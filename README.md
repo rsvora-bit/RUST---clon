@@ -9,7 +9,7 @@ Unity verze navazuje na hlavní mechaniky z HTML verze, ale nepoužívá HTML We
 
 Archiv HTML verzí je zde:
 
-ODKAZ_NA_HTML_ARCHIVE_REPO
+[ODKAZ_NA_HTML_ARCHIVE_REPO](https://github.com/rsvora-bit/it2b_prog_/blob/main/Projekty/Projekt/HTML%20Prototype%20Archive/latest-html/Farkens_World_Beta_1.5.1.html)
 
 Nejnovější HTML reference: Beta 1.5.1
 
