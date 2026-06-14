@@ -97,6 +97,31 @@ namespace FarkensWorld
             values.health = Mathf.Min(100f, values.health + amount);
         }
 
+        public void Damage(float amount)
+        {
+            if (GodMode)
+            {
+                return;
+            }
+
+            values.health = Mathf.Max(0f, values.health - Mathf.Max(0f, amount));
+        }
+
+        public void AddBleeding(float amount)
+        {
+            values.bleeding = Mathf.Clamp(values.bleeding + amount, 0f, 100f);
+        }
+
+        public void AddWetness(float amount)
+        {
+            values.wetness = Mathf.Clamp(values.wetness + amount, 0f, 100f);
+        }
+
+        public void AddRadiation(float amount)
+        {
+            values.radiation = Mathf.Clamp(values.radiation + amount, 0f, 100f);
+        }
+
         public void ReduceBleeding(float amount)
         {
             values.bleeding = Mathf.Max(0f, values.bleeding - amount);
