@@ -1,44 +1,101 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FarkensWorld
 {
     public sealed class PauseMenuUI : MonoBehaviour
     {
+        private GameObject root;
+
         public bool IsOpen { get; private set; }
+
+        private void Start()
+        {
+            BuildCanvas();
+            root.SetActive(false);
+        }
 
         public void Toggle()
         {
             IsOpen = !IsOpen;
             Time.timeScale = IsOpen ? 0f : 1f;
+            if (root != null)
+            {
+                root.SetActive(IsOpen);
+            }
         }
 
         public void Close()
         {
-            if (!IsOpen) return;
+            if (!IsOpen)
+            {
+                return;
+            }
+
             IsOpen = false;
             Time.timeScale = 1f;
+            if (root != null)
+            {
+                root.SetActive(false);
+            }
         }
 
-        private void OnGUI()
+        private void BuildCanvas()
         {
-            if (!IsOpen) return;
-            float x = Screen.width * 0.5f - 170f;
-            float y = Screen.height * 0.5f - 190f;
-            GUI.Box(new Rect(x, y, 340f, 380f), GUIContent.none);
-            GUI.Label(new Rect(x + 20f, y + 20f, 300f, 40f), "FARKEN'S WORLD - PAUSED", HeaderStyle());
-            if (GUI.Button(new Rect(x + 55f, y + 78f, 230f, 42f), "Resume")) Close();
-            if (GUI.Button(new Rect(x + 55f, y + 130f, 230f, 42f), "Save Game")) GameManager.Instance.Saves.SaveGame();
-            if (GUI.Button(new Rect(x + 55f, y + 182f, 230f, 42f), "Load Game")) { Close(); GameManager.Instance.Saves.LoadGame(); }
-            if (GUI.Button(new Rect(x + 55f, y + 234f, 230f, 42f), "New Game")) { Close(); GameManager.Instance.NewGame(); }
-            if (GUI.Button(new Rect(x + 55f, y + 286f, 230f, 42f), "Quit")) Application.Quit();
-            GUI.Label(new Rect(x + 20f, y + 342f, 300f, 24f), GameManager.Version, HeaderStyle());
+            Image overlay = RuntimeUI.Image(RuntimeUI.Canvas.transform, "Pause Overlay", new Color(0.01f, 0.015f, 0.02f, 0.78f),
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            root = overlay.gameObject;
+            Image panel = RuntimeUI.Image(root.transform, "Pause", RuntimeUI.Panel,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 590f));
+            RuntimeUI.Label(panel.transform, "Title", "PAUZA", 28, RuntimeUI.Accent, TextAnchor.MiddleCenter,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(-30f, 56f), FontStyle.Bold);
+
+            AddButton(panel.transform, "POKRAČOVAT", Close, 92f, new Color(0.32f, 0.24f, 0.09f, 0.98f));
+            AddButton(panel.transform, "ULOŽIT HRU", () => GameManager.Instance.Saves.SaveGame(), 146f);
+            AddButton(panel.transform, "NAČÍST HRU", LoadGame, 200f);
+            AddButton(panel.transform, "RESPAWN", Respawn, 254f);
+            AddButton(panel.transform, "INVENTÁŘ", OpenInventory, 308f);
+            AddButton(panel.transform, "MAPA", OpenMap, 362f);
+            AddButton(panel.transform, "NOVÝ OSTROV", NewGame, 416f);
+            AddButton(panel.transform, "UKONČIT", () => Application.Quit(), 470f, new Color(0.36f, 0.11f, 0.09f, 0.98f));
+            RuntimeUI.Label(panel.transform, "Version", GameManager.Version, 12, RuntimeUI.Muted, TextAnchor.MiddleCenter,
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(-30f, 24f), FontStyle.Bold);
         }
 
-        private static GUIStyle HeaderStyle()
+        private static void AddButton(Transform parent, string label, UnityEngine.Events.UnityAction action, float top, Color? color = null)
         {
-            GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            style.normal.textColor = new Color(0.95f, 0.77f, 0.28f);
-            return style;
+            RuntimeUI.Button(parent, label, label, () => action(), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f), new Vector2(0f, -top), new Vector2(300f, 44f), color, 14);
+        }
+
+        private void LoadGame()
+        {
+            Close();
+            GameManager.Instance.Saves.LoadGame();
+        }
+
+        private void Respawn()
+        {
+            Close();
+            GameManager.Instance.Respawn();
+        }
+
+        private void OpenInventory()
+        {
+            Close();
+            GameManager.Instance.InventoryUI.Toggle();
+        }
+
+        private void OpenMap()
+        {
+            Close();
+            GameManager.Instance.MapUI.Open();
+        }
+
+        private void NewGame()
+        {
+            Close();
+            GameManager.Instance.NewGame();
         }
     }
 }

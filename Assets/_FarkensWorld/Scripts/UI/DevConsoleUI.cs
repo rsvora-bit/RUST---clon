@@ -1,61 +1,96 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace FarkensWorld
 {
     public sealed class DevConsoleUI : MonoBehaviour
     {
         private readonly List<string> output = new List<string>();
-        private string command = string.Empty;
-        private bool focusInput;
+        private GameObject root;
+        private Text logText;
+        private InputField commandInput;
 
         public bool IsOpen { get; private set; }
+
+        private void Start()
+        {
+            BuildCanvas();
+            Log("help - seznam příkazů");
+            root.SetActive(false);
+        }
 
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && (keyboard.backquoteKey.wasPressedThisFrame || keyboard.f10Key.wasPressedThisFrame))
+            if (keyboard == null)
             {
-                IsOpen = !IsOpen;
-                focusInput = IsOpen;
+                return;
+            }
+
+            if (keyboard.backquoteKey.wasPressedThisFrame || keyboard.f10Key.wasPressedThisFrame)
+            {
+                SetOpen(!IsOpen);
+                return;
+            }
+
+            if (IsOpen && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame))
+            {
+                RunCommand();
             }
         }
 
-        private void OnGUI()
+        private void BuildCanvas()
         {
-            if (!IsOpen) return;
-            GUI.Box(new Rect(20f, 20f, Screen.width - 40f, Screen.height * 0.48f), GUIContent.none);
-            GUI.Label(new Rect(36f, 30f, 400f, 24f), "DEVELOPER CONSOLE", HeaderStyle());
-            int first = Mathf.Max(0, output.Count - 12);
-            for (int i = first; i < output.Count; i++)
+            Image panel = RuntimeUI.Image(RuntimeUI.Canvas.transform, "Developer Console", new Color(0.024f, 0.039f, 0.051f, 0.97f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -86f), new Vector2(560f, 330f));
+            root = panel.gameObject;
+            RuntimeUI.Label(panel.transform, "Title", "PRIVATE DEV TERMINAL", 13, new Color(0.62f, 0.87f, 0.96f, 1f), TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-120f, 32f), FontStyle.Bold);
+            RuntimeUI.Button(panel.transform, "Close", "ZAVŘÍT", () => SetOpen(false),
+                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -8f), new Vector2(94f, 30f),
+                new Color(0.071f, 0.133f, 0.169f, 0.92f), 11);
+            Image log = RuntimeUI.Image(panel.transform, "Log", new Color(0f, 0f, 0f, 0.48f),
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(-24f, 218f));
+            logText = RuntimeUI.Label(log.transform, "Text", string.Empty, 12, new Color(0.78f, 0.83f, 0.86f, 1f), TextAnchor.LowerLeft,
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-16f, -12f));
+            commandInput = RuntimeUI.Input(panel.transform, "Input", "např. god on, fly on, give wood 100",
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-48f, 12f), new Vector2(-120f, 38f));
+            RuntimeUI.Button(panel.transform, "Run", "RUN", RunCommand,
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-12f, 12f), new Vector2(94f, 38f),
+                new Color(0.071f, 0.133f, 0.169f, 0.92f), 12);
+        }
+
+        private void SetOpen(bool open)
+        {
+            IsOpen = open;
+            if (root != null)
             {
-                GUI.Label(new Rect(36f, 62f + (i - first) * 22f, Screen.width - 72f, 22f), output[i]);
+                root.SetActive(open);
             }
 
-            float inputY = Screen.height * 0.48f - 26f;
-            GUI.SetNextControlName("ConsoleInput");
-            command = GUI.TextField(new Rect(36f, inputY, Screen.width - 160f, 30f), command);
-            if (GUI.Button(new Rect(Screen.width - 112f, inputY, 76f, 30f), "Run")) RunCommand();
-            if (focusInput)
+            if (open && commandInput != null)
             {
-                GUI.FocusControl("ConsoleInput");
-                focusInput = false;
-            }
-
-            Event current = Event.current;
-            if (current.type == EventType.KeyDown && (current.keyCode == KeyCode.Return || current.keyCode == KeyCode.KeypadEnter))
-            {
-                RunCommand();
-                current.Use();
+                commandInput.ActivateInputField();
+                commandInput.Select();
             }
         }
 
         private void RunCommand()
         {
-            string raw = command.Trim();
-            command = string.Empty;
-            if (string.IsNullOrEmpty(raw)) return;
+            string raw = commandInput == null ? string.Empty : commandInput.text.Trim();
+            if (commandInput != null)
+            {
+                commandInput.text = string.Empty;
+                commandInput.ActivateInputField();
+            }
+
+            if (string.IsNullOrEmpty(raw))
+            {
+                return;
+            }
+
             Log("> " + raw);
             string[] parts = raw.Split(' ');
             string verb = parts[0].ToLowerInvariant();
@@ -65,51 +100,70 @@ namespace FarkensWorld
             {
                 case "help":
                     Log("help | give <itemId> <amount> | giveall | clearinventory | heal | feed | drink");
-                    Log("god on/off/toggle | save | load | report | clear drops/build | newgame");
+                    Log("god on/off/toggle | fly on/off/toggle | save | load | report | clear drops/build | newgame");
                     break;
                 case "give":
                     if (parts.Length >= 3 && ItemDatabase.Contains(parts[1]) && int.TryParse(parts[2], out int amount))
                     {
                         int remainder = game.PlayerInventory.Add(parts[1], amount);
-                        Log("Added " + (amount - remainder) + " " + parts[1]);
+                        Log("Přidáno " + (amount - remainder) + " " + parts[1]);
                     }
-                    else Log("Usage: give itemId amount");
+                    else Log("Použití: give itemId amount");
                     break;
                 case "giveall":
                     foreach (ItemDefinition item in ItemDatabase.All) game.PlayerInventory.Add(item.Id, item.IsDurable ? 1 : Mathf.Min(100, item.StackLimit));
-                    Log("Starter batch of every item added");
+                    Log("Přidána testovací sada všech itemů");
                     break;
-                case "clearinventory": game.PlayerInventory.Clear(); Log("Inventory cleared"); break;
-                case "heal": game.PlayerStats.Heal(100f); Log("Health restored"); break;
-                case "feed": game.PlayerStats.Feed(100f); Log("Hunger restored"); break;
-                case "drink": game.PlayerStats.Drink(100f); Log("Thirst restored"); break;
+                case "clearinventory": game.PlayerInventory.Clear(); Log("Inventář vyčištěn"); break;
+                case "heal": game.PlayerStats.Heal(100f); Log("Zdraví obnoveno"); break;
+                case "feed": game.PlayerStats.Feed(100f); Log("Hlad doplněn"); break;
+                case "drink": game.PlayerStats.Drink(100f); Log("Žízeň doplněna"); break;
                 case "god":
-                    string mode = parts.Length > 1 ? parts[1].ToLowerInvariant() : "toggle";
-                    game.PlayerStats.GodMode = mode == "on" || (mode == "toggle" && !game.PlayerStats.GodMode);
-                    if (mode == "off") game.PlayerStats.GodMode = false;
+                    game.PlayerStats.GodMode = ResolveToggle(parts, game.PlayerStats.GodMode);
                     Log("God mode: " + game.PlayerStats.GodMode);
                     break;
-                case "save": game.Saves.SaveGame(); Log("Saved to " + game.Saves.SavePath); break;
-                case "load": game.Saves.LoadGame(); Log("Load requested"); break;
-                case "newgame": game.NewGame(); Log("New world generated"); break;
+                case "fly":
+                    game.PlayerController.FlyMode = ResolveToggle(parts, game.PlayerController.FlyMode);
+                    Log("Fly mode: " + game.PlayerController.FlyMode);
+                    break;
+                case "save": game.Saves.SaveGame(); Log("Uloženo do " + game.Saves.SavePath); break;
+                case "load": game.Saves.LoadGame(); Log("Načtení spuštěno"); break;
+                case "newgame": game.NewGame(); Log("Vygenerován nový ostrov"); break;
                 case "report":
                     Log(GameManager.Version + " | seed " + game.World.WorldSeed);
-                    Log("Position " + game.PlayerController.transform.position + " | inventory " + UsedSlots(game.PlayerInventory) + "/28");
-                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count + " | save " + game.Saves.SavePath);
+                    Log("Pozice " + game.PlayerController.transform.position + " | inventář " + UsedSlots(game.PlayerInventory) + "/28");
+                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count);
                     break;
                 case "clear":
-                    if (parts.Length > 1 && parts[1] == "drops") { game.Drops.ClearAll(); Log("Drops cleared"); }
-                    else if (parts.Length > 1 && parts[1] == "build") { game.Building.ClearAll(); Log("Build cleared"); }
-                    else output.Clear();
+                    if (parts.Length > 1 && parts[1] == "drops") { game.Drops.ClearAll(); Log("Drops odstraněny"); }
+                    else if (parts.Length > 1 && parts[1] == "build") { game.Building.ClearAll(); Log("Stavby odstraněny"); }
+                    else { output.Clear(); RefreshLog(); }
                     break;
-                default: Log("Unknown command. Type help."); break;
+                default: Log("Neznámý příkaz. Napiš help."); break;
             }
+        }
+
+        private static bool ResolveToggle(string[] parts, bool current)
+        {
+            string mode = parts.Length > 1 ? parts[1].ToLowerInvariant() : "toggle";
+            if (mode == "on") return true;
+            if (mode == "off") return false;
+            return !current;
         }
 
         private void Log(string message)
         {
             output.Add(message);
-            while (output.Count > 100) output.RemoveAt(0);
+            while (output.Count > 12) output.RemoveAt(0);
+            RefreshLog();
+        }
+
+        private void RefreshLog()
+        {
+            if (logText != null)
+            {
+                logText.text = string.Join("\n", output.ToArray());
+            }
         }
 
         private static int UsedSlots(Inventory inventory)
@@ -117,13 +171,6 @@ namespace FarkensWorld
             int used = 0;
             for (int i = 0; i < inventory.Capacity; i++) if (!inventory.GetSlot(i).IsEmpty) used++;
             return used;
-        }
-
-        private static GUIStyle HeaderStyle()
-        {
-            GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold };
-            style.normal.textColor = new Color(0.95f, 0.77f, 0.28f);
-            return style;
         }
     }
 }

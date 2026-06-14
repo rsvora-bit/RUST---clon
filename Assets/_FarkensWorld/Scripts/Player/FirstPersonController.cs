@@ -21,6 +21,7 @@ namespace FarkensWorld
 
         public Camera PlayerCamera => playerCamera;
         public float Yaw => transform.eulerAngles.y;
+        public bool FlyMode { get; set; }
 
         private void Awake()
         {
@@ -31,6 +32,12 @@ namespace FarkensWorld
 
         private void Update()
         {
+            if (transform.position.y < -20f && GameManager.Instance != null)
+            {
+                GameManager.Instance.Respawn();
+                return;
+            }
+
             if (GameManager.Instance == null || GameManager.Instance.GameplayInputBlocked)
             {
                 stats.IsSprinting = false;
@@ -85,6 +92,14 @@ namespace FarkensWorld
             stats.IsSprinting = wantsSprint;
             float speed = wantsSprint ? sprintSpeed : walkSpeed;
             Vector3 horizontal = (transform.right * input.x + transform.forward * input.y) * speed;
+
+            if (FlyMode)
+            {
+                float vertical = (keyboard.spaceKey.isPressed ? 1f : 0f) - (keyboard.leftCtrlKey.isPressed ? 1f : 0f);
+                verticalVelocity = 0f;
+                characterController.Move((horizontal + Vector3.up * vertical * speed) * Time.deltaTime);
+                return;
+            }
 
             if (characterController.isGrounded && verticalVelocity < 0f)
             {

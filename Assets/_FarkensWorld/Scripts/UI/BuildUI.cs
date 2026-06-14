@@ -1,62 +1,91 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FarkensWorld
 {
     public sealed class BuildUI : MonoBehaviour
     {
+        private GameObject root;
+
         public bool IsOpen { get; private set; }
+
+        private void Start()
+        {
+            BuildCanvas();
+            root.SetActive(false);
+        }
 
         public void Toggle()
         {
             IsOpen = !IsOpen;
-            if (IsOpen) GameManager.Instance.InventoryUI.Close();
+            if (IsOpen)
+            {
+                GameManager.Instance.InventoryUI.Close();
+                GameManager.Instance.MapUI.Close();
+            }
+
+            if (root != null)
+            {
+                root.SetActive(IsOpen);
+            }
         }
 
         public void Close()
         {
             IsOpen = false;
+            if (root != null)
+            {
+                root.SetActive(false);
+            }
         }
 
-        private void OnGUI()
+        private void BuildCanvas()
         {
-            if (!IsOpen) return;
-            float width = 430f;
-            float x = Screen.width * 0.5f - width * 0.5f;
-            GUI.Box(new Rect(x, 70f, width, 560f), GUIContent.none);
-            GUI.Label(new Rect(x + 20f, 86f, width - 40f, 30f), "BUILDING PLAN", HeaderStyle());
+            Image overlay = RuntimeUI.Image(RuntimeUI.Canvas.transform, "Build Overlay", new Color(0.018f, 0.028f, 0.036f, 0.94f),
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            root = overlay.gameObject;
+            Image panel = RuntimeUI.Image(root.transform, "Panel", RuntimeUI.Panel,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980f, 760f));
+            RuntimeUI.Image(panel.transform, "Header", new Color(0.16f, 0.12f, 0.045f, 0.62f),
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 58f));
+            RuntimeUI.Label(panel.transform, "Title", "BUILD MENU", 21, RuntimeUI.Accent, TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -29f), new Vector2(-180f, 58f), FontStyle.Bold);
+            RuntimeUI.Button(panel.transform, "Close", "ZAVŘÍT", Close,
+                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-16f, -10f), new Vector2(136f, 38f));
 
             for (int i = 0; i < BuildPieceDatabase.All.Count; i++)
             {
                 BuildPieceDefinition definition = BuildPieceDatabase.All[i];
-                string label = definition.DisplayName + "\n" + CostText(definition);
-                if (GUI.Button(new Rect(x + 20f, 128f + i * 45f, width - 40f, 38f), label))
-                {
-                    GameManager.Instance.Building.BeginPlacement(definition.Type);
-                }
+                int row = i / 3;
+                int column = i % 3;
+                string label = "BUILD\n" + definition.DisplayName + "\n" + CostText(definition) + "\n" + SizeText(definition.Size);
+                RuntimeUI.Button(panel.transform, "Build " + definition.Type, label,
+                    () => GameManager.Instance.Building.BeginPlacement(definition.Type),
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(22f + column * 314f, -86f - row * 142f), new Vector2(294f, 126f),
+                    new Color(0.22f, 0.16f, 0.09f, 0.96f), 13);
             }
 
-            GUI.Label(new Rect(x + 20f, 540f, width - 40f, 70f), "LMB place | RMB cancel | R rotate\nU upgrade | T repair | X demolish", CenterStyle());
+            RuntimeUI.Label(panel.transform, "Help", "LPM položit | RMB zrušit | R otočit | U upgrade | T repair | X demolish",
+                13, RuntimeUI.Muted, TextAnchor.MiddleCenter, new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(-40f, 34f), FontStyle.Bold);
         }
 
         private static string CostText(BuildPieceDefinition definition)
         {
-            foreach (System.Collections.Generic.KeyValuePair<string, int> cost in definition.Cost)
+            List<string> costs = new List<string>();
+            foreach (KeyValuePair<string, int> cost in definition.Cost)
             {
-                return cost.Key + " x" + cost.Value;
+                costs.Add(cost.Key + " x" + cost.Value);
             }
-            return string.Empty;
+
+            return string.Join(" | ", costs);
         }
 
-        private static GUIStyle HeaderStyle()
+        private static string SizeText(Vector3 size)
         {
-            GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            style.normal.textColor = new Color(0.95f, 0.77f, 0.28f);
-            return style;
-        }
-
-        private static GUIStyle CenterStyle()
-        {
-            return new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 13 };
+            return size.x.ToString("0.0") + " x " + size.z.ToString("0.0");
         }
     }
 }

@@ -13,7 +13,9 @@ namespace FarkensWorld
         StorageBox,
         Furnace,
         Workbench,
-        SleepingBag
+        SleepingBag,
+        Workbench2,
+        Workbench3
     }
 
     public sealed class BuildPieceDefinition
@@ -44,6 +46,8 @@ namespace FarkensWorld
             Build(BuildPieceType.StorageBox, "Storage Box", new Vector3(1.8f, 1.1f, 1.2f), "storageBox", 1),
             Build(BuildPieceType.Furnace, "Furnace", new Vector3(1.8f, 2f, 1.8f), "furnace", 1),
             Build(BuildPieceType.Workbench, "Workbench L1", new Vector3(2.7f, 1.4f, 1.4f), "workbench1", 1),
+            Build(BuildPieceType.Workbench2, "Workbench L2", new Vector3(2.7f, 1.4f, 1.4f), "workbench2", 1),
+            Build(BuildPieceType.Workbench3, "Workbench L3", new Vector3(2.7f, 1.4f, 1.4f), "workbench3", 1),
             Build(BuildPieceType.SleepingBag, "Sleeping Bag", new Vector3(2.2f, 0.25f, 0.9f), "sleepingBag", 1)
         };
 

@@ -5,7 +5,7 @@ namespace FarkensWorld
 {
     public sealed class GameManager : MonoBehaviour
     {
-        public const string Version = "Unity Prototype 0.1";
+        public const string Version = "Farken's World - Unity Beta 1.5.1";
 
         public static GameManager Instance { get; private set; }
 
@@ -21,14 +21,16 @@ namespace FarkensWorld
         public BuildUI BuildUI { get; private set; }
         public PauseMenuUI PauseUI { get; private set; }
         public DevConsoleUI ConsoleUI { get; private set; }
+        public MapUI MapUI { get; private set; }
         public WorldGenerator World { get; private set; }
 
         public bool InventoryOpen => InventoryUI != null && InventoryUI.IsOpen;
         public bool BuildMenuOpen => BuildUI != null && BuildUI.IsOpen;
         public bool PauseOpen => PauseUI != null && PauseUI.IsOpen;
         public bool ConsoleOpen => ConsoleUI != null && ConsoleUI.IsOpen;
+        public bool MapOpen => MapUI != null && MapUI.IsOpen;
         public bool ContainerOpen => InventoryUI != null && InventoryUI.ActiveContainer != null;
-        public bool GameplayInputBlocked => InventoryOpen || BuildMenuOpen || PauseOpen || ConsoleOpen || ContainerOpen;
+        public bool GameplayInputBlocked => InventoryOpen || BuildMenuOpen || PauseOpen || ConsoleOpen || MapOpen || ContainerOpen;
 
         private void Awake()
         {
@@ -62,9 +64,24 @@ namespace FarkensWorld
                 BuildUI.Toggle();
             }
 
+            if (!ConsoleOpen && keyboard.mKey.wasPressedThisFrame)
+            {
+                MapUI.Toggle();
+            }
+
+            if (!GameplayInputBlocked && keyboard.hKey.wasPressedThisFrame)
+            {
+                UseBandage();
+            }
+
+            if (!GameplayInputBlocked && keyboard.gKey.wasPressedThisFrame)
+            {
+                UseFood();
+            }
+
             if (!ConsoleOpen && keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (InventoryOpen || BuildMenuOpen || ContainerOpen)
+                if (InventoryOpen || BuildMenuOpen || ContainerOpen || MapOpen)
                 {
                     ClosePanels();
                 }
@@ -82,6 +99,7 @@ namespace FarkensWorld
             InventoryUI.Close();
             BuildUI.Close();
             PauseUI.Close();
+            MapUI.Close();
         }
 
         public void SetStarterInventory()
@@ -111,6 +129,13 @@ namespace FarkensWorld
             GameEvents.RaiseCenter("New island generated");
         }
 
+        public void Respawn()
+        {
+            PlayerController.Teleport(World.PlayerSpawn);
+            PlayerStats.Respawn();
+            GameEvents.RaiseCenter("Respawned on the island");
+        }
+
         private void InitializeRuntime()
         {
             PlayerInventory = new Inventory(28);
@@ -127,6 +152,7 @@ namespace FarkensWorld
             BuildUI = gameObject.AddComponent<BuildUI>();
             PauseUI = gameObject.AddComponent<PauseMenuUI>();
             ConsoleUI = gameObject.AddComponent<DevConsoleUI>();
+            MapUI = gameObject.AddComponent<MapUI>();
 
             World.Generate(151);
             CreatePlayer();
@@ -148,6 +174,40 @@ namespace FarkensWorld
             player.AddComponent<PlayerInteraction>();
             player.AddComponent<PlayerCombat>();
             PlayerController.Teleport(World.PlayerSpawn);
+        }
+
+        private void UseBandage()
+        {
+            if (!PlayerInventory.Remove("bandage", 1))
+            {
+                GameEvents.RaiseCenter("No bandage in inventory");
+                return;
+            }
+
+            PlayerStats.Heal(18f);
+            PlayerStats.ReduceBleeding(22f);
+            GameEvents.RaiseCenter("Bandage used");
+        }
+
+        private void UseFood()
+        {
+            if (PlayerInventory.Remove("cookedMeat", 1))
+            {
+                PlayerStats.Feed(32f);
+                PlayerStats.Heal(4f);
+                GameEvents.RaiseCenter("Cooked meat eaten");
+                return;
+            }
+
+            if (PlayerInventory.Remove("mushroom", 1))
+            {
+                PlayerStats.Feed(12f);
+                PlayerStats.Heal(2f);
+                GameEvents.RaiseCenter("Mushroom eaten");
+                return;
+            }
+
+            GameEvents.RaiseCenter("No food in inventory");
         }
 
         private void UpdateCursor()

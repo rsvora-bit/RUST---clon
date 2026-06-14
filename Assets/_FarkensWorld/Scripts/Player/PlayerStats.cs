@@ -13,6 +13,7 @@ namespace FarkensWorld
         public float wetness;
         public float radiation;
         public float bleeding;
+        public float temperature = 17f;
     }
 
     public sealed class PlayerStats : MonoBehaviour
@@ -34,6 +35,7 @@ namespace FarkensWorld
                 values.stamina = 100f;
                 values.bleeding = 0f;
                 values.radiation = 0f;
+                values.temperature = 17f;
                 return;
             }
 
@@ -43,6 +45,8 @@ namespace FarkensWorld
             float staminaDelta = IsSprinting ? -18f : 12f;
             values.stamina = Mathf.Clamp(values.stamina + staminaDelta * Time.deltaTime, 0f, 100f);
             values.wetness = Mathf.Max(0f, values.wetness - 1.8f * Time.deltaTime);
+            values.bleeding = Mathf.Max(0f, values.bleeding - 0.08f * Time.deltaTime);
+            values.temperature = 16f + Mathf.Sin(Time.time * 0.02f) * 6f - values.wetness * 0.12f;
 
             float damage = 0f;
             if (values.hunger <= 0f || values.thirst <= 0f)
@@ -52,6 +56,7 @@ namespace FarkensWorld
 
             damage += values.bleeding * 0.08f;
             damage += values.radiation > 70f ? (values.radiation - 70f) * 0.03f : 0f;
+            damage += values.temperature < 1f ? 0.62f : 0f;
             values.health = Mathf.Max(0f, values.health - damage * Time.deltaTime);
         }
 
@@ -63,6 +68,18 @@ namespace FarkensWorld
         public void Restore(PlayerStatsData data)
         {
             values = data ?? new PlayerStatsData();
+        }
+
+        public void Respawn()
+        {
+            values.health = 100f;
+            values.hunger = 72f;
+            values.thirst = 72f;
+            values.stamina = 100f;
+            values.wetness = 0f;
+            values.radiation = 0f;
+            values.bleeding = 0f;
+            values.temperature = 17f;
         }
 
         public void Drink(float amount)
@@ -78,6 +95,11 @@ namespace FarkensWorld
         public void Heal(float amount)
         {
             values.health = Mathf.Min(100f, values.health + amount);
+        }
+
+        public void ReduceBleeding(float amount)
+        {
+            values.bleeding = Mathf.Max(0f, values.bleeding - amount);
         }
     }
 }

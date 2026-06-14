@@ -100,16 +100,21 @@ namespace FarkensWorld
             }
 
             Vector3 playerPosition = GameManager.Instance.PlayerController.transform.position;
+            int level = 0;
             for (int i = 0; i < placedPieces.Count; i++)
             {
                 BuildPiece piece = placedPieces[i];
-                if (piece != null && piece.Type == BuildPieceType.Workbench && Vector3.Distance(playerPosition, piece.transform.position) <= 13f)
+                if (piece == null || Vector3.Distance(playerPosition, piece.transform.position) > 13f)
                 {
-                    return 1;
+                    continue;
                 }
+
+                if (piece.Type == BuildPieceType.Workbench) level = Mathf.Max(level, 1);
+                if (piece.Type == BuildPieceType.Workbench2) level = Mathf.Max(level, 2);
+                if (piece.Type == BuildPieceType.Workbench3) level = Mathf.Max(level, 3);
             }
 
-            return 0;
+            return level;
         }
 
         public BuildPiece CreatePlacedPiece(BuildPieceType type, Vector3 position, Quaternion rotationValue, bool register = true)

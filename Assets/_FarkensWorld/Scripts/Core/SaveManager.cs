@@ -163,7 +163,8 @@ namespace FarkensWorld
                 stamina = source.stamina,
                 wetness = source.wetness,
                 radiation = source.radiation,
-                bleeding = source.bleeding
+                bleeding = source.bleeding,
+                temperature = source.temperature
             };
         }
     }

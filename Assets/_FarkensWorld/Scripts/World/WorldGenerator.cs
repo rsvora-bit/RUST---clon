@@ -19,7 +19,7 @@ namespace FarkensWorld
         private Material rust;
 
         public int WorldSeed { get; private set; }
-        public Vector3 PlayerSpawn => new Vector3(-6f, 1.2f, -10f);
+        public Vector3 PlayerSpawn => new Vector3(-6f, 2.2f, -10f);
 
         public void Generate(int seed)
         {
@@ -123,8 +123,10 @@ namespace FarkensWorld
         {
             GameObject ocean = Primitive("Ocean", PrimitiveType.Cube, new Vector3(0f, -2.4f, 0f), new Vector3(300f, 2f, 300f), water, worldRoot);
             Object.Destroy(ocean.GetComponent<Collider>());
-            Primitive("Beach", PrimitiveType.Cylinder, new Vector3(0f, -0.65f, 0f), new Vector3(82f, 0.45f, 82f), sand, worldRoot);
-            Primitive("Island", PrimitiveType.Cylinder, new Vector3(0f, -0.45f, 0f), new Vector3(74f, 0.5f, 74f), grass, worldRoot);
+            Primitive("Beach", PrimitiveType.Cylinder, new Vector3(0f, -0.65f, 0f), new Vector3(164f, 0.45f, 164f), sand, worldRoot);
+            Primitive("Island", PrimitiveType.Cylinder, new Vector3(0f, -0.45f, 0f), new Vector3(148f, 0.5f, 148f), grass, worldRoot);
+            GameObject safetyGround = Primitive("Ground Safety Collider", PrimitiveType.Cylinder, new Vector3(0f, -1.7f, 0f), new Vector3(148f, 1.7f, 148f), grass, worldRoot);
+            safetyGround.GetComponent<Renderer>().enabled = false;
             Primitive("Road", PrimitiveType.Cube, new Vector3(0f, 0.06f, 4f), new Vector3(9f, 0.1f, 132f), dirt, worldRoot);
 
             Vector3[] hills =

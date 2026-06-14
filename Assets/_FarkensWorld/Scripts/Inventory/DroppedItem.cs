@@ -8,6 +8,7 @@ namespace FarkensWorld
         [SerializeField] private int amount;
         [SerializeField] private int durability;
         [SerializeField] private float despawnAt;
+        private DroppedItemWorldSpawner owner;
 
         public string ItemId => itemId;
         public int Amount => amount;
@@ -22,11 +23,12 @@ namespace FarkensWorld
             }
         }
 
-        public void Initialize(string id, int itemAmount, int itemDurability = 0)
+        public void Initialize(string id, int itemAmount, int itemDurability, DroppedItemWorldSpawner worldSpawner)
         {
             itemId = id;
             amount = itemAmount;
             durability = itemDurability;
+            owner = worldSpawner;
             despawnAt = Time.time + 300f;
             gameObject.name = "Dropped " + id + " x" + amount;
         }
@@ -36,7 +38,7 @@ namespace FarkensWorld
             transform.Rotate(Vector3.up, 30f * Time.deltaTime, Space.World);
             if (Time.time >= despawnAt)
             {
-                Destroy(gameObject);
+                owner.Recycle(this);
             }
         }
 
@@ -53,7 +55,7 @@ namespace FarkensWorld
 
             if (amount <= 0)
             {
-                Destroy(gameObject);
+                owner.Recycle(this);
             }
         }
     }

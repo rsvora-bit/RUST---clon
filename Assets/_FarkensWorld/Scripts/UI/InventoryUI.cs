@@ -1,27 +1,72 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace FarkensWorld
 {
     public sealed class InventoryUI : MonoBehaviour
     {
-        private Vector2 recipeScroll;
+        private readonly Button[] playerSlots = new Button[28];
+        private readonly Button[] containerSlots = new Button[12];
+        private readonly List<Button> recipeButtons = new List<Button>();
+        private readonly Button[] queueButtons = new Button[3];
+
+        private GameObject root;
+        private GameObject containerPanel;
+        private RectTransform inventoryPanel;
+        private RectTransform craftingPanel;
+        private Text inventoryInfo;
+        private Text containerTitle;
+        private Text furnaceProgress;
+        private Button furnaceToggle;
         private int selectedSlot = -1;
+        private float nextRefresh;
 
         public bool IsOpen { get; private set; }
         public ContainerInventory ActiveContainer { get; private set; }
+
+        private void OnEnable()
+        {
+            GameEvents.InventoryChanged += RefreshAll;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.InventoryChanged -= RefreshAll;
+        }
+
+        private void Start()
+        {
+            BuildCanvas();
+            root.SetActive(false);
+        }
+
+        private void Update()
+        {
+            if (!IsOpen || Time.unscaledTime < nextRefresh)
+            {
+                return;
+            }
+
+            nextRefresh = Time.unscaledTime + 0.15f;
+            RefreshCrafting();
+            RefreshContainer();
+        }
 
         public void Toggle()
         {
             if (IsOpen)
             {
                 Close();
+                return;
             }
-            else
-            {
-                GameManager.Instance.BuildUI.Close();
-                IsOpen = true;
-            }
+
+            GameManager.Instance.BuildUI.Close();
+            GameManager.Instance.MapUI.Close();
+            IsOpen = true;
+            root.SetActive(true);
+            RefreshAll();
         }
 
         public void Close()
@@ -29,6 +74,10 @@ namespace FarkensWorld
             IsOpen = false;
             ActiveContainer = null;
             selectedSlot = -1;
+            if (root != null)
+            {
+                root.SetActive(false);
+            }
         }
 
         public void OpenContainer(ContainerInventory container)
@@ -36,140 +85,263 @@ namespace FarkensWorld
             ActiveContainer = container;
             IsOpen = true;
             GameManager.Instance.BuildUI.Close();
+            GameManager.Instance.MapUI.Close();
+            root.SetActive(true);
+            RefreshAll();
         }
 
-        private void OnGUI()
+        private void BuildCanvas()
         {
-            if (!IsOpen)
-            {
-                return;
-            }
+            Image overlay = RuntimeUI.Image(RuntimeUI.Canvas.transform, "Inventory Overlay", new Color(0.018f, 0.028f, 0.036f, 0.96f),
+                Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            root = overlay.gameObject;
 
-            GUI.Box(new Rect(24f, 24f, Screen.width - 48f, Screen.height - 48f), GUIContent.none);
-            GUI.Label(new Rect(45f, 36f, 520f, 30f), "INVENTORY - 28 SLOTS / HOTBAR 1-6", HeaderStyle());
-            DrawInventoryGrid();
-            DrawInventoryActions();
-            DrawCrafting();
-            if (ActiveContainer != null)
-            {
-                DrawContainer();
-            }
-            GUI.Label(new Rect(45f, Screen.height - 76f, 650f, 24f), "Click selects | Alt-click drops 1 | Shift+Alt drops stack | Shift-click transfers", GUI.skin.label);
+            Image frame = RuntimeUI.Image(root.transform, "Frame", RuntimeUI.Panel, Vector2.zero, Vector2.one,
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-48f, -48f));
+            RuntimeUI.Image(frame.transform, "Header", new Color(0.16f, 0.12f, 0.045f, 0.62f),
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 58f));
+            RuntimeUI.Label(frame.transform, "Title", "INVENTÁŘ / CRAFTING   •   slots / crafting / containers", 20, RuntimeUI.Accent,
+                TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -29f), new Vector2(-180f, 58f), FontStyle.Bold);
+            RuntimeUI.Button(frame.transform, "Close", "ZAVŘÍT", Close, new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(1f, 1f), new Vector2(-16f, -10f), new Vector2(136f, 38f));
+
+            BuildContainerPanel(frame.transform);
+            BuildInventoryPanel(frame.transform);
+            BuildCraftingPanel(frame.transform);
+            UpdateLayout();
         }
 
-        private void DrawInventoryGrid()
+        private void BuildInventoryPanel(Transform parent)
         {
-            Inventory inventory = GameManager.Instance.PlayerInventory;
-            float startX = 45f;
-            float startY = 82f;
-            for (int i = 0; i < inventory.Capacity; i++)
+            Image panel = RuntimeUI.Image(parent, "Player Inventory", RuntimeUI.PanelSoft,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(32f, -84f), new Vector2(900f, 900f));
+            inventoryPanel = panel.rectTransform;
+            RuntimeUI.Label(panel.transform, "Section", "SUROVINY A LOOT", 14, RuntimeUI.Accent, TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-24f, 34f), FontStyle.Bold);
+
+            for (int i = 0; i < playerSlots.Length; i++)
             {
+                int index = i;
                 int row = i / 7;
                 int column = i % 7;
-                Rect rect = new Rect(startX + column * 92f, startY + row * 82f, 84f, 74f);
-                InventorySlot slot = inventory.GetSlot(i);
-                string label = SlotLabel(slot, i < 6 ? (i + 1).ToString() : string.Empty);
-                Color old = GUI.color;
-                GUI.color = selectedSlot == i ? new Color(1f, 0.78f, 0.28f) : Color.white;
-                bool clicked = GUI.Button(rect, label);
-                GUI.color = old;
-                if (clicked)
-                {
-                    HandlePlayerSlotClick(i, slot);
-                }
+                playerSlots[i] = RuntimeUI.Button(panel.transform, "Inventory Slot " + (i + 1), "EMPTY", () => HandlePlayerSlotClick(index),
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(16f + column * 88f, -52f - row * 112f), new Vector2(82f, 104f), RuntimeUI.SlotEmpty, 10);
             }
+
+            float actionsY = -520f;
+            RuntimeUI.Button(panel.transform, "Drop One", "DROP 1", () => DropSelected(1),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, actionsY), new Vector2(122f, 36f));
+            RuntimeUI.Button(panel.transform, "Drop Stack", "DROP STACK", () => DropSelected(int.MaxValue),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(146f, actionsY), new Vector2(138f, 36f));
+            RuntimeUI.Button(panel.transform, "Sort", "SORT", () => GameManager.Instance.PlayerInventory.Sort(),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(292f, actionsY), new Vector2(112f, 36f));
+            RuntimeUI.Button(panel.transform, "Stack", "STACK ALL", RestackInventory,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(412f, actionsY), new Vector2(132f, 36f));
+            inventoryInfo = RuntimeUI.Label(panel.transform, "Info", "Sloty: 0 / 28", 11, RuntimeUI.Muted, TextAnchor.MiddleRight,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, actionsY - 42f), new Vector2(-24f, 24f), FontStyle.Bold);
+            RuntimeUI.Label(panel.transform, "Help", "Kliknutí vybere | Alt kliknutí vyhodí 1 | Shift+Alt vyhodí stack | Shift kliknutí přesune",
+                11, RuntimeUI.Muted, TextAnchor.MiddleLeft, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(0f, 18f), new Vector2(-28f, 28f));
         }
 
-        private void DrawInventoryActions()
+        private void BuildContainerPanel(Transform parent)
         {
-            float y = 430f;
-            if (GUI.Button(new Rect(45f, y, 120f, 34f), "Drop 1")) DropSelected(1);
-            if (GUI.Button(new Rect(175f, y, 130f, 34f), "Drop Stack")) DropSelected(int.MaxValue);
-            if (GUI.Button(new Rect(315f, y, 120f, 34f), "Sort")) GameManager.Instance.PlayerInventory.Sort();
-            if (GUI.Button(new Rect(445f, y, 120f, 34f), "Stack All")) RestackInventory();
-        }
+            Image panel = RuntimeUI.Image(parent, "Container", RuntimeUI.PanelSoft,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(32f, -84f), new Vector2(340f, 900f));
+            containerPanel = panel.gameObject;
+            containerTitle = RuntimeUI.Label(panel.transform, "Title", "KONTEJNER", 14, RuntimeUI.Accent, TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-24f, 34f), FontStyle.Bold);
+            RuntimeUI.Button(panel.transform, "Take All", "TAKE ALL", TakeAll,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -48f), new Vector2(96f, 34f));
+            RuntimeUI.Button(panel.transform, "Deposit", "DEPOSIT ALL", DepositAll,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(116f, -48f), new Vector2(112f, 34f));
+            RuntimeUI.Button(panel.transform, "Sort", "SORT", () => { if (ActiveContainer != null) ActiveContainer.Inventory.Sort(); },
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(236f, -48f), new Vector2(88f, 34f));
 
-        private void DrawCrafting()
-        {
-            float x = ActiveContainer == null ? Screen.width - 500f : Screen.width - 760f;
-            float width = ActiveContainer == null ? 450f : 330f;
-            GUI.Box(new Rect(x, 70f, width, Screen.height - 150f), GUIContent.none);
-            GUI.Label(new Rect(x + 18f, 82f, width - 36f, 28f), "CRAFTING QUEUE", HeaderStyle());
-
-            IReadOnlyList<CraftingQueueItem> queue = GameManager.Instance.Crafting.Queue;
-            float queueY = 116f;
-            for (int i = 0; i < queue.Count && i < 3; i++)
+            for (int i = 0; i < containerSlots.Length; i++)
             {
-                CraftingQueueItem item = queue[i];
-                float progress = 1f - Mathf.Clamp01(item.remaining / item.total);
-                GUI.Label(new Rect(x + 18f, queueY, width - 100f, 24f), item.recipeId + " " + Mathf.RoundToInt(progress * 100f) + "%");
-                if (GUI.Button(new Rect(x + width - 82f, queueY, 64f, 24f), "Cancel")) GameManager.Instance.Crafting.Cancel(i);
-                queueY += 28f;
+                int index = i;
+                int row = i / 3;
+                int column = i % 3;
+                containerSlots[i] = RuntimeUI.Button(panel.transform, "Container Slot " + (i + 1), "EMPTY", () => TransferContainerSlot(index),
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(12f + column * 106f, -94f - row * 110f), new Vector2(98f, 102f), RuntimeUI.SlotEmpty, 10);
             }
 
-            Rect scrollRect = new Rect(x + 12f, queueY + 8f, width - 24f, Screen.height - queueY - 180f);
-            Rect viewRect = new Rect(0f, 0f, width - 48f, CraftingDatabase.All.Count * 58f);
-            recipeScroll = GUI.BeginScrollView(scrollRect, recipeScroll, viewRect);
+            furnaceToggle = RuntimeUI.Button(panel.transform, "Furnace Toggle", "TURN ON", ToggleFurnace,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(12f, 64f), new Vector2(152f, 38f));
+            furnaceProgress = RuntimeUI.Label(panel.transform, "Furnace Progress", string.Empty, 12, RuntimeUI.Accent, TextAnchor.MiddleCenter,
+                new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(174f, 64f), new Vector2(150f, 38f), FontStyle.Bold);
+            RuntimeUI.Button(panel.transform, "Close Container", "ZAVŘÍT KONTEJNER", CloseContainer,
+                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 16f), new Vector2(-24f, 38f));
+        }
+
+        private void BuildCraftingPanel(Transform parent)
+        {
+            Image panel = RuntimeUI.Image(parent, "Crafting", RuntimeUI.PanelSoft,
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(946f, -84f), new Vector2(942f, 900f));
+            craftingPanel = panel.rectTransform;
+            RuntimeUI.Label(panel.transform, "Queue Header", "CRAFTING QUEUE", 14, RuntimeUI.Accent, TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -10f), new Vector2(-24f, 34f), FontStyle.Bold);
+
+            for (int i = 0; i < queueButtons.Length; i++)
+            {
+                int index = i;
+                queueButtons[i] = RuntimeUI.Button(panel.transform, "Queue " + (i + 1), "Fronta je prázdná", () => GameManager.Instance.Crafting.Cancel(index),
+                    new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(0f, -48f - i * 42f), new Vector2(-24f, 36f), RuntimeUI.SlotEmpty, 11);
+            }
+
+            RuntimeUI.Label(panel.transform, "Recipes Header", "CRAFTING", 14, RuntimeUI.Accent, TextAnchor.MiddleLeft,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -180f), new Vector2(-24f, 34f), FontStyle.Bold);
+
             for (int i = 0; i < CraftingDatabase.All.Count; i++)
             {
                 RecipeDefinition recipe = CraftingDatabase.All[i];
-                string cost = CostText(recipe.Cost);
-                bool canCraft = GameManager.Instance.Crafting.CanCraft(recipe);
-                GUI.enabled = canCraft;
-                if (GUI.Button(new Rect(0f, i * 58f, width - 60f, 50f), recipe.DisplayName + "\n" + cost + (recipe.RequiredWorkbenchLevel > 0 ? " | WB" + recipe.RequiredWorkbenchLevel : string.Empty)))
-                {
-                    GameManager.Instance.Crafting.QueueCraft(recipe);
-                }
-                GUI.enabled = true;
-            }
-            GUI.EndScrollView();
-        }
-
-        private void DrawContainer()
-        {
-            float x = 710f;
-            float y = 70f;
-            float width = 300f;
-            GUI.Box(new Rect(x, y, width, 360f), GUIContent.none);
-            GUI.Label(new Rect(x + 15f, y + 12f, width - 30f, 28f), ActiveContainer.DisplayName.ToUpperInvariant(), HeaderStyle());
-
-            Inventory container = ActiveContainer.Inventory;
-            for (int i = 0; i < container.Capacity; i++)
-            {
-                int row = i / 3;
-                int column = i % 3;
-                Rect rect = new Rect(x + 15f + column * 92f, y + 52f + row * 76f, 84f, 68f);
-                InventorySlot slot = container.GetSlot(i);
-                if (GUI.Button(rect, SlotLabel(slot, FurnaceSlotName(i))))
-                {
-                    TransferContainerSlot(i);
-                }
-            }
-
-            float buttonsY = y + 300f;
-            if (GUI.Button(new Rect(x + 15f, buttonsY, 82f, 32f), "Take All")) TakeAll();
-            if (GUI.Button(new Rect(x + 105f, buttonsY, 92f, 32f), "Deposit")) DepositAll();
-            if (GUI.Button(new Rect(x + 205f, buttonsY, 80f, 32f), "Close")) Close();
-
-            Furnace furnace = ActiveContainer as Furnace;
-            if (furnace != null)
-            {
-                string button = furnace.IsActive ? "Stop furnace" : "Start furnace";
-                if (GUI.Button(new Rect(x + 15f, buttonsY + 38f, 180f, 32f), button)) furnace.ToggleActive();
-                GUI.Label(new Rect(x + 205f, buttonsY + 42f, 80f, 24f), Mathf.RoundToInt(furnace.Progress01 * 100f) + "%");
+                int row = i / 2;
+                int column = i % 2;
+                Button button = RuntimeUI.Button(panel.transform, "Recipe " + recipe.ResultItemId, RecipeLabel(recipe), () => QueueRecipe(recipe),
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    new Vector2(12f + column * 402f, -222f - row * 82f), new Vector2(390f, 74f), RuntimeUI.CategoryColor(recipe.Category), 11);
+                recipeButtons.Add(button);
             }
         }
 
-        private void HandlePlayerSlotClick(int index, InventorySlot slot)
+        private void UpdateLayout()
         {
-            Event current = Event.current;
-            if (slot != null && !slot.IsEmpty && current.alt)
+            bool hasContainer = ActiveContainer != null;
+            containerPanel.SetActive(hasContainer);
+            inventoryPanel.anchoredPosition = new Vector2(hasContainer ? 386f : 32f, -84f);
+            inventoryPanel.sizeDelta = new Vector2(hasContainer ? 650f : 900f, 900f);
+            craftingPanel.anchoredPosition = new Vector2(hasContainer ? 1050f : 946f, -84f);
+            craftingPanel.sizeDelta = new Vector2(hasContainer ? 838f : 942f, 900f);
+        }
+
+        private void RefreshAll()
+        {
+            if (root == null)
             {
-                DropSlot(index, current.shift ? int.MaxValue : 1);
                 return;
             }
 
-            if (ActiveContainer != null && slot != null && !slot.IsEmpty && current.shift)
+            UpdateLayout();
+            RefreshInventory();
+            RefreshCrafting();
+            RefreshContainer();
+        }
+
+        private void RefreshInventory()
+        {
+            Inventory inventory = GameManager.Instance.PlayerInventory;
+            int used = 0;
+            for (int i = 0; i < playerSlots.Length; i++)
+            {
+                InventorySlot slot = inventory.GetSlot(i);
+                if (slot == null || slot.IsEmpty)
+                {
+                    RuntimeUI.SetButtonText(playerSlots[i], (i < 6 ? (i + 1) + "\n" : string.Empty) + "EMPTY");
+                    playerSlots[i].image.color = selectedSlot == i ? new Color(0.31f, 0.26f, 0.12f, 0.98f) : RuntimeUI.SlotEmpty;
+                    continue;
+                }
+
+                used++;
+                ItemDefinition item = ItemDatabase.Get(slot.itemId);
+                string durability = item.IsDurable ? "\nDur " + slot.durability : string.Empty;
+                string prefix = i < 6 ? (i + 1) + "\n" : string.Empty;
+                RuntimeUI.SetButtonText(playerSlots[i], prefix + RuntimeUI.CategoryName(item.Category) + "\n" + item.DisplayName + "\nx" + slot.amount + durability);
+                playerSlots[i].image.color = selectedSlot == i ? new Color(0.43f, 0.34f, 0.13f, 0.98f) : RuntimeUI.CategoryColor(item.Category);
+            }
+
+            inventoryInfo.text = "Sloty: " + used + " / 28";
+        }
+
+        private void RefreshCrafting()
+        {
+            IReadOnlyList<CraftingQueueItem> queue = GameManager.Instance.Crafting.Queue;
+            for (int i = 0; i < queueButtons.Length; i++)
+            {
+                bool occupied = i < queue.Count;
+                queueButtons[i].interactable = occupied;
+                if (!occupied)
+                {
+                    RuntimeUI.SetButtonText(queueButtons[i], i == 0 ? "Fronta craftingu je prázdná." : "-");
+                    continue;
+                }
+
+                CraftingQueueItem item = queue[i];
+                float progress = 1f - Mathf.Clamp01(item.remaining / Mathf.Max(0.01f, item.total));
+                RecipeDefinition recipe = CraftingDatabase.Get(item.recipeId);
+                RuntimeUI.SetButtonText(queueButtons[i], (recipe == null ? item.recipeId : recipe.DisplayName) + "   " + Mathf.RoundToInt(progress * 100f) + "%   [zrušit]");
+            }
+
+            for (int i = 0; i < recipeButtons.Count; i++)
+            {
+                RecipeDefinition recipe = CraftingDatabase.All[i];
+                bool canCraft = GameManager.Instance.Crafting.CanCraft(recipe);
+                recipeButtons[i].interactable = canCraft;
+                recipeButtons[i].image.color = canCraft ? RuntimeUI.CategoryColor(recipe.Category) : new Color(0.09f, 0.1f, 0.11f, 0.9f);
+                RuntimeUI.SetButtonText(recipeButtons[i], RecipeLabel(recipe));
+            }
+        }
+
+        private void RefreshContainer()
+        {
+            if (ActiveContainer == null)
+            {
+                return;
+            }
+
+            containerTitle.text = ActiveContainer.DisplayName.ToUpperInvariant();
+            Inventory inventory = ActiveContainer.Inventory;
+            for (int i = 0; i < containerSlots.Length; i++)
+            {
+                bool visible = i < inventory.Capacity;
+                containerSlots[i].gameObject.SetActive(visible);
+                if (!visible)
+                {
+                    continue;
+                }
+
+                InventorySlot slot = inventory.GetSlot(i);
+                string prefix = FurnaceSlotName(i);
+                if (slot == null || slot.IsEmpty)
+                {
+                    RuntimeUI.SetButtonText(containerSlots[i], (string.IsNullOrEmpty(prefix) ? "SLOT " + (i + 1) : prefix) + "\nEMPTY");
+                    containerSlots[i].image.color = RuntimeUI.SlotEmpty;
+                    continue;
+                }
+
+                ItemDefinition item = ItemDatabase.Get(slot.itemId);
+                RuntimeUI.SetButtonText(containerSlots[i], prefix + "\n" + item.DisplayName + "\nx" + slot.amount);
+                containerSlots[i].image.color = RuntimeUI.CategoryColor(item.Category);
+            }
+
+            Furnace furnace = ActiveContainer as Furnace;
+            bool isFurnace = furnace != null;
+            furnaceToggle.gameObject.SetActive(isFurnace);
+            furnaceProgress.gameObject.SetActive(isFurnace);
+            if (isFurnace)
+            {
+                RuntimeUI.SetButtonText(furnaceToggle, furnace.IsActive ? "TURN OFF" : "TURN ON");
+                furnaceProgress.text = "SMELT " + Mathf.RoundToInt(furnace.Progress01 * 100f) + "%";
+            }
+        }
+
+        private void HandlePlayerSlotClick(int index)
+        {
+            InventorySlot slot = GameManager.Instance.PlayerInventory.GetSlot(index);
+            Keyboard keyboard = Keyboard.current;
+            bool alt = keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
+            bool shift = keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
+
+            if (slot != null && !slot.IsEmpty && alt)
+            {
+                DropSlot(index, shift ? int.MaxValue : 1);
+                return;
+            }
+
+            if (ActiveContainer != null && slot != null && !slot.IsEmpty && shift)
             {
                 InventorySlot removed = GameManager.Instance.PlayerInventory.RemoveFromSlot(index, slot.amount);
                 int remainder = ActiveContainer.Deposit(removed.itemId, removed.amount, removed.durability);
@@ -178,17 +350,25 @@ namespace FarkensWorld
             }
 
             selectedSlot = index;
+            RefreshInventory();
         }
 
         private void DropSelected(int amount)
         {
-            if (selectedSlot >= 0) DropSlot(selectedSlot, amount);
+            if (selectedSlot >= 0)
+            {
+                DropSlot(selectedSlot, amount);
+            }
         }
 
         private void DropSlot(int index, int amount)
         {
             InventorySlot slot = GameManager.Instance.PlayerInventory.GetSlot(index);
-            if (slot == null || slot.IsEmpty) return;
+            if (slot == null || slot.IsEmpty)
+            {
+                return;
+            }
+
             InventorySlot removed = GameManager.Instance.PlayerInventory.RemoveFromSlot(index, Mathf.Min(amount, slot.amount));
             Vector3 position = GameManager.Instance.PlayerController.transform.position + GameManager.Instance.PlayerController.transform.forward * 1.5f + Vector3.up;
             GameManager.Instance.Drops.Spawn(removed.itemId, removed.amount, position, removed.durability);
@@ -196,8 +376,17 @@ namespace FarkensWorld
 
         private void TransferContainerSlot(int index)
         {
+            if (ActiveContainer == null)
+            {
+                return;
+            }
+
             InventorySlot slot = ActiveContainer.Inventory.GetSlot(index);
-            if (slot == null || slot.IsEmpty) return;
+            if (slot == null || slot.IsEmpty)
+            {
+                return;
+            }
+
             InventorySlot removed = ActiveContainer.Inventory.RemoveFromSlot(index, slot.amount);
             int remainder = GameManager.Instance.PlayerInventory.Add(removed.itemId, removed.amount, removed.durability);
             if (remainder > 0) ActiveContainer.Inventory.AddToSlot(index, removed.itemId, remainder, removed.durability);
@@ -205,11 +394,24 @@ namespace FarkensWorld
 
         private void TakeAll()
         {
-            for (int i = 0; i < ActiveContainer.Inventory.Capacity; i++) TransferContainerSlot(i);
+            if (ActiveContainer == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < ActiveContainer.Inventory.Capacity; i++)
+            {
+                TransferContainerSlot(i);
+            }
         }
 
         private void DepositAll()
         {
+            if (ActiveContainer == null)
+            {
+                return;
+            }
+
             Inventory inventory = GameManager.Instance.PlayerInventory;
             for (int i = 6; i < inventory.Capacity; i++)
             {
@@ -221,7 +423,7 @@ namespace FarkensWorld
             }
         }
 
-        private static void RestackInventory()
+        private void RestackInventory()
         {
             Inventory inventory = GameManager.Instance.PlayerInventory;
             List<InventorySlot> snapshot = inventory.CreateSnapshot();
@@ -233,33 +435,54 @@ namespace FarkensWorld
             }
         }
 
-        private static string SlotLabel(InventorySlot slot, string prefix)
+        private void QueueRecipe(RecipeDefinition recipe)
         {
-            if (slot == null || slot.IsEmpty) return string.IsNullOrEmpty(prefix) ? "EMPTY" : prefix + "\nEMPTY";
-            ItemDefinition item = ItemDatabase.Get(slot.itemId);
-            string label = (string.IsNullOrEmpty(prefix) ? string.Empty : prefix + "\n") + item.ShortName + "\nx" + slot.amount;
-            return item.IsDurable ? label + "  " + slot.durability : label;
+            GameManager.Instance.Crafting.QueueCraft(recipe);
+            RefreshAll();
+        }
+
+        private void ToggleFurnace()
+        {
+            Furnace furnace = ActiveContainer as Furnace;
+            if (furnace != null)
+            {
+                furnace.ToggleActive();
+                RefreshContainer();
+            }
+        }
+
+        private void CloseContainer()
+        {
+            ActiveContainer = null;
+            RefreshAll();
         }
 
         private string FurnaceSlotName(int index)
         {
-            if (!(ActiveContainer is Furnace)) return string.Empty;
+            if (!(ActiveContainer is Furnace))
+            {
+                return string.Empty;
+            }
+
             string[] names = { "INPUT A", "INPUT B", "FUEL", "OUTPUT A", "OUTPUT B", "OUTPUT C" };
             return index >= 0 && index < names.Length ? names[index] : string.Empty;
+        }
+
+        private static string RecipeLabel(RecipeDefinition recipe)
+        {
+            return RuntimeUI.CategoryName(recipe.Category) + "\n" + recipe.DisplayName + "\n" + CostText(recipe.Cost) +
+                "   " + recipe.CraftTime.ToString("0.0") + "s" + (recipe.RequiredWorkbenchLevel > 0 ? "   WB" + recipe.RequiredWorkbenchLevel : string.Empty);
         }
 
         private static string CostText(IReadOnlyDictionary<string, int> cost)
         {
             List<string> parts = new List<string>();
-            foreach (KeyValuePair<string, int> entry in cost) parts.Add(entry.Key + " " + entry.Value);
-            return string.Join(" | ", parts);
-        }
+            foreach (KeyValuePair<string, int> entry in cost)
+            {
+                parts.Add(entry.Key + " x" + entry.Value);
+            }
 
-        private static GUIStyle HeaderStyle()
-        {
-            GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = 19, fontStyle = FontStyle.Bold };
-            style.normal.textColor = new Color(0.95f, 0.77f, 0.28f);
-            return style;
+            return string.Join(" | ", parts);
         }
     }
 }
