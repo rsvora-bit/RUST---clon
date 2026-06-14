@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -55,7 +56,7 @@ namespace FarkensWorld
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(-24f, 218f));
             logText = RuntimeUI.Label(log.transform, "Text", string.Empty, 12, new Color(0.78f, 0.83f, 0.86f, 1f), TextAnchor.LowerLeft,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-16f, -12f));
-            commandInput = RuntimeUI.Input(panel.transform, "Input", "např. god on, fly on, give wood 100",
+            commandInput = RuntimeUI.Input(panel.transform, "Input", "např. god on, fly on, give wood 100, tp spawn",
                 new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(-48f, 12f), new Vector2(-120f, 38f));
             RuntimeUI.Button(panel.transform, "Run", "RUN", RunCommand,
                 new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-12f, 12f), new Vector2(94f, 38f),
@@ -99,8 +100,9 @@ namespace FarkensWorld
             switch (verb)
             {
                 case "help":
-                    Log("help | give <itemId> <amount> | giveall | clearinventory | heal | feed | drink");
-                    Log("god on/off/toggle | fly on/off/toggle | save | load | report | clear drops/build | newgame");
+                    Log("help | give <itemId> <amount> | giveall | clearinventory | respawn | tp spawn");
+                    Log("damage 20 | bleed 20 | wet 50 | rad 20 | heal/feed/drink | god/fly on/off/toggle");
+                    Log("save | load | report | clear drops/build | newgame");
                     break;
                 case "give":
                     if (parts.Length >= 3 && ItemDatabase.Contains(parts[1]) && int.TryParse(parts[2], out int amount))
@@ -114,10 +116,66 @@ namespace FarkensWorld
                     foreach (ItemDefinition item in ItemDatabase.All) game.PlayerInventory.Add(item.Id, item.IsDurable ? 1 : Mathf.Min(100, item.StackLimit));
                     Log("Přidána testovací sada všech itemů");
                     break;
-                case "clearinventory": game.PlayerInventory.Clear(); Log("Inventář vyčištěn"); break;
-                case "heal": game.PlayerStats.Heal(100f); Log("Zdraví obnoveno"); break;
-                case "feed": game.PlayerStats.Feed(100f); Log("Hlad doplněn"); break;
-                case "drink": game.PlayerStats.Drink(100f); Log("Žízeň doplněna"); break;
+                case "clearinventory":
+                    game.PlayerInventory.Clear();
+                    Log("Inventář vyčištěn");
+                    break;
+                case "heal":
+                    game.PlayerStats.Heal(100f);
+                    Log("Zdraví obnoveno");
+                    break;
+                case "feed":
+                    game.PlayerStats.Feed(100f);
+                    Log("Hlad doplněn");
+                    break;
+                case "drink":
+                    game.PlayerStats.Drink(100f);
+                    Log("Žízeň doplněna");
+                    break;
+                case "respawn":
+                    game.Respawn();
+                    Log("Respawn spuštěn");
+                    break;
+                case "damage":
+                    if (TryReadFloat(parts, 1, 20f, out float damage))
+                    {
+                        game.PlayerStats.Damage(damage);
+                        Log("Damage " + damage.ToString("0.##", CultureInfo.InvariantCulture));
+                    }
+                    else Log("Použití: damage 20");
+                    break;
+                case "bleed":
+                    if (TryReadFloat(parts, 1, 20f, out float bleed))
+                    {
+                        game.PlayerStats.AddBleeding(bleed);
+                        Log("Bleeding +" + bleed.ToString("0.##", CultureInfo.InvariantCulture));
+                    }
+                    else Log("Použití: bleed 20");
+                    break;
+                case "wet":
+                    if (TryReadFloat(parts, 1, 50f, out float wet))
+                    {
+                        game.PlayerStats.AddWetness(wet);
+                        Log("Wetness +" + wet.ToString("0.##", CultureInfo.InvariantCulture));
+                    }
+                    else Log("Použití: wet 50");
+                    break;
+                case "rad":
+                    if (TryReadFloat(parts, 1, 20f, out float rad))
+                    {
+                        game.PlayerStats.AddRadiation(rad);
+                        Log("Radiation +" + rad.ToString("0.##", CultureInfo.InvariantCulture));
+                    }
+                    else Log("Použití: rad 20");
+                    break;
+                case "tp":
+                    if (parts.Length > 1 && parts[1].ToLowerInvariant() == "spawn")
+                    {
+                        game.PlayerController.Teleport(game.World.PlayerSpawn);
+                        Log("Teleport na spawn");
+                    }
+                    else Log("Použití: tp spawn");
+                    break;
                 case "god":
                     game.PlayerStats.GodMode = ResolveToggle(parts, game.PlayerStats.GodMode);
                     Log("God mode: " + game.PlayerStats.GodMode);
@@ -126,9 +184,18 @@ namespace FarkensWorld
                     game.PlayerController.FlyMode = ResolveToggle(parts, game.PlayerController.FlyMode);
                     Log("Fly mode: " + game.PlayerController.FlyMode);
                     break;
-                case "save": game.Saves.SaveGame(); Log("Uloženo do " + game.Saves.SavePath); break;
-                case "load": game.Saves.LoadGame(); Log("Načtení spuštěno"); break;
-                case "newgame": game.NewGame(); Log("Vygenerován nový ostrov"); break;
+                case "save":
+                    game.Saves.SaveGame();
+                    Log("Uloženo do " + game.Saves.SavePath);
+                    break;
+                case "load":
+                    game.Saves.LoadGame();
+                    Log("Načtení spuštěno");
+                    break;
+                case "newgame":
+                    game.NewGame();
+                    Log("Vygenerován nový ostrov");
+                    break;
                 case "report":
                     Log(GameManager.Version + " | seed " + game.World.WorldSeed);
                     Log("Pozice " + game.PlayerController.transform.position + " | inventář " + UsedSlots(game.PlayerInventory) + "/28");
@@ -139,7 +206,9 @@ namespace FarkensWorld
                     else if (parts.Length > 1 && parts[1] == "build") { game.Building.ClearAll(); Log("Stavby odstraněny"); }
                     else { output.Clear(); RefreshLog(); }
                     break;
-                default: Log("Neznámý příkaz. Napiš help."); break;
+                default:
+                    Log("Neznámý příkaz. Napiš help.");
+                    break;
             }
         }
 
@@ -149,6 +218,17 @@ namespace FarkensWorld
             if (mode == "on") return true;
             if (mode == "off") return false;
             return !current;
+        }
+
+        private static bool TryReadFloat(string[] parts, int index, float defaultValue, out float value)
+        {
+            if (parts.Length <= index)
+            {
+                value = defaultValue;
+                return true;
+            }
+
+            return float.TryParse(parts[index], NumberStyles.Float, CultureInfo.InvariantCulture, out value);
         }
 
         private void Log(string message)
