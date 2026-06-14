@@ -23,6 +23,7 @@ namespace FarkensWorld
         public DevConsoleUI ConsoleUI { get; private set; }
         public MapUI MapUI { get; private set; }
         public WorldGenerator World { get; private set; }
+        public RuntimeSafety Safety { get; private set; }
 
         public bool InventoryOpen => InventoryUI != null && InventoryUI.IsOpen;
         public bool BuildMenuOpen => BuildUI != null && BuildUI.IsOpen;
@@ -146,6 +147,7 @@ namespace FarkensWorld
             Building = gameObject.AddComponent<BuildSystem>();
             Saves = gameObject.AddComponent<SaveManager>();
             World = gameObject.AddComponent<WorldGenerator>();
+            Safety = gameObject.AddComponent<RuntimeSafety>();
 
             gameObject.AddComponent<HUDController>();
             InventoryUI = gameObject.AddComponent<InventoryUI>();
