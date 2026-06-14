@@ -12,6 +12,9 @@ namespace FarkensWorld
         [SerializeField] private float mouseSensitivity = 0.12f;
 
         private const float Gravity = -24f;
+        private const float GroundProbeHeight = 80f;
+        private const float GroundProbeDistance = 180f;
+        private const float GroundClearance = 0.08f;
 
         private CharacterController characterController;
         private PlayerStats stats;
@@ -71,14 +74,27 @@ namespace FarkensWorld
                 characterController.enabled = false;
             }
 
-            transform.position = position;
+            Vector3 safePosition = SnapToGround(position);
+            transform.position = safePosition;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             verticalVelocity = 0f;
 
             if (characterController != null)
             {
                 characterController.enabled = enabledBefore;
+                Physics.SyncTransforms();
             }
+        }
+
+        private static Vector3 SnapToGround(Vector3 desiredPosition)
+        {
+            Vector3 rayOrigin = new Vector3(desiredPosition.x, desiredPosition.y + GroundProbeHeight, desiredPosition.z);
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, GroundProbeDistance, ~0, QueryTriggerInteraction.Ignore))
+            {
+                return new Vector3(desiredPosition.x, hit.point.y + GroundClearance, desiredPosition.z);
+            }
+
+            return desiredPosition;
         }
 
         private void UpdateMovement(Keyboard keyboard)
