@@ -1,6 +1,6 @@
-# Další prompt pro Codex – pokračování Unity portu Farken's World
+# Další prompt pro Codex – audit a stabilizace Unity Beta 1.6
 
-Použij tento prompt v Codexu jako další úkol. Repozitář už obsahuje Unity projekt a několik bezpečnostních oprav po předchozí kontrole.
+Použij tento prompt jako další úkol v Codexu. Projekt už obsahuje Unity Beta 1.6 survival systémy, ale je potřeba udělat důkladný audit, protože dokumentace může tvrdit DONE i u věcí, které je ještě nutné fyzicky ověřit v Play Mode.
 
 ---
 
@@ -9,238 +9,299 @@ Jsi v Unity projektu **Farken's World / Rust-like survival prototype**.
 Repozitář:
 `https://github.com/rsvora-bit/RUST---clon`
 
-Pracuj v existujícím projektu. **Nesmíš začít od nuly.**
+Pracuj v existujícím projektu. **Nezačínej od nuly. Nepoužívej WebView.**
 
 Main scene musí zůstat:
 `Assets/_FarkensWorld/Scenes/Main.unity`
 
-Primární reference je nahraný single-file HTML prototyp hry Farken's World Beta 1.5.x. HTML ber jako zdroj pravdy pro layout, mechaniky, HUD, hotbar, inventář, survival panel, mapu, loot, crafting, stavění, furnace, workbench, dev terminál a celkový Rust-like styl.
+Primární reference je nahraný single-file HTML prototyp hry Farken's World Beta 1.5.x. HTML ber jako zdroj pravdy pro layout, UI, HUD, hotbar, inventory, crafting, building, survival, loot, map/minimap, compass a celkový Rust-like styl.
 
-## Co už bylo doplněno před tímto promptem
+## Aktuální stav podle repozitáře
 
-V tomto repozitáři už byly přidány tyto bezpečnostní a debug změny:
+Poslední velká změna přidala Unity Beta 1.6 systémy:
 
-1. `Assets/_FarkensWorld/Scripts/Player/FirstPersonController.cs`
-   - `Teleport()` už nedává hráče slepě na fixní Y pozici.
-   - Při teleportu/spawnu se raycastem hledá zem pod hráčem a hráč se snapne těsně nad collider.
-   - Cíl: omezit problém, kdy hráč po startu levituje nebo spadne pod mapu.
+- settings menu přes `O`,
+- weather/day-night systém,
+- wildlife/enemy population,
+- deer/boar/wolf/scientist,
+- corpse loot,
+- projectile bow se šípy,
+- death screen,
+- procedural audio,
+- rozšířený dev console,
+- loot table database,
+- runtime smoke/build verification.
 
-2. `Assets/_FarkensWorld/Scripts/Core/RuntimeSafety.cs`
-   - Přidán runtime safety systém.
-   - Vytváří neviditelnou fallback collision floor.
-   - Kontroluje NaN/Infinity pozici hráče.
-   - Pokud hráč spadne pod `y = -20`, zavolá respawn.
+Po auditu byl ručně opraven `WorldGenerator.cs`, protože `main` pořád používal walkable `CylinderCollider` pro Beach/Island/Ground Safety Collider. Nově má být:
 
-3. `Assets/_FarkensWorld/Scripts/Core/GameManager.cs`
-   - Registrován `RuntimeSafety` komponent jako součást runtime systémů.
+- Beach/Island pouze vizuální cylinder bez collideru,
+- chůzi mají řešit ploché `BoxCollider` objekty:
+  - `Walkable Island Collider`,
+  - `Walkable Beach Collider`,
+  - `Fallback Safety Collider`.
 
-4. `Assets/_FarkensWorld/Scripts/Player/PlayerStats.cs`
-   - Přidány debug metody:
-     - `Damage(float amount)`
-     - `AddBleeding(float amount)`
-     - `AddWetness(float amount)`
-     - `AddRadiation(float amount)`
+Tento collider patch je commitnutý, ale ještě musíš vše ověřit přímo v Unity Editoru.
 
-5. `Assets/_FarkensWorld/Scripts/UI/DevConsoleUI.cs`
-   - Dev terminál umí navíc:
-     - `respawn`
-     - `tp spawn`
-     - `damage 20`
-     - `bleed 20`
-     - `wet 50`
-     - `rad 20`
-   - Help text byl aktualizovaný.
+## Priorita 0 – nejdřív ověř aktuální main
 
-## Nejdřív ověř build a spawn
+Než začneš něco přidávat, spusť:
 
-Než začneš přidávat nové věci, udělej toto:
+```bash
+git status
+git log --oneline -5
+git branch
+```
 
-1. Otevři Unity projekt.
-2. Otevři scénu:
-   `Assets/_FarkensWorld/Scenes/Main.unity`
-3. Dej Play.
-4. Zkontroluj Console.
-5. Oprav všechny červené compile/runtime errors.
-6. Ověř, že:
-   - hráč se spawnne na pevném povrchu,
-   - nepropadne mapou,
-   - nelítá nesmyslně nad mapou,
-   - WASD, myš, sprint a jump fungují,
-   - `F10` otevře dev terminal,
-   - příkaz `tp spawn` hráče bezpečně vrátí na spawn,
-   - příkaz `respawn` funguje,
-   - příkaz `damage 20` ubere HP,
-   - příkaz `bleed 20` zapne bleeding alert.
+Ověř, že pracuješ na `main` a že nemáš nepushnuté změny.
 
-Pokud hráč pořád padá pod mapu, nepiš nové features. Nejdřív oprav:
-- collider terrainu,
-- vrstvy/layers,
-- CharacterController center/height/radius,
+Potom otevři:
+`Assets/_FarkensWorld/Scenes/Main.unity`
+
+Spusť Play Mode a otestuj minimálně 2 minuty:
+
+1. Spawn na zemi.
+2. Žádné propadnutí pod mapu.
+3. Žádné levitování.
+4. WASD, myš, sprint, jump.
+5. Přechod pláž -> tráva -> road -> loot.
+6. Hráč se dostane do středu ostrova bez invisible walls.
+7. Neobjevuje se viditelné stavění/poskakování trávy při pohybu.
+8. Console nemá red errors.
+
+Pokud se cokoli z toho rozbije, nepřidávej další mechaniky a oprav nejdřív základ.
+
+## Priorita 1 – ověř collider patch
+
+Zkontroluj `Assets/_FarkensWorld/Scripts/World/WorldGenerator.cs`.
+
+Musí platit:
+
+- `Beach Visual` a `Island Visual` nesmí mít collider.
+- Walkable povrch nesmí být `CylinderCollider`.
+- Chůzi musí řešit stabilní `BoxCollider` / jednoduchý rovný collider.
+- `Ground snap` musí trefovat hlavní walkable ground, ne nouzový fallback.
+- Road nesmí tvořit hranu, o kterou se CharacterController zasekne.
+- Přechod pláž -> tráva musí být plynulý.
+
+Pokud je hráč moc vysoko nad zemí nebo se zasekne u okraje, uprav:
+
+- výšku walkable colliderů,
+- `CharacterController` center/height/radius,
+- `GroundClearance`,
 - spawn pozici,
-- raycast ground snap,
-- fallback floor.
+- road výšku.
 
-## Zásadní pravidla
+## Priorita 2 – ověř pravdivost dokumentace
 
-- Nezačínej nový projekt.
-- Nepoužívej WebView.
-- Nemaž existující strukturu bez důvodu.
-- Nepiš jen dokumentaci; musíš implementovat reálné změny v C# / Unity UI.
-- Vše udržuj v `Assets/_FarkensWorld/`.
-- UI musí vypadat jako HTML verze, ne jako generický Unity placeholder.
-- Každý větší krok zapisuj do `docs/IMPLEMENTATION_STATUS.md` a `docs/HTML_PORT_MAPPING.md`.
-- Commituj s jasnými zprávami.
+Zkontroluj a případně oprav:
 
-## Priorita 1 – udělej Unity UI co nejvíc jako HTML verzi
+- `docs/IMPLEMENTATION_STATUS.md`
+- `docs/HTML_PORT_MAPPING.md`
 
-Cíl: Unity verze musí na první pohled připomínat HTML Rust-like hru.
+Nepiš falešně DONE.
 
-Zkontroluj HTML a přenes přesně:
+Použij:
 
-- hotbar dole uprostřed,
-- 6 slotů hotbaru,
-- zvýrazněný vybraný slot,
-- item count a durability,
-- survival panel vpravo dole,
-- HP / food / water / stamina,
-- bleeding/cold/wet/radiation alerty jen při problému,
-- kompas nahoře uprostřed nebo přesně podle HTML,
-- minimapa vpravo nahoře,
-- feed zprávy vlevo dole,
-- center message uprostřed dole,
-- interaction prompt pod crosshairem,
-- inventář jako tmavý Rust-like grid, ne obyčejný seznam,
-- crafting panel vedle inventáře,
-- container panel při otevření storage/furnace/corpse,
-- pause menu přes ESC,
-- map screen přes M,
-- settings screen pokud už existuje nebo ho doplnit.
+- `DONE` = reálně existuje v kódu a prošlo Play Mode testem,
+- `PARTIAL` = existuje v kódu, ale je to zjednodušené nebo ne plně otestované,
+- `BROKEN` = je v kódu, ale při testu nefunguje,
+- `TODO` = není hotové.
 
-Použij Unity Canvas UI s anchored RectTransformy. UI musí fungovat na 1920x1080 i na jiných rozlišeních.
+Speciálně ověř tyto položky:
 
-## Priorita 2 – oprav nebo vylepši inventář
+- Ground/terrain collider,
+- spawn,
+- runtime safety,
+- inventory/hotbar,
+- loot pickup bez freeze,
+- weather/day-night,
+- settings menu,
+- animal/enemy AI,
+- projectile bow,
+- corpse loot,
+- death screen,
+- save/load po nových systémech,
+- dev console `report`,
+- runtime verification.
 
-Inventář musí být reálný slotový systém podle HTML:
+Pokud něco jen existuje v C# souboru, ale není ověřené v gameplayi, dej `PARTIAL`, ne `DONE`.
 
-- 28 slotů hráče,
-- prvních 6 slotů jako hotbar,
-- stack limity podle itemů,
-- prázdný slot je skutečně prázdný,
-- item tile ukazuje ikonu, název, počet, durability/progress,
-- klik/shift klik přesouvá itemy mezi hráčem a kontejnerem,
-- drop 1 / drop stack,
-- při pickup/dropu se nesmí lagovat hra.
+## Priorita 3 – kompletní test nových Beta 1.6 mechanik
 
-Optimalizuj pickup:
-- nepřekreslovat celý UI canvas při každém sebrání, pokud stačí aktualizovat změněný slot,
-- cache item definice,
-- object pool pro dropped item vizuály,
-- nepoužívat zbytečné Instantiate/Destroy ve smyčce.
+Otestuj postupně:
 
-## Priorita 3 – porovnej feature-by-feature s HTML
+### Dev console
 
-Vytvoř přesný audit podle HTML:
+Otevři `F10` nebo backquote a otestuj:
 
-- HTML Feature
-- Unity Script / Scene Object
-- Status: DONE / PARTIAL / BROKEN / TODO
-- Notes
+```text
+help
+report
+tp spawn
+respawn
+damage 20
+bleed 20
+wet 50
+rad 20
+weather rain
+weather storm
+weather clear
+time night
+time noon
+spawn deer 2
+spawn boar 2
+spawn wolf 2
+spawn scientist 1
+kill animals
+kill all
+```
 
-Doplň do:
-`docs/HTML_PORT_MAPPING.md`
+`report` musí vypsat užitečné info:
 
-Nesmí tam být falešné DONE, pokud je to jen placeholder. Radši napiš PARTIAL.
-
-## Priorita 4 – chybějící mechaniky
-
-Podle aktuálního stavu projektu dodělej hlavně:
+- player position,
+- isGrounded,
+- ground collider name,
+- world seed,
+- weather,
+- time,
+- population counts,
+- active arrows,
+- active dropped items,
+- red error count pokud to umíš zjistit.
 
 ### Projectile bow
-- luk nesmí být jen raycast melee,
-- po kliknutí vytvoř šíp jako GameObject,
-- odeber 1 arrow,
-- šíp letí z kamery dopředu,
+
+Ověř:
+
+- bow se dá dát do hotbaru,
+- střelba odebere arrow,
+- šíp letí fyzicky dopředu,
 - má gravity/drop,
-- kontroluje zásah do resource/enemy/animal/interactable,
 - po zásahu dá damage,
-- po čase se smaže nebo vrátí do poolu.
+- po zásahu nebo timeoutu se vrátí do poolu / uklidí,
+- netvoří stovky aktivních objektů.
 
-### Animal/enemy AI + corpse loot
-- přidej jednoduchá zvířata: deer, boar, wolf,
-- přidej jednoduchého road scientist enemy,
-- po smrti nevkládat loot rovnou do inventáře,
-- vytvořit corpse/loot bag na zemi,
-- corpse otevřít přes E,
-- corpse má sloty,
-- po vybrání nebo po čase zmizí.
+### AI / zvířata / scientist
 
-### Weather / day-night
-- přenes z HTML den/noc, déšť, fog/storm alespoň zjednodušeně,
-- HUD musí ukazovat čas a weather stav,
-- déšť a tma mají vizuální overlay nebo změnu light/fog.
+Ověř:
 
-### Death overlay
-- když HP klesne na 0, zobraz death screen,
-- důvod smrti: thirst, hunger, radiation, cold, bleeding, generic,
-- tlačítko Respawn,
-- návrat do menu/pause flow.
+- deer neutíká nebo se chová pasivně,
+- boar/wolf/scientist mají rozumný chase/attack,
+- nejdou přes zeď/propadnout mapou,
+- po smrti vytvoří corpse/loot bag,
+- corpse jde otevřít přes `E`,
+- loot se dá vybrat,
+- prázdný corpse zmizí.
 
-### Settings screen
-- FOV,
-- mouse sensitivity,
-- HUD opacity,
-- FPS/performance HUD toggle,
-- compass/minimap/hint toggle,
-- SFX volume,
-- ambience volume,
-- mute all.
+### Death screen
 
-## Priorita 5 – vizuální zlepšení světa
+Ověř:
 
-Zachovej procedurální jednoduchý svět, ale přibliž ho HTML ostrovu:
+- `damage 999` zabije hráče,
+- zobrazí se death screen,
+- ukáže důvod smrti,
+- respawn tlačítko funguje,
+- po respawnu jde znovu chodit,
+- UI se neblokuje navždy.
 
-- ostrov,
-- pláž,
-- voda,
-- silnice,
-- road loot,
-- monument,
-- stromy,
-- kameny,
-- metal/sulfur ore,
-- barrel/crate vizuály,
-- tmavší survival atmosféra,
-- lepší materiály bez externích assetů.
+### Settings
 
-Nepotřebujeme AAA grafiku. Důležité je, aby to vypadalo podobně jako HTML prototyp a působilo jako Rust-like survival.
+Ověř:
 
-## Acceptance test po úpravě
+- `O` otevře settings,
+- FOV se reálně mění,
+- sensitivity se reálně mění,
+- HUD opacity mění panely,
+- minimap/compass/performance toggle fungují,
+- audio mute funguje,
+- settings se ukládají přes save/load, pokud to dokumentace tvrdí.
 
-Po dokončení musí platit:
+### Weather/day-night
 
-1. Projekt se otevře v Unity bez compile errors.
-2. `Assets/_FarkensWorld/Scenes/Main.unity` jde spustit přes Play.
-3. Hráč se spawnne na pevném povrchu.
-4. Hráč nespadne pod mapu.
-5. UI je vizuálně podobné HTML verzi.
-6. Hotbar je dole uprostřed a funguje 1–6.
-7. Inventory vypadá jako Rust-like grid, ne placeholder.
-8. Survival panel ukazuje staty.
-9. Alerty se zobrazují jen při problému.
-10. Loot pickup funguje bez freeze/lagnutí.
-11. Storage/furnace/crafting se dají otevřít a používat.
-12. Save/load funguje.
-13. Dev terminal F10 funguje a má nové příkazy.
-14. Dokumentace v `docs/` odpovídá realitě.
+Ověř:
 
-## Finální zpráva pro mě
+- `weather rain/storm/fog/clear` mění vizuál,
+- `time night/noon` mění světlo,
+- HUD ukazuje čas a weather,
+- rain audio/particles nezůstávají zapnuté po clear.
 
-Na konci mi napiš česky:
+## Priorita 4 – UI přesnost podle HTML
 
-- co přesně jsi změnil,
-- které soubory jsi upravil,
+Po stabilizačním testu porovnej Unity s HTML verzí.
+
+Cíl: Unity verze má vypadat co nejvíc jako HTML verze, ne jako obecný Unity prototyp.
+
+Zkontroluj:
+
+- hotbar dole uprostřed,
+- compass nahoře uprostřed,
+- minimapa vpravo nahoře,
+- survival panel vpravo dole,
+- feed vlevo dole,
+- center alerts,
+- inventory grid 7x4,
+- crafting panel,
+- loot/container panel,
+- furnace UI,
+- workbench UI,
+- pause menu,
+- map screen,
+- settings overlay.
+
+Pokud UI nesedí vizuálně, uprav barvy, opacity, spacing, font size, border, slot highlight a anchor pozice.
+
+## Priorita 5 – další malé zlepšení, až když je vše stabilní
+
+Až po ověření stabilního základu můžeš přidat:
+
+- hlavní start menu před spawnem,
+- changelog screen,
+- jednoduchý loading screen při generování světa,
+- waypoint na mapě,
+- lepší hit feedback u bow,
+- lepší loot icons,
+- lepší vizuál zvířat/scientista bez externích assetů.
+
+## Acceptance test
+
+Na konci musí platit:
+
+1. Projekt se otevře bez compile errors.
+2. `Main.unity` jde spustit přes Play.
+3. Hráč se spawnne na zemi.
+4. Hráč se dostane z pláže do středu ostrova.
+5. Žádné levitování ani invisible walls.
+6. UI je podobné HTML.
+7. Inventory/hotbar fungují.
+8. Loot pickup nemá freeze.
+9. Weather/time funguje.
+10. Settings fungují.
+11. Bow funguje.
+12. AI/corpse loot funguje.
+13. Death/respawn funguje.
+14. Save/load nerozbije nové systémy.
+15. Dev console `report` funguje.
+16. Console nemá red errors.
+17. Dokumentace odpovídá realitě.
+
+## Commit
+
+Commituj jasnou zprávou podle toho, co opravíš, například:
+
+`Stabilize Beta 1.6 gameplay systems`
+
+## Finální odpověď napiš česky
+
+Napiš mi:
+
+- aktuální commit hash,
+- jestli jsi pushnul na `main`,
+- co přesně bylo rozbité,
+- co jsi opravil,
 - co je DONE,
 - co je PARTIAL,
-- co je TODO,
-- jestli je spawn bug opravený,
-- jestli jsou v Console ještě red errors.
+- co je BROKEN/TODO,
+- jestli ground collider už není walkable CylinderCollider,
+- jestli se dá dojít do středu ostrova,
+- jestli tráva pořád viditelně doskakuje,
+- jestli Console má red errors.
