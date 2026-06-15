@@ -7,9 +7,9 @@ Stavy: `DONE` = funkční Unity implementace, `PARTIAL` = funkční zjednodušen
 | HTML Feature | Unity Script / Scene Object | Status | Notes |
 |---|---|---:|---|
 | Hlavní scéna | `Assets/_FarkensWorld/Scenes/Main.unity`, `Bootstrap.cs` | DONE | Scéna zůstává jediným vstupním bodem a vytváří runtime systémy. |
-| First person pohyb a mouse look | `FirstPersonController.cs` | DONE | WASD, myš, skok, sprint a vývojářský fly mode. `Teleport()` nyní používá raycast ground snap. |
-| Pevný ostrov / ground collider | `WorldGenerator.cs`, `RuntimeSafety.cs` | DONE | Ostrov byl zvětšen na skutečný poloměr 74 m, má záložní collider a runtime fallback floor. |
-| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | DONE | Spawn je snapnutý na collider pod hráčem a ověřený standalone runtime testem. |
+| First person pohyb a mouse look | `FirstPersonController.cs` | DONE | WASD, myš, skok, sprint a vývojářský fly mode. `Teleport()` používá raycast ground snap. |
+| Pevný ostrov / ground collider | `WorldGenerator.cs`, `RuntimeSafety.cs` | DONE | Audit našel staré walkable cylindry v `main`; nyní jsou Beach/Island pouze vizuály bez collideru a chůzi řeší ploché `BoxCollider` objekty. Po patchi nutné otestovat v Editoru. |
+| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | DONE | Spawn je snapnutý na collider pod hráčem. Po collider patchi znovu ověřit v Play Mode. |
 | Failsafe pod `y = -20` | `FirstPersonController.Update()`, `RuntimeSafety.Update()` | DONE | Automatický respawn na bezpečný bod, kontrola NaN/Infinity pozice. |
 | Rust-like HUD | `HUDController.cs`, `RuntimeUI.cs` | DONE | Nativní `Canvas`, tmavé panely, opacity, kotvení pro 1920x1080 a škálování. Vizuálně ještě doladit podle HTML. |
 | Zaměřovač | `HUDController.cs` / `Crosshair` | DONE | Střed obrazovky. |
@@ -22,8 +22,8 @@ Stavy: `DONE` = funkční Unity implementace, `PARTIAL` = funkční zjednodušen
 | Feed a center alerts | `GameEvents.cs`, `HUDController.cs` | DONE | Maximálně šest zpráv a časovaná centrální hláška. |
 | Survival panel vpravo dole | `HUDController.cs`, `PlayerStats.cs` | DONE | Health, hunger, thirst, stamina, status, povrch a úkol. |
 | Temperature | `PlayerStats.cs` | PARTIAL | Teplota reaguje na čas a mokrost; blízkost ohně zatím neovlivňuje teplotu. |
-| Bleeding / cold / wet / radiation alerts | `HUDController.UpdateStatus()`, `PlayerStats.cs` | DONE | Výstrahy se objeví pouze při problému. Dev terminal nově umí testovat `bleed`, `wet`, `rad`. |
-| Hlad, žízeň a damage over time | `PlayerStats.cs` | DONE | Průběžný úbytek a poškození při kritických stavech. Dev terminal nově umí `damage`. |
+| Bleeding / cold / wet / radiation alerts | `HUDController.UpdateStatus()`, `PlayerStats.cs` | DONE | Výstrahy se objeví pouze při problému. Dev terminal umí testovat `bleed`, `wet`, `rad`. |
+| Hlad, žízeň a damage over time | `PlayerStats.cs` | DONE | Průběžný úbytek a poškození při kritických stavech. Dev terminal umí `damage`. |
 | Bandage přes `H` | `GameManager.UseBandage()` | DONE | Léčí a snižuje krvácení. |
 | Jídlo přes `G` | `GameManager.UseFood()` | DONE | Preferuje cooked meat, potom mushroom. |
 | Inventory 28 slotů | `Inventory.cs`, `InventoryUI.cs` | DONE | 7x4 slotová mřížka, stacky, rarity/category barvy a obsazenost. |
@@ -47,12 +47,12 @@ Stavy: `DONE` = funkční Unity implementace, `PARTIAL` = funkční zjednodušen
 | Save / load | `SaveManager.cs` | DONE | Seed, hráč, stats, inventory, hotbar, stavby, kontejnery, furnace, dropy, prostředí a settings. |
 | Pause menu / ESC | `PauseMenuUI.cs`, `GameManager.cs` | DONE | Resume, save, load, respawn, inventory, mapa, settings, nový svět a quit. |
 | Private dev terminal | `DevConsoleUI.cs` | DONE | F10/` a příkazy give, god, fly, save/load/report, weather/time, spawn/kill a survival testy. |
-| World visuals | `WorldGenerator.cs` | PARTIAL | Ostrov, pláž, oceán, silnice, kopce, vegetace, rudy, monument a fog; bez AAA assetů. |
+| World visuals | `WorldGenerator.cs` | PARTIAL | Ostrov, pláž, oceán, silnice, kopce, vegetace, rudy, monument a fog; bez AAA assetů. Po collider patchi nutný gameplay test přechodu pláž -> tráva -> road. |
 | Den/noc a déšť | `WorldEnvironment.cs` | DONE | Denní cyklus, dynamické slunce, fog a rain/storm částice; samostatné lightning efekty zatím chybí. |
-| Animal/enemy AI a corpse loot | `WorldActor.cs`, `WorldPopulation.cs`, `CorpseContainer.cs` | DONE | Deer, boar, wolf, scientist a take-only corpse loot s expirací. |
-| Projectile bow | `PlayerCombat.cs`, `ArrowProjectile.cs` | DONE | Pooled fyzický projectile s gravitací, kolizí, damage a pětisekundovým limitem. |
+| Animal/enemy AI a corpse loot | `WorldActor.cs`, `WorldPopulation.cs`, `CorpseContainer.cs` | DONE | Deer, boar, wolf, scientist a take-only corpse loot s expirací; nutné gameplay ověření balance. |
+| Projectile bow | `PlayerCombat.cs`, `ArrowProjectile.cs` | DONE | Pooled fyzický projectile s gravitací, kolizí, damage a pětisekundovým limitem; nutné gameplay ověření míření. |
 | Death overlay a důvod smrti | `DeathUI.cs`, `GameManager.cs` | DONE | Důvod smrti, respawn a nový náhodný ostrov. |
 | Settings overlay | `SettingsUI.cs`, `GameSettings.cs` | DONE | FOV, sensitivity, HUD opacity/visibility, FPS limit, SFX, ambience a mute. |
 | Procedurální zvuky | `ProceduralAudio.cs` | DONE | Runtime generované SFX a rain ambience bez externích assetů. |
 | Hlavní start menu a changelog | - | TODO | Unity verze startuje přímo do ostrova. |
-| Navazující prompt pro Codex | `docs/CODEX_NEXT_PROMPT.md` | DONE | Český prompt popisuje, co už je hotové, a co má Codex dál ověřit/dodělat. |
+| Navazující prompt pro Codex | `docs/CODEX_NEXT_PROMPT.md` | DONE | Aktualizovaný český prompt pro audit/test Beta 1.6 po collider patchi. |
