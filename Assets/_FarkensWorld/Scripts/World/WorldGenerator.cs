@@ -123,10 +123,17 @@ namespace FarkensWorld
         {
             GameObject ocean = Primitive("Ocean", PrimitiveType.Cube, new Vector3(0f, -2.4f, 0f), new Vector3(300f, 2f, 300f), water, worldRoot);
             Object.Destroy(ocean.GetComponent<Collider>());
-            Primitive("Beach", PrimitiveType.Cylinder, new Vector3(0f, -0.65f, 0f), new Vector3(164f, 0.45f, 164f), sand, worldRoot);
-            Primitive("Island", PrimitiveType.Cylinder, new Vector3(0f, -0.45f, 0f), new Vector3(148f, 0.5f, 148f), grass, worldRoot);
-            GameObject safetyGround = Primitive("Ground Safety Collider", PrimitiveType.Cylinder, new Vector3(0f, -1.7f, 0f), new Vector3(148f, 1.7f, 148f), grass, worldRoot);
-            safetyGround.GetComponent<Renderer>().enabled = false;
+
+            GameObject beach = Primitive("Beach Visual", PrimitiveType.Cylinder, new Vector3(0f, -0.65f, 0f), new Vector3(164f, 0.45f, 164f), sand, worldRoot);
+            RemoveCollider(beach);
+
+            GameObject island = Primitive("Island Visual", PrimitiveType.Cylinder, new Vector3(0f, -0.45f, 0f), new Vector3(148f, 0.5f, 148f), grass, worldRoot);
+            RemoveCollider(island);
+
+            CreateWalkableCollider("Walkable Island Collider", new Vector3(0f, -0.1f, 0f), new Vector3(148f, 0.3f, 148f));
+            CreateWalkableCollider("Walkable Beach Collider", new Vector3(0f, -0.28f, 0f), new Vector3(164f, 0.22f, 164f));
+            CreateWalkableCollider("Fallback Safety Collider", new Vector3(0f, -1.7f, 0f), new Vector3(170f, 0.25f, 170f));
+
             Primitive("Road", PrimitiveType.Cube, new Vector3(0f, 0.06f, 4f), new Vector3(9f, 0.1f, 132f), dirt, worldRoot);
 
             Vector3[] hills =
@@ -224,6 +231,26 @@ namespace FarkensWorld
             float angle = (float)random.NextDouble() * Mathf.PI * 2f;
             float radius = Mathf.Lerp(minRadius, maxRadius, Mathf.Sqrt((float)random.NextDouble()));
             return new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+        }
+
+        private void CreateWalkableCollider(string name, Vector3 localPosition, Vector3 localScale)
+        {
+            GameObject colliderObject = new GameObject(name);
+            colliderObject.transform.SetParent(worldRoot, false);
+            colliderObject.transform.localPosition = localPosition;
+            colliderObject.transform.localScale = localScale;
+            BoxCollider box = colliderObject.AddComponent<BoxCollider>();
+            box.center = Vector3.zero;
+            box.size = Vector3.one;
+        }
+
+        private static void RemoveCollider(GameObject target)
+        {
+            Collider collider = target.GetComponent<Collider>();
+            if (collider != null)
+            {
+                Object.Destroy(collider);
+            }
         }
 
         public static GameObject Primitive(string name, PrimitiveType type, Vector3 localPosition, Vector3 localScale, Material material, Transform parent)
