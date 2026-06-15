@@ -191,6 +191,44 @@ namespace FarkensWorld
             return field;
         }
 
+        public static Slider Slider(
+            Transform parent,
+            string name,
+            float minimum,
+            float maximum,
+            float value,
+            Action<float> changed,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 pivot,
+            Vector2 position,
+            Vector2 size)
+        {
+            Image background = Image(parent, name, new Color(0.055f, 0.071f, 0.082f, 0.98f),
+                anchorMin, anchorMax, pivot, position, size);
+            Slider slider = background.gameObject.AddComponent<Slider>();
+            slider.minValue = minimum;
+            slider.maxValue = maximum;
+            slider.value = value;
+            slider.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
+
+            Image fill = Image(background.transform, "Fill", AccentBlue, Vector2.zero, new Vector2(0f, 1f),
+                new Vector2(0f, 0.5f), new Vector2(3f, 0f), new Vector2(-6f, -6f));
+            fill.rectTransform.anchorMax = new Vector2(0f, 1f);
+            slider.fillRect = fill.rectTransform;
+
+            Image handle = Image(background.transform, "Handle", Accent, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16f, size.y + 4f));
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            if (changed != null)
+            {
+                slider.onValueChanged.AddListener(valueChanged => changed(valueChanged));
+            }
+
+            return slider;
+        }
+
         public static void SetButtonText(Button button, string value)
         {
             Text label = button == null ? null : button.GetComponentInChildren<Text>();

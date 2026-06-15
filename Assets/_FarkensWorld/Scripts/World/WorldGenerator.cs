@@ -183,7 +183,13 @@ namespace FarkensWorld
             {
                 float z = -52f + i * 11f;
                 float x = i % 2 == 0 ? 6.2f : -6.2f;
-                LootContainer.Create(new Vector3(x, 0f, z), i % 3 == 0 ? LootContainerType.Crate : LootContainerType.Barrel, rust, random, worldRoot);
+                LootContainerType[] types =
+                {
+                    LootContainerType.YellowBarrel, LootContainerType.RedBarrel, LootContainerType.BlueBarrel,
+                    LootContainerType.WoodenCrate, LootContainerType.Toolbox, LootContainerType.YellowBarrel,
+                    LootContainerType.FoodCrate, LootContainerType.BlueBarrel, LootContainerType.MilitaryCrate, LootContainerType.RedBarrel
+                };
+                LootContainer.Create(new Vector3(x, 0f, z), types[i % types.Length], rust, random, worldRoot);
             }
         }
 

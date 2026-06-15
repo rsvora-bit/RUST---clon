@@ -5,7 +5,7 @@ namespace FarkensWorld
 {
     public sealed class GameManager : MonoBehaviour
     {
-        public const string Version = "Farken's World - Unity Beta 1.5.1";
+        public const string Version = "Farken's World - Unity Beta 1.6.0";
 
         public static GameManager Instance { get; private set; }
 
@@ -24,14 +24,22 @@ namespace FarkensWorld
         public MapUI MapUI { get; private set; }
         public WorldGenerator World { get; private set; }
         public RuntimeSafety Safety { get; private set; }
+        public GameSettings Settings { get; private set; }
+        public WorldEnvironment Environment { get; private set; }
+        public WorldPopulation Population { get; private set; }
+        public SettingsUI SettingsUI { get; private set; }
+        public DeathUI DeathUI { get; private set; }
+        public ProceduralAudio Audio { get; private set; }
+        public bool IsDead { get; private set; }
 
         public bool InventoryOpen => InventoryUI != null && InventoryUI.IsOpen;
         public bool BuildMenuOpen => BuildUI != null && BuildUI.IsOpen;
         public bool PauseOpen => PauseUI != null && PauseUI.IsOpen;
         public bool ConsoleOpen => ConsoleUI != null && ConsoleUI.IsOpen;
         public bool MapOpen => MapUI != null && MapUI.IsOpen;
+        public bool SettingsOpen => SettingsUI != null && SettingsUI.IsOpen;
         public bool ContainerOpen => InventoryUI != null && InventoryUI.ActiveContainer != null;
-        public bool GameplayInputBlocked => InventoryOpen || BuildMenuOpen || PauseOpen || ConsoleOpen || MapOpen || ContainerOpen;
+        public bool GameplayInputBlocked => IsDead || InventoryOpen || BuildMenuOpen || PauseOpen || ConsoleOpen || MapOpen || SettingsOpen || ContainerOpen;
 
         private void Awake()
         {
@@ -70,6 +78,11 @@ namespace FarkensWorld
                 MapUI.Toggle();
             }
 
+            if (!ConsoleOpen && keyboard.oKey.wasPressedThisFrame)
+            {
+                SettingsUI.Toggle();
+            }
+
             if (!GameplayInputBlocked && keyboard.hKey.wasPressedThisFrame)
             {
                 UseBandage();
@@ -82,7 +95,11 @@ namespace FarkensWorld
 
             if (!ConsoleOpen && keyboard.escapeKey.wasPressedThisFrame)
             {
-                if (InventoryOpen || BuildMenuOpen || ContainerOpen || MapOpen)
+                if (IsDead)
+                {
+                    return;
+                }
+                if (InventoryOpen || BuildMenuOpen || ContainerOpen || MapOpen || SettingsOpen)
                 {
                     ClosePanels();
                 }
@@ -101,6 +118,7 @@ namespace FarkensWorld
             BuildUI.Close();
             PauseUI.Close();
             MapUI.Close();
+            SettingsUI.Close();
         }
 
         public void SetStarterInventory()
@@ -119,9 +137,11 @@ namespace FarkensWorld
 
         public void NewGame()
         {
+            IsDead = false;
+            DeathUI.Close();
             ClosePanels();
-            World.ClearRuntimeWorld();
-            World.Generate(Random.Range(1000, 999999));
+            int seed = Random.Range(1000, 999999);
+            GenerateWorld(seed, true);
             PlayerController.Teleport(World.PlayerSpawn);
             PlayerStats.ResetStats();
             SetStarterInventory();
@@ -132,9 +152,39 @@ namespace FarkensWorld
 
         public void Respawn()
         {
+            IsDead = false;
+            DeathUI.Close();
             PlayerController.Teleport(World.PlayerSpawn);
             PlayerStats.Respawn();
             GameEvents.RaiseCenter("Respawned on the island");
+        }
+
+        public void HandlePlayerDeath(string reason)
+        {
+            if (IsDead)
+            {
+                return;
+            }
+
+            IsDead = true;
+            ClosePanels();
+            DeathUI.Show(reason);
+            Audio.Play(AudioCue.Death);
+            GameEvents.RaiseFeed("You died: " + reason);
+        }
+
+        public void ClearDeathState()
+        {
+            IsDead = false;
+            DeathUI.Close();
+        }
+
+        public void GenerateWorld(int seed, bool resetEnvironment = false)
+        {
+            World.Generate(seed);
+            Environment.RefreshWorldReferences();
+            if (resetEnvironment) Environment.ResetForNewWorld(seed);
+            Population.Generate(seed);
         }
 
         private void InitializeRuntime()
@@ -147,6 +197,10 @@ namespace FarkensWorld
             Building = gameObject.AddComponent<BuildSystem>();
             Saves = gameObject.AddComponent<SaveManager>();
             World = gameObject.AddComponent<WorldGenerator>();
+            Environment = gameObject.AddComponent<WorldEnvironment>();
+            Population = gameObject.AddComponent<WorldPopulation>();
+            Settings = gameObject.AddComponent<GameSettings>();
+            Audio = gameObject.AddComponent<ProceduralAudio>();
             Safety = gameObject.AddComponent<RuntimeSafety>();
 
             gameObject.AddComponent<HUDController>();
@@ -155,10 +209,17 @@ namespace FarkensWorld
             PauseUI = gameObject.AddComponent<PauseMenuUI>();
             ConsoleUI = gameObject.AddComponent<DevConsoleUI>();
             MapUI = gameObject.AddComponent<MapUI>();
+            SettingsUI = gameObject.AddComponent<SettingsUI>();
+            DeathUI = gameObject.AddComponent<DeathUI>();
 
-            World.Generate(151);
+            GenerateWorld(151, true);
             CreatePlayer();
             SetStarterInventory();
+            Settings.Apply();
+            if (RuntimeSmokeTest.Requested)
+            {
+                gameObject.AddComponent<RuntimeSmokeTest>();
+            }
         }
 
         private void CreatePlayer()

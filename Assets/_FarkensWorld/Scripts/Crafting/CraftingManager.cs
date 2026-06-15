@@ -72,6 +72,7 @@ namespace FarkensWorld
                 total = recipe.CraftTime
             });
             GameEvents.RaiseFeed("Crafting started: " + recipe.DisplayName);
+            GameManager.Instance.Audio.Play(AudioCue.CraftStart, UnityEngine.Random.Range(0.95f, 1.05f));
             return true;
         }
 
@@ -110,6 +111,7 @@ namespace FarkensWorld
             }
 
             GameEvents.RaiseCenter("Craft complete: " + recipe.DisplayName);
+            GameManager.Instance.Audio.Play(AudioCue.CraftComplete, UnityEngine.Random.Range(0.95f, 1.08f));
         }
     }
 }

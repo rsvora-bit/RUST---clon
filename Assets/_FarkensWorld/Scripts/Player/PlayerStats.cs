@@ -27,6 +27,12 @@ namespace FarkensWorld
 
         private void Update()
         {
+            if (GameManager.Instance != null && GameManager.Instance.IsDead)
+            {
+                IsSprinting = false;
+                return;
+            }
+
             if (GodMode)
             {
                 values.health = 100f;
@@ -44,9 +50,12 @@ namespace FarkensWorld
 
             float staminaDelta = IsSprinting ? -18f : 12f;
             values.stamina = Mathf.Clamp(values.stamina + staminaDelta * Time.deltaTime, 0f, 100f);
-            values.wetness = Mathf.Max(0f, values.wetness - 1.8f * Time.deltaTime);
+            WorldEnvironment environment = GameManager.Instance == null ? null : GameManager.Instance.Environment;
+            float rain = environment == null ? 0f : environment.RainIntensity;
+            values.wetness = Mathf.Clamp(values.wetness + (rain > 0f ? rain * 7.5f : -1.8f) * Time.deltaTime, 0f, 100f);
             values.bleeding = Mathf.Max(0f, values.bleeding - 0.08f * Time.deltaTime);
-            values.temperature = 16f + Mathf.Sin(Time.time * 0.02f) * 6f - values.wetness * 0.12f;
+            float environmentTemperature = environment == null ? Mathf.Sin(Time.time * 0.02f) * 6f : environment.TemperatureOffset;
+            values.temperature = 16f + environmentTemperature - values.wetness * 0.12f;
 
             float damage = 0f;
             if (values.hunger <= 0f || values.thirst <= 0f)
@@ -58,6 +67,10 @@ namespace FarkensWorld
             damage += values.radiation > 70f ? (values.radiation - 70f) * 0.03f : 0f;
             damage += values.temperature < 1f ? 0.62f : 0f;
             values.health = Mathf.Max(0f, values.health - damage * Time.deltaTime);
+            if (values.health <= 0f && GameManager.Instance != null)
+            {
+                GameManager.Instance.HandlePlayerDeath(GetDeathReason());
+            }
         }
 
         public void ResetStats()
@@ -105,6 +118,14 @@ namespace FarkensWorld
             }
 
             values.health = Mathf.Max(0f, values.health - Mathf.Max(0f, amount));
+            if (amount > 0f && GameManager.Instance != null && GameManager.Instance.Audio != null)
+            {
+                GameManager.Instance.Audio.Play(AudioCue.PlayerHurt, UnityEngine.Random.Range(0.9f, 1.08f));
+            }
+            if (values.health <= 0f && GameManager.Instance != null)
+            {
+                GameManager.Instance.HandlePlayerDeath(GetDeathReason());
+            }
         }
 
         public void AddBleeding(float amount)
@@ -125,6 +146,16 @@ namespace FarkensWorld
         public void ReduceBleeding(float amount)
         {
             values.bleeding = Mathf.Max(0f, values.bleeding - amount);
+        }
+
+        public string GetDeathReason()
+        {
+            if (values.thirst <= 0f) return "Zemřel jsi žízní.";
+            if (values.hunger <= 0f) return "Zemřel jsi hladem.";
+            if (values.radiation > 70f) return "Radiace byla příliš vysoká.";
+            if (values.temperature < 1f) return "Umrzl jsi.";
+            if (values.bleeding > 1f) return "Vykrvácel jsi.";
+            return "Na ostrově jsi utrpěl smrtelné zranění.";
         }
     }
 }

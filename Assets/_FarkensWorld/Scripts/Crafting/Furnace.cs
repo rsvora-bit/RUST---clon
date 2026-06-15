@@ -51,6 +51,7 @@ namespace FarkensWorld
         {
             active = !active;
             GameEvents.RaiseCenter(active ? "Furnace started" : "Furnace stopped");
+            GameManager.Instance.Audio.Play(active ? AudioCue.CraftStart : AudioCue.Hit, active ? 0.72f : 0.8f);
         }
 
         public override int Deposit(string itemId, int amount, int durability = 0)

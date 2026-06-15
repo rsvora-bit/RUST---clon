@@ -50,6 +50,7 @@ namespace FarkensWorld
             if (pickedUp > 0)
             {
                 GameEvents.RaiseFeed("Picked up " + itemId + " x" + pickedUp);
+                GameManager.Instance.Audio.Play(AudioCue.Pickup, Random.Range(0.95f, 1.1f));
                 amount = remainder;
             }
 

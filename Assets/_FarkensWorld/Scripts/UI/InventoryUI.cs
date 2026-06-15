@@ -343,6 +343,11 @@ namespace FarkensWorld
 
             if (ActiveContainer != null && slot != null && !slot.IsEmpty && shift)
             {
+                if (!ActiveContainer.CanDeposit)
+                {
+                    GameEvents.RaiseCenter("Items cannot be deposited into corpse loot");
+                    return;
+                }
                 InventorySlot removed = GameManager.Instance.PlayerInventory.RemoveFromSlot(index, slot.amount);
                 int remainder = ActiveContainer.Deposit(removed.itemId, removed.amount, removed.durability);
                 if (remainder > 0) GameManager.Instance.PlayerInventory.Add(removed.itemId, remainder, removed.durability);
@@ -409,6 +414,12 @@ namespace FarkensWorld
         {
             if (ActiveContainer == null)
             {
+                return;
+            }
+
+            if (!ActiveContainer.CanDeposit)
+            {
+                GameEvents.RaiseCenter("Items cannot be deposited into corpse loot");
                 return;
             }
 

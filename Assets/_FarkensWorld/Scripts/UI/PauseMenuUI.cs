@@ -46,7 +46,7 @@ namespace FarkensWorld
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             root = overlay.gameObject;
             Image panel = RuntimeUI.Image(root.transform, "Pause", RuntimeUI.Panel,
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 590f));
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 644f));
             RuntimeUI.Label(panel.transform, "Title", "PAUZA", 28, RuntimeUI.Accent, TextAnchor.MiddleCenter,
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -24f), new Vector2(-30f, 56f), FontStyle.Bold);
 
@@ -56,8 +56,9 @@ namespace FarkensWorld
             AddButton(panel.transform, "RESPAWN", Respawn, 254f);
             AddButton(panel.transform, "INVENTÁŘ", OpenInventory, 308f);
             AddButton(panel.transform, "MAPA", OpenMap, 362f);
-            AddButton(panel.transform, "NOVÝ OSTROV", NewGame, 416f);
-            AddButton(panel.transform, "UKONČIT", () => Application.Quit(), 470f, new Color(0.36f, 0.11f, 0.09f, 0.98f));
+            AddButton(panel.transform, "NASTAVENÍ", OpenSettings, 416f);
+            AddButton(panel.transform, "NOVÝ OSTROV", NewGame, 470f);
+            AddButton(panel.transform, "UKONČIT", () => Application.Quit(), 524f, new Color(0.36f, 0.11f, 0.09f, 0.98f));
             RuntimeUI.Label(panel.transform, "Version", GameManager.Version, 12, RuntimeUI.Muted, TextAnchor.MiddleCenter,
                 new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 18f), new Vector2(-30f, 24f), FontStyle.Bold);
         }
@@ -90,6 +91,12 @@ namespace FarkensWorld
         {
             Close();
             GameManager.Instance.MapUI.Open();
+        }
+
+        private void OpenSettings()
+        {
+            Close();
+            GameManager.Instance.SettingsUI.Open();
         }
 
         private void NewGame()

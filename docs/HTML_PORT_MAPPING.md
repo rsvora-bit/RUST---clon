@@ -9,13 +9,13 @@ Stavy: `DONE` = funkční Unity implementace, `PARTIAL` = funkční zjednodušen
 | Hlavní scéna | `Assets/_FarkensWorld/Scenes/Main.unity`, `Bootstrap.cs` | DONE | Scéna zůstává jediným vstupním bodem a vytváří runtime systémy. |
 | First person pohyb a mouse look | `FirstPersonController.cs` | DONE | WASD, myš, skok, sprint a vývojářský fly mode. `Teleport()` nyní používá raycast ground snap. |
 | Pevný ostrov / ground collider | `WorldGenerator.cs`, `RuntimeSafety.cs` | DONE | Ostrov byl zvětšen na skutečný poloměr 74 m, má záložní collider a runtime fallback floor. |
-| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | DONE | Spawn je snapnutý na collider pod hráčem, ne pouze na fixní Y. Nutné play-test ověření v Unity. |
+| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | DONE | Spawn je snapnutý na collider pod hráčem a ověřený standalone runtime testem. |
 | Failsafe pod `y = -20` | `FirstPersonController.Update()`, `RuntimeSafety.Update()` | DONE | Automatický respawn na bezpečný bod, kontrola NaN/Infinity pozice. |
 | Rust-like HUD | `HUDController.cs`, `RuntimeUI.cs` | DONE | Nativní `Canvas`, tmavé panely, opacity, kotvení pro 1920x1080 a škálování. Vizuálně ještě doladit podle HTML. |
 | Zaměřovač | `HUDController.cs` / `Crosshair` | DONE | Střed obrazovky. |
 | Kompas nahoře uprostřed | `HUDController.cs` / `Top Compass` | DONE | Směr a stupně se mění podle yaw hráče. |
 | FPS / local latency panel | `HUDController.cs` / `Performance` | DONE | Lokální FPS a statický local latency údaj. |
-| Počasí a hodiny | `HUDController.cs` / `Weather` | PARTIAL | Vizuál a běžící čas jsou portované, plná HTML simulace počasí zatím ne. |
+| Počasí a hodiny | `WorldEnvironment.cs`, `HUDController.cs` | DONE | Clear/rain/storm/fog, denní cyklus, slunce, ambient, mlha a procedurální částice deště. |
 | Minimap vpravo nahoře | `HUDController.cs`, `IslandMapGraphic` | DONE | Mapa ostrova a živá značka hráče. |
 | Velká mapa přes `M` | `MapUI.cs` | DONE | Ostrov, silnice, monument, sladká voda, legenda a pozice hráče. Waypoint zatím chybí. |
 | Interakční prompt | `PlayerInteraction.cs`, `HUDController.cs` | DONE | Prompt se zobrazuje pod zaměřovačem pouze u cíle. |
@@ -40,18 +40,19 @@ Stavy: `DONE` = funkční Unity implementace, `PARTIAL` = funkční zjednodušen
 | Rotace, placement a cena | `BuildSystem.cs` | DONE | `R`, LPM, RMB a odečtení surovin/itemu. |
 | Upgrade / repair / demolish | `BuildPiece.cs`, `BuildSystem.cs` | DONE | `U`, `T`, `X`, wood/stone/metal grade, HP a částečný refund. |
 | Resource nodes | `ResourceNode.cs`, `WorldGenerator.cs` | DONE | Stromy, stone, metal ore a sulfur ore. |
-| Road barrels / crates | `LootContainer.cs`, `WorldGenerator.cs` | DONE | Zničitelné objekty s loot tabulkami a fyzickými dropy. |
+| Road barrels / crates | `LootContainer.cs`, `LootTableDatabase.cs`, `WorldGenerator.cs` | DONE | Sedm čistých loot tabulek, barevné varianty a fyzické dropy. |
 | Dropped item pickup | `DroppedItem.cs`, `DroppedItemWorldSpawner.cs` | DONE | Interakce `E`, částečný pickup při plném inventáři. |
-| Optimalizovaný pickup | `DroppedItemWorldSpawner.cs` | DONE | Object pool, cache materiálů a aktualizace existujících UI slotů. Ještě fyzicky otestovat lag v Unity. |
+| Optimalizovaný pickup | `DroppedItemWorldSpawner.cs` | DONE | Object pool, cache materiálů, slučování dropů a cílený refresh UI. |
 | Fresh water interaction | `WaterZone.cs` | DONE | Pití u sladké vody přes interakci. |
-| Save / load | `SaveManager.cs` | DONE | Seed, hráč, stats, inventory, hotbar, stavby, kontejnery, furnace a dropy. |
-| Pause menu / ESC | `PauseMenuUI.cs`, `GameManager.cs` | DONE | Resume, save, load, respawn, inventory, mapa, nový svět a quit. |
-| Private dev terminal | `DevConsoleUI.cs` | PARTIAL | F10/` a příkazy give, god, fly, save/load/report/clear. Nově `respawn`, `tp spawn`, `damage`, `bleed`, `wet`, `rad`. HTML weather/time/spawn/kill příkazy chybí. |
+| Save / load | `SaveManager.cs` | DONE | Seed, hráč, stats, inventory, hotbar, stavby, kontejnery, furnace, dropy, prostředí a settings. |
+| Pause menu / ESC | `PauseMenuUI.cs`, `GameManager.cs` | DONE | Resume, save, load, respawn, inventory, mapa, settings, nový svět a quit. |
+| Private dev terminal | `DevConsoleUI.cs` | DONE | F10/` a příkazy give, god, fly, save/load/report, weather/time, spawn/kill a survival testy. |
 | World visuals | `WorldGenerator.cs` | PARTIAL | Ostrov, pláž, oceán, silnice, kopce, vegetace, rudy, monument a fog; bez AAA assetů. |
-| Den/noc, déšť a lightning | - | TODO | HTML simulace prostředí zatím není plně portovaná. |
-| Animal/enemy AI a corpse loot | - | TODO | Současný Unity projekt nemá AI aktéry. |
-| Projectile bow | `PlayerCombat.cs` | TODO | Současný combat je raycast melee/harvest. |
-| Death overlay a důvod smrti | - | TODO | Respawn je dostupný z pauzy a failsafe, samostatná death obrazovka chybí. |
-| Settings overlay | - | TODO | FOV/HUD/audio/detail přepínače z HTML zatím nejsou v Unity UI. |
+| Den/noc a déšť | `WorldEnvironment.cs` | DONE | Denní cyklus, dynamické slunce, fog a rain/storm částice; samostatné lightning efekty zatím chybí. |
+| Animal/enemy AI a corpse loot | `WorldActor.cs`, `WorldPopulation.cs`, `CorpseContainer.cs` | DONE | Deer, boar, wolf, scientist a take-only corpse loot s expirací. |
+| Projectile bow | `PlayerCombat.cs`, `ArrowProjectile.cs` | DONE | Pooled fyzický projectile s gravitací, kolizí, damage a pětisekundovým limitem. |
+| Death overlay a důvod smrti | `DeathUI.cs`, `GameManager.cs` | DONE | Důvod smrti, respawn a nový náhodný ostrov. |
+| Settings overlay | `SettingsUI.cs`, `GameSettings.cs` | DONE | FOV, sensitivity, HUD opacity/visibility, FPS limit, SFX, ambience a mute. |
+| Procedurální zvuky | `ProceduralAudio.cs` | DONE | Runtime generované SFX a rain ambience bez externích assetů. |
 | Hlavní start menu a changelog | - | TODO | Unity verze startuje přímo do ostrova. |
 | Navazující prompt pro Codex | `docs/CODEX_NEXT_PROMPT.md` | DONE | Český prompt popisuje, co už je hotové, a co má Codex dál ověřit/dodělat. |

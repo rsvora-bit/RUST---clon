@@ -102,6 +102,8 @@ namespace FarkensWorld
                 case "help":
                     Log("help | give <itemId> <amount> | giveall | clearinventory | respawn | tp spawn");
                     Log("damage 20 | bleed 20 | wet 50 | rad 20 | heal/feed/drink | god/fly on/off/toggle");
+                    Log("weather clear/rain/storm/fog | time 0-24/day/night/noon");
+                    Log("spawn deer/boar/wolf/scientist <amount> | kill animals/all/type");
                     Log("save | load | report | clear drops/build | newgame");
                     break;
                 case "give":
@@ -184,6 +186,53 @@ namespace FarkensWorld
                     game.PlayerController.FlyMode = ResolveToggle(parts, game.PlayerController.FlyMode);
                     Log("Fly mode: " + game.PlayerController.FlyMode);
                     break;
+                case "weather":
+                    if (parts.Length > 1 && System.Enum.TryParse(parts[1], true, out WeatherType requestedWeather))
+                    {
+                        game.Environment.SetWeather(requestedWeather);
+                        Log("Weather: " + requestedWeather);
+                    }
+                    else Log("Použití: weather clear/rain/storm/fog");
+                    break;
+                case "time":
+                    if (parts.Length <= 1)
+                    {
+                        Log("Time: " + game.Environment.FormattedTime);
+                    }
+                    else
+                    {
+                        string timeValue = parts[1].ToLowerInvariant();
+                        float hour = timeValue == "day" ? 9f : timeValue == "noon" ? 12f : timeValue == "night" ? 22f : timeValue == "midnight" ? 0f : -1f;
+                        if (hour < 0f && !float.TryParse(timeValue, NumberStyles.Float, CultureInfo.InvariantCulture, out hour))
+                        {
+                            Log("Použití: time 0-24/day/night/noon/midnight");
+                        }
+                        else
+                        {
+                            game.Environment.SetTime(hour);
+                            Log("Time: " + game.Environment.FormattedTime);
+                        }
+                    }
+                    break;
+                case "spawn":
+                    if (parts.Length > 1 && System.Enum.TryParse(parts[1], true, out WorldActorKind actorKind))
+                    {
+                        int actorCount = 1;
+                        if (parts.Length > 2) int.TryParse(parts[2], out actorCount);
+                        actorCount = Mathf.Clamp(actorCount, 1, 20);
+                        for (int i = 0; i < actorCount; i++)
+                        {
+                            Vector3 offset = game.PlayerController.transform.forward * (7f + i * 1.8f) + game.PlayerController.transform.right * ((i % 3) - 1) * 2f;
+                            game.Population.Spawn(actorKind, game.PlayerController.transform.position + offset);
+                        }
+                        Log("Spawned " + actorKind + " x" + actorCount);
+                    }
+                    else Log("Použití: spawn deer/boar/wolf/scientist 1");
+                    break;
+                case "kill":
+                    string selector = parts.Length > 1 ? parts[1] : "all";
+                    Log("Killed " + game.Population.Kill(selector) + " actors");
+                    break;
                 case "save":
                     game.Saves.SaveGame();
                     Log("Uloženo do " + game.Saves.SavePath);
@@ -199,7 +248,9 @@ namespace FarkensWorld
                 case "report":
                     Log(GameManager.Version + " | seed " + game.World.WorldSeed);
                     Log("Pozice " + game.PlayerController.transform.position + " | inventář " + UsedSlots(game.PlayerInventory) + "/28");
-                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count);
+                    PlayerCombat combat = game.PlayerController.GetComponent<PlayerCombat>();
+                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count + " | actors " + game.Population.ActiveCount);
+                    Log("Weather " + game.Environment.WeatherName + " " + game.Environment.FormattedTime + " | arrows " + (combat == null ? 0 : combat.ActiveProjectileCount));
                     break;
                 case "clear":
                     if (parts.Length > 1 && parts[1] == "drops") { game.Drops.ClearAll(); Log("Drops odstraněny"); }

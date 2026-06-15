@@ -12,6 +12,7 @@ namespace FarkensWorld
 
         public string DisplayName => displayName;
         public Inventory Inventory => inventory;
+        public virtual bool CanDeposit => true;
         public virtual string InteractionPrompt => "E - open " + displayName;
 
         protected virtual void Awake()
@@ -28,6 +29,7 @@ namespace FarkensWorld
 
         public virtual int Deposit(string itemId, int amount, int durability = 0)
         {
+            if (!CanDeposit) return amount;
             return inventory.Add(itemId, amount, durability);
         }
 

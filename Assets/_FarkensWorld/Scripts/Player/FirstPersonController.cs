@@ -25,6 +25,11 @@ namespace FarkensWorld
         public Camera PlayerCamera => playerCamera;
         public float Yaw => transform.eulerAngles.y;
         public bool FlyMode { get; set; }
+        public float MouseSensitivity
+        {
+            get => mouseSensitivity;
+            set => mouseSensitivity = Mathf.Clamp(value, 0.04f, 0.35f);
+        }
 
         private void Awake()
         {
@@ -42,6 +47,12 @@ namespace FarkensWorld
             }
 
             if (GameManager.Instance == null || GameManager.Instance.GameplayInputBlocked)
+            {
+                stats.IsSprinting = false;
+                return;
+            }
+
+            if (Application.isBatchMode)
             {
                 stats.IsSprinting = false;
                 return;
@@ -66,15 +77,16 @@ namespace FarkensWorld
             UpdateHotbar(keyboard);
         }
 
-        public void Teleport(Vector3 position, float yaw = 0f)
+        public void Teleport(Vector3 position, float yaw = 0f, bool snapToGround = true)
         {
             bool enabledBefore = characterController != null && characterController.enabled;
             if (characterController != null)
             {
                 characterController.enabled = false;
+                Physics.SyncTransforms();
             }
 
-            Vector3 safePosition = SnapToGround(position);
+            Vector3 safePosition = snapToGround ? SnapToGround(position) : position;
             transform.position = safePosition;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             verticalVelocity = 0f;
@@ -89,16 +101,46 @@ namespace FarkensWorld
         private static Vector3 SnapToGround(Vector3 desiredPosition)
         {
             Vector3 rayOrigin = new Vector3(desiredPosition.x, desiredPosition.y + GroundProbeHeight, desiredPosition.z);
-            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, GroundProbeDistance, ~0, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, GroundProbeDistance, ~0, QueryTriggerInteraction.Ignore);
+            float highestGround = float.NegativeInfinity;
+            float maximumAllowedY = desiredPosition.y + 12f;
+            for (int i = 0; i < hits.Length; i++)
             {
-                return new Vector3(desiredPosition.x, hit.point.y + GroundClearance, desiredPosition.z);
+                RaycastHit hit = hits[i];
+                if (hit.point.y > maximumAllowedY || !IsValidGroundHit(hit.collider))
+                {
+                    continue;
+                }
+
+                highestGround = Mathf.Max(highestGround, hit.point.y);
+            }
+
+            if (!float.IsNegativeInfinity(highestGround))
+            {
+                return new Vector3(desiredPosition.x, highestGround + GroundClearance, desiredPosition.z);
             }
 
             return desiredPosition;
         }
 
+        private static bool IsValidGroundHit(Collider collider)
+        {
+            if (collider == null || collider is CharacterController)
+            {
+                return false;
+            }
+
+            Transform target = collider.transform;
+            return target.GetComponentInParent<ResourceNode>() == null &&
+                target.GetComponentInParent<LootContainer>() == null &&
+                target.GetComponentInParent<DroppedItem>() == null &&
+                target.GetComponentInParent<ContainerInventory>() == null &&
+                target.GetComponentInParent<WorldActor>() == null;
+        }
+
         private void UpdateMovement(Keyboard keyboard)
         {
+            float deltaTime = Mathf.Min(Time.deltaTime, 0.05f);
             Vector2 input = new Vector2(
                 (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f),
                 (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f));
@@ -113,7 +155,7 @@ namespace FarkensWorld
             {
                 float vertical = (keyboard.spaceKey.isPressed ? 1f : 0f) - (keyboard.leftCtrlKey.isPressed ? 1f : 0f);
                 verticalVelocity = 0f;
-                characterController.Move((horizontal + Vector3.up * vertical * speed) * Time.deltaTime);
+                characterController.Move((horizontal + Vector3.up * vertical * speed) * deltaTime);
                 return;
             }
 
@@ -127,8 +169,8 @@ namespace FarkensWorld
                 verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * Gravity);
             }
 
-            verticalVelocity += Gravity * Time.deltaTime;
-            characterController.Move((horizontal + Vector3.up * verticalVelocity) * Time.deltaTime);
+            verticalVelocity += Gravity * deltaTime;
+            characterController.Move((horizontal + Vector3.up * verticalVelocity) * deltaTime);
         }
 
         private static void UpdateHotbar(Keyboard keyboard)
@@ -159,6 +201,12 @@ namespace FarkensWorld
             playerCamera.nearClipPlane = 0.05f;
             playerCamera.farClipPlane = 600f;
             cameraObject.AddComponent<AudioListener>();
+
+            if (GameManager.Instance != null && GameManager.Instance.Settings != null)
+            {
+                mouseSensitivity = GameManager.Instance.Settings.Values.mouseSensitivity;
+                playerCamera.fieldOfView = GameManager.Instance.Settings.Values.fieldOfView;
+            }
         }
     }
 }

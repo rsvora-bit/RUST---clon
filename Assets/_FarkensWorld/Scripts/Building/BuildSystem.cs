@@ -243,6 +243,7 @@ namespace FarkensWorld
 
             CreatePlacedPiece(selected.Type, position, preview.transform.rotation);
             GameEvents.RaiseCenter("Placed " + selected.DisplayName);
+            GameManager.Instance.Audio.Play(AudioCue.Build, Random.Range(0.92f, 1.06f));
         }
 
         private bool PayCost(IReadOnlyDictionary<string, int> cost)

@@ -13,6 +13,12 @@ namespace FarkensWorld
         private readonly Text[] hotbarLabels = new Text[Hotbar.SlotCount];
 
         private GameObject root;
+        private CanvasGroup rootGroup;
+        private GameObject compassPanel;
+        private GameObject performancePanel;
+        private GameObject weatherPanel;
+        private GameObject miniMapPanel;
+        private GameObject hintsPanel;
         private PlayerInteraction interaction;
         private Text compassLabel;
         private Text compassTrack;
@@ -50,6 +56,10 @@ namespace FarkensWorld
         {
             BuildCanvas();
             RefreshHotbar();
+            if (GameManager.Instance != null && GameManager.Instance.Settings != null)
+            {
+                ApplySettings(GameManager.Instance.Settings.Values);
+            }
         }
 
         private void Update()
@@ -76,8 +86,9 @@ namespace FarkensWorld
 
             smoothFps = Mathf.Lerp(smoothFps, 1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime), 0.08f);
             performanceText.text = "FPS     " + Mathf.RoundToInt(smoothFps) + "\nLAT     local 0ms";
-            float minutes = (Time.time * 0.75f + 374f) % 1440f;
-            weatherText.text = "CLEAR SKY                         " + Mathf.FloorToInt(minutes / 60f).ToString("00") + ":" + Mathf.FloorToInt(minutes % 60f).ToString("00");
+            WorldEnvironment environment = game.Environment;
+            weatherText.text = (environment == null ? "CLEAR SKY" : environment.WeatherName) +
+                "                         " + (environment == null ? "06:14" : environment.FormattedTime);
 
             bool showCenter = Time.unscaledTime < centerUntil && !string.IsNullOrEmpty(centerText.text);
             centerPanel.SetActive(showCenter);
@@ -95,6 +106,7 @@ namespace FarkensWorld
         {
             root = RuntimeUI.Rect(RuntimeUI.Canvas.transform, "HUD", Vector2.zero, Vector2.one,
                 new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero).gameObject;
+            rootGroup = root.AddComponent<CanvasGroup>();
 
             BuildCompass();
             BuildLeftPanels();
@@ -112,6 +124,7 @@ namespace FarkensWorld
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -5f), new Vector2(0f, 20f), FontStyle.Bold);
             compassTrack = RuntimeUI.Label(panel.transform, "Track", "W        NW        N        NE        E", 11, RuntimeUI.Muted, TextAnchor.MiddleCenter,
                 new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 5f), new Vector2(-16f, 26f), FontStyle.Bold);
+            compassPanel = panel.gameObject;
         }
 
         private void BuildLeftPanels()
@@ -120,6 +133,7 @@ namespace FarkensWorld
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -18f), new Vector2(142f, 56f));
             performanceText = RuntimeUI.Label(performance.transform, "Text", "FPS     --\nLAT     local 0ms", 12, RuntimeUI.Text, TextAnchor.MiddleLeft,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-18f, -8f), FontStyle.Bold);
+            performancePanel = performance.gameObject;
 
             Image weather = RuntimeUI.Image(root.transform, "Weather", RuntimeUI.Panel,
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -84f), new Vector2(254f, 38f));
@@ -127,6 +141,7 @@ namespace FarkensWorld
                 new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(20f, 20f));
             weatherText = RuntimeUI.Label(weather.transform, "Text", "CLEAR SKY                         06:14", 11, RuntimeUI.Text, TextAnchor.MiddleLeft,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(21f, 0f), new Vector2(-48f, -6f), FontStyle.Bold);
+            weatherPanel = weather.gameObject;
 
             Image hints = RuntimeUI.Image(root.transform, "Hints", RuntimeUI.Panel,
                 new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(18f, 18f), new Vector2(420f, 88f));
@@ -134,6 +149,7 @@ namespace FarkensWorld
                 "LPM těžba/útok | E loot/pít/sebrat | Space skok | F10 dev | Tab inventář | B stavění\nR otočit | U upgrade | T repair | X demolish | M mapa | 1-6 hotbar | H bandage | G jídlo | ESC pauza",
                 12, new Color(0.77f, 0.82f, 0.86f, 1f), TextAnchor.MiddleLeft,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-20f, -16f));
+            hintsPanel = hints.gameObject;
         }
 
         private void BuildMiniMap()
@@ -149,6 +165,7 @@ namespace FarkensWorld
             miniMapMarker = marker.rectTransform;
             RuntimeUI.Label(panel.transform, "Label", "LOCAL MAP", 11, RuntimeUI.Muted, TextAnchor.MiddleCenter,
                 new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 7f), new Vector2(0f, 22f), FontStyle.Bold);
+            miniMapPanel = panel.gameObject;
         }
 
         private void BuildStats()
@@ -325,6 +342,21 @@ namespace FarkensWorld
 
             centerText.text = message;
             centerUntil = Time.unscaledTime + 2.4f;
+        }
+
+        public void ApplySettings(GameSettingsData settings)
+        {
+            if (settings == null || root == null)
+            {
+                return;
+            }
+
+            if (rootGroup != null) rootGroup.alpha = settings.hudOpacity;
+            if (performancePanel != null) performancePanel.SetActive(settings.showPerformance);
+            if (weatherPanel != null) weatherPanel.SetActive(true);
+            if (compassPanel != null) compassPanel.SetActive(settings.showCompass);
+            if (miniMapPanel != null) miniMapPanel.SetActive(settings.showMiniMap);
+            if (hintsPanel != null) hintsPanel.SetActive(settings.showHints);
         }
     }
 }

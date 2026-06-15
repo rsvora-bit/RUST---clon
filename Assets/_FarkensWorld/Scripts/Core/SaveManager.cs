@@ -17,6 +17,8 @@ namespace FarkensWorld
         public List<InventorySlot> inventory = new List<InventorySlot>();
         public List<BuildSaveData> builds = new List<BuildSaveData>();
         public List<DropSaveData> drops = new List<DropSaveData>();
+        public EnvironmentSaveData environment = new EnvironmentSaveData();
+        public GameSettingsData settings = new GameSettingsData();
     }
 
     [Serializable]
@@ -58,7 +60,9 @@ namespace FarkensWorld
                     playerYaw = game.PlayerController.Yaw,
                     selectedHotbar = game.Hotbar.SelectedIndex,
                     inventory = game.PlayerInventory.CreateSnapshot(),
-                    stats = CopyStats(game.PlayerStats.Values)
+                    stats = CopyStats(game.PlayerStats.Values),
+                    environment = game.Environment.CreateSnapshot(),
+                    settings = game.Settings.CreateSnapshot()
                 };
 
                 foreach (BuildPiece piece in game.Building.PlacedPieces)
@@ -114,10 +118,13 @@ namespace FarkensWorld
                 if (data == null) throw new InvalidDataException("Save file is empty or invalid.");
 
                 GameManager game = GameManager.Instance;
+                game.ClearDeathState();
                 game.ClosePanels();
-                game.World.Generate(data.worldSeed == 0 ? 151 : data.worldSeed);
-                game.PlayerController.Teleport(data.playerPosition, data.playerYaw);
+                game.GenerateWorld(data.worldSeed == 0 ? 151 : data.worldSeed);
+                game.PlayerController.Teleport(data.playerPosition, data.playerYaw, false);
                 game.PlayerStats.Restore(data.stats);
+                game.Environment.Restore(data.environment);
+                game.Settings.Restore(data.settings);
                 game.PlayerInventory.Restore(data.inventory);
                 game.Hotbar.RestoreSelection(data.selectedHotbar);
                 game.Building.ClearAll();
