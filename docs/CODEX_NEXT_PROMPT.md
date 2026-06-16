@@ -1,24 +1,50 @@
-# Další prompt pro Codex – audit a stabilizace Unity Beta 1.6
+# Další prompt pro Codex – čti docs a stabilizuj Unity Beta 1.6
 
-Použij tento prompt jako další úkol v Codexu. Projekt už obsahuje Unity Beta 1.6 survival systémy, ale je potřeba udělat důkladný audit, protože dokumentace může tvrdit DONE i u věcí, které je ještě nutné fyzicky ověřit v Play Mode.
+Tento soubor je hlavní prompt pro další běh Codexu. Nedávej Codexu obří text pokaždé znovu. Stačí mu říct, ať začne tady v `docs/`.
+
+## Krátký prompt, který vlož do Codexu
+
+```text
+Přečti nejdřív docs/README.md a potom docs/CODEX_NEXT_PROMPT.md. Řiď se tím jako hlavním zadáním. Nezačínej od nuly, nepoužívej WebView, pracuj v existujícím Unity projektu Farken's World. Nejdřív ověř Play Mode stabilitu, collider patch a dokumentaci. Po každé změně aktualizuj docs/IMPLEMENTATION_STATUS.md, docs/HTML_PORT_MAPPING.md a případně docs/NEXT_STEPS.md podle reality z testu.
+```
 
 ---
+
+## Projekt
 
 Jsi v Unity projektu **Farken's World / Rust-like survival prototype**.
 
 Repozitář:
 `https://github.com/rsvora-bit/RUST---clon`
 
-Pracuj v existujícím projektu. **Nezačínej od nuly. Nepoužívej WebView.**
+Pracuj v existujícím projektu.
+
+**Nesmíš:**
+
+- začít od nuly,
+- vytvořit nový Unity projekt,
+- použít WebView,
+- smazat existující `Assets/_FarkensWorld/`,
+- psát jen dokumentaci bez reálného testu/opravy.
 
 Main scene musí zůstat:
 `Assets/_FarkensWorld/Scenes/Main.unity`
 
-Primární reference je nahraný single-file HTML prototyp hry Farken's World Beta 1.5.x. HTML ber jako zdroj pravdy pro layout, UI, HUD, hotbar, inventory, crafting, building, survival, loot, map/minimap, compass a celkový Rust-like styl.
+Primární gameplay/reference je nahraný single-file HTML prototyp Farken's World Beta 1.5.x. HTML ber jako zdroj pravdy pro layout, UI, HUD, hotbar, inventory, crafting, building, survival, loot, map/minimap, compass a celkový Rust-like styl.
 
-## Aktuální stav podle repozitáře
+## Nejdřív přečti tyto soubory
 
-Poslední velká změna přidala Unity Beta 1.6 systémy:
+1. `docs/README.md`
+2. `docs/NEXT_STEPS.md`
+3. `docs/IMPLEMENTATION_STATUS.md`
+4. `docs/HTML_PORT_MAPPING.md`
+5. Tento soubor `docs/CODEX_NEXT_PROMPT.md`
+
+Dokumentace je pracovní zdroj pravdy, ale ne absolutní pravda. Pokud Play Mode ukáže, že něco nefunguje, oprav dokumentaci podle reality.
+
+## Aktuální stav
+
+Projekt už obsahuje Unity Beta 1.6 systémy:
 
 - settings menu přes `O`,
 - weather/day-night systém,
@@ -32,17 +58,17 @@ Poslední velká změna přidala Unity Beta 1.6 systémy:
 - loot table database,
 - runtime smoke/build verification.
 
-Po auditu byl ručně opraven `WorldGenerator.cs`, protože `main` pořád používal walkable `CylinderCollider` pro Beach/Island/Ground Safety Collider. Nově má být:
+Po auditu byl opraven `WorldGenerator.cs`, protože `main` ještě používal walkable `CylinderCollider` pro Beach/Island/Ground Safety Collider. Nově má být:
 
-- Beach/Island pouze vizuální cylinder bez collideru,
+- `Beach Visual` a `Island Visual` pouze vizuální cylinder bez collideru,
 - chůzi mají řešit ploché `BoxCollider` objekty:
   - `Walkable Island Collider`,
   - `Walkable Beach Collider`,
   - `Fallback Safety Collider`.
 
-Tento collider patch je commitnutý, ale ještě musíš vše ověřit přímo v Unity Editoru.
+Tento collider patch je commitnutý, ale musíš ho fyzicky ověřit v Unity Editoru.
 
-## Priorita 0 – nejdřív ověř aktuální main
+## Priorita 0 – ověř stabilní základ
 
 Než začneš něco přidávat, spusť:
 
@@ -68,9 +94,9 @@ Spusť Play Mode a otestuj minimálně 2 minuty:
 7. Neobjevuje se viditelné stavění/poskakování trávy při pohybu.
 8. Console nemá red errors.
 
-Pokud se cokoli z toho rozbije, nepřidávej další mechaniky a oprav nejdřív základ.
+Pokud se cokoli z toho rozbije, nepřidávej nové features. Nejdřív oprav základ.
 
-## Priorita 1 – ověř collider patch
+## Priorita 1 – ověř a případně oprav collider patch
 
 Zkontroluj `Assets/_FarkensWorld/Scripts/World/WorldGenerator.cs`.
 
@@ -91,23 +117,24 @@ Pokud je hráč moc vysoko nad zemí nebo se zasekne u okraje, uprav:
 - spawn pozici,
 - road výšku.
 
-## Priorita 2 – ověř pravdivost dokumentace
+## Priorita 2 – pravdivá dokumentace
 
 Zkontroluj a případně oprav:
 
 - `docs/IMPLEMENTATION_STATUS.md`
 - `docs/HTML_PORT_MAPPING.md`
+- `docs/NEXT_STEPS.md`
 
-Nepiš falešně DONE.
+Nepoužívej falešné `DONE`.
 
-Použij:
+Statusy:
 
-- `DONE` = reálně existuje v kódu a prošlo Play Mode testem,
+- `DONE` = existuje v kódu a prošlo Play Mode testem,
 - `PARTIAL` = existuje v kódu, ale je to zjednodušené nebo ne plně otestované,
 - `BROKEN` = je v kódu, ale při testu nefunguje,
 - `TODO` = není hotové.
 
-Speciálně ověř tyto položky:
+Speciálně ověř:
 
 - Ground/terrain collider,
 - spawn,
@@ -124,11 +151,9 @@ Speciálně ověř tyto položky:
 - dev console `report`,
 - runtime verification.
 
-Pokud něco jen existuje v C# souboru, ale není ověřené v gameplayi, dej `PARTIAL`, ne `DONE`.
+Pokud něco jen existuje v C# souboru, ale nebylo otestované v gameplayi, dej `PARTIAL`, ne `DONE`.
 
-## Priorita 3 – kompletní test nových Beta 1.6 mechanik
-
-Otestuj postupně:
+## Priorita 3 – kompletní test Beta 1.6 mechanik
 
 ### Dev console
 
@@ -156,7 +181,7 @@ kill animals
 kill all
 ```
 
-`report` musí vypsat užitečné info:
+`report` má vypsat užitečné info:
 
 - player position,
 - isGrounded,
@@ -166,14 +191,13 @@ kill all
 - time,
 - population counts,
 - active arrows,
-- active dropped items,
-- red error count pokud to umíš zjistit.
+- active dropped items.
 
 ### Projectile bow
 
 Ověř:
 
-- bow se dá dát do hotbaru,
+- bow jde dát do hotbaru,
 - střelba odebere arrow,
 - šíp letí fyzicky dopředu,
 - má gravity/drop,
@@ -185,8 +209,7 @@ Ověř:
 
 Ověř:
 
-- deer neutíká nebo se chová pasivně,
-- boar/wolf/scientist mají rozumný chase/attack,
+- deer/boar/wolf/scientist spawnují na zemi,
 - nejdou přes zeď/propadnout mapou,
 - po smrti vytvoří corpse/loot bag,
 - corpse jde otevřít přes `E`,
@@ -225,11 +248,11 @@ Ověř:
 - HUD ukazuje čas a weather,
 - rain audio/particles nezůstávají zapnuté po clear.
 
-## Priorita 4 – UI přesnost podle HTML
+## Priorita 4 – UI podle HTML
 
 Po stabilizačním testu porovnej Unity s HTML verzí.
 
-Cíl: Unity verze má vypadat co nejvíc jako HTML verze, ne jako obecný Unity prototyp.
+Cíl: Unity verze má vypadat jako HTML Rust-like hra, ne jako obecný Unity prototyp.
 
 Zkontroluj:
 
@@ -248,11 +271,19 @@ Zkontroluj:
 - map screen,
 - settings overlay.
 
-Pokud UI nesedí vizuálně, uprav barvy, opacity, spacing, font size, border, slot highlight a anchor pozice.
+Pokud UI nesedí vizuálně, uprav:
 
-## Priorita 5 – další malé zlepšení, až když je vše stabilní
+- barvy,
+- opacity,
+- spacing,
+- font size,
+- border,
+- slot highlight,
+- anchor pozice.
 
-Až po ověření stabilního základu můžeš přidat:
+## Priorita 5 – nové věci až po stabilitě
+
+Až když základ projde, můžeš přidat:
 
 - hlavní start menu před spawnem,
 - changelog screen,
