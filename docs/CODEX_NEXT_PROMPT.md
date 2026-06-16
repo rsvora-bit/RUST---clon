@@ -1,11 +1,11 @@
-# Další prompt pro Codex – čti docs a stabilizuj Unity Beta 1.6
+# Další prompt pro Codex – audit, stabilita a přesný HTML clon
 
 Tento soubor je hlavní prompt pro další běh Codexu. Nedávej Codexu obří text pokaždé znovu. Stačí mu říct, ať začne tady v `docs/`.
 
 ## Krátký prompt, který vlož do Codexu
 
 ```text
-Přečti nejdřív docs/README.md a potom docs/CODEX_NEXT_PROMPT.md. Řiď se tím jako hlavním zadáním. Nezačínej od nuly, nepoužívej WebView, pracuj v existujícím Unity projektu Farken's World. Nejdřív ověř Play Mode stabilitu, collider patch a dokumentaci. Po každé změně aktualizuj docs/IMPLEMENTATION_STATUS.md, docs/HTML_PORT_MAPPING.md a případně docs/NEXT_STEPS.md podle reality z testu.
+Přečti nejdřív docs/README.md, docs/NEXT_STEPS.md, docs/IMPLEMENTATION_STATUS.md, docs/HTML_PORT_MAPPING.md a docs/CODEX_NEXT_PROMPT.md. Řiď se tím jako hlavním zadáním. Nezačínej od nuly, nepoužívej WebView, pracuj v existujícím Unity projektu Farken's World. Nejdřív ověř Play Mode stabilitu, collider patch a problém s doskakováním/stavěním trávy při pohybu. Nepoužívej falešné DONE: co nebylo fyzicky otestované v Unity Play Mode, nech jako PARTIAL nebo BROKEN. Po každé změně aktualizuj docs podle reality z testu. Finální odpověď piš česky.
 ```
 
 ---
@@ -25,7 +25,8 @@ Pracuj v existujícím projektu.
 - vytvořit nový Unity projekt,
 - použít WebView,
 - smazat existující `Assets/_FarkensWorld/`,
-- psát jen dokumentaci bez reálného testu/opravy.
+- dělat jen dokumentaci bez reálného testu/opravy,
+- tvrdit `DONE`, pokud funkce nebyla fyzicky otestovaná v Play Mode.
 
 Main scene musí zůstat:
 `Assets/_FarkensWorld/Scenes/Main.unity`
@@ -42,31 +43,28 @@ Primární gameplay/reference je nahraný single-file HTML prototyp Farken's Wor
 
 Dokumentace je pracovní zdroj pravdy, ale ne absolutní pravda. Pokud Play Mode ukáže, že něco nefunguje, oprav dokumentaci podle reality.
 
-## Aktuální stav
+## Aktuální známý stav
 
-Projekt už obsahuje Unity Beta 1.6 systémy:
+Projekt už obsahuje hodně Unity systémů Beta 1.6, ale po dokumentačním auditu nejsou automaticky brané jako `DONE`. Většina je `PARTIAL`, protože musí projít fyzickým gameplay testem.
 
-- settings menu přes `O`,
-- weather/day-night systém,
-- wildlife/enemy population,
-- deer/boar/wolf/scientist,
-- corpse loot,
-- projectile bow se šípy,
-- death screen,
-- procedural audio,
-- rozšířený dev console,
-- loot table database,
-- runtime smoke/build verification.
+Známé věci:
 
-Po auditu byl opraven `WorldGenerator.cs`, protože `main` ještě používal walkable `CylinderCollider` pro Beach/Island/Ground Safety Collider. Nově má být:
+- Po posledním collider fixu se hráč podle ručního testu už dokáže pohybovat.
+- Původní levitace / pád pod mapu se zdá být zlepšený, ale musíš to znovu ověřit v Play Mode.
+- Známý problém: při pohybu je vidět doskakování / stavění trávy nebo world detailů.
+- UI existuje, ale musí se dál ladit, aby působilo víc jako HTML Rust-like verze, ne obecný Unity prototyp.
+- Start menu a changelog podle HTML zatím nejsou hotové.
 
-- `Beach Visual` a `Island Visual` pouze vizuální cylinder bez collideru,
-- chůzi mají řešit ploché `BoxCollider` objekty:
-  - `Walkable Island Collider`,
-  - `Walkable Beach Collider`,
-  - `Fallback Safety Collider`.
+## Status pravidla
 
-Tento collider patch je commitnutý, ale musíš ho fyzicky ověřit v Unity Editoru.
+Používej přesně tyto statusy:
+
+- `DONE` = existuje v kódu a prošlo Play Mode testem.
+- `PARTIAL` = existuje v kódu, ale je to zjednodušené, neověřené nebo ne úplně podle HTML.
+- `BROKEN` = je v kódu, ale při testu nefunguje správně.
+- `TODO` = není hotové.
+
+Pokud něco pouze existuje jako C# soubor, ale netestoval jsi to ve hře, nech `PARTIAL`.
 
 ## Priorita 0 – ověř stabilní základ
 
@@ -91,21 +89,41 @@ Spusť Play Mode a otestuj minimálně 2 minuty:
 4. WASD, myš, sprint, jump.
 5. Přechod pláž -> tráva -> road -> loot.
 6. Hráč se dostane do středu ostrova bez invisible walls.
-7. Neobjevuje se viditelné stavění/poskakování trávy při pohybu.
+7. Neobjevuje se viditelné stavění / doskakování trávy při pohybu.
 8. Console nemá red errors.
 
 Pokud se cokoli z toho rozbije, nepřidávej nové features. Nejdřív oprav základ.
 
-## Priorita 1 – ověř a případně oprav collider patch
+## Priorita 1 – opravit doskakování / stavění trávy
+
+Tohle je aktuální ručně pozorovaný problém.
+
+Zjisti přesně:
+
+- který skript vytváří nebo refreshuje trávu / vegetaci / world detaily,
+- jestli se něco negeneruje opakovaně podle pozice hráče,
+- jestli se při pohybu nepřepočítává celý world nebo chunk,
+- jestli nejde o špatný culling, LOD, enable/disable nebo spawn threshold,
+- jestli některý UI/map refresh omylem nespouští world refresh.
+
+Oprava:
+
+- Nedělej brutální fix odstraněním veškeré trávy.
+- Zachovej ostrov vizuálně živý.
+- Tráva a detaily se nesmí viditelně stavět po každém kroku hráče.
+- Použij stabilní spawn/detail cache, chunk hysterézi nebo prostě statické rozmístění, pokud je to pro tento prototyp lepší.
+- Po opravě spusť 2minutový pohybový test.
+
+## Priorita 2 – ověř collider patch
 
 Zkontroluj `Assets/_FarkensWorld/Scripts/World/WorldGenerator.cs`.
 
 Musí platit:
 
-- `Beach Visual` a `Island Visual` nesmí mít collider.
-- Walkable povrch nesmí být `CylinderCollider`.
-- Chůzi musí řešit stabilní `BoxCollider` / jednoduchý rovný collider.
-- `Ground snap` musí trefovat hlavní walkable ground, ne nouzový fallback.
+- `Beach Visual` a `Island Visual` nesmí být walkable `CylinderCollider`.
+- Walkable povrch nesmí být problematický `CylinderCollider`.
+- Chůzi má řešit stabilní rovný collider / jednoduchý collider.
+- `Ground snap` musí trefovat hlavní walkable ground, ne špatný fallback.
 - Road nesmí tvořit hranu, o kterou se CharacterController zasekne.
 - Přechod pláž -> tráva musí být plynulý.
 
@@ -113,13 +131,13 @@ Pokud je hráč moc vysoko nad zemí nebo se zasekne u okraje, uprav:
 
 - výšku walkable colliderů,
 - `CharacterController` center/height/radius,
-- `GroundClearance`,
+- ground clearance,
 - spawn pozici,
 - road výšku.
 
-## Priorita 2 – pravdivá dokumentace
+## Priorita 3 – pravdivá dokumentace
 
-Zkontroluj a případně oprav:
+Po testu oprav:
 
 - `docs/IMPLEMENTATION_STATUS.md`
 - `docs/HTML_PORT_MAPPING.md`
@@ -127,18 +145,12 @@ Zkontroluj a případně oprav:
 
 Nepoužívej falešné `DONE`.
 
-Statusy:
-
-- `DONE` = existuje v kódu a prošlo Play Mode testem,
-- `PARTIAL` = existuje v kódu, ale je to zjednodušené nebo ne plně otestované,
-- `BROKEN` = je v kódu, ale při testu nefunguje,
-- `TODO` = není hotové.
-
 Speciálně ověř:
 
-- Ground/terrain collider,
-- spawn,
+- ground/terrain collider,
+- player spawn,
 - runtime safety,
+- grass/world detail popping,
 - inventory/hotbar,
 - loot pickup bez freeze,
 - weather/day-night,
@@ -151,9 +163,7 @@ Speciálně ověř:
 - dev console `report`,
 - runtime verification.
 
-Pokud něco jen existuje v C# souboru, ale nebylo otestované v gameplayi, dej `PARTIAL`, ne `DONE`.
-
-## Priorita 3 – kompletní test Beta 1.6 mechanik
+## Priorita 4 – kompletní test Beta 1.6 mechanik
 
 ### Dev console
 
@@ -165,6 +175,7 @@ report
 tp spawn
 respawn
 damage 20
+damage 999
 bleed 20
 wet 50
 rad 20
@@ -248,7 +259,7 @@ Ověř:
 - HUD ukazuje čas a weather,
 - rain audio/particles nezůstávají zapnuté po clear.
 
-## Priorita 4 – UI podle HTML
+## Priorita 5 – UI podle HTML
 
 Po stabilizačním testu porovnej Unity s HTML verzí.
 
@@ -281,7 +292,7 @@ Pokud UI nesedí vizuálně, uprav:
 - slot highlight,
 - anchor pozice.
 
-## Priorita 5 – nové věci až po stabilitě
+## Priorita 6 – nové věci až po stabilitě
 
 Až když základ projde, můžeš přidat:
 
@@ -302,24 +313,25 @@ Na konci musí platit:
 3. Hráč se spawnne na zemi.
 4. Hráč se dostane z pláže do středu ostrova.
 5. Žádné levitování ani invisible walls.
-6. UI je podobné HTML.
-7. Inventory/hotbar fungují.
-8. Loot pickup nemá freeze.
-9. Weather/time funguje.
-10. Settings fungují.
-11. Bow funguje.
-12. AI/corpse loot funguje.
-13. Death/respawn funguje.
-14. Save/load nerozbije nové systémy.
-15. Dev console `report` funguje.
-16. Console nemá red errors.
-17. Dokumentace odpovídá realitě.
+6. Tráva/world detaily se viditelně nestaví při každém pohybu.
+7. UI je podobné HTML.
+8. Inventory/hotbar fungují.
+9. Loot pickup nemá freeze.
+10. Weather/time funguje.
+11. Settings fungují.
+12. Bow funguje.
+13. AI/corpse loot funguje.
+14. Death/respawn funguje.
+15. Save/load nerozbije nové systémy.
+16. Dev console `report` funguje.
+17. Console nemá red errors.
+18. Dokumentace odpovídá realitě.
 
 ## Commit
 
 Commituj jasnou zprávou podle toho, co opravíš, například:
 
-`Stabilize Beta 1.6 gameplay systems`
+`Fix grass popping and verify Beta 1.6 stability`
 
 ## Finální odpověď napiš česky
 
