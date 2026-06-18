@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -17,9 +18,11 @@ namespace FarkensWorld
         private Material metalOre;
         private Material sulfurOre;
         private Material rust;
+        private Material grassDetail;
 
         public int WorldSeed { get; private set; }
         public Vector3 PlayerSpawn => new Vector3(-6f, 2.2f, -10f);
+        public int GrassDetailCount { get; private set; }
 
         public void Generate(int seed)
         {
@@ -29,6 +32,7 @@ namespace FarkensWorld
             CreateMaterials();
             ConfigureEnvironment();
             CreateTerrain();
+            CreateStaticGrassDetails(seed);
             CreateResources(seed);
             CreateRoadLoot(seed);
         }
@@ -39,6 +43,8 @@ namespace FarkensWorld
             {
                 Destroy(worldRoot.gameObject);
             }
+
+            GrassDetailCount = 0;
         }
 
         public static Material CreateMaterial(string name, Color color, float roughness, float metallic = 0f)
@@ -92,6 +98,7 @@ namespace FarkensWorld
             metalOre = CreateMaterial("Metal Ore", new Color(0.37f, 0.47f, 0.52f), 0.72f, 0.18f);
             sulfurOre = CreateMaterial("Sulfur Ore", new Color(0.73f, 0.61f, 0.09f), 0.88f);
             rust = CreateMaterial("Rusted Metal", new Color(0.49f, 0.19f, 0.08f), 0.9f, 0.25f);
+            grassDetail = CreateMaterial("Static Grass Details", new Color(0.18f, 0.34f, 0.12f), 1f);
         }
 
         private void ConfigureEnvironment()
@@ -134,7 +141,8 @@ namespace FarkensWorld
             CreateWalkableCollider("Walkable Beach Collider", new Vector3(0f, -0.28f, 0f), new Vector3(164f, 0.22f, 164f));
             CreateWalkableCollider("Fallback Safety Collider", new Vector3(0f, -1.7f, 0f), new Vector3(170f, 0.25f, 170f));
 
-            Primitive("Road", PrimitiveType.Cube, new Vector3(0f, 0.06f, 4f), new Vector3(9f, 0.1f, 132f), dirt, worldRoot);
+            GameObject road = Primitive("Road", PrimitiveType.Cube, new Vector3(0f, 0.06f, 4f), new Vector3(9f, 0.1f, 132f), dirt, worldRoot);
+            RemoveCollider(road);
 
             Vector3[] hills =
             {
@@ -157,6 +165,54 @@ namespace FarkensWorld
             Primitive("Floor", PrimitiveType.Cube, new Vector3(0f, 0.15f, 0f), new Vector3(12f, 0.3f, 9f), dirt, monument.transform);
             Primitive("Tower", PrimitiveType.Cube, new Vector3(0f, 4f, 0f), new Vector3(4f, 8f, 4f), rust, monument.transform);
             Primitive("Roof", PrimitiveType.Cube, new Vector3(0f, 8.2f, 0f), new Vector3(5.2f, 0.4f, 5.2f), rust, monument.transform);
+        }
+
+        private void CreateStaticGrassDetails(int seed)
+        {
+            const int targetTufts = 520;
+            System.Random random = new System.Random(seed + 4219);
+            List<Vector3> vertices = new List<Vector3>(targetTufts * 8);
+            List<int> triangles = new List<int>(targetTufts * 24);
+            int attempts = 0;
+            int created = 0;
+
+            while (created < targetTufts && attempts < targetTufts * 8)
+            {
+                attempts++;
+                Vector3 position = RandomPosition(random, 11f, 70f);
+                if (IsRoadPosition(position) || IsWaterPoolPosition(position))
+                {
+                    continue;
+                }
+
+                position.y = 0.075f;
+                float height = Mathf.Lerp(0.25f, 0.62f, (float)random.NextDouble());
+                float width = Mathf.Lerp(0.05f, 0.11f, (float)random.NextDouble());
+                float yaw = (float)random.NextDouble() * Mathf.PI * 2f;
+                AddGrassCross(vertices, triangles, position, width, height, yaw);
+                created++;
+            }
+
+            Mesh mesh = new Mesh
+            {
+                name = "Static Island Grass Details"
+            };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
+
+            GameObject grassObject = new GameObject("Static Grass Details");
+            grassObject.transform.SetParent(worldRoot, false);
+            grassObject.isStatic = true;
+            MeshFilter filter = grassObject.AddComponent<MeshFilter>();
+            filter.sharedMesh = mesh;
+            MeshRenderer renderer = grassObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = grassDetail;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            GrassDetailCount = created;
         }
 
         private void CreateResources(int seed)
@@ -231,6 +287,46 @@ namespace FarkensWorld
             float angle = (float)random.NextDouble() * Mathf.PI * 2f;
             float radius = Mathf.Lerp(minRadius, maxRadius, Mathf.Sqrt((float)random.NextDouble()));
             return new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+        }
+
+        private static bool IsRoadPosition(Vector3 position)
+        {
+            return Mathf.Abs(position.x) < 6.1f && Mathf.Abs(position.z - 4f) < 68f;
+        }
+
+        private static bool IsWaterPoolPosition(Vector3 position)
+        {
+            Vector2 offset = new Vector2(position.x - 22f, position.z + 18f);
+            return offset.sqrMagnitude < 52f;
+        }
+
+        private static void AddGrassCross(List<Vector3> vertices, List<int> triangles, Vector3 position, float width, float height, float yaw)
+        {
+            Vector3 right = new Vector3(Mathf.Cos(yaw), 0f, Mathf.Sin(yaw)) * width;
+            Vector3 forward = new Vector3(-right.z, 0f, right.x);
+            AddDoubleSidedQuad(vertices, triangles, position - right, position + right, position + right + Vector3.up * height, position - right + Vector3.up * height);
+            AddDoubleSidedQuad(vertices, triangles, position - forward, position + forward, position + forward + Vector3.up * height, position - forward + Vector3.up * height);
+        }
+
+        private static void AddDoubleSidedQuad(List<Vector3> vertices, List<int> triangles, Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            int start = vertices.Count;
+            vertices.Add(a);
+            vertices.Add(b);
+            vertices.Add(c);
+            vertices.Add(d);
+            triangles.Add(start);
+            triangles.Add(start + 1);
+            triangles.Add(start + 2);
+            triangles.Add(start);
+            triangles.Add(start + 2);
+            triangles.Add(start + 3);
+            triangles.Add(start + 2);
+            triangles.Add(start + 1);
+            triangles.Add(start);
+            triangles.Add(start + 3);
+            triangles.Add(start + 2);
+            triangles.Add(start);
         }
 
         private void CreateWalkableCollider(string name, Vector3 localPosition, Vector3 localScale)

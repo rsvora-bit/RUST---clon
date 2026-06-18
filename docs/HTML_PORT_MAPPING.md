@@ -4,16 +4,16 @@ Primární zdroj: `Farken's World - Beta 1.5.1.html` / HTML Beta 1.5.x.
 
 Tento soubor mapuje, co z HTML prototypu existuje v Unity. Status `DONE` znamená pouze: funkce je v Unity, prošla Play Mode testem a odpovídá aspoň zjednodušeně HTML referenci. Pokud funkce pouze existuje v C# kódu, ale není gameplay ověřená, má být `PARTIAL`.
 
-Poslední známý ruční test: hráč už se po opravě colliderů dokáže pohybovat. Známý problém: při pohybu je vidět doskakování / stavění trávy nebo world detailů.
+Poslední aktuální ověření: Unity batch build a postavený runtime player smoke test prošly na `Assets/_FarkensWorld/Scenes/Main.unity`. Smoke test ověřil spawn, walkable `BoxCollider`, cestu spawn -> tráva/road -> střed ostrova, weather, death/respawn a AI spawn. Ruční 2minutový Editor Play Mode test je pořád nutný pro vizuální popping, UI a reálné ovládání.
 
 Stavy: `DONE` = hotové a ověřené, `PARTIAL` = existuje, ale je zjednodušené nebo neověřené, `BROKEN` = je v kódu, ale chová se špatně, `TODO` = zatím nepřeneseno.
 
 | HTML Feature | Unity Script / Scene Object | Status | Notes |
 |---|---|---:|---|
-| Hlavní scéna | `Assets/_FarkensWorld/Scenes/Main.unity`, `Bootstrap.cs` | PARTIAL | Scéna existuje a spouští runtime systémy. Nutné ověřit po každém velkém commitu. |
-| First person pohyb a mouse look | `FirstPersonController.cs` | PARTIAL | Pohyb podle uživatele už funguje. Ještě ověřit sprint, jump, input lock, respawn a přechody po mapě. |
-| Pevný ostrov / ground collider | `WorldGenerator.cs`, `RuntimeSafety.cs` | PARTIAL | Walkable cylindry byly nahrazené stabilnějšími collidery. Nutné ověřit celý průchod pláž -> tráva -> road -> střed ostrova. |
-| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | PARTIAL | Spawn už se zdá použitelný, ale opakovaný respawn a ground snap musí projít Play Mode testem. |
+| Hlavní scéna | `Assets/_FarkensWorld/Scenes/Main.unity`, `Bootstrap.cs` | PARTIAL | Scéna existuje, spouští runtime systémy a prošla batch build/runtime smoke. Ruční Editor Play Mode audit pořád zopakovat. |
+| First person pohyb a mouse look | `FirstPersonController.cs` | PARTIAL | Automatizovaný runtime pohyb prošel spawn -> tráva/road -> střed ostrova. WASD, myš, sprint, jump a input lock ještě ručně ověřit. |
+| Pevný ostrov / ground collider | `WorldGenerator.cs`, `RuntimeSafety.cs` | PARTIAL | Walkable povrch řeší `BoxCollider` objekty. `Beach Visual`, `Island Visual` a `Road` nemají walkable collider; smoke test trefil `Walkable Island Collider (BoxCollider)`. Ruční kontrola hran/invisible walls ještě zbývá. |
+| Bezpečný spawn | `WorldGenerator.PlayerSpawn`, `FirstPersonController.Teleport()`, `GameManager.Respawn()` | PARTIAL | Runtime smoke potvrdil spawn na zemi a respawn flow. Opakovaný ruční respawn / `tp spawn` přes dev console ještě ověřit v Editoru. |
 | Failsafe pod `y = -20` | `FirstPersonController.Update()`, `RuntimeSafety.Update()` | PARTIAL | Existuje v kódu. Ověřit pádem pod mapu nebo dev příkazem. |
 | Rust-like HUD | `HUDController.cs`, `RuntimeUI.cs` | PARTIAL | Canvas UI existuje. Vizuálně ještě doladit, aby více odpovídalo HTML místo obecného Unity prototypu. |
 | Zaměřovač | `HUDController.cs` / `Crosshair` | PARTIAL | Viditelný, ale ověřit placement a chování při UI panelech. |
@@ -50,9 +50,9 @@ Stavy: `DONE` = hotové a ověřené, `PARTIAL` = existuje, ale je zjednodušen�
 | Fresh water interaction | `WaterZone.cs` | PARTIAL | Existuje. Ověřit `E` u vody, thirst restore a prompt. |
 | Save / load | `SaveManager.cs` | PARTIAL | Existuje. Ověřit kompletní gameplay save/load po všech nových systémech. |
 | Pause menu / ESC | `PauseMenuUI.cs`, `GameManager.cs` | PARTIAL | Existuje. Ověřit input lock, resume, save/load, settings, map, respawn. |
-| Private dev terminal | `DevConsoleUI.cs` | PARTIAL | Existuje. Ověřit všechny důležité příkazy a výstup `report`. |
-| World visuals | `WorldGenerator.cs` | PARTIAL | Ostrov a low-poly svět existují. Známý problém s doskakováním / stavěním trávy při pohybu. |
-| Grass / world detail popping | `WorldGenerator.cs` nebo runtime world/detail systém | BROKEN | Viditelné stavění trávy při pohybu je ručně pozorovaný problém. Další krok: najít konkrétní příčinu a odstranit bez rozbití performance. |
+| Private dev terminal | `DevConsoleUI.cs` | PARTIAL | Existuje. `report` nově vypisuje player position, grounded, ground collider, seed, weather/time, population counts, arrows, drops a grass details. Celý ruční příkazový checklist ještě ověřit přes `F10`/backquote. |
+| World visuals | `WorldGenerator.cs` | PARTIAL | Ostrov a low-poly svět existují včetně statického grass detail meshe. Vizuální shoda a popping musí ještě projít ručním Play Mode testem. |
+| Grass / world detail popping | `WorldGenerator.cs` | PARTIAL | Kandidátní fix: tráva se vytváří jednou jako statický seedovaný mesh (`GrassDetailCount=520`) a ne přes pohyb hráče/chunky; road visual už nemá fyzický collider/lip. Runtime smoke prošel, ale viditelné doskakování musí potvrdit ruční test. |
 | Den/noc a déšť | `WorldEnvironment.cs` | PARTIAL | Existuje. Ověřit přechody, rain particles/audio a clear reset. |
 | Animal/enemy AI a corpse loot | `WorldActor.cs`, `WorldPopulation.cs`, `CorpseContainer.cs` | PARTIAL | Existuje. Ověřit spawn, pohyb, damage, smrt, corpse a loot. |
 | Projectile bow | `PlayerCombat.cs`, `ArrowProjectile.cs` | PARTIAL | Existuje. Ověřit míření, fyziku, damage, spotřebu arrows a cleanup. |

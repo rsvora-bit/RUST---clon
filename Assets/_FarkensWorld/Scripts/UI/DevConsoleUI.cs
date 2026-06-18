@@ -246,10 +246,26 @@ namespace FarkensWorld
                     Log("Vygenerován nový ostrov");
                     break;
                 case "report":
+                    FirstPersonController controller = game.PlayerController;
+                    string groundName = "none";
+                    if (controller != null && controller.TryGetGroundHit(out RaycastHit groundHit) && groundHit.collider != null)
+                    {
+                        groundName = groundHit.collider.name + " (" + groundHit.collider.GetType().Name + ")";
+                    }
+
                     Log(GameManager.Version + " | seed " + game.World.WorldSeed);
-                    Log("Pozice " + game.PlayerController.transform.position + " | inventář " + UsedSlots(game.PlayerInventory) + "/28");
+                    Log("Pozice " + (controller == null ? Vector3.zero : controller.transform.position) +
+                        " | grounded " + (controller != null && controller.IsCharacterGrounded) +
+                        " | ground " + groundName);
+                    Log("Inventář " + UsedSlots(game.PlayerInventory) + "/28" +
+                        " | grass details " + game.World.GrassDetailCount);
                     PlayerCombat combat = game.PlayerController.GetComponent<PlayerCombat>();
-                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count + " | actors " + game.Population.ActiveCount);
+                    Log("Drops " + game.Drops.ActiveCount + " | builds " + game.Building.PlacedPieces.Count +
+                        " | actors " + game.Population.ActiveCount +
+                        " D/B/W/S " + game.Population.Count(WorldActorKind.Deer) + "/" +
+                        game.Population.Count(WorldActorKind.Boar) + "/" +
+                        game.Population.Count(WorldActorKind.Wolf) + "/" +
+                        game.Population.Count(WorldActorKind.Scientist));
                     Log("Weather " + game.Environment.WeatherName + " " + game.Environment.FormattedTime + " | arrows " + (combat == null ? 0 : combat.ActiveProjectileCount));
                     break;
                 case "clear":

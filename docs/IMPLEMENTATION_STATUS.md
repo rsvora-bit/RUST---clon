@@ -2,17 +2,17 @@
 
 Tento soubor má popisovat realitu, ne optimistický plán. Status `DONE` používej jen tehdy, když je věc opravdu v kódu a zároveň prošla Play Mode testem v Unity Editoru.
 
-Poslední známý stav podle ručního testu uživatele a výstupu Codexu: hráč už se po collider patchi dokáže pohybovat, ale při pohybu je vidět doskakování / stavění trávy. Já jsem Play Mode v Unity Editoru přímo nespustil, takže většina systémů zůstává `PARTIAL`, dokud je Codex nebo uživatel fyzicky neověří.
+Poslední známý stav podle aktuálního běhu Codexu: Unity 6000.4.11f1 projekt prošel batch buildem a postavený runtime player prošel smoke testem přes `Assets/_FarkensWorld/Scenes/Main.unity`. Smoke test ověřil spawn, walkable `BoxCollider`, cestu spawn -> tráva/road -> střed ostrova, weather, death/respawn a AI spawn bez gameplay erroru. Ruční 2minutový vizuální Play Mode test v Editoru ale ještě neproběhl, takže většina systémů zůstává `PARTIAL`, dokud se fyzicky neověří ovládání, UI a viditelné doskakování trávy.
 
 | Feature | Status | Notes |
 |---|---:|---|
-| Main scene | PARTIAL | Hlavní scéna zůstává `Assets/_FarkensWorld/Scenes/Main.unity`. Nutné ověřit po každém větším commitu. |
-| First person controller | PARTIAL | WASD pohyb je podle uživatele po poslední opravě funkční. Sprint, jump, fly debug, blokace inputu a hraniční situace ještě znovu otestovat. |
-| Ground/terrain collider | PARTIAL | Codex opravil problém s nevhodnými `CylinderCollider` objekty a nahradil walkable plochu jednoduššími collidery. Pohyb už funguje, ale stále ověřit pláž -> tráva -> road -> střed ostrova bez invisible walls. |
-| Player spawn | PARTIAL | Podle posledního stavu už hráč neleviduje jako předtím a dá se hýbat. Ještě ověřit opakovaný spawn, respawn a pád pod `y = -20`. |
+| Main scene | PARTIAL | Hlavní scéna zůstává `Assets/_FarkensWorld/Scenes/Main.unity`. Batch build a runtime smoke player prošly, ruční Editor Play Mode test ještě zopakovat. |
+| First person controller | PARTIAL | Runtime smoke automaticky prošel cestu spawn -> tráva/road -> střed ostrova bez pádu pod mapu. WASD, myš, sprint a jump ještě ručně ověřit v Editor Play Mode. |
+| Ground/terrain collider | PARTIAL | Walkable povrch je řešený `BoxCollider` objekty (`Walkable Island/Beach/Fallback`). `Beach Visual`, `Island Visual` a `Road` nejsou walkable collidery. Runtime smoke trefil `Walkable Island Collider (BoxCollider)` a prošel cestu do středu ostrova; ruční test hran a invisible walls ještě zopakovat. |
+| Player spawn | PARTIAL | Runtime smoke potvrdil spawn na `(-6.00, 0.13, -10.00)` nad `Walkable Island Collider`. Opakovaný ruční spawn/respawn a pád pod `y = -20` ještě ověřit v Editoru. |
 | Runtime safety | PARTIAL | Existuje ochrana proti pádu pod mapu / špatné pozici, ale musí projít testem `tp spawn`, `respawn`, pád pod mapu a nový seed. |
-| World visuals | PARTIAL | Ostrov, pláž, oceán, road, stromy, kameny a loot objekty existují. Známý problém: při pohybu je vidět doskakování / stavění trávy nebo world detailů. |
-| Grass / world detail popping | BROKEN | Uživatel po posledním testu hlásil, že se při pohybu viditelně buduje tráva. Další úkol: zjistit, jestli jde o runtime spawn detailů, špatné LOD/culling, refresh world generatoru nebo UI/visual objekt napojený na pohyb. |
+| World visuals | PARTIAL | Ostrov, pláž, oceán, road, stromy, kameny, loot objekty a statický grass detail mesh existují. Vizuální shodu a popping je potřeba ještě zkontrolovat očima v Editor Play Mode. |
+| Grass / world detail popping | PARTIAL | Přidaný kandidátní fix: tráva se generuje jednou jako statický mesh podle seedu (`GrassDetailCount=520`) a road visual už nemá fyzický collider/lip. Runtime smoke prošel, ale viditelné doskakování musí ještě potvrdit ruční 2minutový Play Mode test. |
 | Inventory UI | PARTIAL | Existuje nativní Canvas inventář se sloty, ale musí se ověřit chování, přesun itemů, stacky, drop a vizuální shoda s HTML. |
 | Hotbar UI | PARTIAL | Hotbar existuje dole uprostřed. Ověřit výběr 1-6, durability, použití itemů a přesnou podobu podle HTML. |
 | Compass | PARTIAL | Kompas je viditelný nahoře uprostřed. Ověřit přesnost yaw/stupňů, responsivitu a shodu s HTML. |
@@ -26,7 +26,7 @@ Poslední známý stav podle ručního testu uživatele a výstupu Codexu: hrá�
 | Building system | PARTIAL | Preview, placement, upgrade/repair/demolish existují. Ověřit valid/invalid placement, rotaci, náklady, kolize a save/load. |
 | Storage boxes | PARTIAL | Storage box UI existuje. Ověřit otevření přes `E`, přesun itemů, take all, deposit all a save/load. |
 | Save/load | PARTIAL | JSON save/load existuje. Nutné ověřit, že po nových systémech nerozbije pozici, inventory, buildy, dropy, počasí, AI a settings. |
-| Dev console | PARTIAL | Dev console existuje. Ověřit `help`, `report`, `tp spawn`, `respawn`, `damage`, `weather`, `time`, `spawn`, `kill`. |
+| Dev console | PARTIAL | Dev console existuje a `report` byl rozšířen o player position, grounded, ground collider, seed, weather/time, population counts, arrows, drops a grass details. Ovládání přes `F10`/backquote a celý příkazový checklist ještě ručně ověřit. |
 | Map/minimap | PARTIAL | Minimap a velká mapa existují. Ověřit pozici hráče, orientaci, legendu a otevření přes `M`. Waypoint zatím chybí. |
 | Pause menu | PARTIAL | ESC menu existuje. Ověřit resume, save/load, respawn, settings, mapu, quit a blokaci inputu. |
 | Weather/day-night | PARTIAL | Systém clear/rain/storm/fog a den/noc existuje. Ověřit vizuál, particles, audio, HUD a návrat do clear. |
@@ -37,7 +37,7 @@ Poslední známý stav podle ručního testu uživatele a výstupu Codexu: hrá�
 | Death screen | PARTIAL | Death/respawn overlay existuje. Ověřit přes `damage 999`, důvod smrti, respawn a obnovení inputu. |
 | Loot tables | PARTIAL | Loot table database existuje. Ověřit drop šance/množství a porovnání s HTML referencí. |
 | Procedural audio | PARTIAL | Runtime SFX/ambience existuje. Ověřit hlasitost, mute, rain audio a absence loop bugů. |
-| Runtime verification | PARTIAL | Codex dříve hlásil compile/build/smoke test, ale po ručních a následných změnách je potřeba znovu spustit Play Mode audit. |
+| Runtime verification | PARTIAL | Aktuální běh prošel Unity batch buildem a runtime smoke playerem. Smoke test ověřuje collider patch, cestu do středu ostrova, weather, bleeding, death/respawn a AI spawn. Ruční 2minutový Editor Play Mode audit je stále potřeba pro ovládání, UI a vizuální popping. |
 | Start menu / changelog | TODO | Unity verze pořád startuje přímo do hry. Start menu a changelog podle HTML zatím nejsou hotové. |
 | Codex continuation prompt | DONE | `docs/CODEX_NEXT_PROMPT.md` existuje a říká Codexu, ať nejdřív čte docs a testuje realitu. |
 
@@ -87,7 +87,7 @@ Poslední známý stav podle ručního testu uživatele a výstupu Codexu: hrá�
 2. Spustit Play Mode aspoň 2 minuty.
 3. Ověřit chůzi z pláže na trávu, do středu ostrova, po road a k lootům.
 4. Zapsat, jestli hráč levituje, propadá se nebo narazí na invisible wall.
-5. Zjistit příčinu viditelného doskakování / stavění trávy při pohybu.
+5. Ručně ověřit, jestli statický grass detail mesh odstranil viditelné doskakování / stavění trávy při pohybu.
 6. Spustit dev console `report`.
 7. Otestovat `tp spawn`, `respawn`, `weather storm`, `time night`, `spawn wolf 2`, luk/šípy, corpse loot, death/respawn.
 8. Zkontrolovat Console red errors.

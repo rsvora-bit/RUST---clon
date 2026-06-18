@@ -4,9 +4,11 @@ Tento soubor je konkrétní seznam práce pro další vývoj. Codex má postupov
 
 ## Aktuální známý stav
 
-- Po posledním collider fixu se hráč podle ručního testu už dokáže pohybovat.
-- Původní problém s levitací / pádem pod mapu se zdá být zlepšený, ale musí projít delším testem.
-- Známý problém: při pohybu je vidět doskakování / stavění trávy nebo world detailů.
+- Aktuální běh Codexu prošel `git status`, `git log --oneline -5` a ověřil větev `main`.
+- Unity 6000.4.11f1 batch build prošel a postavený runtime player smoke test prošel bez gameplay failure.
+- Runtime smoke ověřil spawn, walkable `BoxCollider`, cestu spawn -> tráva/road -> střed ostrova, weather, bleeding, death/respawn a AI spawn.
+- Původní problém s levitací / pádem pod mapu se v automatizovaném runtime smoke testu neprojevil, ale ruční 2minutový Editor Play Mode test je pořád potřeba.
+- Kandidátní fix pro doskakování trávy je v kódu: tráva je statický seedovaný mesh (`GrassDetailCount=520`) a road visual už nemá collider/lip. Vizuálně to ještě musí ověřit ruční Play Mode test.
 - Hodně systémů v kódu existuje, ale není férové je označit jako `DONE`, dokud neprojdou Play Mode testem.
 
 ## 0) Povinný start před každou prací
@@ -21,13 +23,16 @@ Tento soubor je konkrétní seznam práce pro další vývoj. Codex má postupov
 
 ## 1) Stabilita hráče a mapy
 
-- [ ] Hráč se spawnne na zemi.
-- [ ] Hráč neleviduje.
-- [ ] Hráč nepadá pod mapu.
-- [ ] Hráč se dostane z pláže na trávu.
-- [ ] Hráč se dostane do středu ostrova.
+- [x] Automatizovaný runtime smoke: hráč se spawnne na zemi.
+- [x] Automatizovaný runtime smoke: hráč neleviduje ani nepadá pod mapu během kontrolované cesty.
+- [x] Automatizovaný runtime smoke: hráč se dostane ze spawnu přes trávu/road do středu ostrova.
+- [ ] Ruční Editor Play Mode: hráč se spawnne na zemi.
+- [ ] Ruční Editor Play Mode: hráč neleviduje.
+- [ ] Ruční Editor Play Mode: hráč nepadá pod mapu.
+- [ ] Ruční Editor Play Mode: hráč se dostane z pláže na trávu.
+- [ ] Ruční Editor Play Mode: hráč se dostane do středu ostrova.
 - [ ] Hráč se nezasekne na road / loot / hraně beach-island.
-- [ ] Ověřit, že walkable povrch není `CylinderCollider`.
+- [x] Automatizovaný runtime smoke: walkable povrch je `BoxCollider`, ne visual/cylinder collider.
 - [ ] Ověřit `tp spawn`.
 - [ ] Ověřit `respawn`.
 - [ ] Ověřit, že ground snap netrefuje špatný fallback collider.
@@ -36,9 +41,9 @@ Tento soubor je konkrétní seznam práce pro další vývoj. Codex má postupov
 
 Toto je aktuální vizuální problém po posledním testu.
 
-- [ ] Najít, který systém při pohybu hráče vytváří / přesouvá / obnovuje trávu nebo world detaily.
-- [ ] Ověřit, jestli se to děje v `WorldGenerator.cs`, detail/foliage systému, map refreshi, cullingu, LOD nebo jiném runtime skriptu.
-- [ ] Zajistit, aby se tráva negenerovala znovu každý frame podle pohybu hráče.
+- [x] Najít, který systém vytváří / přesouvá / obnovuje trávu nebo world detaily: vegetace a detaily jsou v `WorldGenerator.cs`, ne v UI/minimap refreshi.
+- [x] Ověřit v kódu, že se nic negeneruje opakovaně podle pozice hráče.
+- [x] Zajistit, aby se tráva negenerovala znovu každý frame podle pohybu hráče: přidaný statický seedovaný grass detail mesh.
 - [ ] Pokud je nutná optimalizace, použít stabilní chunk/grid systém s hysterézí, ne rebuild celé vrstvy okolo hráče při každém kroku.
 - [ ] Neopravovat to smazáním veškeré vegetace; cílem je stabilní vizuál, ne prázdná mapa.
 - [ ] Po opravě otestovat 2 minuty pohybu po ostrově.
@@ -132,8 +137,8 @@ Toto je aktuální vizuální problém po posledním testu.
 Nejbližší úkol pro Codex:
 
 1. Vzít tento checklist.
-2. Ověřit collider patch a pohyb hráče v Play Mode.
-3. Opravit doskakování / stavění trávy při pohybu.
+2. Ručně otevřít `Main.unity` v Editoru a udělat 2minutový Play Mode test pohybu, ovládání a vizuálního poppingu.
+3. Pokud statický grass detail mesh pořád viditelně doskakuje, doladit materiál/mesh/bounds nebo další world detail culling.
 4. Pokud je základ stabilní, otestovat Beta 1.6 systémy.
 5. V dokumentaci přepsat statusy podle reality, ne podle toho, že existuje C# soubor.
 6. Teprve potom ladit UI a vizuál podle HTML.

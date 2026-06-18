@@ -25,6 +25,7 @@ namespace FarkensWorld
         public Camera PlayerCamera => playerCamera;
         public float Yaw => transform.eulerAngles.y;
         public bool FlyMode { get; set; }
+        public bool IsCharacterGrounded => characterController != null && characterController.isGrounded;
         public float MouseSensitivity
         {
             get => mouseSensitivity;
@@ -75,6 +76,37 @@ namespace FarkensWorld
 
             UpdateMovement(keyboard);
             UpdateHotbar(keyboard);
+        }
+
+        public bool TryGetGroundHit(out RaycastHit groundHit)
+        {
+            Vector3 rayOrigin = transform.position + Vector3.up * 3f;
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore);
+            float highestGround = float.NegativeInfinity;
+            int bestIndex = -1;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                if (!IsValidGroundHit(hit.collider) || hit.point.y > transform.position.y + 0.75f)
+                {
+                    continue;
+                }
+
+                if (hit.point.y > highestGround)
+                {
+                    highestGround = hit.point.y;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex >= 0)
+            {
+                groundHit = hits[bestIndex];
+                return true;
+            }
+
+            groundHit = default;
+            return false;
         }
 
         public void Teleport(Vector3 position, float yaw = 0f, bool snapToGround = true)
