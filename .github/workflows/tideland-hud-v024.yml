@@ -22,7 +22,11 @@ jobs:
           fetch-depth: 0
 
       - name: Apply HUD overhaul
-        run: python3 scripts/hud-v024.py
+        run: |
+          sed -i 's/notify_pattern.subn(notify_new,ui,count=1)/notify_pattern.subn(lambda _: notify_new,ui,count=1)/' scripts/hud-v024.py
+          sed -i 's/stats_pattern.subn(stats_new,ui,count=1)/stats_pattern.subn(lambda _: stats_new,ui,count=1)/' scripts/hud-v024.py
+          sed -i 's/slot_pattern.subn(slot_new,ui,count=1)/slot_pattern.subn(lambda _: slot_new,ui,count=1)/' scripts/hud-v024.py
+          python3 scripts/hud-v024.py
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
