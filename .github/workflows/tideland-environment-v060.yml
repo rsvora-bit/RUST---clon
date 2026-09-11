@@ -22,7 +22,15 @@ jobs:
           fetch-depth: 0
 
       - name: Apply environment overhaul
-        run: python3 scripts/environment-v060-finalize.py
+        run: |
+          python3 scripts/environment-v060-finalize.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/rendering/environment.ts')
+          s=p.read_text()
+          s=s.replace("new THREE.MeshLambertMaterial({color:0x526d40,side:THREE.DoubleSide,roughness:1 as never});delete (fernM as unknown as {roughness?:number}).roughness;","new THREE.MeshLambertMaterial({color:0x526d40,side:THREE.DoubleSide});")
+          p.write_text(s)
+          PY
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
