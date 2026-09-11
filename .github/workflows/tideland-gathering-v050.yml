@@ -1,0 +1,59 @@
+name: Validate Tideland v0.5.0 Gathering
+
+on:
+  push:
+    branches: [feature/gathering-overhaul-v050]
+    paths:
+      - 'scripts/gathering-v050-finalize.py'
+      - '.github/workflows/tideland-gathering-v050.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: feature/gathering-overhaul-v050
+          fetch-depth: 0
+
+      - name: Apply gathering overhaul
+        run: python3 scripts/gathering-v050-finalize.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify release markers
+        run: |
+          grep -q "GAME_VERSION='0.5.0'" src/config/version.ts
+          grep -q "GAME_BUILD='EA-05'" src/config/version.ts
+          grep -q '"version": "0.5.0"' package.json
+          grep -q "weakSpotMultiplier:1.5" src/config/gameplay.ts
+          grep -q "class GatheringFeedback" src/rendering/GatheringFeedback.ts
+          grep -q "treeFall()" src/audio/AudioMixer.ts
+          grep -q "resourceStrike" src/app/GameApp.ts
+
+      - name: Commit validated release
+        run: |
+          rm scripts/gathering-v050-finalize.py .github/workflows/tideland-gathering-v050.yml
+          git config user.name 'Roman Svora'
+          git config user.email 'roman.svora.ml@gmail.com'
+          git add -A
+          git commit -m 'Tideland v0.5.0: gathering and weak-spot overhaul'
+          git push origin HEAD:feature/gathering-overhaul-v050
