@@ -1,5 +1,5 @@
 import {nearbyWorkbench} from '../survival/stations';
-import type { GameState, HUDData, ItemId, ItemStack, KeybindAction, PieceType, ResourceNode, Screen, Settings, UIActions } from '../core/types';
+import type { GameState, HUDData, ItemId, ItemStack, KeybindAction, PieceType, ResourceNode, SaveSlotSummary, Screen, Settings, UIActions } from '../core/types';
 import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
@@ -36,6 +36,10 @@ export class UI {
   private craftHudHash = '';
   private resourceFeedbackTimer = 0;
   private saveAvailable=false;
+  private saveSlots:SaveSlotSummary[]=[];
+  private saveBrowserMode:'load'|'new'|'manage'='load';
+  private pendingSaveSlot:number|null=null;
+  private pendingDeleteSlot:number|null=null;
   private settingsTab:'gameplay'|'controls'|'graphics'|'audio'='gameplay';
   private rebinding:KeybindAction|null=null;
 
@@ -45,24 +49,24 @@ export class UI {
     this.root.className = 'tide-ui';
     this.root.dataset.screen = 'menu';
     this.root.innerHTML = `
-      <section class="screen menu-screen menu-v3" data-view="menu" aria-label="Main menu">
-        <div class="menu-v3-scrim"></div>
-        <header class="menu-v3-top"><div class="menu-v3-brand">${mark}<span>TIDELAND<small>EARLY ACCESS · ${GAME_BUILD}</small></span></div><div class="menu-language"><button data-language="en">EN</button><button data-language="cs">CZ</button></div></header>
-        <main class="menu-v3-panel"><div class="eyebrow"><span></span><b data-i18n="survivalExperience">OPEN WORLD SURVIVAL</b></div><h1>TIDELAND<span>.</span></h1><p class="menu-v3-tagline" data-i18n="menuTagline">Build, survive and make the island yours.</p>
-          <button class="hero-play" data-action="play"><span data-i18n="play">PLAY</span>${chevron}</button>
-          <div class="play-panel" hidden><div class="play-panel-head"><strong data-i18n="playGame">PLAY GAME</strong><small>LOCAL · SOLO</small></div>
-            <button class="play-choice" data-action="new"><span>01</span><strong data-i18n="newGame">NEW GAME</strong>${chevron}</button>
-            <button class="play-choice continue-game" data-action="continue" disabled><span>02</span><strong data-i18n="continue">CONTINUE</strong><small class="continue-meta" data-i18n="noSave">NO SAVED WORLD</small>${chevron}</button>
-            <button class="play-choice load-game" data-action="load" disabled><span>03</span><strong data-i18n="load">LOAD</strong><small data-i18n="localSave">LOCAL SAVE</small>${chevron}</button>
-            <div class="seed-control menu-v3-seed"><label for="world-seed" data-i18n="worldSeed">WORLD SEED</label><input id="world-seed" type="text" inputmode="numeric" maxlength="10" placeholder="731942" aria-label="World seed"><span data-i18n="proceduralIsland">PROCEDURAL ISLAND</span></div>
-          </div>
-          <nav class="menu-v3-secondary"><button data-action="settings"><span data-i18n="settings">SETTINGS</span></button><button data-action="history"><span data-i18n="history">HISTORY</span><small>v${GAME_VERSION}</small></button><button data-action="help"><span data-i18n="controls">CONTROLS</span></button></nav>
+      <section class="screen menu-screen menu-classic-v7" data-view="menu" aria-label="Main menu">
+        <header class="menu-masthead"><span class="brand-mark">${mark}</span><div><div class="eyebrow">TIDELAND PROJECT</div><b>PROCEDURAL SURVIVAL</b></div><div class="edition"><i></i><span>EARLY ACCESS</span><b>${GAME_BUILD}</b></div></header>
+        <main class="menu-content"><div class="eyebrow"><span></span><b data-i18n="survivalExperience">OPEN WORLD SURVIVAL</b></div><h1>TIDELAND<span class="title-period">.</span></h1><p class="menu-description" data-i18n="menuTagline">Build, survive and make the island yours.</p>
+          <nav class="main-nav">
+            <button class="menu-link continue-game" data-action="continue" disabled><span class="nav-index">01</span><strong data-i18n="continue">CONTINUE</strong><small class="menu-meta continue-meta" data-i18n="noSave">NO SAVED WORLD</small>${chevron}</button>
+            <button class="menu-link new-game" data-action="new"><span class="nav-index">02</span><strong data-i18n="newGame">NEW GAME</strong><small class="menu-meta">CHOOSE SLOT</small>${chevron}</button>
+            <button class="menu-link load-game" data-action="load" disabled><span class="nav-index">03</span><strong data-i18n="load">LOAD</strong><small class="menu-meta save-count">0 / 5 SAVES</small>${chevron}</button>
+            <button class="menu-link" data-action="settings"><span class="nav-index">04</span><strong data-i18n="settings">SETTINGS</strong><small class="menu-meta">GAME / UI / AUDIO</small>${chevron}</button>
+            <button class="menu-link" data-action="history"><span class="nav-index">05</span><strong data-i18n="history">HISTORY</strong><small class="menu-meta">v${GAME_VERSION}</small>${chevron}</button>
+          </nav>
+          <div class="seed-control"><label for="world-seed" data-i18n="worldSeed">WORLD SEED</label><input id="world-seed" type="text" inputmode="numeric" maxlength="10" placeholder="731942" aria-label="World seed"><span data-i18n="proceduralIsland">PROCEDURAL ISLAND</span></div>
         </main>
-        <footer class="menu-v3-footer"><span>v${GAME_VERSION} · ${GAME_BUILD}</span><span>LOCAL WORLD · SOLO</span></footer>
+        <div class="menu-location"><span class="location-line"></span><div>WESTERN SHORE<small>LOCAL SOLO SESSION</small></div><span class="coordinate">5 SAVE SLOTS<br>AUTOSAVE · 60 SEC</span></div>
+        <footer class="menu-footer"><span>v${GAME_VERSION}<i>•</i>${GAME_BUILD}<i>•</i>LOCAL BROWSER SAVE</span><div class="local-save-status"><i></i><span class="save-footer-status">NO LOCAL WORLDS</span></div><button class="text-button" data-action="help"><span data-i18n="controls">CONTROLS</span></button></footer>
       </section>
 
       <section class="screen game-screen" data-view="playing" aria-label="Gameplay interface">
-        <div class="compass-wrap"><div class="compass-value">N</div><div class="compass-line"></div><div class="compass-needle"></div><div class="biome-label">WESTERN SHORE</div></div>
+        <div class="compass-wrap"><div class="compass-value">N</div><div class="compass-line"></div><div class="compass-needle"></div><div class="biome-label">WESTERN SHORE</div></div><div class="fps-counter" hidden>60 FPS</div>
         <div class="crosshair"><i></i></div><div class="interaction-prompt"></div><div class="resource-feedback" aria-live="polite"></div><div class="damage-vignette" aria-hidden="true"></div>
         <div class="onboarding"><span class="hint-rule"></span><span class="tutorial-copy"></span><button class="help-shortcut" data-action="help" title="View controls">?</button></div>
         <div class="build-panel"></div>
@@ -86,9 +90,9 @@ export class UI {
           <main class="settings-pages">
             <section class="settings-page active" data-settings-page="gameplay"><div class="settings-page-title"><span>01</span><h3 data-i18n="gameplay">GAMEPLAY</h3></div>
               <div class="setting-row toggle-row"><label><span data-i18n="language">LANGUAGE</span><small data-i18n="languageDetail">Switch the interface between English and Czech.</small></label><div class="language-options"><button data-language="en">EN</button><button data-language="cs">CZ</button></div></div>
-              ${this.slider('crosshairOpacity','crosshair','crosshairDetail',0,1,0.05)}${this.toggle('showCompass','compass','compassDetail')}
+              ${this.slider('hudScale','hudScale','hudScaleDetail',0.8,1.45,0.05)}${this.slider('hudOpacity','hudOpacity','hudOpacityDetail',0.55,1,0.05)}${this.slider('crosshairOpacity','crosshair','crosshairDetail',0,1,0.05)}${this.slider('crosshairScale','crosshairScale','crosshairScaleDetail',0.6,2,0.05)}${this.toggle('showCompass','compass','compassDetail')}${this.toggle('showFps','showFps','showFpsDetail')}${this.toggle('showTutorialHints','tutorialHints','tutorialHintsDetail')}
               <div class="setting-row setting-buttons"><label><span data-i18n="localSettings">LOCAL SETTINGS</span><small data-i18n="localSettingsDetail">Reset device-specific controls and presentation.</small></label><div><button data-action="resetSettings" data-i18n="resetSettings">RESET SETTINGS</button><button data-action="reloadBuild" data-i18n="reloadBuild">RELOAD LATEST BUILD</button></div></div>
-              <div class="save-reset-row"><span><b data-i18n="localSaveData">LOCAL SAVE DATA</b><small data-i18n="localSaveDataDetail">Remove your saved island and progress.</small></span><button class="danger-button" data-action="reset" data-i18n="resetSave">RESET SAVE</button></div><div class="reset-confirm" hidden><span data-i18n="localSaveDataDetail">Remove your saved island and progress.</span><button data-action="resetConfirm" data-i18n="deleteSave">DELETE SAVE</button><button data-action="resetCancel" data-i18n="cancel">CANCEL</button></div>
+              <div class="save-reset-row"><span><b data-i18n="localSaveData">LOCAL SAVE DATA</b><small data-i18n="localSaveDataDetail">Manage individual local worlds or remove all save data.</small></span><div><button data-action="manageSaves" data-i18n="manageSaves">MANAGE SAVES</button><button class="danger-button" data-action="reset" data-i18n="deleteAllSaves">DELETE ALL SAVES</button></div></div><div class="reset-confirm" hidden><span data-i18n="localSaveDataDetail">Remove your saved island and progress.</span><button class="danger-button" data-action="resetConfirm" data-i18n="deleteAllSaves">DELETE ALL SAVES</button><button data-action="resetCancel" data-i18n="cancel">CANCEL</button></div>
             </section>
             <section class="settings-page" data-settings-page="controls"><div class="settings-page-title"><span>02</span><h3 data-i18n="controls">CONTROLS</h3></div>
               ${this.slider('sensitivityX','sensitivityX','sensitivityXDetail',0.05,2.5,0.05)}${this.slider('sensitivityY','sensitivityY','sensitivityYDetail',0.05,2.5,0.05)}${this.toggle('invertY','invertY','invertYDetail')}${this.toggle('headBob','headBob','headBobDetail')}${this.toggle('cameraShake','cameraShake','cameraShakeDetail')}
@@ -96,7 +100,7 @@ export class UI {
             </section>
             <section class="settings-page" data-settings-page="graphics"><div class="settings-page-title"><span>03</span><h3 data-i18n="graphics">GRAPHICS</h3></div>
               <div class="setting-row quality-row"><label><span data-i18n="quality">GRAPHICS PRESET</span><small data-i18n="qualityDetail">One-click rendering quality profile.</small></label><div class="quality-options"><button data-preset="low" data-i18n="low">LOW</button><button data-preset="medium" data-i18n="medium">MEDIUM</button><button data-preset="high" data-i18n="high">HIGH</button><button data-preset="ultra" data-i18n="ultra">ULTRA</button></div></div>
-              ${this.slider('fov','fov','fovDetail',60,100,1)}${this.slider('viewmodelFov','viewmodelFov','viewmodelFovDetail',40,75,1)}${this.slider('renderScale','renderScale','renderScaleDetail',0.5,1,0.05)}${this.toggle('shadows','shadows','shadowsDetail')}${this.toggle('motionBlur','motionBlur','motionBlurDetail')}
+              ${this.slider('brightness','brightness','brightnessDetail',0.75,1.35,0.05)}${this.slider('fov','fov','fovDetail',60,100,1)}${this.slider('viewmodelFov','viewmodelFov','viewmodelFovDetail',40,75,1)}${this.slider('renderScale','renderScale','renderScaleDetail',0.5,1,0.05)}${this.toggle('shadows','shadows','shadowsDetail')}${this.toggle('motionBlur','motionBlur','motionBlurDetail')}
             </section>
             <section class="settings-page" data-settings-page="audio"><div class="settings-page-title"><span>04</span><h3 data-i18n="audio">AUDIO</h3></div>
               ${this.slider('masterVolume','masterVolume','masterVolumeDetail',0,1,0.01)}${this.slider('musicVolume','musicVolume','musicVolumeDetail',0,1,0.01)}${this.slider('effectsVolume','effectsVolume','effectsVolumeDetail',0,1,0.01)}${this.slider('ambientVolume','ambientVolume','ambientVolumeDetail',0,1,0.01)}
@@ -105,7 +109,9 @@ export class UI {
         </div>
       </section>
 
-      <div class="confirm-overlay new-game-confirm" hidden><div class="confirm-card"><span class="eyebrow">LOCAL SAVE</span><h2 data-i18n="newGameWarning">START A NEW WORLD?</h2><p data-i18n="newGameWarningDetail">Your current local world will be replaced the next time the new world is saved.</p><div><button class="danger-button" data-action="confirmNew" data-i18n="newGameConfirm">START NEW WORLD</button><button data-action="cancelNew" data-i18n="cancel">CANCEL</button></div></div></div>
+      <div class="save-browser" hidden><div class="save-browser-shell"><header><div><span class="eyebrow">LOCAL WORLDS</span><h2 class="save-browser-title">LOAD WORLD</h2><p class="save-browser-subtitle">Choose a local save slot.</p></div><button class="close-button" data-action="saveBrowserClose">×</button></header><div class="save-slot-grid"></div><footer><span>Autosave runs every 60 seconds while a world is attached to a slot.</span><span>5 LOCAL SLOTS</span></footer></div></div>
+      <div class="confirm-overlay new-game-confirm" hidden><div class="confirm-card"><span class="eyebrow">SAVE SLOT</span><h2 data-i18n="newGameWarning">OVERWRITE THIS WORLD?</h2><p class="overwrite-slot-copy">The selected save slot will be permanently replaced.</p><div><button class="danger-button" data-action="confirmNew" data-i18n="newGameConfirm">START NEW WORLD</button><button data-action="cancelNew" data-i18n="cancel">CANCEL</button></div></div></div>
+      <div class="confirm-overlay delete-slot-confirm" hidden><div class="confirm-card"><span class="eyebrow">LOCAL SAVE</span><h2>DELETE SAVE SLOT?</h2><p class="delete-slot-copy">This world will be removed from this browser.</p><div><button class="danger-button" data-action="deleteSlotConfirm" data-i18n="deleteSave">DELETE SAVE</button><button data-action="deleteSlotCancel" data-i18n="cancel">CANCEL</button></div></div></div>
 
       <section class="screen dead-screen modal-screen" data-view="dead" aria-label="Death screen"><div class="modal-content"><div class="eyebrow">THE ISLAND REMAINS</div><h2>WASHED<br>AWAY<span>.</span></h2><p>Every shore is another beginning.</p><button class="primary-button" data-action="respawn">RESPAWN ${chevron}</button><button class="text-button" data-action="menu">RETURN TO MAIN MENU</button></div></section>
 
@@ -127,6 +133,7 @@ export class UI {
     if(screen!==this.screen)this.endDrag();
     this.screen = screen;
     this.root.dataset.screen = screen;
+    this.closeSaveBrowser();
     this.find('.help-panel').hidden = true;
     this.find('.reset-confirm').hidden = true;
     if (screen === 'inventory' && this.state) { this.inventoryHash = ''; this.renderInventory(this.state); }
@@ -134,7 +141,7 @@ export class UI {
 
   setSettings(settings: Settings): void {
     this.settings={...settings,keybinds:{...settings.keybinds}};
-    for (const name of ['sensitivityX','sensitivityY','fov','viewmodelFov','masterVolume','musicVolume','effectsVolume','ambientVolume','renderScale','crosshairOpacity'] as const) {
+    for (const name of ['sensitivityX','sensitivityY','fov','viewmodelFov','masterVolume','musicVolume','effectsVolume','ambientVolume','renderScale','crosshairOpacity','crosshairScale','hudScale','hudOpacity','brightness'] as const) {
       const input=this.root.querySelector<HTMLInputElement>(`input[data-setting="${name}"]`);if(!input)continue;
       input.value=String(settings[name]);const output=this.root.querySelector<HTMLElement>(`[data-setting-value="${name}"]`);if(output)output.textContent=this.settingValue(name,settings[name]);
       input.style.setProperty('--range',`${(settings[name]-Number(input.min))/(Number(input.max)-Number(input.min))*100}%`);
@@ -143,13 +150,16 @@ export class UI {
     for(const name of ['invertY','headBob','cameraShake','motionBlur','shadows','showCompass'] as const)this.root.querySelectorAll<HTMLElement>(`[data-toggle="${name}"]`).forEach(button=>button.classList.toggle('active',String(settings[name])===button.dataset.value));
     this.root.querySelectorAll<HTMLElement>('[data-language]').forEach(button=>button.classList.toggle('active',button.dataset.language===settings.language));
     for(const [action,code] of Object.entries(settings.keybinds)) {const button=this.root.querySelector<HTMLButtonElement>(`[data-keybind="${action}"]`);if(button&&!button.classList.contains('rebinding'))button.textContent=keyLabel(code);}
-    this.root.classList.toggle('hide-compass',!settings.showCompass);this.root.style.setProperty('--crosshair-opacity',String(settings.crosshairOpacity));this.applyLanguage();
+    this.root.classList.toggle('hide-compass',!settings.showCompass);this.root.classList.toggle('hide-tutorials',!settings.showTutorialHints);this.root.style.setProperty('--crosshair-opacity',String(settings.crosshairOpacity));this.root.style.setProperty('--crosshair-scale',String(settings.crosshairScale));this.root.style.setProperty('--hud-scale',String(settings.hudScale));this.root.style.setProperty('--hud-opacity',String(settings.hudOpacity));const fps=this.root.querySelector<HTMLElement>('.fps-counter');if(fps)fps.hidden=!settings.showFps;this.applyLanguage();
   }
 
+  setSaveSlots(slots:SaveSlotSummary[]):void{this.saveSlots=slots.map(slot=>({...slot}));this.setSaveAvailable(this.saveSlots.some(slot=>slot.exists));this.renderSaveBrowser();}
   setSaveAvailable(available: boolean): void {
     this.saveAvailable=available;
     const continueButton=this.root.querySelector<HTMLButtonElement>('.continue-game'),loadButton=this.root.querySelector<HTMLButtonElement>('.load-game');if(continueButton)continueButton.disabled=!available;if(loadButton)loadButton.disabled=!available;
-    const meta=this.root.querySelector<HTMLElement>('.continue-meta');if(meta)meta.textContent=this.tx(available?'returnIsland':'noSave');
+    const latest=[...this.saveSlots].filter(slot=>slot.exists).sort((a,b)=>(b.savedAt??0)-(a.savedAt??0))[0];
+    const meta=this.root.querySelector<HTMLElement>('.continue-meta');if(meta)meta.textContent=latest?`SLOT ${latest.slot} · SEED ${latest.seed}`:this.tx('noSave');
+    const count=this.saveSlots.filter(slot=>slot.exists).length,countLabel=this.root.querySelector<HTMLElement>('.save-count'),footer=this.root.querySelector<HTMLElement>('.save-footer-status');if(countLabel)countLabel.textContent=`${count} / 5 SAVES`;if(footer)footer.textContent=count?`${count} LOCAL WORLD${count===1?'':'S'}`:'NO LOCAL WORLDS';
   }
 
   setLoading(loading: boolean): void { this.find('.loading-screen').hidden = !loading; if(loading)this.setLoadingProgress(0,'Preparing engine','Starting the world pipeline'); }
@@ -216,8 +226,9 @@ export class UI {
       const gameScreen=this.find('.game-screen');
       gameScreen.classList.toggle('targeted',Boolean(interaction));
       gameScreen.classList.toggle('building',Boolean(hud.build));
-      this.find('.tutorial-copy').textContent = hud.tutorial;
-      this.find('.onboarding').classList.toggle('empty',!hud.tutorial);
+      this.find('.tutorial-copy').textContent = this.settings.showTutorialHints?hud.tutorial:'';
+      this.find('.onboarding').classList.toggle('empty',!this.settings.showTutorialHints||!hud.tutorial);
+      const fpsCounter=this.root.querySelector<HTMLElement>('.fps-counter');if(fpsCounter&&this.settings.showFps)fpsCounter.textContent=`${Math.round(hud.fps)} FPS`;
       const buildHash = JSON.stringify(hud.build);
       if(buildHash !== this.buildHash) { this.buildHash = buildHash; this.renderBuild(hud); }
     }
@@ -332,6 +343,7 @@ export class UI {
     });
     this.root.addEventListener('click',event=>{
       const target=(event.target as HTMLElement).closest<HTMLElement>('button,a');if(!target||(target instanceof HTMLButtonElement&&target.disabled))return;event.preventDefault();
+      if(target.dataset.saveAction){this.handleSaveSlotAction(target.dataset.saveAction,Number(target.dataset.saveSlot));return;}
       if(target.dataset.action)this.handleAction(target.dataset.action);
       if(target.dataset.settingsTab)this.selectSettingsTab(target.dataset.settingsTab as typeof this.settingsTab);
       if(target.dataset.language)this.setLanguage(target.dataset.language==='cs'?'cs':'en');
@@ -341,10 +353,10 @@ export class UI {
       if(target.dataset.category){this.recipeCategory=target.dataset.category;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
       if(target.dataset.recipe){this.selectedRecipe=target.dataset.recipe;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
       if(target.dataset.piece)this.actions.selectPiece(target.dataset.piece as PieceType);
-      if(target.dataset.toggle){const name=target.dataset.toggle as 'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass';this.settings[name]=target.dataset.value==='true';this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
+      if(target.dataset.toggle){const name=target.dataset.toggle as 'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass'|'showFps'|'showTutorialHints';this.settings[name]=target.dataset.value==='true';this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
       if(target.dataset.dev)this.actions.dev(target.dataset.dev);
     });
-    this.root.addEventListener('input',event=>{const input=event.target as HTMLInputElement;const name=input.dataset.setting as 'sensitivityX'|'sensitivityY'|'fov'|'viewmodelFov'|'masterVolume'|'musicVolume'|'effectsVolume'|'ambientVolume'|'renderScale'|'crosshairOpacity'|undefined;if(!name)return;this.settings[name]=Number(input.value);this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);});
+    this.root.addEventListener('input',event=>{const input=event.target as HTMLInputElement;const name=input.dataset.setting as 'sensitivityX'|'sensitivityY'|'fov'|'viewmodelFov'|'masterVolume'|'musicVolume'|'effectsVolume'|'ambientVolume'|'renderScale'|'crosshairOpacity'|'crosshairScale'|'hudScale'|'hudOpacity'|'brightness'|undefined;if(!name)return;this.settings[name]=Number(input.value);this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);});
     this.root.addEventListener('dragstart',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(!slot||!this.state?.inventory[Number(slot.dataset.slot)])return;this.dragSlot=Number(slot.dataset.slot);this.dragSplit=event.shiftKey;event.dataTransfer?.setData('text/plain',String(this.dragSlot));if(event.dataTransfer)event.dataTransfer.effectAllowed='move';slot.classList.add('dragging');});
     this.root.addEventListener('dragover',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(slot&&this.dragSlot>=0){event.preventDefault();slot.classList.add('drag-over');}});
     this.root.addEventListener('dragleave',event=>(event.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.classList.remove('drag-over'));
@@ -369,11 +381,15 @@ export class UI {
   private handleAction(action:string):void {
     switch(action){
       case 'respawn':this.actions.respawn();break;
-      case 'play':{const panel=this.find<HTMLElement>('.play-panel');panel.hidden=!panel.hidden;break;}
-      case 'new':if(this.saveAvailable)this.find<HTMLElement>('.new-game-confirm').hidden=false;else this.startNewGame();break;
-      case 'confirmNew':this.find<HTMLElement>('.new-game-confirm').hidden=true;this.startNewGame();break;
-      case 'cancelNew':this.find<HTMLElement>('.new-game-confirm').hidden=true;break;
-      case 'continue':case 'load':this.actions.continueGame();break;
+      case 'play':case 'continue':{const latest=[...this.saveSlots].filter(slot=>slot.exists).sort((a,b)=>(b.savedAt??0)-(a.savedAt??0))[0];if(latest)this.actions.continueGame(latest.slot);break;}
+      case 'new':this.openSaveBrowser('new');break;
+      case 'load':this.openSaveBrowser('load');break;
+      case 'manageSaves':this.openSaveBrowser('manage');break;
+      case 'saveBrowserClose':this.closeSaveBrowser();break;
+      case 'confirmNew':{const slot=this.pendingSaveSlot;this.find<HTMLElement>('.new-game-confirm').hidden=true;this.pendingSaveSlot=null;if(slot!==null)this.startNewGame(slot);break;}
+      case 'cancelNew':this.find<HTMLElement>('.new-game-confirm').hidden=true;this.pendingSaveSlot=null;break;
+      case 'deleteSlotConfirm':{const slot=this.pendingDeleteSlot;this.find<HTMLElement>('.delete-slot-confirm').hidden=true;this.pendingDeleteSlot=null;if(slot!==null)this.actions.deleteSave(slot);break;}
+      case 'deleteSlotCancel':this.find<HTMLElement>('.delete-slot-confirm').hidden=true;this.pendingDeleteSlot=null;break;
       case 'settings':this.actions.setScreen('settings');break;
       case 'settingsBack':this.actions.setScreen(this.lastSettingsScreen);break;
       case 'resume':this.actions.resume();break;case 'save':this.actions.save();break;case 'menu':this.actions.mainMenu();break;
@@ -385,9 +401,24 @@ export class UI {
       case 'history':{const panel=this.find('.history-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.help-panel').hidden=true;break;}case 'help':{const panel=this.find('.help-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.history-panel').hidden=true;break;}
     }
   }
-  private startNewGame():void{const seedText=this.find<HTMLInputElement>('#world-seed').value.trim(),seed=seedText?Number(seedText):undefined;this.actions.newGame(seed!==undefined&&Number.isFinite(seed)?Math.floor(seed):undefined);}
+  private startNewGame(slot=1):void{const seedText=this.find<HTMLInputElement>('#world-seed').value.trim(),seed=seedText?Number(seedText):undefined;this.closeSaveBrowser();this.actions.newGame(seed!==undefined&&Number.isFinite(seed)?Math.floor(seed):undefined,slot);}
+  private openSaveBrowser(mode:'load'|'new'|'manage'):void{this.saveBrowserMode=mode;this.renderSaveBrowser();this.find<HTMLElement>('.save-browser').hidden=false;}
+  private closeSaveBrowser():void{const browser=this.root.querySelector<HTMLElement>('.save-browser');if(browser)browser.hidden=true;}
+  private handleSaveSlotAction(action:string,slot:number):void{
+    if(!Number.isInteger(slot)||slot<1||slot>5)return;const save=this.saveSlots.find(item=>item.slot===slot);
+    if(action==='load'&&save?.exists){this.closeSaveBrowser();this.actions.continueGame(slot);return;}
+    if(action==='new'){if(save?.exists){this.pendingSaveSlot=slot;this.find<HTMLElement>('.overwrite-slot-copy').textContent=this.settings.language==='cs'?`Slot ${slot} (seed ${save.seed}) bude trvale nahrazen novým světem.`:`Slot ${slot} (seed ${save.seed}) will be permanently replaced by the new world.`;this.find<HTMLElement>('.new-game-confirm').hidden=false;}else this.startNewGame(slot);return;}
+    if(action==='delete'&&save?.exists){this.pendingDeleteSlot=slot;this.find<HTMLElement>('.delete-slot-copy').textContent=this.settings.language==='cs'?`Slot ${slot} · seed ${save.seed} bude odstraněn z tohoto prohlížeče.`:`Slot ${slot} · seed ${save.seed} will be removed from this browser.`;this.find<HTMLElement>('.delete-slot-confirm').hidden=false;}
+  }
+  private renderSaveBrowser():void{
+    const grid=this.root.querySelector<HTMLElement>('.save-slot-grid');if(!grid)return;const cs=this.settings.language==='cs';
+    const title=this.root.querySelector<HTMLElement>('.save-browser-title'),subtitle=this.root.querySelector<HTMLElement>('.save-browser-subtitle');
+    if(title)title.textContent=this.saveBrowserMode==='new'?(cs?'NOVÝ SVĚT':'NEW WORLD'):this.saveBrowserMode==='manage'?(cs?'SPRÁVA ULOŽENÍ':'MANAGE SAVES'):(cs?'NAČÍST SVĚT':'LOAD WORLD');
+    if(subtitle)subtitle.textContent=this.saveBrowserMode==='new'?(cs?'Vyber slot. Obsazený slot bude před přepsáním vyžadovat potvrzení.':'Choose a slot. Occupied slots require confirmation before overwrite.'):this.saveBrowserMode==='manage'?(cs?'Jednotlivé světy můžeš bezpečně odstranit.':'Delete individual local worlds without touching the others.'):(cs?'Vyber svět, do kterého se chceš vrátit.':'Choose the world you want to continue.');
+    grid.innerHTML=this.saveSlots.map(save=>{const minutes=Math.max(0,Math.floor((save.elapsed??0)/60)),date=save.savedAt?new Date(save.savedAt).toLocaleString(cs?'cs-CZ':'en-GB',{dateStyle:'short',timeStyle:'short'}):'',status=save.exists?`${cs?'SEED':'SEED'} ${save.seed} · ${minutes} MIN`:(cs?'PRÁZDNÝ SLOT':'EMPTY SLOT');const action=this.saveBrowserMode==='new'?'new':'load';const actionLabel=this.saveBrowserMode==='new'?(save.exists?(cs?'PŘEPSAT':'OVERWRITE'):(cs?'VYTVOŘIT':'CREATE')):(cs?'NAČÍST':'LOAD');return `<article class="save-slot-card ${save.exists?'occupied':'empty'}"><header><span>SLOT ${save.slot}</span><i>${save.exists?(cs?'ULOŽENO':'SAVED'):(cs?'VOLNÝ':'FREE')}</i></header><div class="save-slot-body"><strong>${save.exists?`ISLAND ${esc(save.seed)}`:'—'}</strong><span>${status}</span>${save.exists?`<small>${date} · ${save.structures??0} ${cs?'STAVEB':'STRUCTURES'}</small>`:`<small>${cs?'Připraven pro nový svět.':'Ready for a new world.'}</small>`}</div><footer>${this.saveBrowserMode!=='manage'?`<button class="save-slot-primary" data-save-action="${action}" data-save-slot="${save.slot}" ${!save.exists&&this.saveBrowserMode==='load'?'disabled':''}>${actionLabel}${chevron}</button>`:''}${save.exists?`<button class="save-slot-delete" data-save-action="delete" data-save-slot="${save.slot}">${cs?'SMAZAT':'DELETE'}</button>`:''}</footer></article>`;}).join('');
+  }
   private tx(key:TranslationKey):string{return t(this.settings.language,key);}
-  private applyLanguage():void{if(!this.root)return;document.documentElement.lang=this.settings.language==='cs'?'cs':'en';this.root.dataset.language=this.settings.language;this.root.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el=>{const key=el.dataset.i18n as TranslationKey;if(key)el.textContent=this.tx(key);});this.root.querySelectorAll<HTMLElement>('[data-language]').forEach(button=>button.classList.toggle('active',button.dataset.language===this.settings.language));const h=this.root.querySelector<HTMLElement>('.vital.health div span'),w=this.root.querySelector<HTMLElement>('.vital.thirst div span'),f=this.root.querySelector<HTMLElement>('.vital.hunger div span'),st=this.root.querySelector<HTMLElement>('.stamina span');if(h)h.textContent=this.tx('health');if(w)w.textContent=this.tx('water');if(f)f.textContent=this.tx('food');if(st)st.textContent=this.tx('stamina');const wet=this.root.querySelector<HTMLElement>('.status-pill.wet'),cold=this.root.querySelector<HTMLElement>('.status-pill.cold');if(wet)wet.textContent=this.tx('wet');if(cold)cold.textContent=this.tx('cold');const caption=this.root.querySelector<HTMLElement>('.hotbar-caption');if(caption)caption.innerHTML=`<span><kbd>${keyLabel(this.settings.keybinds.inventory)}</kbd> ${this.tx('inventory')}</span><span><kbd>ESC</kbd> ${this.tx('menu')}</span>`;this.setSaveAvailable(this.saveAvailable);}
+  private applyLanguage():void{if(!this.root)return;document.documentElement.lang=this.settings.language==='cs'?'cs':'en';this.root.dataset.language=this.settings.language;this.root.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el=>{const key=el.dataset.i18n as TranslationKey;if(key)el.textContent=this.tx(key);});this.root.querySelectorAll<HTMLElement>('[data-language]').forEach(button=>button.classList.toggle('active',button.dataset.language===this.settings.language));const h=this.root.querySelector<HTMLElement>('.vital.health div span'),w=this.root.querySelector<HTMLElement>('.vital.thirst div span'),f=this.root.querySelector<HTMLElement>('.vital.hunger div span'),st=this.root.querySelector<HTMLElement>('.stamina span');if(h)h.textContent=this.tx('health');if(w)w.textContent=this.tx('water');if(f)f.textContent=this.tx('food');if(st)st.textContent=this.tx('stamina');const wet=this.root.querySelector<HTMLElement>('.status-pill.wet'),cold=this.root.querySelector<HTMLElement>('.status-pill.cold');if(wet)wet.textContent=this.tx('wet');if(cold)cold.textContent=this.tx('cold');const caption=this.root.querySelector<HTMLElement>('.hotbar-caption');if(caption)caption.innerHTML=`<span><kbd>${keyLabel(this.settings.keybinds.inventory)}</kbd> ${this.tx('inventory')}</span><span><kbd>ESC</kbd> ${this.tx('menu')}</span>`;this.setSaveAvailable(this.saveAvailable);this.renderSaveBrowser();}
   private setLanguage(language:Settings['language']):void{if(this.settings.language===language)return;this.settings.language=language;this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
   private selectSettingsTab(tab:typeof this.settingsTab):void{this.settingsTab=tab;this.root.querySelectorAll<HTMLElement>('[data-settings-tab]').forEach(button=>button.classList.toggle('active',button.dataset.settingsTab===tab));this.root.querySelectorAll<HTMLElement>('[data-settings-page]').forEach(page=>page.classList.toggle('active',page.dataset.settingsPage===tab));}
   private setPreset(quality:Settings['quality']):void{const presets={low:{renderScale:.7,shadows:false,motionBlur:false},medium:{renderScale:.85,shadows:true,motionBlur:false},high:{renderScale:1,shadows:true,motionBlur:false},ultra:{renderScale:1,shadows:true,motionBlur:true}} as const;Object.assign(this.settings,{quality,...presets[quality]});this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
@@ -396,8 +427,8 @@ export class UI {
   private keybindRows():string{const rows:[KeybindAction,TranslationKey][]=[['forward','forward'],['backward','backward'],['left','left'],['right','right'],['sprint','sprint'],['jump','jump'],['crouch','crouch'],['interact','interact'],['inventory','inventory'],['build','build'],['rotate','rotate'],['cycleBuild','cycleBuild'],['use','use'],['map','map'],['maintenance','maintenance'],['autoRun','autoRun'],['inspect','inspect']];return rows.map(([action,label])=>`<div class="keybind-row"><span data-i18n="${label}">${esc(this.tx(label))}</span><button data-keybind="${action}">${keyLabel(this.settings.keybinds[action])}</button></div>`).join('');}
   private interactionAction(action:string):string{const clean=action.toUpperCase();if(clean.startsWith('PICK UP'))return `${this.tx('pickUp')}${action.slice(7)}`;const map:Record<string,TranslationKey>={OPEN:'open',CLOSE:'close',AUTHORIZE:'authorize',USE:'useAction',GATHER:'gather','DRINK FRESH WATER':'drink'};return map[clean]?this.tx(map[clean]):action;}
   private slider(name:string,label:TranslationKey,detail:TranslationKey,min:number,max:number,step:number):string{return `<div class="setting-row"><label for="setting-${name}"><span data-i18n="${label}">${esc(this.tx(label))}</span><small data-i18n="${detail}">${esc(this.tx(detail))}</small></label><div class="setting-slider"><input id="setting-${name}" data-setting="${name}" type="range" min="${min}" max="${max}" step="${step}"><output data-setting-value="${name}"></output></div></div>`;}
-  private toggle(name:'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass',label:TranslationKey,detail:TranslationKey):string{return `<div class="setting-row toggle-row"><label><span data-i18n="${label}">${esc(this.tx(label))}</span><small data-i18n="${detail}">${esc(this.tx(detail))}</small></label><div class="toggle-options"><button data-toggle="${name}" data-value="false"><span data-i18n="off">OFF</span></button><button data-toggle="${name}" data-value="true"><span data-i18n="on">ON</span></button></div></div>`;}
-  private settingValue(name:string,value:number):string{if(name.includes('Volume')||name==='crosshairOpacity')return `${Math.round(value*100)}%`;if(name==='fov'||name==='viewmodelFov')return `${Math.round(value)}°`;if(name==='renderScale')return `${Math.round(value*100)}%`;if(name==='sensitivityX'||name==='sensitivityY')return `${value.toFixed(2)}×`;return `${value.toFixed(1)}×`;}
+  private toggle(name:'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass'|'showFps'|'showTutorialHints',label:TranslationKey,detail:TranslationKey):string{return `<div class="setting-row toggle-row"><label><span data-i18n="${label}">${esc(this.tx(label))}</span><small data-i18n="${detail}">${esc(this.tx(detail))}</small></label><div class="toggle-options"><button data-toggle="${name}" data-value="false"><span data-i18n="off">OFF</span></button><button data-toggle="${name}" data-value="true"><span data-i18n="on">ON</span></button></div></div>`;}
+  private settingValue(name:string,value:number):string{if(name.includes('Volume')||name==='crosshairOpacity'||name==='hudOpacity')return `${Math.round(value*100)}%`;if(name==='fov'||name==='viewmodelFov')return `${Math.round(value)}°`;if(name==='renderScale'||name==='hudScale'||name==='crosshairScale'||name==='brightness')return `${Math.round(value*100)}%`;if(name==='sensitivityX'||name==='sensitivityY')return `${value.toFixed(2)}×`;return `${value.toFixed(1)}×`;}
 
   private pieceIcon(piece: PieceType): string {const shapes:Record<PieceType,string>={foundation:'<path d="m3 12 9-5 9 5-9 5zM3 12v4l9 5 9-5v-4M12 17v4"/>',wall:'<path d="M5 4h14v17H5zM8 4v17M12 4v17M16 4v17"/>',doorway:'<path d="M4 3h16v18h-5V9H9v12H4z"/>',floor:'<path d="m3 12 9-6 9 6-9 6zM6 10l9 6M10 8l9 6"/>',roof:'<path d="m2 15 10-10 10 10M5 12v8h14v-8M12 5v15"/>',door:'<path d="M6 3h12v18H6zM15 12v2M9 3v18M4 21h16"/>'};return `<svg viewBox="0 0 24 24">${shapes[piece]}</svg>`;}
   private character(): string {return `<svg class="character-art" viewBox="0 0 240 470" aria-label="Survivor illustration"><defs><linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aaa492"/><stop offset="1" stop-color="#4e5249"/></linearGradient><linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#737a6d"/><stop offset="1" stop-color="#343d34"/></linearGradient></defs><ellipse cx="122" cy="450" rx="68" ry="9" fill="#0b1513" opacity=".45"/><g stroke="#2c342d" stroke-width="1.5"><path d="m99 80-3 19-28 16-14 44-16 78 9 11 13-12 15-65 10-12 1 89 65 2 7-88 10 20 13 57 13 13 10-9-17-94-15-29-35-19-2-26" fill="url(#skin)"/><path d="m87 237-4 72 5 49-1 66 23 4 9-66 4-48 5 48 7 66 23-3-1-70 2-41-9-76" fill="url(#cloth)"/><path d="m87 419-4 20-17 7v8h43l4-31m22 0 1 30h40l-1-9-19-10-2-15" fill="#3c4138"/><path d="m83 114 17-11 22 14 19-16 15 12-1 58-8 48-60-1-6-52z" fill="url(#cloth)"/><path d="m99 46 1-13 9-12 17-4 17 10 6 23-7 31-11 11-16-4-14-15z" fill="url(#skin)"/><path d="m99 47-2-10 5-13 13-8 18 2 11 11 4 16-9-5-8-14-11 9-20 7" fill="#393f36"/><path d="m110 56 8-2m13 0 8 2m-16 1-3 11 8 1m-12 8 15-1" fill="none"/><path d="m89 231 60 1 4 11-65 1z" fill="#80745b"/><path d="m110 231 17 1v14h-17z" fill="#303930"/><path d="m85 160 8 44m57-39-13 37m-48 97 24 2m19-2 22-1m-63 52 18 4m27-2 18-4" stroke="#959982" opacity=".35"/><path d="m46 238-4 9 2 16 7 5 7-9-1-17m127 1-1 18 8 10 7-4 3-15-7-13" fill="url(#skin)"/><path d="m96 100 17 10m15-1 16-10m-21 17 1 107" fill="none" opacity=".6"/></g><path d="M36 101h-9v306h9M207 101h9v306h-9" stroke="#c9cfb9" stroke-opacity=".15" fill="none"/><path d="M18 168h23M201 168h23M18 318h23M201 318h23" stroke="#c9cfb9" stroke-opacity=".15"/></svg>`;}

@@ -1,6 +1,6 @@
 import {validateStations} from '../survival/stations';
 import {normalizeFov} from '../camera/FirstPersonProjection';
-import type { GameState, ItemStack, PlayerStats, Settings, Structure, Vec3 } from '../core/types';
+import type { GameState, ItemStack, PlayerStats, SaveSlotSummary, Settings, Structure, Vec3 } from '../core/types';
 import { DEFAULT_KEYBINDS, DEFAULT_SETTINGS } from '../config/balance';
 import { BUILDING_RULES, INVENTORY, SAVE } from '../config/gameplay';
 import { ITEMS, isItemId } from '../items/definitions';
@@ -56,25 +56,59 @@ export function validateGameState(value: unknown): value is GameState {
   return true;
 }
 
-export function saveGame(state: GameState): boolean {
+interface SaveEnvelope {savedAt:number; state:GameState}
+const slotKey=(slot:number):string=>`${SAVE.GAME_KEY}:slot:${Math.max(1,Math.min(SAVE.SLOT_COUNT,Math.trunc(slot)))}`;
+function decodeSave(raw:string|null):SaveEnvelope|null {
+  if(!raw||raw.length>12_000_000)return null;
+  try {
+    const parsed:unknown=JSON.parse(raw);
+    if(validateGameState(parsed))return {savedAt:0,state:parsed};
+    if(record(parsed)&&finite(parsed.savedAt,0,Number.MAX_SAFE_INTEGER)&&validateGameState(parsed.state))return {savedAt:parsed.savedAt,state:parsed.state};
+  } catch { /* Invalid or partial browser storage entry. */ }
+  return null;
+}
+function migrateLegacySave():void {
+  try {
+    const legacy=localStorage.getItem(SAVE.GAME_KEY);if(!legacy)return;
+    if(Array.from({length:SAVE.SLOT_COUNT},(_,i)=>localStorage.getItem(slotKey(i+1))).some(Boolean))return;
+    const decoded=decodeSave(legacy);if(!decoded)return;
+    localStorage.setItem(slotKey(1),JSON.stringify({savedAt:decoded.savedAt||Date.now(),state:decoded.state} satisfies SaveEnvelope));
+    localStorage.removeItem(SAVE.GAME_KEY);
+  } catch { /* Storage can be unavailable in private sessions. */ }
+}
+export function saveGame(state: GameState, slot=1): boolean {
   try {
     if (!validateGameState(state)) return false;
-    localStorage.setItem(SAVE.GAME_KEY, JSON.stringify(state));
+    migrateLegacySave();
+    localStorage.setItem(slotKey(slot), JSON.stringify({savedAt:Date.now(),state} satisfies SaveEnvelope));
     return true;
   } catch { return false; }
 }
 
-export function loadGame(): GameState | null {
-  try {
-    const raw = localStorage.getItem(SAVE.GAME_KEY);
-    if (!raw || raw.length > 12_000_000) return null;
-    const parsed: unknown = JSON.parse(raw);
-    return validateGameState(parsed) ? parsed : null;
-  } catch { return null; }
+export function loadGame(slot=1): GameState | null {
+  try {migrateLegacySave();return decodeSave(localStorage.getItem(slotKey(slot)))?.state??null;} catch { return null; }
 }
 
-export function hasSave(): boolean { return loadGame() !== null; }
-export function resetSave(): void { try { localStorage.removeItem(SAVE.GAME_KEY); } catch { /* Storage can be unavailable in private sessions. */ } }
+export function listSaveSlots():SaveSlotSummary[] {
+  try {
+    migrateLegacySave();
+    return Array.from({length:SAVE.SLOT_COUNT},(_,index)=>{
+      const slot=index+1,decoded=decodeSave(localStorage.getItem(slotKey(slot)));
+      if(!decoded)return {slot,exists:false};
+      const state=decoded.state;
+      return {slot,exists:true,seed:state.seed,savedAt:decoded.savedAt,elapsed:state.elapsed,timeOfDay:state.timeOfDay,structures:state.structures.length,worldGeneration:state.worldGeneration};
+    });
+  } catch { return Array.from({length:SAVE.SLOT_COUNT},(_,index)=>({slot:index+1,exists:false})); }
+}
+export function latestSaveSlot():number|null {
+  const saves=listSaveSlots().filter(save=>save.exists);
+  if(!saves.length)return null;
+  saves.sort((a,b)=>(b.savedAt??0)-(a.savedAt??0)||a.slot-b.slot);
+  return saves[0]!.slot;
+}
+export function hasSave(slot?:number): boolean {return slot===undefined?listSaveSlots().some(save=>save.exists):loadGame(slot)!==null;}
+export function deleteSave(slot:number):void {try{migrateLegacySave();localStorage.removeItem(slotKey(slot));if(slot===1)localStorage.removeItem(SAVE.GAME_KEY);}catch{/* Storage can be unavailable. */}}
+export function resetSave(): void {try{localStorage.removeItem(SAVE.GAME_KEY);for(let slot=1;slot<=SAVE.SLOT_COUNT;slot++)localStorage.removeItem(slotKey(slot));}catch{/* Storage can be unavailable. */}}
 
 const defaultSettings=():Settings=>({...DEFAULT_SETTINGS,keybinds:{...DEFAULT_KEYBINDS}});
 function normalizeSettings(value: unknown): Settings {
@@ -104,7 +138,13 @@ function normalizeSettings(value: unknown): Settings {
     renderScale: finite(value.renderScale, 0.5, 1) ? value.renderScale : DEFAULT_SETTINGS.renderScale,
     shadows: typeof value.shadows === 'boolean' ? value.shadows : DEFAULT_SETTINGS.shadows,
     crosshairOpacity: finite(value.crosshairOpacity, 0, 1) ? value.crosshairOpacity : DEFAULT_SETTINGS.crosshairOpacity,
+    crosshairScale: finite(value.crosshairScale, 0.6, 2) ? value.crosshairScale : DEFAULT_SETTINGS.crosshairScale,
+    hudScale: finite(value.hudScale, 0.8, 1.45) ? value.hudScale : DEFAULT_SETTINGS.hudScale,
+    hudOpacity: finite(value.hudOpacity, 0.55, 1) ? value.hudOpacity : DEFAULT_SETTINGS.hudOpacity,
+    brightness: finite(value.brightness, 0.75, 1.35) ? value.brightness : DEFAULT_SETTINGS.brightness,
     showCompass: typeof value.showCompass === 'boolean' ? value.showCompass : DEFAULT_SETTINGS.showCompass,
+    showFps: typeof value.showFps === 'boolean' ? value.showFps : DEFAULT_SETTINGS.showFps,
+    showTutorialHints: typeof value.showTutorialHints === 'boolean' ? value.showTutorialHints : DEFAULT_SETTINGS.showTutorialHints,
     keybinds
   };
 }

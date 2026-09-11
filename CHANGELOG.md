@@ -1,5 +1,16 @@
 # Tideland changelog
 
+## 0.7.0 — 2026-09-11
+
+Classic menu, save-slot and interface settings overhaul.
+
+- Restored the original left-aligned Tideland menu style, modernized with clearer state/meta information instead of the large dashboard-like v0.3 panel.
+- Added five independent local save slots with seed, playtime, structure count and saved-time metadata.
+- Added load/new/manage save flows with per-slot overwrite and deletion confirmation.
+- Fixed deleted active saves being silently recreated by the 60-second autosave or main-menu transition.
+- Added HUD scale, HUD opacity, crosshair size, FPS counter and tutorial-hint controls.
+- Added world brightness/exposure control and kept all new interface preferences persistent per browser.
+
 ## 0.6.0 — 2026-09-11
 
 Environment graphics overhaul.

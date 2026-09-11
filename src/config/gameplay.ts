@@ -38,4 +38,4 @@ export const BUILDING_RULES = {
   HEALTH: 250,
 } as const;
 
-export const SAVE = { GAME_KEY: 'tideland:save:v1', SETTINGS_KEY: 'tideland:settings:v1', MAX_DROPS: 500, MAX_NODE_CHANGES: 50000 } as const;
+export const SAVE = { GAME_KEY: 'tideland:save:v1', SETTINGS_KEY: 'tideland:settings:v1', SLOT_COUNT: 5, MAX_DROPS: 500, MAX_NODE_CHANGES: 50000 } as const;

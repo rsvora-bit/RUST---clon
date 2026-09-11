@@ -24,7 +24,7 @@ import {findBuildCandidate,PIECES} from '../building/rules';
 import {InteractionSystem} from '../entities/InteractionSystem';
 import {WorldItems} from '../entities/WorldItems';
 import {DebugView} from '../diagnostics/DebugView';
-import {saveGame,loadGame,hasSave,resetSave,loadSettings,saveSettings} from '../save/storage';
+import {saveGame,loadGame,listSaveSlots,latestSaveSlot,deleteSave,resetSave,loadSettings,saveSettings} from '../save/storage';
 import {ITEMS} from '../items/definitions';
 import {GATHERING} from '../config/gameplay';
 import {PLAYER,WORLD,BUILD} from '../config/balance';
@@ -33,7 +33,7 @@ export class GameApp {
   readonly scene=new THREE.Scene();readonly camera=new THREE.PerspectiveCamera(60,1,.075,1700);private readonly projection=new FirstPersonProjection(this.camera);readonly renderer:THREE.WebGLRenderer;
   readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly gatheringFeedback:GatheringFeedback;readonly postFX:WorldPostFX;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
   environment!:Environment;physics!:PhysicsWorld;player!:PlayerController;simulation!:GameSimulation;structures!:StructureRenderer;worldItems!:WorldItems;debug:DebugView;
-  private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
+  private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private activeSaveSlot:number|null=null;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
   private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();
   private pendingHit:{node:ResourceNode;remaining:number;strike:GatherStrike}|null=null;
   private capturePaused=false;
@@ -48,7 +48,7 @@ export class GameApp {
     this.input=new Input(canvas);this.audio=new AudioMixer(this.settings);this.impactFx=new ImpactFX(this.scene);this.gatheringFeedback=new GatheringFeedback(this.scene);this.scene.add(this.torchLight);this.debug=new DebugView(this.scene);
     this.ui=new UI(uiRoot,{
       respawn:()=>this.respawn(),
-      newGame:seed=>{void this.start(seed??WORLD.SEED);},continueGame:()=>{const saved=loadGame();if(saved)void this.start(saved.seed,saved);else this.ui.notify('No valid save was found. Start a new island.');},resume:()=>this.setScreen('playing'),save:()=>this.save(),mainMenu:()=>{if(this.activeWorld)this.save();this.setScreen('menu');},resetSave:()=>{resetSave();this.ui.setSaveAvailable(false);this.ui.notify('Saved world removed');},settings:s=>this.applySettings(s),setScreen:s=>this.setScreen(s),
+      newGame:(seed,slot)=>{const target=slot??this.firstFreeSaveSlot();deleteSave(target);this.refreshSaveSlots();void this.start(seed??WORLD.SEED,undefined,target);},continueGame:slot=>{const target=slot??latestSaveSlot();const saved=target!==null?loadGame(target):null;if(saved&&target!==null)void this.start(saved.seed,saved,target);else this.ui.notify('No valid save was found. Start a new island.');},resume:()=>this.setScreen('playing'),save:()=>this.save(),mainMenu:()=>{if(this.activeWorld&&this.activeSaveSlot!==null)this.save(false,false);this.setScreen('menu');},resetSave:()=>{resetSave();this.activeSaveSlot=null;this.refreshSaveSlots();this.ui.notify('All saved worlds removed');},deleteSave:slot=>this.deleteSaveSlot(slot),settings:s=>this.applySettings(s),setScreen:s=>this.setScreen(s),
       moveItem:(from,to,split)=>{this.simulation.moveItem(from,to,split);this.syncHeld();},dropItem:slot=>{const p=this.dropPosition();this.simulation.dropItem(slot,p);this.syncWorldItems();this.syncHeld();},consume:slot=>{if(this.simulation.consume(slot))this.audio.play('eat');this.syncHeld();},craft:id=>{this.simulation.craft(id);},canCraft:id=>this.simulation?.canCraft(id)??false,selectSlot:slot=>{this.simulation.selectSlot(slot);this.syncHeld();},selectPiece:piece=>{this.buildPiece=piece;this.building=true;},dev:(a,v)=>this.dev(a,v)
     });
     this.stationUI=new StationUI(uiRoot,{move:(id,a,b,split)=>{const station=this.station(id);if(station&&!transfer(this.simulation.state.inventory,station,a,b,split,p=>this.simulation.fitsQueue(p)))this.ui.notify('Transfer blocked: slot type, capacity or reserved crafting space');},takeAll:id=>{const s=this.station(id);if(s)takeAll(this.simulation.state.inventory,s,p=>this.simulation.fitsQueue(p));},toggle:id=>{const s=this.station(id);if(s)s.active=!s.active;},spawn:id=>{ensureProgression(this.simulation.state).spawnId=id;this.ui.notify('Respawn point set');},close:()=>{this.stationUI.close();this.openStation=null;this.setScreen('playing');}});
@@ -59,8 +59,8 @@ export class GameApp {
     this.input.onLockChange=locked=>{if(!locked){this.leftDown=false;if(this.screen==='playing'&&!this.loading)this.setScreen('pause');}};
     window.addEventListener('mouseup',()=>this.leftDown=false);window.addEventListener('resize',()=>this.resize());document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.screen==='playing')this.setScreen('pause');});
     canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();this.setScreen('pause');this.ui.notify('Graphics context interrupted. Restoring…');});canvas.addEventListener('webglcontextrestored',()=>{this.applySettings(this.settings);this.ui.notify('Graphics restored. Resume when ready.');});
-    window.addEventListener('beforeunload',()=>{if(this.activeWorld&&this.simulation.state.player.stats.health>0)saveGame(this.simulation.state);});
-    this.ui.setSettings(this.settings);this.ui.setSaveAvailable(hasSave());this.ui.setLoading(true);this.projection.setBaseFov(this.settings.fov);this.resize();
+    window.addEventListener('beforeunload',()=>{if(this.activeWorld&&this.activeSaveSlot!==null&&this.simulation.state.player.stats.health>0)saveGame(this.simulation.state,this.activeSaveSlot);});
+    this.ui.setSettings(this.settings);this.refreshSaveSlots();this.ui.setLoading(true);this.projection.setBaseFov(this.settings.fov);this.resize();
   }
   async init(){this.ui.setLoading(true);await this.loadingStage(3,'Bootstrapping renderer','Creating the WebGL pipeline and interface');await this.loadingStage(8,'Starting physics engine','Loading Rapier and preparing collision workers');await initPhysics();await this.loadingStage(13,'Preparing preview island','Generating a ready-to-play world behind the main menu');await this.makeWorld(WORLD.SEED);await this.warmUpWorld();this.activeWorld=false;this.ui.setLoading(false);this.setScreen('menu');this.installDevAPI();this.renderer.setAnimationLoop(t=>this.frame(t));}
   private async makeWorld(seed:number,saved?:GameState){
@@ -87,9 +87,9 @@ export class GameApp {
     this.registerNodes();this.createWaterSource();this.syncStructures();this.syncWorldItems();this.syncHeld();this.applySettings(this.settings);this.player.tick(1/60,this.simulation.state,false);this.accumulator=0;this.autoSave=0;this.building=false;this.candidate=null;
     await this.loadingStage(89,'Finalizing gameplay systems','Syncing structures, held items, saves and the first simulation frame');
   }
-  private async start(seed:number,saved?:GameState){
+  private async start(seed:number,saved?:GameState,slot=1){
     if(this.loading)return;this.loading=true;this.ui.setLoading(true);void this.audio.start();void this.input.lock();
-    try {await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const normalized=Number.isFinite(seed)?Math.trunc(seed):WORLD.SEED,prepared=!saved&&!this.activeWorld&&this.environment?.seed===normalized;if(prepared)await this.loadingStage(82,'Using prepared island','The menu preview already contains this seed, so the world can be reused');else await this.makeWorld(normalized,saved);await this.warmUpWorld();this.activeWorld=true;this.screen='playing';this.ui.setScreen('playing');this.ui.notify(saved?'Welcome back to your island.':'Washed ashore. Everything begins here.');}
+    try {await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const normalized=Number.isFinite(seed)?Math.trunc(seed):WORLD.SEED,prepared=!saved&&!this.activeWorld&&this.environment?.seed===normalized;if(prepared)await this.loadingStage(82,'Using prepared island','The menu preview already contains this seed, so the world can be reused');else await this.makeWorld(normalized,saved);await this.warmUpWorld();this.activeWorld=true;this.activeSaveSlot=slot;this.refreshSaveSlots();this.screen='playing';this.ui.setScreen('playing');this.ui.notify(saved?`Welcome back · save slot ${slot}.`:`Washed ashore · save slot ${slot}.`);}
     catch(error){console.error(error);this.ui.notify('The island could not be created. Reload to try again.');this.setScreen('menu');}
     finally{this.loading=false;this.ui.setLoading(false);}
   }
@@ -107,7 +107,7 @@ export class GameApp {
     this.ui.setLoadingProgress(100,'Ready','Renderer warm-up complete · entering the island with clean FPS timing');
     await new Promise<void>(resolve=>setTimeout(resolve,120));
   }
-  private setScreen(screen:Screen){if(screen==='playing'&&!this.activeWorld)return;this.screen=screen;this.ui.setScreen(screen);this.input.keys.clear();this.leftDown=false;if(screen==='playing'){void this.audio.start();void this.input.lock();}else{this.input.release();this.structures?.preview(null);}this.ui.setSaveAvailable(hasSave());}
+  private setScreen(screen:Screen){if(screen==='playing'&&!this.activeWorld)return;this.screen=screen;this.ui.setScreen(screen);this.input.keys.clear();this.leftDown=false;if(screen==='playing'){void this.audio.start();void this.input.lock();}else{this.input.release();this.structures?.preview(null);}this.refreshSaveSlots();}
   private onKey(code:string){
     const keys=this.settings.keybinds;
     if((code===keys.map||code==='Escape')&&this.islandMap?.isOpen){this.islandMap.close();this.setScreen('playing');return;}
@@ -239,7 +239,7 @@ export class GameApp {
       if(this.simulation.state.player.position.y<-9){this.player.teleport(this.environment.spawn);this.ui.notify('The current carried you back to shore');}
       if(this.simulation.state.player.stats.health<=0)this.setScreen('dead');
       this.player.renderCamera(this.accumulator/(1/60));
-      this.autoSave+=dt;if(this.autoSave>60){this.save(false);this.autoSave=0;}
+      this.autoSave+=dt;if(this.autoSave>60){if(this.activeSaveSlot!==null)this.save(false,false);this.autoSave=0;}
       if(playing){this.updateBuild();this.interactions.update(this.camera,PLAYER.INTERACT_DISTANCE,[this.groundMesh,...this.structures.objects.values()].filter(o=>o!==this.interactions.current?.object));if(this.leftDown&&!this.building&&this.interactions.current?.kind==='resource'&&this.cooldown<=0)this.use();}
       else this.structures.preview(null);
       this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching);
@@ -260,8 +260,11 @@ export class GameApp {
       this.ui.update(hud,state);
     }
   }
-  private save(notify=true){if(!this.activeWorld)return;const success=saveGame(this.simulation.state);if(notify)this.ui.notify(success?'World saved. Your progress is safe.':'Storage is full or unavailable. Save could not be written.');this.ui.setSaveAvailable(hasSave());}
-  private applySettings(s:Settings){this.settings={...s,keybinds:{...s.keybinds}};this.projection.setBaseFov(s.fov);saveSettings(s);this.ui?.setSettings(s);this.audio?.setSettings(s);this.player?.setSettings(s);this.held.setFov(s.viewmodelFov);const qualityDpr=s.quality==='low'?1:s.quality==='medium'?Math.min(devicePixelRatio,1.25):s.quality==='high'?Math.min(devicePixelRatio,1.6):Math.min(devicePixelRatio,2);this.renderer.setPixelRatio(Math.max(.5,qualityDpr*s.renderScale));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low';this.postFX.setQuality(s.quality);this.environment?.setQuality(s.quality);this.resize();}
+  private refreshSaveSlots(){this.ui?.setSaveSlots(listSaveSlots());}
+  private firstFreeSaveSlot(){return listSaveSlots().find(save=>!save.exists)?.slot??1;}
+  private deleteSaveSlot(slot:number){deleteSave(slot);if(this.activeSaveSlot===slot)this.activeSaveSlot=null;this.refreshSaveSlots();this.ui.notify(`Save slot ${slot} deleted${this.activeWorld&&this.activeSaveSlot===null?' · autosave disabled for this session':''}.`);}
+  private save(notify=true,allowCreate=true){if(!this.activeWorld)return;if(this.activeSaveSlot===null){if(!allowCreate)return;this.activeSaveSlot=this.firstFreeSaveSlot();}const success=saveGame(this.simulation.state,this.activeSaveSlot);if(notify)this.ui.notify(success?`World saved to slot ${this.activeSaveSlot}.`:'Storage is full or unavailable. Save could not be written.');this.refreshSaveSlots();}
+  private applySettings(s:Settings){this.settings={...s,keybinds:{...s.keybinds}};this.projection.setBaseFov(s.fov);this.renderer.toneMappingExposure=s.brightness;saveSettings(s);this.ui?.setSettings(s);this.audio?.setSettings(s);this.player?.setSettings(s);this.held.setFov(s.viewmodelFov);const qualityDpr=s.quality==='low'?1:s.quality==='medium'?Math.min(devicePixelRatio,1.25):s.quality==='high'?Math.min(devicePixelRatio,1.6):Math.min(devicePixelRatio,2);this.renderer.setPixelRatio(Math.max(.5,qualityDpr*s.renderScale));this.renderer.shadowMap.enabled=s.shadows&&s.quality!=='low';this.postFX.setQuality(s.quality);this.environment?.setQuality(s.quality);this.resize();}
   private resize(){const w=window.innerWidth,h=window.innerHeight;this.projection.resize(w/Math.max(1,h));this.renderer.setSize(w,h,false);this.postFX.resize(w,h,this.renderer.getPixelRatio());this.held.resize(w,h);}
   private dev(action:string,value?:number){if(!this.simulation)return;if(action==='resources'){for(const id of ['wood','stone','fiber','metal','berries'] as ItemId[])this.simulation.addItem(id,id==='berries'?30:2000);this.ui.notify('Development resources added');}if(action==='plan'){this.simulation.addItem('plan',1);this.ui.notify('Development building plan added');this.syncHeld();}if(action==='spawn')this.player.teleport(this.environment.spawn);if(action==='day')this.simulation.state.timeOfDay=10;if(action==='night')this.simulation.state.timeOfDay=0;if(action==='speed')this.timeMultiplier=20;if(action==='normal')this.timeMultiplier=1;if(action==='time'&&value!==undefined)this.simulation.state.timeOfDay=value;if(action==='collisions')this.debug.collisions=!this.debug.collisions;if(action==='sockets')this.debug.sockets=!this.debug.sockets;}
   private installDevAPI(){
