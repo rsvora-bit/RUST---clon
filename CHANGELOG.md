@@ -1,5 +1,17 @@
 # Tideland changelog
 
+## 0.2.4 — 2026-09-11
+
+Survival HUD overhaul.
+
+- Reworked health, water and food into compact survival-game status panels with warning/critical states.
+- Rebuilt the quick belt with a stronger selected slot, cleaner numbering and condition strips for tools.
+- Made interaction prompts action-first and added gathering hit feedback at the reticle.
+- Added damage/low-health screen feedback plus contextual Wet and Cold indicators.
+- Added a live gameplay crafting queue with progress and remaining time.
+- Resource gains now use icon-based pickup notifications instead of generic text-only messages.
+- Unified HUD typography, panel opacity, spacing and responsive layout while leaving developer telemetry behind F3.
+
 ## 0.2.3 — 2026-09-11
 
 World startup and harvesting polish.

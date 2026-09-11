@@ -1,9 +1,19 @@
-export const GAME_VERSION='0.2.3';
-export const GAME_BUILD='EA-02.3';
+export const GAME_VERSION='0.2.4';
+export const GAME_BUILD='EA-02.4';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.2.4',date:'2026-09-11',title:'Survival HUD overhaul',changes:[
+    'Rebuilt the live vitals HUD into compact health, water and food panels with warning and critical states.',
+    'Reworked the quick belt with a stronger active slot, cleaner numbering and tool-condition strips.',
+    'Reframed world interactions around the action itself, with compact key prompts and progress feedback.',
+    'Added center-screen resource hit feedback driven by real gathering results and depleted-node events.',
+    'Added damage vignette, persistent low-health pressure and contextual wet/cold environment indicators.',
+    'Added a live crafting queue to the gameplay HUD with item icons, timers and progress bars.',
+    'Converted resource notifications into compact icon-based pickup toasts.',
+    'Unified HUD spacing, typography, translucency and responsive behaviour for a more game-like presentation.'
+  ]},
   {version:'0.2.3',date:'2026-09-11',title:'World startup & harvesting polish',changes:[
     'Split procedural world population into visible loading phases that yield between expensive generation steps.',
     'Expanded the loading screen with six pipeline phases, live task detail and GPU warm-up status.',
