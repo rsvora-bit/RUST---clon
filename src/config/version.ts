@@ -1,9 +1,17 @@
-export const GAME_VERSION='0.6.0';
-export const GAME_BUILD='EA-06';
+export const GAME_VERSION='0.7.0';
+export const GAME_BUILD='EA-07';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.0',date:'2026-09-11',title:'Classic menu, save slots & HUD settings',changes:[
+    'Restored the original left-aligned Tideland menu language with a cleaner modern survival-game presentation.',
+    'Added five independent local world save slots with timestamps, seed/playtime metadata, loading and per-slot deletion.',
+    'Fixed deleted worlds being recreated by background autosave by detaching a deleted active slot from the live session.',
+    'Added a save manager and explicit confirmations for overwriting one slot or deleting all local worlds.',
+    'Added HUD scale and opacity controls plus crosshair size, optional FPS counter and tutorial-hint visibility.',
+    'Added world brightness/exposure control while preserving the existing graphics quality and render-scale system.'
+  ]},
   {version:'0.6.0',date:'2026-09-11',title:'Environment graphics overhaul',changes:[
     'Expanded terrain material blending with dedicated dirt, wet shoreline sand and stronger close-range procedural surface detail.',
     'Added more tree bark/canopy variation plus instanced ferns, fallen twigs, dry meadow tufts and terrain decals.',

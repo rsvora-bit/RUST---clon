@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.6.0%20%7C%20EA--06-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.0%20%7C%20EA--07-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.6.0 / EA-06` · **11 September 2026**
+**Current release:** `v0.7.0 / EA-07` · **11 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -86,7 +86,9 @@ The main idea is simple:
 - Configurable FOV and viewmodel FOV
 - Frame-rate independent mouse look, separate X/Y sensitivity, auto-run, invert Y and head bob settings
 - Speed- and surface-aware footsteps
-- Render scale, shadows, compass and crosshair settings
+- Five local save slots with per-slot load/delete management
+- HUD scale/opacity, crosshair size, FPS counter and tutorial visibility settings
+- Render scale, brightness, shadows, compass and crosshair settings
 - Map, waypoints, diagnostics and developer telemetry
 
 ### 💾 Persistence
@@ -96,7 +98,7 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 
 ## 🚀 Current development focus
 
-**v0.6.x** is focused on environment rendering, atmosphere and scalable graphics quality.
+**v0.7.x** is focused on menu usability, multi-save persistence and player-configurable interface scale.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
