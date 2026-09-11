@@ -5,6 +5,7 @@ on:
     branches: [feature/menu-settings-i18n-v030]
     paths:
       - 'scripts/menu-v030.py'
+      - 'scripts/menu-v030-test-fixes.py'
       - '.github/workflows/tideland-menu-v030.yml'
   workflow_dispatch:
 
@@ -22,7 +23,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply menu/settings update
-        run: python3 scripts/menu-v030.py
+        run: |
+          python3 scripts/menu-v030.py
+          python3 scripts/menu-v030-test-fixes.py
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -62,11 +65,11 @@ jobs:
           await page.locator('[data-action="settings"]').first().click({force:true});
           await page.locator('[data-settings-tab="controls"]').click({force:true});
           if(!await page.locator('[data-settings-page="controls"]').evaluate(el=>el.classList.contains('active')))throw new Error('Controls tab did not activate');
-          const bind=page.locator('[data-keybind="forward"]');await bind.click({force:true});await bind.press('KeyP');
+          const bind=page.locator('[data-keybind="forward"]');await bind.click({force:true});await page.keyboard.press('KeyP');
           if((await bind.textContent())?.trim()!=='P')throw new Error('Keybind remap failed');
           await page.locator('[data-settings-tab="graphics"]').click({force:true});await page.locator('[data-preset="ultra"]').click({force:true});
           if(!await page.locator('[data-preset="ultra"]').evaluate(el=>el.classList.contains('active')))throw new Error('Ultra preset failed');
-          const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland-settings')||'{}'));
+          const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1')||'{}'));
           if(stored.language!=='cs'||stored.keybinds?.forward!=='KeyP'||stored.quality!=='ultra')throw new Error(`Settings persistence failed: ${JSON.stringify(stored)}`);
           if(errors.length)throw new Error(`Browser errors: ${errors.join(' | ')}`);await browser.close();
           EOF
@@ -87,7 +90,7 @@ jobs:
 
       - name: Commit validated release
         run: |
-          rm scripts/menu-v030.py .github/workflows/tideland-menu-v030.yml
+          rm scripts/menu-v030.py scripts/menu-v030-test-fixes.py .github/workflows/tideland-menu-v030.yml
           git config user.name 'Roman Svora'
           git config user.email 'roman.svora.ml@gmail.com'
           git add -A
