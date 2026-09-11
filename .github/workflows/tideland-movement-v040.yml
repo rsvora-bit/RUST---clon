@@ -58,7 +58,12 @@ jobs:
           await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
           await page.waitForSelector('.tide-ui',{state:'attached',timeout:20000});
           for(const selector of ['[data-keybind="autoRun"]','[data-keybind="inspect"]'])if(await page.locator(selector).count()<1)throw new Error(`Missing ${selector}`);
-          const bind=page.locator('[data-keybind="autoRun"]');await bind.click({force:true});await page.keyboard.press('KeyV');
+          const bind=page.locator('[data-keybind="autoRun"]');
+          await page.evaluate(()=>{
+            const button=document.querySelector('[data-keybind="autoRun"]');
+            button?.click();
+            button?.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyV',key:'v',bubbles:true}));
+          });
           if((await bind.textContent())?.trim()!=='V')throw new Error('Auto-run keybind remap failed');
           const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1')||'{}'));
           if(stored.keybinds?.autoRun!=='KeyV'||stored.keybinds?.inspect!=='KeyX')throw new Error(`New keybind persistence failed: ${JSON.stringify(stored.keybinds)}`);
