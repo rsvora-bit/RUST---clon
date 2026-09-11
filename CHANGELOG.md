@@ -1,5 +1,17 @@
 # Tideland changelog
 
+## 0.5.0 — 2026-09-11
+
+Gathering and weak-spot overhaul.
+
+- Added world-space tree hit marks, a red X weak spot and 50% bonus yield for accurate follow-up hits.
+- Added stone/metal sparkle weak spots using the same skill-hit loop.
+- Moved wood/stone/metal particles to the real impact point and increased material-specific burst readability.
+- Increased visible tree/resource hit reaction, especially on weak-spot strikes.
+- Extended final tree falls with a ground-rest phase plus procedural creak and crash audio.
+- Added distinct harvesting sounds for rock, hatchet and pickaxe.
+- Rebalanced harvestables around explicit per-tool resource gain on each hit.
+
 ## 0.4.0 — 2026-09-11
 
 Movement, camera feel and first-person animation overhaul.

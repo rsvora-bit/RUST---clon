@@ -71,7 +71,7 @@ export class GameSimulation {
     });
   }
 
-  gather(node: ResourceNode): { amount: number; depleted: boolean } {
+  gather(node: ResourceNode, weakSpot = false): { amount: number; depleted: boolean } {
     const rule = GATHERING[node.kind];
     if (!rule) return { amount: 0, depleted: false };
     const remaining = this.state.nodeChanges[node.id] ?? node.remaining;
@@ -81,7 +81,10 @@ export class GameSimulation {
       this.onNotify('Equip a rock, hatchet or pickaxe');
       return { amount: 0, depleted: false };
     }
-    const requested = Math.min(remaining, Math.round(rule.amount * (active === rule.preferredTool ? rule.toolMultiplier : 1)));
+    const toolYield=rule.toolYield?.[active as 'rock'|'hatchet'|'pickaxe'];
+    const base=toolYield ?? rule.amount * (active === rule.preferredTool ? rule.toolMultiplier : 1);
+    const bonus=weakSpot ? (rule.weakSpotMultiplier ?? 1) : 1;
+    const requested = Math.min(remaining, Math.max(1,Math.round(base*bonus)));
     const amount = requested - this.addItem(rule.itemId, requested);
     if (amount === 0) {
       this.onNotify('Inventory full');

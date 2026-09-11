@@ -29,13 +29,14 @@ export class ImpactFX {
 
   private random(){this.seed=(this.seed*1664525+1013904223)>>>0;return this.seed/4294967296;}
 
-  burst(position:Vec3,kind:'wood'|'stone'|'metal'|'fiber'|'berries'|'build'='stone'){
-    const palette:{[key:string]:number}={wood:0xb88a58,stone:0xc4c1ae,metal:0xc5a47b,fiber:0x9caf63,berries:0xb85155,build:0xd4b276};
-    const color=new THREE.Color(palette[kind]??palette.stone);const amount=kind==='build'?14:10;
+  burst(position:Vec3,kind:'wood'|'stone'|'metal'|'fiber'|'berries'|'build'='stone',strength=1){
+    const palette:{[key:string]:number}={wood:0xc7955d,stone:0xd7d3c4,metal:0xd6b171,fiber:0x9caf63,berries:0xb85155,build:0xd4b276};
+    const force=Math.max(.7,Math.min(1.7,strength));
+    const color=new THREE.Color(palette[kind]??palette.stone);const base=kind==='build'?14:kind==='wood'?15:kind==='metal'?14:kind==='stone'?13:10,amount=Math.round(base*force);
     for(let i=0;i<amount;i++){
       const index=this.next++%this.maxParticles,p=this.particles[index],angle=this.random()*Math.PI*2,rad=.35+this.random()*.65;
       p.life=p.max=.24+this.random()*.28;p.x=position.x+(this.random()-.5)*.18;p.y=position.y+.35+this.random()*.25;p.z=position.z+(this.random()-.5)*.18;
-      p.vx=Math.cos(angle)*rad*1.35;p.vz=Math.sin(angle)*rad*1.35;p.vy=.65+this.random()*1.65;p.size=kind==='build'?.08+this.random()*.055:.045+this.random()*.04;p.color.copy(color).offsetHSL((this.random()-.5)*.04,(this.random()-.5)*.08,(this.random()-.5)*.1);
+      p.vx=Math.cos(angle)*rad*1.35*force;p.vz=Math.sin(angle)*rad*1.35*force;p.vy=(.65+this.random()*1.65)*force;p.size=(kind==='build'?.08+this.random()*.055:.045+this.random()*.04)*(1+(force-1)*.35);p.color.copy(color).offsetHSL((this.random()-.5)*.04,(this.random()-.5)*.08,(this.random()-.5)*.1);
       this.write(index,p);
     }
     this.positionAttribute.needsUpdate=true;this.colorAttribute.needsUpdate=true;this.sizeAttribute.needsUpdate=true;

@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.4.0%20%7C%20EA--04-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.5.0%20%7C%20EA--05-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.4.0 / EA-04` · **11 September 2026**
+**Current release:** `v0.5.0 / EA-05` · **11 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -96,7 +96,7 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 
 ## 🚀 Current development focus
 
-**v0.4.x** is focused on first-person game feel, movement and viewmodel presentation.
+**v0.5.x** is focused on tactile gathering, weak spots and resource feedback.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -104,6 +104,8 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 - ✅ Auto-run plus survival-FPS crouch/sprint restrictions
 - ✅ Animated hands/tools with swing, recoil, sway, sprint pose and inspect
 - ✅ Speed- and surface-aware procedural footsteps
+- ✅ Tree X weak spots, rock sparkle targets and per-hit bonus yields
+- ✅ Tool-specific gathering audio and material impact particles
 - ✅ Detailed staged world loading and GPU warm-up
 - ✅ Expanded settings, localization and diagnostics
 - ✅ Automated CI validation and GitHub Pages deployment
@@ -226,6 +228,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.5.0` | Gathering weak spots, per-tool yields, particles and tree-fall audio |
 | `v0.4.0` | Movement feel, first-person hands and tool animations |
 | `v0.3.0` | Game menus, settings, remappable controls and EN/CZ localization |
 | `v0.2.4` | Survival HUD overhaul |
@@ -271,6 +274,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.4.0 / EA-04`
+`EARLY ACCESS DEVELOPMENT · v0.5.0 / EA-05`
 
 </div>

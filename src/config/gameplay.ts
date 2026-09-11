@@ -12,12 +12,13 @@ export const SURVIVAL = {
   START_HOUR: 9.4,
 } as const;
 
-export interface GatherRule { itemId: ItemId; amount: number; preferredTool?: ItemId; toolMultiplier: number; label: string }
+export type GatherTool='rock'|'hatchet'|'pickaxe';
+export interface GatherRule { itemId: ItemId; amount: number; preferredTool?: ItemId; toolMultiplier: number; weakSpotMultiplier?:number; toolYield?:Partial<Record<GatherTool,number>>; label: string }
 export const GATHERING: Record<ResourceNode['kind'], GatherRule> = {
-  tree: { itemId: 'wood', amount: 30, preferredTool: 'hatchet', toolMultiplier: 2.5, label: 'Tree' },
+  tree: { itemId: 'wood', amount: 18, preferredTool: 'hatchet', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:18,hatchet:42,pickaxe:12}, label: 'Tree' },
   wood: { itemId: 'wood', amount: 35, preferredTool: 'hatchet', toolMultiplier: 1, label: 'Driftwood' },
-  stone: { itemId: 'stone', amount: 24, preferredTool: 'pickaxe', toolMultiplier: 2.5, label: 'Stone deposit' },
-  metal: { itemId: 'ore', amount: 14, preferredTool: 'pickaxe', toolMultiplier: 2.5, label: 'Metal deposit' },
+  stone: { itemId: 'stone', amount: 14, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:14,hatchet:7,pickaxe:34}, label: 'Stone deposit' },
+  metal: { itemId: 'ore', amount: 8, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:8,hatchet:4,pickaxe:22}, label: 'Metal deposit' },
   fiber: { itemId: 'fiber', amount: 25, toolMultiplier: 1, label: 'Wild flax' },
   berries: { itemId: 'berries', amount: 4, toolMultiplier: 1, label: 'Berry bush' },
 };
