@@ -12,14 +12,15 @@ export class PlayerController {
   private previousEye=new THREE.Vector3();private currentEye=new THREE.Vector3();
   onStep:()=>void=()=>{};private stepDistance=0;
   constructor(readonly physics:PhysicsWorld,readonly camera:THREE.PerspectiveCamera,private input:Input,private settings:Settings,state:GameState){this.yaw=state.player.yaw;this.pitch=state.player.pitch;this.currentEye.set(state.player.position.x,state.player.position.y+PLAYER.EYE_HEIGHT,state.player.position.z);this.previousEye.copy(this.currentEye);this.renderCamera(1);}
-  look(dx:number,dy:number){const scale=0.0009*this.settings.sensitivity;this.yaw-=dx*scale;const ySign=this.settings.invertY?1:-1;this.pitch=THREE.MathUtils.clamp(this.pitch+dy*scale*ySign,-1.48,1.48);this.camera.rotation.order='YXZ';this.camera.rotation.set(this.pitch,this.yaw,0);}
+  look(dx:number,dy:number){const sx=0.0009*this.settings.sensitivityX,sy=0.0009*this.settings.sensitivityY;this.yaw-=dx*sx;const ySign=this.settings.invertY?1:-1;this.pitch=THREE.MathUtils.clamp(this.pitch+dy*sy*ySign,-1.48,1.48);this.camera.rotation.order='YXZ';this.camera.rotation.set(this.pitch,this.yaw,0);}
   jump(){this.jumpRequested=true;}
   setSettings(s:Settings){this.settings=s;this.headBob=s.headBob;}
   tick(dt:number,state:GameState,active:boolean){
-    const forward=active?Number(this.input.down('KeyW','ArrowUp'))-Number(this.input.down('KeyS','ArrowDown')):0;
-    const side=active?Number(this.input.down('KeyD','ArrowRight'))-Number(this.input.down('KeyA','ArrowLeft')):0;
-    const crouching=active&&this.input.down('ControlLeft','ControlRight','KeyC');
-    this.sprinting=active&&forward>0&&this.input.down('ShiftLeft','ShiftRight')&&state.player.stats.stamina>2&&!crouching;
+    const keys=this.settings.keybinds;
+    const forward=active?Number(this.input.down(keys.forward))-Number(this.input.down(keys.backward)):0;
+    const side=active?Number(this.input.down(keys.right))-Number(this.input.down(keys.left)):0;
+    const crouching=active&&this.input.down(keys.crouch);
+    this.sprinting=active&&forward>0&&this.input.down(keys.sprint)&&state.player.stats.stamina>2&&!crouching;
     const speed=crouching?PLAYER.CROUCH_SPEED:this.sprinting?PLAYER.SPRINT_SPEED:PLAYER.WALK_SPEED;
     // Camera and movement share the same yaw. Pitch only changes where the player looks, never ground movement.
     this.camera.rotation.order='YXZ';this.camera.rotation.set(this.pitch,this.yaw,0);
