@@ -1,7 +1,7 @@
 import {validateStations} from '../survival/stations';
 import {normalizeFov} from '../camera/FirstPersonProjection';
 import type { GameState, ItemStack, PlayerStats, Settings, Structure, Vec3 } from '../core/types';
-import { DEFAULT_SETTINGS } from '../config/balance';
+import { DEFAULT_KEYBINDS, DEFAULT_SETTINGS } from '../config/balance';
 import { BUILDING_RULES, INVENTORY, SAVE } from '../config/gameplay';
 import { ITEMS, isItemId } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
@@ -76,29 +76,44 @@ export function loadGame(): GameState | null {
 export function hasSave(): boolean { return loadGame() !== null; }
 export function resetSave(): void { try { localStorage.removeItem(SAVE.GAME_KEY); } catch { /* Storage can be unavailable in private sessions. */ } }
 
+const defaultSettings=():Settings=>({...DEFAULT_SETTINGS,keybinds:{...DEFAULT_KEYBINDS}});
 function normalizeSettings(value: unknown): Settings {
-  if (!record(value)) return { ...DEFAULT_SETTINGS };
+  if (!record(value)) return defaultSettings();
+  const legacySensitivity=finite(value.sensitivity,0.05,3)?value.sensitivity:1;
+  const source=record(value.keybinds)?value.keybinds:{};
+  const keybinds={...DEFAULT_KEYBINDS} as Settings['keybinds'];
+  for(const action of Object.keys(DEFAULT_KEYBINDS) as (keyof Settings['keybinds'])[]){
+    const code=source[action];
+    if(typeof code==='string'&&code.length>0&&code.length<=32)keybinds[action]=code;
+  }
   return {
-    sensitivity: finite(value.sensitivity, 0.05, 3) ? value.sensitivity : DEFAULT_SETTINGS.sensitivity,
+    language:value.language==='cs'?'cs':'en',
+    sensitivityX:finite(value.sensitivityX,0.05,3)?value.sensitivityX:legacySensitivity,
+    sensitivityY:finite(value.sensitivityY,0.05,3)?value.sensitivityY:legacySensitivity,
     fov: finite(value.fov, 55, 110) ? normalizeFov(value.fov) : DEFAULT_SETTINGS.fov,
     viewmodelFov: finite(value.viewmodelFov, 40, 75) ? value.viewmodelFov : DEFAULT_SETTINGS.viewmodelFov,
     invertY: typeof value.invertY === 'boolean' ? value.invertY : DEFAULT_SETTINGS.invertY,
     headBob: typeof value.headBob === 'boolean' ? value.headBob : DEFAULT_SETTINGS.headBob,
+    cameraShake: typeof value.cameraShake === 'boolean' ? value.cameraShake : DEFAULT_SETTINGS.cameraShake,
+    motionBlur: typeof value.motionBlur === 'boolean' ? value.motionBlur : DEFAULT_SETTINGS.motionBlur,
     masterVolume: finite(value.masterVolume, 0, 1) ? value.masterVolume : DEFAULT_SETTINGS.masterVolume,
+    musicVolume: finite(value.musicVolume, 0, 1) ? value.musicVolume : DEFAULT_SETTINGS.musicVolume,
     effectsVolume: finite(value.effectsVolume, 0, 1) ? value.effectsVolume : DEFAULT_SETTINGS.effectsVolume,
-    quality: value.quality === 'low' || value.quality === 'medium' || value.quality === 'high' ? value.quality : DEFAULT_SETTINGS.quality,
+    ambientVolume: finite(value.ambientVolume, 0, 1) ? value.ambientVolume : DEFAULT_SETTINGS.ambientVolume,
+    quality: ['low','medium','high','ultra'].includes(String(value.quality)) ? value.quality as Settings['quality'] : DEFAULT_SETTINGS.quality,
     renderScale: finite(value.renderScale, 0.5, 1) ? value.renderScale : DEFAULT_SETTINGS.renderScale,
     shadows: typeof value.shadows === 'boolean' ? value.shadows : DEFAULT_SETTINGS.shadows,
     crosshairOpacity: finite(value.crosshairOpacity, 0, 1) ? value.crosshairOpacity : DEFAULT_SETTINGS.crosshairOpacity,
     showCompass: typeof value.showCompass === 'boolean' ? value.showCompass : DEFAULT_SETTINGS.showCompass,
+    keybinds
   };
 }
 
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SAVE.SETTINGS_KEY);
-    return raw ? normalizeSettings(JSON.parse(raw)) : { ...DEFAULT_SETTINGS };
-  } catch { return { ...DEFAULT_SETTINGS }; }
+    return raw ? normalizeSettings(JSON.parse(raw)) : defaultSettings();
+  } catch { return defaultSettings(); }
 }
 
 export function saveSettings(settings: Settings): void {

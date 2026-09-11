@@ -1,11 +1,12 @@
 import {nearbyWorkbench} from '../survival/stations';
-import type { GameState, HUDData, ItemId, ItemStack, PieceType, ResourceNode, Screen, Settings, UIActions } from '../core/types';
+import type { GameState, HUDData, ItemId, ItemStack, KeybindAction, PieceType, ResourceNode, Screen, Settings, UIActions } from '../core/types';
 import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
 import { ITEMS } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import { PIECES } from '../building/rules';
+import {keyLabel,t,type TranslationKey} from './i18n';
 import './style.css';
 
 const esc = (value: unknown): string => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
@@ -19,7 +20,7 @@ export class UI {
   private root: HTMLDivElement;
   private actions: UIActions;
   private state: GameState | null = null;
-  private settings: Settings = {...DEFAULT_SETTINGS};
+  private settings: Settings = {...DEFAULT_SETTINGS,keybinds:{...DEFAULT_SETTINGS.keybinds}};
   private selectedSlot = 0;
   private selectedRecipe = 'hatchet';
   private recipeCategory = 'all';
@@ -34,6 +35,9 @@ export class UI {
   private lastHealth: number | null = null;
   private craftHudHash = '';
   private resourceFeedbackTimer = 0;
+  private saveAvailable=false;
+  private settingsTab:'gameplay'|'controls'|'graphics'|'audio'='gameplay';
+  private rebinding:KeybindAction|null=null;
 
   constructor(container: HTMLElement, actions: UIActions) {
     this.actions = actions;
@@ -41,13 +45,20 @@ export class UI {
     this.root.className = 'tide-ui';
     this.root.dataset.screen = 'menu';
     this.root.innerHTML = `
-      <section class="screen menu-screen" data-view="menu" aria-label="Main menu">
-        <header class="menu-masthead"><a class="brand-mark" href="#" aria-label="Tideland home">${mark}</a><span>AN OPEN WORLD<br>SURVIVAL EXPERIENCE</span><div class="edition"><i></i> EARLY ACCESS <b>02</b></div></header>
-        <div class="menu-content"><div class="eyebrow"><span></span> NOTHING GIVEN. EVERYTHING EARNED.</div><h1>TIDELAND<span class="title-period">.</span></h1><p class="menu-description">The tide brings you here.<br>What you make of it is yours.</p>
-        <nav class="main-nav" aria-label="Game actions"><button class="new-game menu-link" data-action="new"><span class="nav-index">01</span><strong>NEW GAME</strong>${chevron}</button><button class="menu-link continue-game" data-action="continue" disabled><span class="nav-index">02</span><strong>CONTINUE</strong><span class="menu-meta">NO SAVED WORLD</span>${chevron}</button><button class="menu-link" data-action="settings"><span class="nav-index">03</span><strong>SETTINGS</strong>${chevron}</button><button class="menu-link" data-action="history"><span class="nav-index">04</span><strong>HISTORY</strong><span class="menu-meta">v${GAME_VERSION}</span>${chevron}</button></nav>
-        <div class="seed-control"><label for="world-seed">WORLD SEED</label><input id="world-seed" type="text" inputmode="numeric" maxlength="10" placeholder="731942" aria-label="World seed"><span>PROCEDURAL ISLAND</span></div></div>
-        <div class="menu-location"><span class="location-line"></span><span>THE WESTERN SHORE<small>A new beginning awaits.</small></span><span class="coordinate">47° 36′ N<br>122° 20′ W</span></div>
-        <footer class="menu-footer"><span>INDEPENDENT SURVIVAL SANDBOX <i>/</i> VERSION ${GAME_VERSION} <i>/</i> ${GAME_BUILD}</span><button data-action="help" class="text-button">CONTROLS <span>↗</span></button><span class="local-save-status"><i></i> LOCAL WORLD · SOLO</span></footer>
+      <section class="screen menu-screen menu-v3" data-view="menu" aria-label="Main menu">
+        <div class="menu-v3-scrim"></div>
+        <header class="menu-v3-top"><div class="menu-v3-brand">${mark}<span>TIDELAND<small>EARLY ACCESS · ${GAME_BUILD}</small></span></div><div class="menu-language"><button data-language="en">EN</button><button data-language="cs">CZ</button></div></header>
+        <main class="menu-v3-panel"><div class="eyebrow"><span></span><b data-i18n="survivalExperience">OPEN WORLD SURVIVAL</b></div><h1>TIDELAND<span>.</span></h1><p class="menu-v3-tagline" data-i18n="menuTagline">Build, survive and make the island yours.</p>
+          <button class="hero-play" data-action="play"><span data-i18n="play">PLAY</span>${chevron}</button>
+          <div class="play-panel" hidden><div class="play-panel-head"><strong data-i18n="playGame">PLAY GAME</strong><small>LOCAL · SOLO</small></div>
+            <button class="play-choice" data-action="new"><span>01</span><strong data-i18n="newGame">NEW GAME</strong>${chevron}</button>
+            <button class="play-choice continue-game" data-action="continue" disabled><span>02</span><strong data-i18n="continue">CONTINUE</strong><small class="continue-meta" data-i18n="noSave">NO SAVED WORLD</small>${chevron}</button>
+            <button class="play-choice load-game" data-action="load" disabled><span>03</span><strong data-i18n="load">LOAD</strong><small data-i18n="localSave">LOCAL SAVE</small>${chevron}</button>
+            <div class="seed-control menu-v3-seed"><label for="world-seed" data-i18n="worldSeed">WORLD SEED</label><input id="world-seed" type="text" inputmode="numeric" maxlength="10" placeholder="731942" aria-label="World seed"><span data-i18n="proceduralIsland">PROCEDURAL ISLAND</span></div>
+          </div>
+          <nav class="menu-v3-secondary"><button data-action="settings"><span data-i18n="settings">SETTINGS</span></button><button data-action="history"><span data-i18n="history">HISTORY</span><small>v${GAME_VERSION}</small></button><button data-action="help"><span data-i18n="controls">CONTROLS</span></button></nav>
+        </main>
+        <footer class="menu-v3-footer"><span>v${GAME_VERSION} · ${GAME_BUILD}</span><span>LOCAL WORLD · SOLO</span></footer>
       </section>
 
       <section class="screen game-screen" data-view="playing" aria-label="Gameplay interface">
@@ -67,9 +78,34 @@ export class UI {
         <footer class="inventory-footer"><span>Everything you carry is a possibility.</span><span class="inventory-world-info"></span></footer>
       </section>
 
-      <section class="screen modal-screen pause-screen" data-view="pause" aria-label="Pause menu"><div class="modal-content"><div class="eyebrow">TAKE A BREATH</div><h2>PAUSED<span>.</span></h2><p>The island can wait.</p><nav class="pause-nav"><button class="primary-button" data-action="resume">RETURN TO WORLD ${chevron}</button><button data-action="save">SAVE WORLD <span>LOCAL SAVE</span></button><button data-action="settings">SETTINGS ${chevron}</button><button data-action="menu">MAIN MENU ${chevron}</button></nav><div class="pause-footnote"><i></i> Simulation paused</div></div></section>
+      <section class="screen modal-screen pause-screen pause-v3" data-view="pause" aria-label="Pause menu"><div class="pause-v3-panel"><div class="eyebrow">TIDELAND · ${GAME_BUILD}</div><h2 data-i18n="paused">PAUSED</h2><p data-i18n="pauseDesc">The island can wait.</p><nav class="pause-nav"><button class="primary-button" data-action="resume"><span data-i18n="returnWorld">RETURN TO WORLD</span>${chevron}</button><button data-action="save"><span data-i18n="saveWorld">SAVE WORLD</span><small data-i18n="localSave">LOCAL SAVE</small></button><button data-action="settings"><span data-i18n="settings">SETTINGS</span>${chevron}</button><button data-action="menu"><span data-i18n="mainMenu">MAIN MENU</span>${chevron}</button></nav><div class="pause-footnote"><i></i><span data-i18n="simulationPaused">Simulation paused</span></div></div></section>
 
-      <section class="screen settings-screen" data-view="settings" aria-label="Settings"><header class="overlay-header"><div class="small-brand">${mark}<span>TIDELAND</span><i>/</i><span class="muted">SETTINGS</span></div><button class="close-button" data-action="settingsBack">BACK <span>×</span></button></header><div class="settings-content"><div class="settings-intro"><div class="eyebrow">MAKE YOURSELF AT HOME</div><h2>LIVE<br>PREVIEW<span>.</span></h2><p>Changes apply immediately and save automatically.<br><small>BUILD v${GAME_VERSION} · ${GAME_BUILD}</small></p></div><div class="settings-controls"><h3>CONTROLS & CAMERA</h3>${this.slider('sensitivity','Mouse sensitivity <small>Buffered and normalized across high-DPI displays</small>',0.05,2.5,0.05)}${this.slider('fov','World field of view <small>Uses the current proven camera behaviour</small>',60,100,1)}${this.slider('viewmodelFov','Held-item field of view <small>Changes only hands and equipped tools</small>',40,75,1)}${this.toggle('invertY','Invert vertical look','Reverse mouse Y movement')}${this.toggle('headBob','Head bob','Subtle walking camera motion')}<div class="settings-actions"><button data-action="resetCamera">RESET CAMERA</button></div><h3>AUDIO</h3>${this.slider('masterVolume','Master volume',0,1,0.01)}${this.slider('effectsVolume','Effects volume',0,1,0.01)}<h3>GRAPHICS & HUD</h3><div class="setting-row quality-row"><label>Graphics quality<small>Vegetation and environment detail</small></label><div class="quality-options"><button data-quality="low">LOW</button><button data-quality="medium">MEDIUM</button><button data-quality="high">HIGH</button></div></div>${this.slider('renderScale','Render scale <small>Lower this first if FPS is low</small>',0.5,1,0.05)}${this.toggle('shadows','Dynamic shadows','Disable for a large GPU performance gain')}${this.slider('crosshairOpacity','Crosshair opacity',0,1,0.05)}${this.toggle('showCompass','Compass','Show the navigation strip at the top')}<h3>TROUBLESHOOTING</h3><div class="setting-row setting-buttons"><label>Local settings<small>Useful when two devices behave differently.</small></label><div><button data-action="resetSettings">RESET SETTINGS</button><button data-action="reloadBuild">RELOAD LATEST BUILD</button></div></div><div class="save-reset-row"><span>LOCAL SAVE DATA<small>Remove your saved island and progress.</small></span><button class="danger-button" data-action="reset">RESET SAVE</button></div><div class="reset-confirm" hidden><span>This permanently removes the saved world.</span><button data-action="resetConfirm">DELETE SAVE</button><button data-action="resetCancel">CANCEL</button></div></div></div></section>
+      <section class="screen settings-screen settings-v3" data-view="settings" aria-label="Settings">
+        <header class="overlay-header settings-v3-header"><div class="small-brand">${mark}<span>TIDELAND</span><i>/</i><span class="muted" data-i18n="settings">SETTINGS</span></div><button class="close-button" data-action="settingsBack"><span data-i18n="back">BACK</span> <b>×</b></button></header>
+        <div class="settings-v3-shell"><aside class="settings-sidebar"><div><span class="eyebrow">TIDELAND</span><h2 data-i18n="settingsTitle">GAME SETTINGS</h2><p data-i18n="settingsSubtitle">Changes apply immediately and save automatically.</p></div><nav><button class="active" data-settings-tab="gameplay"><span>01</span><b data-i18n="gameplay">GAMEPLAY</b></button><button data-settings-tab="controls"><span>02</span><b data-i18n="controls">CONTROLS</b></button><button data-settings-tab="graphics"><span>03</span><b data-i18n="graphics">GRAPHICS</b></button><button data-settings-tab="audio"><span>04</span><b data-i18n="audio">AUDIO</b></button></nav><small>v${GAME_VERSION} · ${GAME_BUILD}</small></aside>
+          <main class="settings-pages">
+            <section class="settings-page active" data-settings-page="gameplay"><div class="settings-page-title"><span>01</span><h3 data-i18n="gameplay">GAMEPLAY</h3></div>
+              <div class="setting-row toggle-row"><label><span data-i18n="language">LANGUAGE</span><small data-i18n="languageDetail">Switch the interface between English and Czech.</small></label><div class="language-options"><button data-language="en">EN</button><button data-language="cs">CZ</button></div></div>
+              ${this.slider('crosshairOpacity','crosshair','crosshairDetail',0,1,0.05)}${this.toggle('showCompass','compass','compassDetail')}
+              <div class="setting-row setting-buttons"><label><span data-i18n="localSettings">LOCAL SETTINGS</span><small data-i18n="localSettingsDetail">Reset device-specific controls and presentation.</small></label><div><button data-action="resetSettings" data-i18n="resetSettings">RESET SETTINGS</button><button data-action="reloadBuild" data-i18n="reloadBuild">RELOAD LATEST BUILD</button></div></div>
+              <div class="save-reset-row"><span><b data-i18n="localSaveData">LOCAL SAVE DATA</b><small data-i18n="localSaveDataDetail">Remove your saved island and progress.</small></span><button class="danger-button" data-action="reset" data-i18n="resetSave">RESET SAVE</button></div><div class="reset-confirm" hidden><span data-i18n="localSaveDataDetail">Remove your saved island and progress.</span><button data-action="resetConfirm" data-i18n="deleteSave">DELETE SAVE</button><button data-action="resetCancel" data-i18n="cancel">CANCEL</button></div>
+            </section>
+            <section class="settings-page" data-settings-page="controls"><div class="settings-page-title"><span>02</span><h3 data-i18n="controls">CONTROLS</h3></div>
+              ${this.slider('sensitivityX','sensitivityX','sensitivityXDetail',0.05,2.5,0.05)}${this.slider('sensitivityY','sensitivityY','sensitivityYDetail',0.05,2.5,0.05)}${this.toggle('invertY','invertY','invertYDetail')}${this.toggle('headBob','headBob','headBobDetail')}${this.toggle('cameraShake','cameraShake','cameraShakeDetail')}
+              <div class="settings-subheading"><span data-i18n="keybinds">KEY BINDINGS</span><small>CLICK A KEY TO REMAP</small></div><div class="keybind-grid">${this.keybindRows()}</div><div class="settings-actions"><button data-action="resetCamera" data-i18n="resetCamera">RESET CAMERA</button></div>
+            </section>
+            <section class="settings-page" data-settings-page="graphics"><div class="settings-page-title"><span>03</span><h3 data-i18n="graphics">GRAPHICS</h3></div>
+              <div class="setting-row quality-row"><label><span data-i18n="quality">GRAPHICS PRESET</span><small data-i18n="qualityDetail">One-click rendering quality profile.</small></label><div class="quality-options"><button data-preset="low" data-i18n="low">LOW</button><button data-preset="medium" data-i18n="medium">MEDIUM</button><button data-preset="high" data-i18n="high">HIGH</button><button data-preset="ultra" data-i18n="ultra">ULTRA</button></div></div>
+              ${this.slider('fov','fov','fovDetail',60,100,1)}${this.slider('viewmodelFov','viewmodelFov','viewmodelFovDetail',40,75,1)}${this.slider('renderScale','renderScale','renderScaleDetail',0.5,1,0.05)}${this.toggle('shadows','shadows','shadowsDetail')}${this.toggle('motionBlur','motionBlur','motionBlurDetail')}
+            </section>
+            <section class="settings-page" data-settings-page="audio"><div class="settings-page-title"><span>04</span><h3 data-i18n="audio">AUDIO</h3></div>
+              ${this.slider('masterVolume','masterVolume','masterVolumeDetail',0,1,0.01)}${this.slider('musicVolume','musicVolume','musicVolumeDetail',0,1,0.01)}${this.slider('effectsVolume','effectsVolume','effectsVolumeDetail',0,1,0.01)}${this.slider('ambientVolume','ambientVolume','ambientVolumeDetail',0,1,0.01)}
+            </section>
+          </main>
+        </div>
+      </section>
+
+      <div class="confirm-overlay new-game-confirm" hidden><div class="confirm-card"><span class="eyebrow">LOCAL SAVE</span><h2 data-i18n="newGameWarning">START A NEW WORLD?</h2><p data-i18n="newGameWarningDetail">Your current local world will be replaced the next time the new world is saved.</p><div><button class="danger-button" data-action="confirmNew" data-i18n="newGameConfirm">START NEW WORLD</button><button data-action="cancelNew" data-i18n="cancel">CANCEL</button></div></div></div>
 
       <section class="screen dead-screen modal-screen" data-view="dead" aria-label="Death screen"><div class="modal-content"><div class="eyebrow">THE ISLAND REMAINS</div><h2>WASHED<br>AWAY<span>.</span></h2><p>Every shore is another beginning.</p><button class="primary-button" data-action="respawn">RESPAWN ${chevron}</button><button class="text-button" data-action="menu">RETURN TO MAIN MENU</button></div></section>
 
@@ -81,6 +117,7 @@ export class UI {
     container.append(this.root);
     this.bindEvents();
     this.setSettings(this.settings);
+    this.applyLanguage();
   }
 
   private find<T extends HTMLElement = HTMLElement>(selector: string): T { return this.root.querySelector<T>(selector)!; }
@@ -96,22 +133,23 @@ export class UI {
   }
 
   setSettings(settings: Settings): void {
-    this.settings = {...settings};
-    for (const name of ['sensitivity','fov','viewmodelFov','masterVolume','effectsVolume','renderScale','crosshairOpacity'] as const) {
-      const input = this.find<HTMLInputElement>(`input[data-setting="${name}"]`);
-      input.value = String(settings[name]);
-      this.find(`[data-setting-value="${name}"]`).textContent = this.settingValue(name, settings[name]);
-      input.style.setProperty('--range',`${(settings[name] - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100}%`);
+    this.settings={...settings,keybinds:{...settings.keybinds}};
+    for (const name of ['sensitivityX','sensitivityY','fov','viewmodelFov','masterVolume','musicVolume','effectsVolume','ambientVolume','renderScale','crosshairOpacity'] as const) {
+      const input=this.root.querySelector<HTMLInputElement>(`input[data-setting="${name}"]`);if(!input)continue;
+      input.value=String(settings[name]);const output=this.root.querySelector<HTMLElement>(`[data-setting-value="${name}"]`);if(output)output.textContent=this.settingValue(name,settings[name]);
+      input.style.setProperty('--range',`${(settings[name]-Number(input.min))/(Number(input.max)-Number(input.min))*100}%`);
     }
-    this.root.querySelectorAll<HTMLElement>('[data-quality]').forEach(button => button.classList.toggle('active',button.dataset.quality === settings.quality));
-    for(const name of ['invertY','headBob','shadows','showCompass'] as const)this.root.querySelectorAll<HTMLElement>(`[data-toggle="${name}"]`).forEach(button=>button.classList.toggle('active',String(settings[name])===button.dataset.value));
-    this.root.classList.toggle('hide-compass',!settings.showCompass);
-    this.root.style.setProperty('--crosshair-opacity',String(settings.crosshairOpacity));
+    this.root.querySelectorAll<HTMLElement>('[data-preset]').forEach(button=>button.classList.toggle('active',button.dataset.preset===settings.quality));
+    for(const name of ['invertY','headBob','cameraShake','motionBlur','shadows','showCompass'] as const)this.root.querySelectorAll<HTMLElement>(`[data-toggle="${name}"]`).forEach(button=>button.classList.toggle('active',String(settings[name])===button.dataset.value));
+    this.root.querySelectorAll<HTMLElement>('[data-language]').forEach(button=>button.classList.toggle('active',button.dataset.language===settings.language));
+    for(const [action,code] of Object.entries(settings.keybinds)) {const button=this.root.querySelector<HTMLButtonElement>(`[data-keybind="${action}"]`);if(button&&!button.classList.contains('rebinding'))button.textContent=keyLabel(code);}
+    this.root.classList.toggle('hide-compass',!settings.showCompass);this.root.style.setProperty('--crosshair-opacity',String(settings.crosshairOpacity));this.applyLanguage();
   }
 
   setSaveAvailable(available: boolean): void {
-    this.find<HTMLButtonElement>('.continue-game').disabled = !available;
-    this.find('.menu-meta').textContent = available ? 'RETURN TO YOUR ISLAND' : 'NO SAVED WORLD';
+    this.saveAvailable=available;
+    const continueButton=this.root.querySelector<HTMLButtonElement>('.continue-game'),loadButton=this.root.querySelector<HTMLButtonElement>('.load-game');if(continueButton)continueButton.disabled=!available;if(loadButton)loadButton.disabled=!available;
+    const meta=this.root.querySelector<HTMLElement>('.continue-meta');if(meta)meta.textContent=this.tx(available?'returnIsland':'noSave');
   }
 
   setLoading(loading: boolean): void { this.find('.loading-screen').hidden = !loading; if(loading)this.setLoadingProgress(0,'Preparing engine','Starting the world pipeline'); }
@@ -142,9 +180,9 @@ export class UI {
 
   resourceHit(kind: ResourceNode['kind'], amount: number, depleted = false): void {
     const feedback=this.find<HTMLElement>('.resource-feedback');
-    const resourceLabels:Record<ResourceNode['kind'],string>={tree:'WOOD',wood:'WOOD',stone:'STONE',metal:'METAL ORE',fiber:'CLOTH FIBER',berries:'BERRIES'};
+    const resourceLabels:Record<ResourceNode['kind'],string>=this.settings.language==='cs'?{tree:'DŘEVO',wood:'DŘEVO',stone:'KÁMEN',metal:'KOVOVÁ RUDA',fiber:'VLÁKNO',berries:'BOBULE'}:{tree:'WOOD',wood:'WOOD',stone:'STONE',metal:'METAL ORE',fiber:'CLOTH FIBER',berries:'BERRIES'};
     feedback.className=`resource-feedback ${kind}${depleted?' depleted':''}`;
-    feedback.innerHTML=`<span class="resource-hit-mark"><i></i><i></i></span><div><strong>+${amount}</strong><small>${resourceLabels[kind]}${depleted?' · DEPLETED':''}</small></div>`;
+    feedback.innerHTML=`<span class="resource-hit-mark"><i></i><i></i></span><div><strong>+${amount}</strong><small>${resourceLabels[kind]}${depleted?' · '+this.tx('depleted'):''}</small></div>`;
     void feedback.offsetWidth;
     feedback.classList.add('show');
     window.clearTimeout(this.resourceFeedbackTimer);
@@ -171,7 +209,7 @@ export class UI {
       this.find('.compass-line').style.backgroundPositionX = `${-degrees*2}px`;
       this.find('.biome-label').textContent = hud.biome.toUpperCase();
       const interaction = hud.interaction;
-      const promptHTML = interaction ? `<span class="interaction-key"><kbd>${esc(interaction.key)}</kbd></span><div class="interaction-copy"><strong>${esc(interaction.action)}</strong><span>${esc(interaction.title)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
+      const promptHTML = interaction ? `<span class="interaction-key"><kbd>${esc(interaction.key)}</kbd></span><div class="interaction-copy"><strong>${esc(this.interactionAction(interaction.action))}</strong><span>${esc(interaction.title)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
       const prompt = this.find('.interaction-prompt');
       if(prompt.innerHTML !== promptHTML) prompt.innerHTML = promptHTML;
       const gameScreen=this.find('.game-screen');
@@ -217,7 +255,7 @@ export class UI {
     const queue=this.find<HTMLElement>('.hud-craft-queue');
     queue.hidden=state.craftQueue.length===0;
     if(!state.craftQueue.length){queue.innerHTML='';return;}
-    queue.innerHTML=`<div class="hud-craft-title"><span>CRAFTING</span><b>${state.craftQueue.length}</b></div><div class="hud-craft-items">${state.craftQueue.slice(0,4).map(job=>{const recipe=RECIPES[job.recipeId];if(!recipe)return '';const progress=Math.max(0,Math.min(100,(1-job.remaining/job.total)*100));return `<div class="hud-craft-item" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span><b>${esc(ITEMS[recipe.resultItemId].displayName)}</b><small>${job.remaining<=0?'READY':`${Math.ceil(job.remaining)}s`}</small></span><i style="width:${progress}%"></i></div>`;}).join('')}</div>`;
+    queue.innerHTML=`<div class="hud-craft-title"><span>${this.tx('crafting')}</span><b>${state.craftQueue.length}</b></div><div class="hud-craft-items">${state.craftQueue.slice(0,4).map(job=>{const recipe=RECIPES[job.recipeId];if(!recipe)return '';const progress=Math.max(0,Math.min(100,(1-job.remaining/job.total)*100));return `<div class="hud-craft-item" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span><b>${esc(ITEMS[recipe.resultItemId].displayName)}</b><small>${job.remaining<=0?this.tx('ready'):`${Math.ceil(job.remaining)}s`}</small></span><i style="width:${progress}%"></i></div>`;}).join('')}</div>`;
   }
 
   private updateEnvironmentStatus(state:GameState,hud:HUDData):void {
@@ -234,7 +272,7 @@ export class UI {
     this.hotbarHash = hash;
     this.find('.hotbar').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(hud.inventory[index] ?? null,index,index === hud.activeSlot,true)).join('');
     const active = hud.inventory[hud.activeSlot];
-    this.find('.active-item-name').textContent = active ? ITEMS[active.itemId].displayName : 'EMPTY HANDS';
+    this.find('.active-item-name').textContent = active ? ITEMS[active.itemId].displayName : this.tx('emptyHands');
   }
 
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {
@@ -287,63 +325,31 @@ export class UI {
   }
 
   private bindEvents(): void {
-    this.root.addEventListener('keydown',event => { const target=event.target; if(target instanceof HTMLElement && target.matches('input,select,textarea')) event.stopPropagation(); });
-    this.root.addEventListener('click',event => {
-      const target = (event.target as HTMLElement).closest<HTMLElement>('button,a');
-      if(!target || (target instanceof HTMLButtonElement && target.disabled)) return;
-      event.preventDefault();
-      if(target.dataset.action) this.handleAction(target.dataset.action);
-      if(target.dataset.slot !== undefined) {
-        const slot = Number(target.dataset.slot);
-        if(target.dataset.hotbar) {
-          this.selectedSlot=slot;
-          this.actions.selectSlot(slot);
-          this.inventoryHash='';
-          if(this.state)this.renderInventory(this.state);
-        } else {
-          this.selectedSlot=slot;
-          this.inventoryHash='';
-          if(this.state)this.renderInventory(this.state);
-        }
-      }
-      if(target.dataset.category) {this.recipeCategory=target.dataset.category;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
-      if(target.dataset.recipe) {this.selectedRecipe=target.dataset.recipe;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
-      if(target.dataset.piece) this.actions.selectPiece(target.dataset.piece as PieceType);
-      if(target.dataset.quality) {this.settings.quality=target.dataset.quality as Settings['quality'];this.actions.settings({...this.settings});this.setSettings(this.settings);}
-      if(target.dataset.toggle) {const name=target.dataset.toggle as 'invertY'|'headBob'|'shadows'|'showCompass';this.settings[name]=target.dataset.value==='true';this.actions.settings({...this.settings});this.setSettings(this.settings);}
-      if(target.dataset.dev) this.actions.dev(target.dataset.dev);
+    this.root.addEventListener('keydown',event=>{
+      if(this.rebinding){event.preventDefault();event.stopPropagation();const action=this.rebinding;if(event.code==='Escape'){this.finishRebind();return;}const previous=this.settings.keybinds[action];const duplicate=(Object.keys(this.settings.keybinds) as KeybindAction[]).find(key=>key!==action&&this.settings.keybinds[key]===event.code);if(duplicate)this.settings.keybinds[duplicate]=previous;this.settings.keybinds[action]=event.code;this.finishRebind(false);this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);return;}
+      const target=event.target;if(target instanceof HTMLElement&&target.matches('input,select,textarea'))event.stopPropagation();
     });
-    this.root.addEventListener('input',event => {
-      const input = event.target as HTMLInputElement;
-      const name = input.dataset.setting as 'sensitivity'|'fov'|'viewmodelFov'|'masterVolume'|'effectsVolume'|'renderScale'|'crosshairOpacity'|undefined;
-      if(!name) return;
-      this.settings[name] = Number(input.value);
-      this.actions.settings({...this.settings});
-      this.setSettings(this.settings);
+    this.root.addEventListener('click',event=>{
+      const target=(event.target as HTMLElement).closest<HTMLElement>('button,a');if(!target||(target instanceof HTMLButtonElement&&target.disabled))return;event.preventDefault();
+      if(target.dataset.action)this.handleAction(target.dataset.action);
+      if(target.dataset.settingsTab)this.selectSettingsTab(target.dataset.settingsTab as typeof this.settingsTab);
+      if(target.dataset.language)this.setLanguage(target.dataset.language==='cs'?'cs':'en');
+      if(target.dataset.preset)this.setPreset(target.dataset.preset as Settings['quality']);
+      if(target.dataset.keybind)this.beginRebind(target.dataset.keybind as KeybindAction,target as HTMLButtonElement);
+      if(target.dataset.slot!==undefined){const slot=Number(target.dataset.slot);if(target.dataset.hotbar){this.selectedSlot=slot;this.actions.selectSlot(slot);this.inventoryHash='';if(this.state)this.renderInventory(this.state);}else{this.selectedSlot=slot;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}}
+      if(target.dataset.category){this.recipeCategory=target.dataset.category;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
+      if(target.dataset.recipe){this.selectedRecipe=target.dataset.recipe;this.inventoryHash='';if(this.state)this.renderInventory(this.state);}
+      if(target.dataset.piece)this.actions.selectPiece(target.dataset.piece as PieceType);
+      if(target.dataset.toggle){const name=target.dataset.toggle as 'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass';this.settings[name]=target.dataset.value==='true';this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
+      if(target.dataset.dev)this.actions.dev(target.dataset.dev);
     });
-    this.root.addEventListener('dragstart',event => {
-      const slot = (event.target as HTMLElement).closest<HTMLElement>('[data-slot]');
-      if(!slot || !this.state?.inventory[Number(slot.dataset.slot)]) return;
-      this.dragSlot=Number(slot.dataset.slot);this.dragSplit=event.shiftKey;
-      event.dataTransfer?.setData('text/plain',String(this.dragSlot));
-      if(event.dataTransfer) event.dataTransfer.effectAllowed='move';
-      slot.classList.add('dragging');
-    });
-    this.root.addEventListener('dragover',event => {
-      const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');
-      if(slot && this.dragSlot>=0) {event.preventDefault();slot.classList.add('drag-over');}
-    });
-    this.root.addEventListener('dragleave',event => (event.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.classList.remove('drag-over'));
-    this.root.addEventListener('drop',event => {
-      const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');
-      if(slot && this.dragSlot>=0) {event.preventDefault();this.actions.moveItem(this.dragSlot,Number(slot.dataset.slot),this.dragSplit || event.shiftKey);}
-      this.endDrag();
-    });
+    this.root.addEventListener('input',event=>{const input=event.target as HTMLInputElement;const name=input.dataset.setting as 'sensitivityX'|'sensitivityY'|'fov'|'viewmodelFov'|'masterVolume'|'musicVolume'|'effectsVolume'|'ambientVolume'|'renderScale'|'crosshairOpacity'|undefined;if(!name)return;this.settings[name]=Number(input.value);this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);});
+    this.root.addEventListener('dragstart',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(!slot||!this.state?.inventory[Number(slot.dataset.slot)])return;this.dragSlot=Number(slot.dataset.slot);this.dragSplit=event.shiftKey;event.dataTransfer?.setData('text/plain',String(this.dragSlot));if(event.dataTransfer)event.dataTransfer.effectAllowed='move';slot.classList.add('dragging');});
+    this.root.addEventListener('dragover',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(slot&&this.dragSlot>=0){event.preventDefault();slot.classList.add('drag-over');}});
+    this.root.addEventListener('dragleave',event=>(event.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.classList.remove('drag-over'));
+    this.root.addEventListener('drop',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(slot&&this.dragSlot>=0){event.preventDefault();this.actions.moveItem(this.dragSlot,Number(slot.dataset.slot),this.dragSplit||event.shiftKey);}this.endDrag();});
     this.root.addEventListener('dragend',()=>this.endDrag());
-    this.root.addEventListener('contextmenu',event => {
-      const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');
-      if(slot && this.screen==='inventory') {event.preventDefault();this.selectedSlot=Number(slot.dataset.slot);this.splitSelected();}
-    });
+    this.root.addEventListener('contextmenu',event=>{const slot=(event.target as HTMLElement).closest<HTMLElement>('[data-slot]');if(slot&&this.screen==='inventory'){event.preventDefault();this.selectedSlot=Number(slot.dataset.slot);this.splitSelected();}});
   }
 
   private endDrag(): void {
@@ -359,35 +365,39 @@ export class UI {
     else {this.actions.moveItem(this.selectedSlot,target,true);this.inventoryHash='';}
   }
 
-  private handleAction(action: string): void {
-    switch(action) {
-      case 'respawn': this.actions.respawn(); break;
-      case 'new': {const seedText=this.find<HTMLInputElement>('#world-seed').value.trim();const seed=seedText?Number(seedText):undefined;this.actions.newGame(seed!==undefined && Number.isFinite(seed)?Math.floor(seed):undefined);break;}
-      case 'continue':this.actions.continueGame();break;
+  private handleAction(action:string):void {
+    switch(action){
+      case 'respawn':this.actions.respawn();break;
+      case 'play':{const panel=this.find<HTMLElement>('.play-panel');panel.hidden=!panel.hidden;break;}
+      case 'new':if(this.saveAvailable)this.find<HTMLElement>('.new-game-confirm').hidden=false;else this.startNewGame();break;
+      case 'confirmNew':this.find<HTMLElement>('.new-game-confirm').hidden=true;this.startNewGame();break;
+      case 'cancelNew':this.find<HTMLElement>('.new-game-confirm').hidden=true;break;
+      case 'continue':case 'load':this.actions.continueGame();break;
       case 'settings':this.actions.setScreen('settings');break;
       case 'settingsBack':this.actions.setScreen(this.lastSettingsScreen);break;
-      case 'resume':this.actions.resume();break;
-      case 'save':this.actions.save();break;
-      case 'menu':this.actions.mainMenu();break;
-      case 'reset':this.find('.reset-confirm').hidden=false;break;
-      case 'resetCancel':this.find('.reset-confirm').hidden=true;break;
-      case 'resetConfirm':this.actions.resetSave();this.find('.reset-confirm').hidden=true;this.setSaveAvailable(false);break;
-      case 'resetCamera':this.settings={...this.settings,sensitivity:DEFAULT_SETTINGS.sensitivity,fov:DEFAULT_SETTINGS.fov,viewmodelFov:DEFAULT_SETTINGS.viewmodelFov,invertY:DEFAULT_SETTINGS.invertY,headBob:DEFAULT_SETTINGS.headBob};this.actions.settings({...this.settings});this.setSettings(this.settings);this.notify('Camera settings restored');break;
-      case 'resetSettings':this.settings={...DEFAULT_SETTINGS};this.actions.settings({...this.settings});this.setSettings(this.settings);this.notify('Settings restored to defaults');break;
+      case 'resume':this.actions.resume();break;case 'save':this.actions.save();break;case 'menu':this.actions.mainMenu();break;
+      case 'reset':this.find('.reset-confirm').hidden=false;break;case 'resetCancel':this.find('.reset-confirm').hidden=true;break;case 'resetConfirm':this.actions.resetSave();this.find('.reset-confirm').hidden=true;this.setSaveAvailable(false);break;
+      case 'resetCamera':this.settings={...this.settings,sensitivityX:DEFAULT_SETTINGS.sensitivityX,sensitivityY:DEFAULT_SETTINGS.sensitivityY,fov:DEFAULT_SETTINGS.fov,viewmodelFov:DEFAULT_SETTINGS.viewmodelFov,invertY:DEFAULT_SETTINGS.invertY,headBob:DEFAULT_SETTINGS.headBob,cameraShake:DEFAULT_SETTINGS.cameraShake,motionBlur:DEFAULT_SETTINGS.motionBlur,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;
+      case 'resetSettings':{const language=this.settings.language;this.settings={...DEFAULT_SETTINGS,language,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;}
       case 'reloadBuild':{const url=new URL(window.location.href);url.searchParams.set('build',`${GAME_VERSION}-${GAME_BUILD}`);window.location.replace(url.toString());break;}
-      case 'drop':this.actions.dropItem(this.selectedSlot);break;
-      case 'consume':this.actions.consume(this.selectedSlot);break;
-      case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;
-      case 'split':this.splitSelected();break;
-      case 'craft':this.actions.craft(this.selectedRecipe);break;
-      case 'history':{const panel=this.find('.history-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.help-panel').hidden=true;break;}
-      case 'help':{const panel=this.find('.help-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.history-panel').hidden=true;break;}
+      case 'drop':this.actions.dropItem(this.selectedSlot);break;case 'consume':this.actions.consume(this.selectedSlot);break;case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;case 'split':this.splitSelected();break;case 'craft':this.actions.craft(this.selectedRecipe);break;
+      case 'history':{const panel=this.find('.history-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.help-panel').hidden=true;break;}case 'help':{const panel=this.find('.help-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.history-panel').hidden=true;break;}
     }
   }
+  private startNewGame():void{const seedText=this.find<HTMLInputElement>('#world-seed').value.trim(),seed=seedText?Number(seedText):undefined;this.actions.newGame(seed!==undefined&&Number.isFinite(seed)?Math.floor(seed):undefined);}
+  private tx(key:TranslationKey):string{return t(this.settings.language,key);}
+  private applyLanguage():void{if(!this.root)return;document.documentElement.lang=this.settings.language==='cs'?'cs':'en';this.root.dataset.language=this.settings.language;this.root.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el=>{const key=el.dataset.i18n as TranslationKey;if(key)el.textContent=this.tx(key);});this.root.querySelectorAll<HTMLElement>('[data-language]').forEach(button=>button.classList.toggle('active',button.dataset.language===this.settings.language));const h=this.root.querySelector<HTMLElement>('.vital.health div span'),w=this.root.querySelector<HTMLElement>('.vital.thirst div span'),f=this.root.querySelector<HTMLElement>('.vital.hunger div span'),st=this.root.querySelector<HTMLElement>('.stamina span');if(h)h.textContent=this.tx('health');if(w)w.textContent=this.tx('water');if(f)f.textContent=this.tx('food');if(st)st.textContent=this.tx('stamina');const wet=this.root.querySelector<HTMLElement>('.status-pill.wet'),cold=this.root.querySelector<HTMLElement>('.status-pill.cold');if(wet)wet.textContent=this.tx('wet');if(cold)cold.textContent=this.tx('cold');const caption=this.root.querySelector<HTMLElement>('.hotbar-caption');if(caption)caption.innerHTML=`<span><kbd>${keyLabel(this.settings.keybinds.inventory)}</kbd> ${this.tx('inventory')}</span><span><kbd>ESC</kbd> ${this.tx('menu')}</span>`;this.setSaveAvailable(this.saveAvailable);}
+  private setLanguage(language:Settings['language']):void{if(this.settings.language===language)return;this.settings.language=language;this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
+  private selectSettingsTab(tab:typeof this.settingsTab):void{this.settingsTab=tab;this.root.querySelectorAll<HTMLElement>('[data-settings-tab]').forEach(button=>button.classList.toggle('active',button.dataset.settingsTab===tab));this.root.querySelectorAll<HTMLElement>('[data-settings-page]').forEach(page=>page.classList.toggle('active',page.dataset.settingsPage===tab));}
+  private setPreset(quality:Settings['quality']):void{const presets={low:{renderScale:.7,shadows:false,motionBlur:false},medium:{renderScale:.85,shadows:true,motionBlur:false},high:{renderScale:1,shadows:true,motionBlur:false},ultra:{renderScale:1,shadows:true,motionBlur:true}} as const;Object.assign(this.settings,{quality,...presets[quality]});this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);}
+  private beginRebind(action:KeybindAction,button:HTMLButtonElement):void{this.finishRebind();this.rebinding=action;button.classList.add('rebinding');button.textContent=this.tx('pressKey');button.focus();}
+  private finishRebind(restore=true):void{if(!this.rebinding)return;const button=this.root.querySelector<HTMLButtonElement>(`[data-keybind="${this.rebinding}"]`);if(button){button.classList.remove('rebinding');if(restore)button.textContent=keyLabel(this.settings.keybinds[this.rebinding]);}this.rebinding=null;}
+  private keybindRows():string{const rows:[KeybindAction,TranslationKey][]=[['forward','forward'],['backward','backward'],['left','left'],['right','right'],['sprint','sprint'],['jump','jump'],['crouch','crouch'],['interact','interact'],['inventory','inventory'],['build','build'],['rotate','rotate'],['cycleBuild','cycleBuild'],['use','use'],['map','map'],['maintenance','maintenance']];return rows.map(([action,label])=>`<div class="keybind-row"><span data-i18n="${label}">${esc(this.tx(label))}</span><button data-keybind="${action}">${keyLabel(this.settings.keybinds[action])}</button></div>`).join('');}
+  private interactionAction(action:string):string{const clean=action.toUpperCase();if(clean.startsWith('PICK UP'))return `${this.tx('pickUp')}${action.slice(7)}`;const map:Record<string,TranslationKey>={OPEN:'open',CLOSE:'close',AUTHORIZE:'authorize',USE:'useAction',GATHER:'gather','DRINK FRESH WATER':'drink'};return map[clean]?this.tx(map[clean]):action;}
+  private slider(name:string,label:TranslationKey,detail:TranslationKey,min:number,max:number,step:number):string{return `<div class="setting-row"><label for="setting-${name}"><span data-i18n="${label}">${esc(this.tx(label))}</span><small data-i18n="${detail}">${esc(this.tx(detail))}</small></label><div class="setting-slider"><input id="setting-${name}" data-setting="${name}" type="range" min="${min}" max="${max}" step="${step}"><output data-setting-value="${name}"></output></div></div>`;}
+  private toggle(name:'invertY'|'headBob'|'cameraShake'|'motionBlur'|'shadows'|'showCompass',label:TranslationKey,detail:TranslationKey):string{return `<div class="setting-row toggle-row"><label><span data-i18n="${label}">${esc(this.tx(label))}</span><small data-i18n="${detail}">${esc(this.tx(detail))}</small></label><div class="toggle-options"><button data-toggle="${name}" data-value="false"><span data-i18n="off">OFF</span></button><button data-toggle="${name}" data-value="true"><span data-i18n="on">ON</span></button></div></div>`;}
+  private settingValue(name:string,value:number):string{if(name.includes('Volume')||name==='crosshairOpacity')return `${Math.round(value*100)}%`;if(name==='fov'||name==='viewmodelFov')return `${Math.round(value)}°`;if(name==='renderScale')return `${Math.round(value*100)}%`;if(name==='sensitivityX'||name==='sensitivityY')return `${value.toFixed(2)}×`;return `${value.toFixed(1)}×`;}
 
-  private slider(name: string, label: string, min: number, max: number, step: number): string {return `<div class="setting-row"><label for="setting-${name}">${label}</label><div class="setting-slider"><input id="setting-${name}" data-setting="${name}" type="range" min="${min}" max="${max}" step="${step}"><output data-setting-value="${name}"></output></div></div>`;}
-  private toggle(name:'invertY'|'headBob'|'shadows'|'showCompass',label:string,detail:string):string{return `<div class="setting-row toggle-row"><label>${label}<small>${detail}</small></label><div class="toggle-options"><button data-toggle="${name}" data-value="false">OFF</button><button data-toggle="${name}" data-value="true">ON</button></div></div>`;}
-  private settingValue(name: string, value: number): string {if(name.includes('Volume')||name==='crosshairOpacity')return `${Math.round(value*100)}%`;if(name==='fov'||name==='viewmodelFov')return `${Math.round(value)}°`;if(name==='renderScale')return `${Math.round(value*100)}%`;if(name==='sensitivity')return `${value.toFixed(2)}×`;return `${value.toFixed(1)}×`;}
   private pieceIcon(piece: PieceType): string {const shapes:Record<PieceType,string>={foundation:'<path d="m3 12 9-5 9 5-9 5zM3 12v4l9 5 9-5v-4M12 17v4"/>',wall:'<path d="M5 4h14v17H5zM8 4v17M12 4v17M16 4v17"/>',doorway:'<path d="M4 3h16v18h-5V9H9v12H4z"/>',floor:'<path d="m3 12 9-6 9 6-9 6zM6 10l9 6M10 8l9 6"/>',roof:'<path d="m2 15 10-10 10 10M5 12v8h14v-8M12 5v15"/>',door:'<path d="M6 3h12v18H6zM15 12v2M9 3v18M4 21h16"/>'};return `<svg viewBox="0 0 24 24">${shapes[piece]}</svg>`;}
   private character(): string {return `<svg class="character-art" viewBox="0 0 240 470" aria-label="Survivor illustration"><defs><linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aaa492"/><stop offset="1" stop-color="#4e5249"/></linearGradient><linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#737a6d"/><stop offset="1" stop-color="#343d34"/></linearGradient></defs><ellipse cx="122" cy="450" rx="68" ry="9" fill="#0b1513" opacity=".45"/><g stroke="#2c342d" stroke-width="1.5"><path d="m99 80-3 19-28 16-14 44-16 78 9 11 13-12 15-65 10-12 1 89 65 2 7-88 10 20 13 57 13 13 10-9-17-94-15-29-35-19-2-26" fill="url(#skin)"/><path d="m87 237-4 72 5 49-1 66 23 4 9-66 4-48 5 48 7 66 23-3-1-70 2-41-9-76" fill="url(#cloth)"/><path d="m87 419-4 20-17 7v8h43l4-31m22 0 1 30h40l-1-9-19-10-2-15" fill="#3c4138"/><path d="m83 114 17-11 22 14 19-16 15 12-1 58-8 48-60-1-6-52z" fill="url(#cloth)"/><path d="m99 46 1-13 9-12 17-4 17 10 6 23-7 31-11 11-16-4-14-15z" fill="url(#skin)"/><path d="m99 47-2-10 5-13 13-8 18 2 11 11 4 16-9-5-8-14-11 9-20 7" fill="#393f36"/><path d="m110 56 8-2m13 0 8 2m-16 1-3 11 8 1m-12 8 15-1" fill="none"/><path d="m89 231 60 1 4 11-65 1z" fill="#80745b"/><path d="m110 231 17 1v14h-17z" fill="#303930"/><path d="m85 160 8 44m57-39-13 37m-48 97 24 2m19-2 22-1m-63 52 18 4m27-2 18-4" stroke="#959982" opacity=".35"/><path d="m46 238-4 9 2 16 7 5 7-9-1-17m127 1-1 18 8 10 7-4 3-15-7-13" fill="url(#skin)"/><path d="m96 100 17 10m15-1 16-10m-21 17 1 107" fill="none" opacity=".6"/></g><path d="M36 101h-9v306h9M207 101h9v306h-9" stroke="#c9cfb9" stroke-opacity=".15" fill="none"/><path d="M18 168h23M201 168h23M18 318h23M201 318h23" stroke="#c9cfb9" stroke-opacity=".15"/></svg>`;}
 }

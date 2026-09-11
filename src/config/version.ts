@@ -1,9 +1,19 @@
-export const GAME_VERSION='0.2.4';
-export const GAME_BUILD='EA-02.4';
+export const GAME_VERSION='0.3.0';
+export const GAME_BUILD='EA-03';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.3.0',date:'2026-09-11',title:'Game menu, settings & Czech localization',changes:[
+    'Rebuilt the main and pause menus as a full-screen game interface over the live world with a prominent Play flow.',
+    'Added Play Game with New Game, Continue and Load actions plus a confirmation step before replacing an existing world.',
+    'Split settings into Gameplay, Controls, Graphics and Audio pages.',
+    'Added real keybind remapping and separate horizontal/vertical mouse sensitivity.',
+    'Added camera shake and motion-blur toggles alongside world and viewmodel FOV and head bob.',
+    'Added Low, Medium, High and Ultra graphics presets.',
+    'Added independent Master, Music, Effects and Ambient audio channels.',
+    'Added persistent English/Czech interface switching across the main game menus and common HUD labels.'
+  ]},
   {version:'0.2.4',date:'2026-09-11',title:'Survival HUD overhaul',changes:[
     'Rebuilt the live vitals HUD into compact health, water and food panels with warning and critical states.',
     'Reworked the quick belt with a stronger active slot, cleaner numbering and tool-condition strips.',

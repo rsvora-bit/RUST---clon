@@ -1,5 +1,18 @@
 # Tideland changelog
 
+## 0.3.0 — 2026-09-11
+
+Game menu, settings and Czech localization update.
+
+- Rebuilt the main menu as a full-screen game surface over the live island with a dark translucent panel and prominent Play action.
+- Added `PLAY GAME → NEW GAME / CONTINUE / LOAD` and a safety confirmation before starting over an existing local world.
+- Split settings into Gameplay, Controls, Graphics and Audio pages.
+- Added functional keybind remapping and independent horizontal/vertical mouse sensitivity.
+- Added world/viewmodel FOV, head bob, camera shake and lightweight motion blur controls.
+- Added Low, Medium, High and Ultra graphics presets.
+- Added independent Master, Music, Effects and Ambient volume controls.
+- Added persistent EN/CZ language switching for the main menus, settings and common HUD labels/actions.
+
 ## 0.2.4 — 2026-09-11
 
 Survival HUD overhaul.
