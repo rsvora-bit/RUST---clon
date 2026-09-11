@@ -1,0 +1,66 @@
+name: Browser smoke Tideland v0.6.0 Environment
+
+on:
+  push:
+    branches: [feature/environment-overhaul-v060]
+    paths:
+      - '.github/workflows/tideland-environment-browser-v060.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feature/environment-overhaul-v060
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Render High/Ultra graphics pipeline in Chromium
+        run: |
+          cat > visual-smoke.html <<'EOF'
+          <!doctype html><html><body style="margin:0"><canvas id="smoke"></canvas><script type="module" src="/visual-smoke.ts"></script></body></html>
+          EOF
+          cat > visual-smoke.ts <<'EOF'
+          import * as THREE from 'three';
+          import {WorldPostFX} from './src/rendering/WorldPostFX';
+          import {Atmosphere} from './src/world/atmosphere';
+          const canvas=document.querySelector<HTMLCanvasElement>('#smoke')!;
+          const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});renderer.setSize(800,500,false);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;
+          const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(72,800/500,.1,1800);camera.position.set(0,5,10);camera.lookAt(0,2,0);
+          const data=new Uint8Array(17*17*4);for(let i=0;i<17*17;i++)data.set([55,55,55,255],i*4);const height=new THREE.DataTexture(data,17,17,THREE.RGBAFormat);height.needsUpdate=true;
+          const atmosphere=new Atmosphere(scene,height);atmosphere.setQuality('ultra');atmosphere.update(.016,12,camera.position);
+          const ground=new THREE.Mesh(new THREE.PlaneGeometry(25,25),new THREE.MeshStandardMaterial({color:0x527044,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+          const box=new THREE.Mesh(new THREE.BoxGeometry(2,3,2),new THREE.MeshStandardMaterial({color:0x8f7250,roughness:.8}));box.position.y=1.5;box.castShadow=true;box.receiveShadow=true;scene.add(box);
+          const glow=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),new THREE.MeshBasicMaterial({color:0xffd28a}));glow.position.set(1.5,3,-1);scene.add(glow);
+          const fx=new WorldPostFX(renderer,scene,camera);fx.resize(800,500,1);fx.setQuality('high');fx.update(12,.1,0);fx.render();fx.setQuality('ultra');fx.update(18.4,.35,.2);fx.render();
+          (window as any).__visualSmoke={ok:true,diagnostics:fx.diagnostics(),width:canvas.width,height:canvas.height};
+          EOF
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/tideland-v060-vite.log 2>&1 &
+          echo $! >/tmp/tideland-v060-vite.pid
+          for i in {1..30}; do curl -fsS http://127.0.0.1:4173/visual-smoke.html >/dev/null && break || sleep 1; done
+          cat > .visual-smoke.mjs <<'EOF'
+          import {chromium} from '@playwright/test';
+          const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+          const page=await browser.newPage({viewport:{width:800,height:500}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+          await page.goto('http://127.0.0.1:4173/visual-smoke.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>globalThis.__visualSmoke?.ok===true,null,{timeout:30000});const result=await page.evaluate(()=>globalThis.__visualSmoke);if(!result.diagnostics.ssao||!result.diagnostics.bloom)throw new Error(`Post FX inactive: ${JSON.stringify(result)}`);if(result.width<700||result.height<400)throw new Error('Render target size invalid');if(errors.length)throw new Error(errors.join(' | '));await browser.close();
+          EOF
+          node .visual-smoke.mjs
+          kill $(cat /tmp/tideland-v060-vite.pid) || true
+          rm -f visual-smoke.html visual-smoke.ts .visual-smoke.mjs
+      - name: Remove temporary smoke workflow
+        run: |
+          rm .github/workflows/tideland-environment-browser-v060.yml
+          git config user.name 'Roman Svora'
+          git config user.email 'roman.svora.ml@gmail.com'
+          git add -A
+          git commit -m 'Complete v0.6.0 Chromium graphics smoke'
+          git push origin HEAD:feature/environment-overhaul-v060
