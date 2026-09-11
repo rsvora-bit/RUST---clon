@@ -1,0 +1,58 @@
+name: Validate Tideland v0.2.3
+
+on:
+  push:
+    branches: [feature/loading-tree-v023]
+    paths:
+      - 'scripts/reconcile-v023.py'
+      - '.github/workflows/tideland-v023-reconcile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/loading-tree-v023
+          fetch-depth: 0
+
+      - name: Apply v0.2.3 patch
+        run: python3 scripts/reconcile-v023.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify release markers
+        shell: bash
+        run: |
+          grep -q "GAME_VERSION='0.2.3'" src/config/version.ts
+          grep -q "fallTree" src/rendering/environment.ts
+          grep -q "GPU WARM-UP" src/ui/UI.ts
+          grep -q '"version": "0.2.3"' package.json
+
+      - name: Commit validated release
+        shell: bash
+        run: |
+          rm scripts/reconcile-v023.py .github/workflows/tideland-v023-reconcile.yml
+          git config user.name "Roman Svora"
+          git config user.email "roman.svora.ml@gmail.com"
+          git add -A
+          git commit -m "Tideland v0.2.3: detailed loading and falling trees"
+          git push origin feature/loading-tree-v023
