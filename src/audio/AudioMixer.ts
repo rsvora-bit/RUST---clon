@@ -33,7 +33,7 @@ export class AudioMixer {
     };
     const profile=profiles[surface];
     const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();noise.buffer=this.buffer;filter.type='lowpass';filter.frequency.value=profile.cutoff*(.94+Math.random()*.12);noise.connect(filter);filter.connect(gain);gain.connect(this.sfx);gain.gain.setValueAtTime(profile.gain*pace,t);gain.gain.exponentialRampToValueAtTime(.001,t+profile.duration);noise.start(t);noise.stop(t+profile.duration+.03);
-    const tone=ctx.createOscillator(),toneGain=ctx.createGain();tone.type=surface==='rock'?'triangle':'sine';tone.frequency.setValueAtTime(profile.pitch*(.94+Math.random()*.12),t);tone.frequency.exponentialRampToValueAtTime(profile.pitch*.72,t+.055);toneGain.gain.setValueAtTime(((surface==='rock'||surface==='wood')?.027:.016)*pace,t);toneGain.gain.exponentialRampToValueAtTime(.001,t+.075);tone.connect(toneGain);toneGain.connect(this.sfx);tone.start(t);tone.stop(t+.08);
+    const tone=ctx.createOscillator(),toneGain=ctx.createGain();tone.type=surface==='rock'?'triangle':'sine';tone.frequency.setValueAtTime(profile.pitch*(.94+Math.random()*.12),t);tone.frequency.exponentialRampToValueAtTime(profile.pitch*.72,t+.055);toneGain.gain.setValueAtTime(((surface==='rock'||surface==='wood') ? .027 : .016)*pace,t);toneGain.gain.exponentialRampToValueAtTime(.001,t+.075);tone.connect(toneGain);toneGain.connect(this.sfx);tone.start(t);tone.stop(t+.08);
   }
 
   play(kind:'step'|'wood'|'stone'|'pickup'|'build'|'ui'|'door'|'eat'|'error'){
