@@ -1,9 +1,18 @@
-export const GAME_VERSION='0.3.0';
-export const GAME_BUILD='EA-03';
+export const GAME_VERSION='0.4.0';
+export const GAME_BUILD='EA-04';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.4.0',date:'2026-09-11',title:'Movement & first-person animation overhaul',changes:[
+    'Added tuned acceleration, deceleration, reverse response and restrained in-air steering instead of instant ground-speed changes.',
+    'Reduced the sprint FOV kick to a subtle 0.85 degrees and added smooth crouch, landing bob and walking camera sway.',
+    'Made mouse-look accumulation independent of render-frame batching while keeping per-event burst protection.',
+    'Added jump cooldown, survival-FPS crouch/sprint restrictions and remappable auto-run.',
+    'Added speed- and surface-aware procedural footsteps for sand, grass, forest, rock and timber structures.',
+    'Rebuilt the procedural first-person rig with persistent hands, item-specific rock/hatchet/pickaxe poses and torch motion.',
+    'Added equip/unequip transitions, mouse-driven tool sway, sprint lowering, contact recoil and a remappable inspect animation.'
+  ]},
   {version:'0.3.0',date:'2026-09-11',title:'Game menu, settings & Czech localization',changes:[
     'Rebuilt the main and pause menus as a full-screen game interface over the live world with a prominent Play flow.',
     'Added Play Game with New Game, Continue and Load actions plus a confirmation step before replacing an existing world.',

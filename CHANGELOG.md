@@ -1,5 +1,17 @@
 # Tideland changelog
 
+## 0.4.0 — 2026-09-11
+
+Movement, camera feel and first-person animation overhaul.
+
+- Added tuned acceleration/deceleration, stronger reverse braking and restrained air control.
+- Reduced sprint FOV kick to a subtle `0.85°`, with smooth crouch transitions, landing bob and light walking sway.
+- Made mouse-look accumulation independent of render-frame batching while retaining burst protection.
+- Added jump cooldown, survival-FPS crouch/sprint restrictions and remappable auto-run (`Caps Lock` by default).
+- Added speed- and surface-aware footsteps for coast sand, grassland, forest, rocky terrain and timber structures.
+- Rebuilt the procedural first-person rig with persistent hands and more physical rock, hatchet, pickaxe and torch presentation.
+- Added item-specific swing arcs, equip/unequip transitions, mouse-driven tool sway, sprint pose, hit recoil and inspect (`X` by default).
+
 ## 0.3.0 — 2026-09-11
 
 Game menu, settings and Czech localization update.
