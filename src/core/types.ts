@@ -4,7 +4,7 @@ export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'ha
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';
-export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|'crouch'|'interact'|'inventory'|'build'|'rotate'|'cycleBuild'|'use'|'map'|'maintenance';
+export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|'crouch'|'interact'|'inventory'|'build'|'rotate'|'cycleBuild'|'use'|'map'|'maintenance'|'autoRun'|'inspect';
 export type Keybinds = Record<KeybindAction,string>;
 export interface ItemDefinition {id:ItemId; displayName:string; description:string; category:ItemCategory; icon:string; maxStack:number; placeable?:boolean; consumable?:boolean; tags:string[]}
 export interface ItemStack {itemId:ItemId; count:number}
