@@ -1,0 +1,26 @@
+{
+  "name": "tideland-survival",
+  "version": "0.2.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:browser": "node scripts/polish-qa.mjs"
+  },
+  "dependencies": {
+    "three": "^0.180.0",
+    "@dimforge/rapier3d-compat": "^0.19.0",
+    "@fontsource/barlow-condensed": "^5.2.6",
+    "@fontsource/barlow": "^5.2.6"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.1.5",
+    "@types/three": "^0.180.0",
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.55.0"
+  }
+}

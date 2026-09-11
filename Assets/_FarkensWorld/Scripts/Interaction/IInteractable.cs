@@ -1,8 +1,0 @@
-namespace FarkensWorld
-{
-    public interface IInteractable
-    {
-        string InteractionPrompt { get; }
-        void Interact(PlayerInteraction player);
-    }
-}

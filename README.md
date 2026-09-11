@@ -1,39 +1,50 @@
-# Farken's World - Unity Beta 1.6.0
+# Tideland
 
-Tento repozitář obsahuje novou Unity verzi hry Farken's World.
+Tideland is an original, procedural first-person island survival sandbox built with TypeScript, Vite, Three.js, Rapier 3D, and a DOM-based interface. It uses no extracted game assets or branding.
 
-Původní hra vznikala jako single-file HTML/Three.js survival prototyp.  
-Unity verze navazuje na hlavní mechaniky z HTML verze, ale nepoužívá HTML WebView. Cílem je vytvořit skutečný Unity C# survival projekt.
+## Run
 
-## Původní HTML prototyp
+```bash
+npm install
+npm run dev
+```
 
-Archiv HTML verzí je zde:
+Open the local URL printed by Vite. The production checks are:
 
-[ODKAZ_NA_HTML_ARCHIVE_REPO](https://github.com/rsvora-bit/it2b_prog_/blob/main/Projekty/Projekt/HTML%20Prototype%20Archive/latest-html/Farkens_World_Beta_1.5.1.html)
+```bash
+npm test
+npm run build
+```
 
-Nejnovější HTML reference: Beta 1.5.1
+## Controls
 
-## Cílové mechaniky Unity verze
+- `WASD` move, mouse look, `Shift` sprint, `Space` jump, `C` or `Ctrl` crouch
+- `E` interact, left click gather/use, `1–6` select the quick belt
+- `Tab` inventory and crafting, `B` building plan, `Q` piece, `R` rotate
+- Left click places a building piece, right click cancels, `Esc` pauses
+- `F3` opens development telemetry and test controls
 
-- first person controller
-- survival stats
-- inventory + hotbar
-- crafting queue
-- storage boxy
-- furnace
-- workbench levely
-- building systém
-- loot tables
-- dropped itemy
-- bow projectile
-- corpse loot
-- save/load
-- dev console
+Worlds, settings, inventory, crafting, structures, doors, dropped items, and depleted resource nodes persist locally in the browser.
 
-## Stav projektu
+## Polish validation
 
-Unity Beta 1.6.0 je hratelný procedurální survival prototyp. Obsahuje počasí a den/noc, AI zvířata a scientisty, fyzický luk, corpse loot, smrt/respawn, runtime settings, procedurální audio a robustnější save/load.
+Current implementation notes, coverage and limitations: [POLISH-STATUS.md](POLISH-STATUS.md).
+Screenshot gallery: [artifacts/polish/index.html](artifacts/polish/index.html).
 
-Projekt otevři v Unity Hubu přes **Add project from disk** a vyber tuto složku. Požadovaná verze editoru je Unity `6000.4.11f1`; hlavní scéna je `Assets/_FarkensWorld/Scenes/Main.unity`.
+With the dev server running, `npm run test:browser` runs isolated Chrome gameplay,
+UI and multi-level persistence checks. `node scripts/polish-settings-qa.mjs` checks
+settings persistence, crafting capacity UI and a dense forest view. Set `CHROME_BIN`
+if Chrome is not installed at the default macOS application path.
 
-Aktuální implementační stav a příkazy jsou v [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+## Camera and field of view
+
+Settings use horizontal FOV at a 16:9 reference aspect, 60–100 degrees (default 90). The renderer converts this to Three.js vertical FOV and preserves vertical coverage when resizing; ultrawide displays show more on the sides. Existing numeric preferences now follow this convention. Changes apply live and persist. Sprint adds a smooth 2-degree offset. Held items use a separate fixed 50-degree vertical camera, so world FOV does not stretch them.
+
+Run `node scripts/camera-fov-qa.mjs` with the Vite server running for camera/persistence/aspect regression checks. Open `artifacts/camera-fov/index.html` for exact-pose screenshot comparisons.
+
+
+## Version
+
+Current release: **0.2.0 / EA-02** (2026-09-11).
+
+Development history is tracked in [`CHANGELOG.md`](./CHANGELOG.md) and is also visible from the in-game **HISTORY** menu.
