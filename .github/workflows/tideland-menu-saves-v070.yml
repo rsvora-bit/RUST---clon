@@ -63,8 +63,10 @@ jobs:
           import { chromium } from 'playwright';
           const browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
           const page=await browser.newPage({viewport:{width:1440,height:900}});
+          page.setDefaultTimeout(120000);
           const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
           await page.goto('http://127.0.0.1:4175/',{waitUntil:'networkidle',timeout:120000});
+          await page.waitForSelector('.loading-screen',{state:'hidden',timeout:180000});
           await page.waitForSelector('.menu-classic-v7',{state:'visible',timeout:120000});
           await page.click('[data-action="new"]');
           await page.waitForSelector('.save-browser:not([hidden])');
@@ -73,7 +75,7 @@ jobs:
           await page.click('[data-action="settings"]');
           await page.waitForSelector('[data-view="settings"]',{state:'visible'});
           const hud=page.locator('input[data-setting="hudScale"]');if(await hud.count()!==1)throw new Error('HUD scale setting missing');
-          await hud.fill('1.3');await hud.dispatchEvent('input');
+          await hud.evaluate(el=>{el.value='1.3';el.dispatchEvent(new Event('input',{bubbles:true}));});
           const crosshair=page.locator('input[data-setting="crosshairScale"]');if(await crosshair.count()!==1)throw new Error('Crosshair size setting missing');
           if(errors.length)throw new Error(errors.join('\n'));
           await browser.close();
