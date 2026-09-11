@@ -54,7 +54,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
             sleep 1
           done
-          cat > /tmp/hud-smoke.mjs <<'EOF'
+          cat > .hud-smoke.mjs <<'EOF'
           import { chromium } from '@playwright/test';
           const browser=await chromium.launch({headless:true});
           const page=await browser.newPage({viewport:{width:1440,height:900}});
@@ -77,7 +77,8 @@ jobs:
           if(errors.length) throw new Error(`Browser errors: ${errors.join(' | ')}`);
           await browser.close();
           EOF
-          node /tmp/hud-smoke.mjs
+          node .hud-smoke.mjs
+          rm .hud-smoke.mjs
           kill $(cat /tmp/tideland-preview.pid) || true
 
       - name: Verify release markers
