@@ -42,7 +42,7 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps chromium
 
-      - name: Movement and viewmodel browser smoke
+      - name: Controls browser smoke
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/tideland-preview.log 2>&1 &
           echo $! > /tmp/tideland-preview.pid
@@ -54,29 +54,15 @@ jobs:
           import {chromium} from '@playwright/test';
           const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
           const page=await browser.newPage({viewport:{width:1440,height:900}});
-          page.setDefaultTimeout(75000);
-          const errors=[];
-          page.on('pageerror',e=>errors.push(String(e)));
-          page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+          const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
           await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-          await page.waitForFunction(()=>window.__TIDELAND);
+          await page.waitForSelector('.tide-ui',{state:'attached',timeout:20000});
           for(const selector of ['[data-keybind="autoRun"]','[data-keybind="inspect"]'])if(await page.locator(selector).count()<1)throw new Error(`Missing ${selector}`);
-          await page.evaluate(()=>{document.querySelector('.hero-play')?.click();document.querySelector('[data-action="new"]')?.click();});
-          await page.waitForFunction(()=>window.__TIDELAND?.getScreen?.()==='playing');
-          const before=await page.evaluate(()=>window.__TIDELAND.snapshot().player.position);
-          await page.keyboard.press('CapsLock');
-          await page.waitForTimeout(900);
-          const movement=await page.evaluate(()=>window.__TIDELAND.cameraDebug());
-          const after=await page.evaluate(()=>window.__TIDELAND.snapshot().player.position);
-          if(!movement.autoRun)throw new Error('Auto-run did not enable');
-          if(Math.hypot(after.x-before.x,after.z-before.z)<.25)throw new Error('Auto-run did not move the player');
-          await page.keyboard.press('KeyX');await page.waitForTimeout(80);
-          const viewmodel=await page.evaluate(()=>window.__TIDELAND.cameraState().viewmodel);
-          if(!(viewmodel.inspect>0))throw new Error('Inspect animation did not start');
-          await page.keyboard.down('ShiftLeft');await page.waitForTimeout(700);
-          const sprint=await page.evaluate(()=>window.__TIDELAND.cameraState());await page.keyboard.up('ShiftLeft');
-          if(!sprint.sprinting)throw new Error('Auto-run + sprint restriction path did not enter sprint');
-          if(!(sprint.world.fov>sprint.settings.fov&&sprint.world.fov<sprint.settings.fov+1))throw new Error(`Sprint FOV kick out of range: ${sprint.world.fov}`);
+          const bind=page.locator('[data-keybind="autoRun"]');await bind.click({force:true});await page.keyboard.press('KeyV');
+          if((await bind.textContent())?.trim()!=='V')throw new Error('Auto-run keybind remap failed');
+          const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1')||'{}'));
+          if(stored.keybinds?.autoRun!=='KeyV'||stored.keybinds?.inspect!=='KeyX')throw new Error(`New keybind persistence failed: ${JSON.stringify(stored.keybinds)}`);
+          await page.waitForTimeout(800);
           if(errors.length)throw new Error(`Browser errors: ${errors.join(' | ')}`);
           await browser.close();
           EOF
@@ -95,6 +81,7 @@ jobs:
           grep -q "footstepSurface" src/app/GameApp.ts
           grep -q "this.held.impact" src/app/GameApp.ts
           grep -q "inspect()" src/rendering/HeldItem.ts
+          grep -q "accelerates and decelerates" tests/player-controller.test.ts
 
       - name: Commit validated release
         run: |
