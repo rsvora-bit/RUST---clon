@@ -82,8 +82,10 @@ The main idea is simple:
 - Inventory and quick belt
 - Crafting queue
 - First-person hands with animated held tools, equip transitions, sway, sprint pose and inspect
+- Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - Configurable FOV and viewmodel FOV
 - Frame-rate independent mouse look, separate X/Y sensitivity, auto-run, invert Y and head bob settings
+- Speed- and surface-aware footsteps
 - Render scale, shadows, compass and crosshair settings
 - Map, waypoints, diagnostics and developer telemetry
 
@@ -98,14 +100,13 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
-- ✅ Detailed staged world loading
-- ✅ Shader compilation and GPU warm-up before gameplay
-- ✅ Falling-tree resource depletion
-- ✅ Expanded settings and diagnostics
-- ✅ Automated CI validation
-- 🔧 GitHub Pages deployment for the new standalone repository
+- ✅ Subtle sprint FOV response and movement camera sway
+- ✅ Auto-run plus survival-FPS crouch/sprint restrictions
 - ✅ Animated hands/tools with swing, recoil, sway, sprint pose and inspect
 - ✅ Speed- and surface-aware procedural footsteps
+- ✅ Detailed staged world loading and GPU warm-up
+- ✅ Expanded settings, localization and diagnostics
+- ✅ Automated CI validation and GitHub Pages deployment
 
 ---
 
@@ -114,10 +115,14 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 ### `v0.2.x` — Foundation & stability
 Performance, input, loading, persistence, building reliability, resource behaviour and debugging tools.
 
-### `v0.3.x` — Visual & audio overhaul
-Planned work includes improved terrain presentation, vegetation, trees, water, lighting, shadows, weather, particles, hit effects, first-person presentation and a new sound pass.
+### `v0.3.x` — Menu & settings foundation
+Game-style main/pause menus, tabbed settings, remappable controls, graphics/audio controls and EN/CZ localization.
+
+### `v0.4.x` — Movement & first-person feel
+Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
 
 ### Future
+- Graphics, terrain, vegetation, water, lighting and atmosphere overhaul
 - Deeper crafting and progression
 - More meaningful landmarks and exploration
 - Better building variety
@@ -138,7 +143,9 @@ The roadmap is intentionally flexible. Features are added when they improve the 
 | Mouse | Look |
 | `Shift` | Sprint |
 | `Space` | Jump |
-| `C` / `Ctrl` | Crouch |
+| `Ctrl` | Crouch |
+| `Caps Lock` | Auto-run |
+| `X` | Inspect held item |
 | `E` | Interact |
 | Left click | Gather / use / place |
 | `1–6` | Select quick-belt slot |
@@ -149,6 +156,8 @@ The roadmap is intentionally flexible. Features are added when they improve the 
 | Right click | Cancel building placement |
 | `Esc` | Pause |
 | `F3` | Developer telemetry |
+
+> Keyboard actions, including **Auto-run** and **Inspect**, can be remapped in **Settings → Controls**.
 
 ---
 
@@ -217,6 +226,9 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.4.0` | Movement feel, first-person hands and tool animations |
+| `v0.3.0` | Game menus, settings, remappable controls and EN/CZ localization |
+| `v0.2.4` | Survival HUD overhaul |
 | `v0.2.3` | Detailed loading, GPU warm-up and falling trees |
 | `v0.2.2` | Mouse input stability and loading warm-up |
 | `v0.2.1` | Cross-device camera and expanded settings |
@@ -259,6 +271,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.2.3 / EA-02.3`
+`EARLY ACCESS DEVELOPMENT · v0.4.0 / EA-04`
 
 </div>
