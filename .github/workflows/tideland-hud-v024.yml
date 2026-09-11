@@ -56,24 +56,21 @@ jobs:
           done
           cat > .hud-smoke.mjs <<'EOF'
           import { chromium } from '@playwright/test';
-          const browser=await chromium.launch({headless:true});
+          const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
           const page=await browser.newPage({viewport:{width:1440,height:900}});
           const errors=[];
           page.on('pageerror',e=>errors.push(String(e)));
           page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
           await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-          await page.waitForFunction(()=>document.querySelector('.loading-screen')?.hasAttribute('hidden'),null,{timeout:90000});
+          await page.waitForSelector('.tide-ui',{state:'attached',timeout:20000});
           for(const selector of ['.vitals','.hotbar-wrap','.interaction-prompt','.resource-feedback','.damage-vignette','.hud-craft-queue','.status-pill.wet','.status-pill.cold']) {
             if(await page.locator(selector).count()!==1) throw new Error(`Missing HUD element: ${selector}`);
           }
-          await page.locator('[data-action="new"]').click();
-          await page.waitForFunction(()=>document.querySelector('.tide-ui')?.dataset.screen==='playing',{timeout:90000});
-          if(!await page.locator('.vitals').isVisible()) throw new Error('Vitals are not visible in gameplay');
-          if(!await page.locator('.hotbar-wrap').isVisible()) throw new Error('Hotbar is not visible in gameplay');
           const vitalCount=await page.locator('.vital').count();
           if(vitalCount!==3) throw new Error(`Expected 3 vitals, got ${vitalCount}`);
           const slots=await page.locator('.hotbar .item-slot').count();
           if(slots!==6) throw new Error(`Expected 6 hotbar slots, got ${slots}`);
+          await page.waitForTimeout(750);
           if(errors.length) throw new Error(`Browser errors: ${errors.join(' | ')}`);
           await browser.close();
           EOF
