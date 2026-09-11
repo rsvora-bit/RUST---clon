@@ -5,6 +5,7 @@ on:
     branches: [feature/menu-settings-i18n-v030]
     paths:
       - 'scripts/menu-v030.py'
+      - 'scripts/menu-v030-self-fix.py'
       - 'scripts/menu-v030-test-fixes.py'
       - '.github/workflows/tideland-menu-v030.yml'
   workflow_dispatch:
@@ -24,6 +25,7 @@ jobs:
 
       - name: Apply menu/settings update
         run: |
+          python3 scripts/menu-v030-self-fix.py
           python3 scripts/menu-v030.py
           python3 scripts/menu-v030-test-fixes.py
 
@@ -90,7 +92,7 @@ jobs:
 
       - name: Commit validated release
         run: |
-          rm scripts/menu-v030.py scripts/menu-v030-test-fixes.py .github/workflows/tideland-menu-v030.yml
+          rm scripts/menu-v030.py scripts/menu-v030-self-fix.py scripts/menu-v030-test-fixes.py .github/workflows/tideland-menu-v030.yml
           git config user.name 'Roman Svora'
           git config user.email 'roman.svora.ml@gmail.com'
           git add -A
