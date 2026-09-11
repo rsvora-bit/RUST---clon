@@ -62,7 +62,7 @@ jobs:
           page.on('pageerror',e=>errors.push(String(e)));
           page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
           await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
-          await page.waitForSelector('.loading-screen[hidden]',{timeout:90000});
+          await page.waitForFunction(()=>document.querySelector('.loading-screen')?.hasAttribute('hidden'),null,{timeout:90000});
           for(const selector of ['.vitals','.hotbar-wrap','.interaction-prompt','.resource-feedback','.damage-vignette','.hud-craft-queue','.status-pill.wet','.status-pill.cold']) {
             if(await page.locator(selector).count()!==1) throw new Error(`Missing HUD element: ${selector}`);
           }
