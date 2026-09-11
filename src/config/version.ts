@@ -1,9 +1,17 @@
-export const GAME_VERSION='0.2.2';
-export const GAME_BUILD='EA-02.2';
+export const GAME_VERSION='0.2.3';
+export const GAME_BUILD='EA-02.3';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.2.3',date:'2026-09-11',title:'World startup & harvesting polish',changes:[
+    'Split procedural world population into visible loading phases that yield between expensive generation steps.',
+    'Expanded the loading screen with six pipeline phases, live task detail and GPU warm-up status.',
+    'Pre-compiles shaders, warms multiple camera headings and waits for stable frame pacing before gameplay begins.',
+    'Reuses the already prepared default menu island when starting a fresh game with the same seed.',
+    'Fixed depleted resource visuals so destroyed nodes reliably disappear instead of remaining in the world.',
+    'Trees now fall away from the player, rest briefly, then sink/fade out after the final harvesting hit.'
+  ]},
   {version:'0.2.2',date:'2026-09-11',title:'Input stability & loading warm-up',changes:[
     'Added real staged loading progress and renderer warm-up before the world is revealed.',
     'Mouse look is now coalesced once per render frame instead of applying every browser event immediately.',

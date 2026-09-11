@@ -4,7 +4,7 @@
 
 Tideland is an original procedural first-person island survival sandbox built with TypeScript, Vite, Three.js, Rapier 3D, and a DOM-based interface.
 
-**Current release:** `v0.2.2 / EA-02.2` — 2026-09-11
+**Current release:** `v0.2.3 / EA-02.3` — 2026-09-11
 
 The previous school-repository copy is kept only as a stable snapshot at [`rsvora-bit/it3b_prog_/Projekty/Tideland`](https://github.com/rsvora-bit/it3b_prog_/tree/main/Projekty/Tideland).
 
@@ -48,4 +48,4 @@ Mouse look uses frame-coalesced input with burst protection to avoid large camer
 
 Release history is tracked in [`CHANGELOG.md`](./CHANGELOG.md) and is also visible from the in-game **HISTORY** menu. Implementation notes and QA status live in [`POLISH-STATUS.md`](./POLISH-STATUS.md).
 
-From `v0.2.2` onward, this repository is the canonical source for new Tideland development.
+From `v0.2.3` onward, this repository is the canonical source for new Tideland development.

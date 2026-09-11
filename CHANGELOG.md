@@ -1,5 +1,16 @@
 # Tideland changelog
 
+## 0.2.3 — 2026-09-11
+
+World startup and harvesting polish.
+
+- Split procedural island population into real loading phases with browser paint/yield points between expensive generation passes.
+- Expanded the loading screen to show Engine, Terrain, World, Physics, Systems and GPU Warm-up phases with live task details.
+- Uses async shader compilation when available, warms eight camera headings and waits for stable frame pacing before gameplay begins.
+- Reuses the already-prepared default menu island for a fresh game with the same seed instead of rebuilding it immediately.
+- Fixed depleted resource synchronization so destroyed resource visuals are actually removed.
+- Trees now fall away from the player on the final hit, remain on the ground briefly, then sink and disappear.
+
 ## 0.2.2 — 2026-09-11
 
 Input stability and loading warm-up patch.

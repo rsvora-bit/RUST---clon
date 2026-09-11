@@ -59,44 +59,50 @@ export class GameApp {
     window.addEventListener('beforeunload',()=>{if(this.activeWorld&&this.simulation.state.player.stats.health>0)saveGame(this.simulation.state);});
     this.ui.setSettings(this.settings);this.ui.setSaveAvailable(hasSave());this.ui.setLoading(true);this.projection.setBaseFov(this.settings.fov);this.resize();
   }
-  async init(){this.ui.setLoading(true);await this.loadingStage(5,'Starting physics');await initPhysics();await this.loadingStage(12,'Preparing procedural island');await this.makeWorld(WORLD.SEED);await this.warmUpWorld();this.activeWorld=false;this.ui.setLoading(false);this.setScreen('menu');this.installDevAPI();this.renderer.setAnimationLoop(t=>this.frame(t));}
+  async init(){this.ui.setLoading(true);await this.loadingStage(3,'Bootstrapping renderer','Creating the WebGL pipeline and interface');await this.loadingStage(8,'Starting physics engine','Loading Rapier and preparing collision workers');await initPhysics();await this.loadingStage(13,'Preparing preview island','Generating a ready-to-play world behind the main menu');await this.makeWorld(WORLD.SEED);await this.warmUpWorld();this.activeWorld=false;this.ui.setLoading(false);this.setScreen('menu');this.installDevAPI();this.renderer.setAnimationLoop(t=>this.frame(t));}
   private async makeWorld(seed:number,saved?:GameState){
     this.worldSurvival?.dispose();this.weather?.dispose();this.islandMap?.dispose();
     this.stationRenderer?.dispose();this.stationIds.clear();this.stationUI?.close();this.openStation=null;this.interactions.clear();this.knownStructures.clear();this.rainBarrel?.removeFromParent();this.structures?.dispose();this.worldItems?.dispose();this.physics?.dispose();this.environment?.dispose();
-    await this.loadingStage(20,'Shaping terrain');
-    this.environment=new Environment(this.scene,seed,saved ? saved.worldGeneration ?? 1 : 2);
+    await this.loadingStage(17,'Shaping terrain heightfield','Generating beaches, valleys, slopes and the player spawn');
+    this.environment=new Environment(this.scene,seed,saved ? saved.worldGeneration ?? 1 : 2,true);
+    await this.environment.populateAsync((progress,status,detail)=>this.loadingStage(progress,status,detail));
     this.simulation=new GameSimulation(seed,this.environment.spawn,saved);this.simulation.onNotify=msg=>this.ui.notify(msg);
-    this.environment.syncNodes(this.simulation.state.nodeChanges);
-    await this.loadingStage(42,'Placing resources');
+    await this.loadingStage(68,'Restoring resource state','Applying depleted nodes and saved world mutations');this.environment.syncNodes(this.simulation.state.nodeChanges);
+    await this.loadingStage(72,'Building collision world','Creating terrain, resource and natural obstacle colliders');
     this.physics=new PhysicsWorld(this.environment.terrainGeometry,this.environment.colliders,this.simulation.state.player.position);
-    await this.loadingStage(56,'Building collision world');
+    await this.loadingStage(76,'Synchronizing physics','Removing depleted colliders and preparing the player body');
     // Saved depleted nodes keep their simulation state; remove their static
     // colliders after the physics bridge is rebuilt so invisible resources do
     // not become walls on a continued island.
     for (const node of this.environment.nodes) if ((this.simulation.state.nodeChanges[node.id] ?? node.remaining) <= 0) this.physics.removeNodeCollider(node.id);
     this.player=new PlayerController(this.physics,this.camera,this.input,this.settings,this.simulation.state);this.player.onStep=()=>this.audio.play('step');
-    this.worldSurvival=new WorldSurvival(this.environment,this.scene,seed);this.worldSurvival.populate(this.simulation.state);this.physics.setStructure('landmarks',this.worldSurvival.collisionBoxes());this.weather=new Weather(this.scene);
-    await this.loadingStage(70,'Growing the island');this.islandMap=new IslandMap(this.uiContainer,this.worldSurvival,this.environment,p=>{const progress=ensureProgression(this.simulation.state);if(p)progress.waypoint=p;else delete progress.waypoint;},()=>{this.islandMap.close();this.setScreen('playing');});
+    await this.loadingStage(80,'Placing landmarks','Populating survival points of interest and weather systems');this.worldSurvival=new WorldSurvival(this.environment,this.scene,seed);this.worldSurvival.populate(this.simulation.state);this.physics.setStructure('landmarks',this.worldSurvival.collisionBoxes());this.weather=new Weather(this.scene);
+    await this.loadingStage(84,'Preparing map and stations','Building navigation, station renderers and interaction data');this.islandMap=new IslandMap(this.uiContainer,this.worldSurvival,this.environment,p=>{const progress=ensureProgression(this.simulation.state);if(p)progress.waypoint=p;else delete progress.waypoint;},()=>{this.islandMap.close();this.setScreen('playing');});
     this.stationRenderer=new StationRenderer(this.scene);this.syncStations();
     this.structures=new StructureRenderer(this.scene);this.worldItems=new WorldItems(this.scene);
     this.groundMesh=new THREE.Mesh(this.environment.terrainGeometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));
     this.registerNodes();this.createWaterSource();this.syncStructures();this.syncWorldItems();this.syncHeld();this.applySettings(this.settings);this.player.tick(1/60,this.simulation.state,false);this.accumulator=0;this.autoSave=0;this.building=false;this.candidate=null;
-    await this.loadingStage(86,'Finalizing world systems');
+    await this.loadingStage(89,'Finalizing gameplay systems','Syncing structures, held items, saves and the first simulation frame');
   }
   private async start(seed:number,saved?:GameState){
     if(this.loading)return;this.loading=true;this.ui.setLoading(true);void this.audio.start();void this.input.lock();
-    try {await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));await this.makeWorld(Number.isFinite(seed)?Math.trunc(seed):WORLD.SEED,saved);await this.warmUpWorld();this.activeWorld=true;this.screen='playing';this.ui.setScreen('playing');this.ui.notify(saved?'Welcome back to your island.':'Washed ashore. Everything begins here.');}
+    try {await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const normalized=Number.isFinite(seed)?Math.trunc(seed):WORLD.SEED,prepared=!saved&&!this.activeWorld&&this.environment?.seed===normalized;if(prepared)await this.loadingStage(82,'Using prepared island','The menu preview already contains this seed, so the world can be reused');else await this.makeWorld(normalized,saved);await this.warmUpWorld();this.activeWorld=true;this.screen='playing';this.ui.setScreen('playing');this.ui.notify(saved?'Welcome back to your island.':'Washed ashore. Everything begins here.');}
     catch(error){console.error(error);this.ui.notify('The island could not be created. Reload to try again.');this.setScreen('menu');}
     finally{this.loading=false;this.ui.setLoading(false);}
   }
-  private async loadingStage(progress:number,status:string){this.ui.setLoadingProgress(progress,status);await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));}
+  private async loadingStage(progress:number,status:string,detail?:string){this.ui.setLoadingProgress(progress,status,detail);await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));}
   private async warmUpWorld(){
-    await this.loadingStage(90,'Compiling shaders');
-    try{this.renderer.compile(this.scene,this.camera);}catch{ /* A normal render below still warms the pipeline. */ }
-    for(let i=0;i<6;i++){this.renderer.render(this.scene,this.camera);this.ui.setLoadingProgress(92+(i+1)*1.25,'Warming renderer');await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));}
-    this.frameMs=16.7;this.fps=60;this.last=performance.now();
-    this.ui.setLoadingProgress(100,'Ready');
-    await new Promise<void>(resolve=>setTimeout(resolve,80));
+    await this.loadingStage(91,'Compiling GPU shaders','Preparing terrain, foliage, lighting and first-person materials before gameplay');
+    try{const renderer=this.renderer as THREE.WebGLRenderer&{compileAsync?:(scene:THREE.Object3D,camera:THREE.Camera)=>Promise<void>};if(renderer.compileAsync)await renderer.compileAsync(this.scene,this.camera);else this.renderer.compile(this.scene,this.camera);}catch{ /* Warm-up renders below still initialize the pipeline. */ }
+    await this.loadingStage(94,'Uploading visible geometry','Rendering the island from multiple headings so buffers are resident on the GPU');
+    const original=this.camera.quaternion.clone(),up=new THREE.Vector3(0,1,0);
+    for(let i=0;i<8;i++){const turn=new THREE.Quaternion().setFromAxisAngle(up,i*Math.PI/4);this.camera.quaternion.copy(original).premultiply(turn);this.renderer.render(this.scene,this.camera);this.ui.setLoadingProgress(94+(i+1)*.32,'Uploading visible geometry',`Warm-up view ${i+1} / 8`);await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));}
+    this.camera.quaternion.copy(original);
+    await this.loadingStage(97,'Stabilizing frame pacing','Waiting for startup shader compilation and asset uploads to leave the live frame budget');
+    let stable=0,previous=performance.now();for(let i=0;i<24&&stable<6;i++){await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));const now=performance.now(),frame=now-previous;previous=now;stable=frame<34?stable+1:0;this.renderer.render(this.scene,this.camera);this.ui.setLoadingProgress(97+Math.min(2.4,(i+1)*.1),'Stabilizing frame pacing',`Stable frames ${stable} / 6 · last ${frame.toFixed(1)} ms`);}
+    this.frameMs=16.7;this.fps=60;this.last=performance.now();this.accumulator=0;
+    this.ui.setLoadingProgress(100,'Ready','Renderer warm-up complete · entering the island with clean FPS timing');
+    await new Promise<void>(resolve=>setTimeout(resolve,120));
   }
   private setScreen(screen:Screen){if(screen==='playing'&&!this.activeWorld)return;this.screen=screen;this.ui.setScreen(screen);this.input.keys.clear();this.leftDown=false;if(screen==='playing'){void this.audio.start();void this.input.lock();}else{this.input.release();this.structures?.preview(null);}this.ui.setSaveAvailable(hasSave());}
   private onKey(code:string){
@@ -144,7 +150,7 @@ export class GameApp {
       this.interactions.register({id:node.id,kind:'resource',object,position:()=>node.position,enabled:()=>node.remaining>0,info:()=>({title:GATHERING[node.kind].label,action:['fiber','berries','wood'].includes(node.kind)?'PICK UP':'GATHER',key:['fiber','berries','wood'].includes(node.kind)?'E':'LMB',detail:`${GATHERING[node.kind].itemId==='metal'?'METAL ORE':GATHERING[node.kind].itemId.toUpperCase()} · ${Math.ceil(node.remaining)} REMAINING`,progress:node.remaining/node.capacity}),interact:()=>this.gather(node)});
     }
   }
-  private gather(node:ResourceNode,animate=true){if(this.cooldown>0)return;const result=this.simulation.gather(node);if(result.amount>0){this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();this.impactFx.burst(node.position,node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries');this.environment.hitNode(node.id);this.audio.play(node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'||node.kind==='metal'?'stone':'pickup');this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);}}
+  private gather(node:ResourceNode,animate=true){if(this.cooldown>0)return;const result=this.simulation.gather(node);if(result.amount>0){this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();this.impactFx.burst(node.position,node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries');if(result.depleted&&node.kind==='tree')this.environment.fallTree(node.id,this.simulation.state.player.position);else this.environment.hitNode(node.id);this.audio.play(node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'||node.kind==='metal'?'stone':'pickup');this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);}}
   private use(){
     if(this.cooldown>0)return;
     if(this.stationPlacement){this.placeStation(this.stationPlacement.kind,this.stationPlacement.position,this.buildRotation);return;}
