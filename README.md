@@ -1,50 +1,51 @@
 # Tideland
 
-Tideland is an original, procedural first-person island survival sandbox built with TypeScript, Vite, Three.js, Rapier 3D, and a DOM-based interface. It uses no extracted game assets or branding.
+> **Active development repository.** All new Tideland work continues here.
 
-## Run
+Tideland is an original procedural first-person island survival sandbox built with TypeScript, Vite, Three.js, Rapier 3D, and a DOM-based interface.
+
+**Current release:** `v0.2.2 / EA-02.2` — 2026-09-11
+
+The previous school-repository copy is kept only as a stable snapshot at [`rsvora-bit/it3b_prog_/Projekty/Tideland`](https://github.com/rsvora-bit/it3b_prog_/tree/main/Projekty/Tideland).
+
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The production checks are:
+Production validation:
 
 ```bash
 npm test
 npm run build
 ```
 
+Browser gameplay QA can be run with:
+
+```bash
+npm run test:browser
+```
+
 ## Controls
 
 - `WASD` move, mouse look, `Shift` sprint, `Space` jump, `C` or `Ctrl` crouch
 - `E` interact, left click gather/use, `1–6` select the quick belt
-- `Tab` inventory and crafting, `B` building plan, `Q` piece, `R` rotate
+- `Tab` inventory and crafting, `B` building plan, `Q` cycle piece, `R` rotate
 - Left click places a building piece, right click cancels, `Esc` pauses
-- `F3` opens development telemetry and test controls
+- `F3` opens developer telemetry and test controls
 
-Worlds, settings, inventory, crafting, structures, doors, dropped items, and depleted resource nodes persist locally in the browser.
+Worlds, settings, inventory, crafting, structures, doors, dropped items, depleted resource nodes and survival progression persist locally in the browser.
 
-## Polish validation
+## Camera, settings and performance
 
-Current implementation notes, coverage and limitations: [POLISH-STATUS.md](POLISH-STATUS.md).
-Screenshot gallery: [artifacts/polish/index.html](artifacts/polish/index.html).
+The current world FOV and yaw-based movement are kept on the proven gameplay path. Held-item FOV is configured separately. Settings also include mouse sensitivity, invert Y, head bob, render scale, shadows, crosshair opacity and compass visibility.
 
-With the dev server running, `npm run test:browser` runs isolated Chrome gameplay,
-UI and multi-level persistence checks. `node scripts/polish-settings-qa.mjs` checks
-settings persistence, crafting capacity UI and a dense forest view. Set `CHROME_BIN`
-if Chrome is not installed at the default macOS application path.
+Mouse look uses frame-coalesced input with burst protection to avoid large camera jumps after browser/GPU stalls. Startup uses staged world loading plus renderer/shader warm-up before gameplay is revealed.
 
-## Camera and field of view
+## Development history
 
-Settings use horizontal FOV at a 16:9 reference aspect, 60–100 degrees (default 90). The renderer converts this to Three.js vertical FOV and preserves vertical coverage when resizing; ultrawide displays show more on the sides. Existing numeric preferences now follow this convention. Changes apply live and persist. Sprint adds a smooth 2-degree offset. Held items use a separate fixed 50-degree vertical camera, so world FOV does not stretch them.
+Release history is tracked in [`CHANGELOG.md`](./CHANGELOG.md) and is also visible from the in-game **HISTORY** menu. Implementation notes and QA status live in [`POLISH-STATUS.md`](./POLISH-STATUS.md).
 
-Run `node scripts/camera-fov-qa.mjs` with the Vite server running for camera/persistence/aspect regression checks. Open `artifacts/camera-fov/index.html` for exact-pose screenshot comparisons.
-
-
-## Version
-
-Current release: **0.2.0 / EA-02** (2026-09-11).
-
-Development history is tracked in [`CHANGELOG.md`](./CHANGELOG.md) and is also visible from the in-game **HISTORY** menu.
+From `v0.2.2` onward, this repository is the canonical source for new Tideland development.
