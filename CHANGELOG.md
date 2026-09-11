@@ -1,5 +1,16 @@
 # Tideland changelog
 
+## 0.6.0 — 2026-09-11
+
+Environment graphics overhaul.
+
+- Expanded grass/dirt/rock/sand terrain blending with wet shoreline sand and stronger close-range detail.
+- Added tree color variation, ferns, fallen twigs, dry meadow tufts and low-cost ground decals.
+- Improved procedural rock relief and shoreline detail with seaweed, driftwood and pebbles.
+- Reworked water with multi-scale wave normals, reflected sky tones, shallows and animated shoreline foam.
+- Improved distance fog, shadows, layered clouds, moonlight sky detail and night stars.
+- Added High/Ultra SSAO/contact shading, subtle bloom and color grading while keeping Low/Medium on the direct renderer path.
+
 ## 0.5.0 — 2026-09-11
 
 Gathering and weak-spot overhaul.

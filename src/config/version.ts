@@ -1,9 +1,19 @@
-export const GAME_VERSION='0.5.0';
-export const GAME_BUILD='EA-05';
+export const GAME_VERSION='0.6.0';
+export const GAME_BUILD='EA-06';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.6.0',date:'2026-09-11',title:'Environment graphics overhaul',changes:[
+    'Expanded terrain material blending with dedicated dirt, wet shoreline sand and stronger close-range procedural surface detail.',
+    'Added more tree bark/canopy variation plus instanced ferns, fallen twigs, dry meadow tufts and terrain decals.',
+    'Improved procedural rock relief and enriched the shoreline with denser pebbles, driftwood and tidal seaweed.',
+    'Reworked ocean shading with multi-scale wave normals, sky reflection, shallows and animated shoreline foam.',
+    'Upgraded the sky with layered moving clouds, stronger horizon depth, stars and a moon opposite the sun.',
+    'Improved dynamic distance fog and shadow quality, including a higher-resolution Ultra shadow profile.',
+    'Added quality-gated screen-space ambient occlusion/contact shading, restrained highlight bloom and color grading on High/Ultra.',
+    'Kept Low/Medium on the direct renderer path so the visual upgrade does not force expensive post-processing on slower hardware.'
+  ]},
   {version:'0.5.0',date:'2026-09-11',title:'Gathering & weak-spot overhaul',changes:[
     'Added visible impact marks and stronger material-specific wood, stone and metal particles at the actual strike point.',
     'Trees now reveal a red weak-spot X after the first hit; landing the next strike on it grants a 50% resource bonus and moves the target.',

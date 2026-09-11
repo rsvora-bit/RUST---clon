@@ -102,3 +102,25 @@ export function fiberGeometry():THREE.BufferGeometry {
 export function berryGeometry():THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[],r=randomSource(128);for(let i=0;i<18;i++){const g=new THREE.SphereGeometry(.065,6,5);const a=r()*6.28,rad=.3+r()*.35;g.translate(Math.cos(a)*rad,.5+r()*.62,Math.sin(a)*rad);parts.push(g);}const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
+
+
+export function fernGeometry():THREE.BufferGeometry {
+  const parts:THREE.BufferGeometry[]=[];
+  for(let arm=0;arm<9;arm++){
+    const g=new THREE.PlaneGeometry(.34,.95,4,7),p=g.getAttribute('position');
+    for(let i=0;i<p.count;i++){const y=p.getY(i)+.475,t=Math.max(0,Math.min(1,y/.95)),w=Math.sin(t*Math.PI)*(.92-.22*t);p.setX(i,p.getX(i)*w);p.setZ(i,Math.sin(t*Math.PI)*.13);}
+    g.translate(0,.46,0);temp.position.set(0,.02,0);temp.rotation.set(-.72+(arm%3)*.08,arm/9*Math.PI*2,(arm%2?1:-1)*.08);temp.scale.set(1,1,1);temp.updateMatrix();g.applyMatrix4(temp.matrix);parts.push(g);
+  }
+  const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());geo.computeVertexNormals();return geo;
+}
+
+export function twigGeometry():THREE.BufferGeometry {
+  const parts:THREE.BufferGeometry[]=[];
+  const add=(x:number,z:number,len:number,rot:number)=>{const g=new THREE.CylinderGeometry(.012,.021,len,5);g.rotateZ(Math.PI/2);g.rotateY(rot);g.translate(x,.025,z);parts.push(g);};
+  add(0,0,.95,.2);add(.08,.03,.62,-.55);add(-.14,-.04,.48,.83);const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
+}
+
+export function seaweedGeometry():THREE.BufferGeometry {
+  const parts:THREE.BufferGeometry[]=[];
+  for(let blade=0;blade<6;blade++){const g=new THREE.PlaneGeometry(.14,.9,2,7),p=g.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i)+.45,t=y/.9;p.setX(i,p.getX(i)*(1-t*.72)+Math.sin(t*8+blade)*.05*t);p.setZ(i,Math.sin(t*5+blade)*.055);}g.translate((blade-2.5)*.045,.44,0);g.rotateY(blade/6*Math.PI*2);parts.push(g);}const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());geo.computeVertexNormals();return geo;
+}
