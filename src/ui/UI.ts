@@ -1,5 +1,5 @@
 import {nearbyWorkbench} from '../survival/stations';
-import type { GameState, HUDData, ItemId, ItemStack, PieceType, Screen, Settings, UIActions } from '../core/types';
+import type { GameState, HUDData, ItemId, ItemStack, PieceType, ResourceNode, Screen, Settings, UIActions } from '../core/types';
 import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
@@ -31,6 +31,9 @@ export class UI {
   private diagnosticVisible = false;
   private lastSettingsScreen: Screen = 'menu';
   private hud: HUDData | null = null;
+  private lastHealth: number | null = null;
+  private craftHudHash = '';
+  private resourceFeedbackTimer = 0;
 
   constructor(container: HTMLElement, actions: UIActions) {
     this.actions = actions;
@@ -49,11 +52,11 @@ export class UI {
 
       <section class="screen game-screen" data-view="playing" aria-label="Gameplay interface">
         <div class="compass-wrap"><div class="compass-value">N</div><div class="compass-line"></div><div class="compass-needle"></div><div class="biome-label">WESTERN SHORE</div></div>
-        <div class="crosshair"><i></i></div><div class="interaction-prompt"></div>
+        <div class="crosshair"><i></i></div><div class="interaction-prompt"></div><div class="resource-feedback" aria-live="polite"></div><div class="damage-vignette" aria-hidden="true"></div>
         <div class="onboarding"><span class="hint-rule"></span><span class="tutorial-copy"></span><button class="help-shortcut" data-action="help" title="View controls">?</button></div>
         <div class="build-panel"></div>
-        <div class="hotbar-wrap"><div class="active-item-name"></div><div class="hotbar"></div><div class="hotbar-caption"><span><kbd>TAB</kbd> INVENTORY & CRAFTING</span><span><kbd>ESC</kbd> PAUSE</span></div></div>
-        <div class="vitals"><div class="vital health"><span class="vital-icon">+</span><div><i></i><span>HEALTH</span><b>100</b></div></div><div class="vital thirst"><span class="vital-icon droplet">◊</span><div><i></i><span>HYDRATION</span><b>100</b></div></div><div class="vital hunger"><span class="vital-icon food-icon">×</span><div><i></i><span>NOURISHMENT</span><b>100</b></div></div><div class="stamina"><i></i><span>STAMINA</span></div></div>
+        <div class="hotbar-wrap"><div class="active-item-name"></div><div class="hotbar"></div><div class="hotbar-caption"><span><kbd>TAB</kbd> INVENTORY</span><span><kbd>ESC</kbd> MENU</span></div></div><div class="hud-craft-queue" hidden></div>
+        <div class="vitals"><div class="vital health"><span class="vital-symbol">✚</span><div><i></i><span>HEALTH</span><b>100</b></div></div><div class="vital thirst"><span class="vital-symbol water-symbol">●</span><div><i></i><span>WATER</span><b>100</b></div></div><div class="vital hunger"><span class="vital-symbol food-symbol">◆</span><div><i></i><span>FOOD</span><b>100</b></div></div><div class="stamina"><i></i><span>STAMINA</span></div><div class="survival-status"><span class="status-pill wet" hidden>WET</span><span class="status-pill cold" hidden>COLD</span></div></div>
       </section>
 
       <section class="screen inventory-screen" data-view="inventory" aria-label="Inventory and crafting">
@@ -120,12 +123,32 @@ export class UI {
 
   notify(message: string): void {
     const item = document.createElement('div');
-    item.className = 'notification';
-    item.innerHTML = `<span class="notification-mark"></span><span>${esc(message)}</span>`;
+    const match = /^\+\s*(\d+)\s+(.+?)[.!]?$/.exec(message.trim());
+    let pickup: ItemId | null = null;
+    if(match) {
+      const wanted=match[2].trim().toLowerCase();
+      const found=Object.values(ITEMS).find(definition=>definition.displayName.toLowerCase()===wanted);
+      if(found) pickup=found.id;
+    }
+    item.className = `notification${pickup?' pickup':''}`;
+    item.innerHTML = pickup && match
+      ? `${icon(pickup,'notification-art')}<span class="notification-copy"><b>+${esc(match[1])}</b><small>${esc(ITEMS[pickup].displayName)}</small></span>`
+      : `<span class="notification-mark"></span><span class="notification-message">${esc(message)}</span>`;
     const notifications = this.find('.notifications');
     notifications.append(item);
     while (notifications.children.length > 5) notifications.firstElementChild?.remove();
-    window.setTimeout(() => {item.classList.add('leaving'); window.setTimeout(() => item.remove(),300);},3400);
+    window.setTimeout(() => {item.classList.add('leaving'); window.setTimeout(() => item.remove(),260);},pickup?2200:3200);
+  }
+
+  resourceHit(kind: ResourceNode['kind'], amount: number, depleted = false): void {
+    const feedback=this.find<HTMLElement>('.resource-feedback');
+    const resourceLabels:Record<ResourceNode['kind'],string>={tree:'WOOD',wood:'WOOD',stone:'STONE',metal:'METAL ORE',fiber:'CLOTH FIBER',berries:'BERRIES'};
+    feedback.className=`resource-feedback ${kind}${depleted?' depleted':''}`;
+    feedback.innerHTML=`<span class="resource-hit-mark"><i></i><i></i></span><div><strong>+${amount}</strong><small>${resourceLabels[kind]}${depleted?' · DEPLETED':''}</small></div>`;
+    void feedback.offsetWidth;
+    feedback.classList.add('show');
+    window.clearTimeout(this.resourceFeedbackTimer);
+    this.resourceFeedbackTimer=window.setTimeout(()=>feedback.classList.remove('show'),depleted?1050:620);
   }
 
   setDiagnostics(visible:boolean){if(visible!==this.diagnosticVisible)this.toggleDiagnostics();}
@@ -140,13 +163,15 @@ export class UI {
     if (this.screen === 'playing') {
       this.renderHotbar(hud);
       this.updateStats(hud);
+      this.renderCraftHud(state);
+      this.updateEnvironmentStatus(state,hud);
       const degrees = ((Math.round(hud.compass) % 360) + 360) % 360;
       const dirs = ['N','NE','E','SE','S','SW','W','NW'];
       this.find('.compass-value').textContent = `${dirs[Math.round(degrees/45)%8]}  ${String(degrees).padStart(3,'0')}°`;
       this.find('.compass-line').style.backgroundPositionX = `${-degrees*2}px`;
       this.find('.biome-label').textContent = hud.biome.toUpperCase();
       const interaction = hud.interaction;
-      const promptHTML = interaction ? `<kbd>${esc(interaction.key)}</kbd><div><strong>${esc(interaction.title)}</strong><span>${esc(interaction.action)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
+      const promptHTML = interaction ? `<span class="interaction-key"><kbd>${esc(interaction.key)}</kbd></span><div class="interaction-copy"><strong>${esc(interaction.action)}</strong><span>${esc(interaction.title)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
       const prompt = this.find('.interaction-prompt');
       if(prompt.innerHTML !== promptHTML) prompt.innerHTML = promptHTML;
       const gameScreen=this.find('.game-screen');
@@ -165,14 +190,42 @@ export class UI {
   }
 
   private updateStats(hud: HUDData): void {
+    const health=Math.max(0,Math.min(100,hud.stats.health));
+    if(this.lastHealth!==null && health < this.lastHealth-.05) {
+      const damage=Math.min(1,Math.max(.22,(this.lastHealth-health)/28));
+      const vignette=this.find<HTMLElement>('.damage-vignette');
+      vignette.style.setProperty('--damage',String(damage));
+      vignette.classList.remove('flash');void vignette.offsetWidth;vignette.classList.add('flash');
+    }
+    this.lastHealth=health;
     for (const [className, stat] of [['health','health'],['thirst','thirst'],['hunger','hunger']] as const) {
       const value = Math.max(0,Math.min(100,hud.stats[stat]));
       this.find(`.vital.${className} i`).style.width = `${value}%`;
       this.find(`.vital.${className} b`).textContent = String(Math.ceil(value));
       this.find(`.vital.${className}`).classList.toggle('critical',value < 20);
+      this.find(`.vital.${className}`).classList.toggle('warning',value >= 20 && value < 40);
     }
+    this.find('.game-screen').classList.toggle('low-health',health < 28);
     this.find('.stamina i').style.width = `${hud.stats.stamina}%`;
     this.find('.stamina').classList.toggle('full',hud.stats.stamina > 99);
+  }
+
+  private renderCraftHud(state: GameState): void {
+    const hash=JSON.stringify(state.craftQueue.map(job=>[job.recipeId,Math.ceil(job.remaining*10)/10]));
+    if(hash===this.craftHudHash)return;
+    this.craftHudHash=hash;
+    const queue=this.find<HTMLElement>('.hud-craft-queue');
+    queue.hidden=state.craftQueue.length===0;
+    if(!state.craftQueue.length){queue.innerHTML='';return;}
+    queue.innerHTML=`<div class="hud-craft-title"><span>CRAFTING</span><b>${state.craftQueue.length}</b></div><div class="hud-craft-items">${state.craftQueue.slice(0,4).map(job=>{const recipe=RECIPES[job.recipeId];if(!recipe)return '';const progress=Math.max(0,Math.min(100,(1-job.remaining/job.total)*100));return `<div class="hud-craft-item" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span><b>${esc(ITEMS[recipe.resultItemId].displayName)}</b><small>${job.remaining<=0?'READY':`${Math.ceil(job.remaining)}s`}</small></span><i style="width:${progress}%"></i></div>`;}).join('')}</div>`;
+  }
+
+  private updateEnvironmentStatus(state:GameState,hud:HUDData):void {
+    const weather=state.progression?.weather;
+    const wet=weather?.kind==='rain'||weather?.kind==='storm'||(weather?.rain??0)>.2;
+    const cold=hud.timeOfDay<5.5||hud.timeOfDay>21;
+    this.find<HTMLElement>('.status-pill.wet').hidden=!wet;
+    this.find<HTMLElement>('.status-pill.cold').hidden=!cold;
   }
 
   private renderHotbar(hud: HUDData): void {
@@ -186,7 +239,8 @@ export class UI {
 
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {
     const item = stack && ITEMS[stack.itemId];
-    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span><i class="slot-condition"></i>`:''}</button>`;
+    const tool=Boolean(item?.category==='tool');
+    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${tool?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${tool?'<i class="slot-condition" title="Tool condition"></i>':''}`:''}</button>`;
   }
 
   private renderInventory(state: GameState): void {
