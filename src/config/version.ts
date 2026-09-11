@@ -1,9 +1,18 @@
-export const GAME_VERSION='0.4.0';
-export const GAME_BUILD='EA-04';
+export const GAME_VERSION='0.5.0';
+export const GAME_BUILD='EA-05';
 export const GAME_RELEASE_DATE='2026-09-11';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.5.0',date:'2026-09-11',title:'Gathering & weak-spot overhaul',changes:[
+    'Added visible impact marks and stronger material-specific wood, stone and metal particles at the actual strike point.',
+    'Trees now reveal a red weak-spot X after the first hit; landing the next strike on it grants a 50% resource bonus and moves the target.',
+    'Stone and metal deposits now reveal a glowing sparkle weak spot with the same skill-hit bonus loop.',
+    'Made resource nodes react more visibly to impacts, with stronger shake on successful weak-spot hits.',
+    'Extended the final tree fall so the trunk visibly falls, rests on the ground and then sinks away, backed by a creak and heavy crash.',
+    'Added distinct procedural harvesting audio for rock, hatchet and pickaxe impacts.',
+    'Rebalanced tree, stone and metal gathering to use explicit per-tool resource yields on every individual hit.'
+  ]},
   {version:'0.4.0',date:'2026-09-11',title:'Movement & first-person animation overhaul',changes:[
     'Added tuned acceleration, deceleration, reverse response and restrained in-air steering instead of instant ground-speed changes.',
     'Reduced the sprint FOV kick to a subtle 0.85 degrees and added smooth crouch, landing bob and walking camera sway.',

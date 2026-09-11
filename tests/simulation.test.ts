@@ -67,12 +67,12 @@ describe('crafting and gathering progression', () => {
     const game = sim();
     expect(game.state.inventory.filter(Boolean).map(item => item?.itemId)).toEqual(['rock', 'torch']);
     const tree: ResourceNode = { id: 'tree-1', kind: 'tree', position: { x: 0, y: 1, z: 0 }, capacity: 120, remaining: 120, rotation: 0, scale: 1 };
-    expect(game.gather(tree)).toEqual({ amount: 30, depleted: false });
-    expect(game.state.nodeChanges['tree-1']).toBe(90);
+    expect(game.gather(tree)).toEqual({ amount: 18, depleted: false });
+    expect(game.state.nodeChanges['tree-1']).toBe(102);
     game.addItem('hatchet', 1);
     game.moveItem(3, 0);
-    expect(game.gather(tree).amount).toBe(75);
-    expect(game.gather(tree)).toEqual({ amount: 15, depleted: true });
+    expect(game.gather(tree).amount).toBe(42);
+    expect(game.gather(tree,true)).toEqual({ amount: 60, depleted: true });
     expect(game.gather(tree).amount).toBe(0);
     game.addItem('fiber', 50);
     expect(game.craft('plan')).toBe(true);

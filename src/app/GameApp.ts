@@ -14,9 +14,10 @@ import {Input} from '../input/Input';
 import {GameSimulation} from '../simulation/GameSimulation';
 import {UI} from '../ui/UI';
 import {keyLabel} from '../ui/i18n';
-import {AudioMixer,type FootstepSurface} from '../audio/AudioMixer';
+import {AudioMixer,type FootstepSurface,type GatherTool} from '../audio/AudioMixer';
 import {HeldItem} from '../rendering/HeldItem';
 import {ImpactFX} from '../rendering/ImpactFX';
+import {GatheringFeedback,type GatherStrike} from '../rendering/GatheringFeedback';
 import {StructureRenderer} from '../building/StructureRenderer';
 import {findBuildCandidate,PIECES} from '../building/rules';
 import {InteractionSystem} from '../entities/InteractionSystem';
@@ -29,11 +30,11 @@ import {PLAYER,WORLD,BUILD} from '../config/balance';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
 export class GameApp {
   readonly scene=new THREE.Scene();readonly camera=new THREE.PerspectiveCamera(60,1,.075,1700);private readonly projection=new FirstPersonProjection(this.camera);readonly renderer:THREE.WebGLRenderer;
-  readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
+  readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly gatheringFeedback:GatheringFeedback;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
   environment!:Environment;physics!:PhysicsWorld;player!:PlayerController;simulation!:GameSimulation;structures!:StructureRenderer;worldItems!:WorldItems;debug:DebugView;
   private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
   private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();
-  private pendingHit:{node:ResourceNode;remaining:number}|null=null;
+  private pendingHit:{node:ResourceNode;remaining:number;strike:GatherStrike}|null=null;
   private capturePaused=false;
   private worldSurvival!:WorldSurvival;private weather!:Weather;private islandMap!:IslandMap;private uiContainer:HTMLElement;
   private maintenancePanel:HTMLElement|null=null;private terminalReturn:Screen='menu';
@@ -43,7 +44,7 @@ export class GameApp {
   constructor(private canvas:HTMLCanvasElement,uiRoot:HTMLElement){
     this.uiContainer=uiRoot;
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.08;this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    this.input=new Input(canvas);this.audio=new AudioMixer(this.settings);this.impactFx=new ImpactFX(this.scene);this.scene.add(this.torchLight);this.debug=new DebugView(this.scene);
+    this.input=new Input(canvas);this.audio=new AudioMixer(this.settings);this.impactFx=new ImpactFX(this.scene);this.gatheringFeedback=new GatheringFeedback(this.scene);this.scene.add(this.torchLight);this.debug=new DebugView(this.scene);
     this.ui=new UI(uiRoot,{
       respawn:()=>this.respawn(),
       newGame:seed=>{void this.start(seed??WORLD.SEED);},continueGame:()=>{const saved=loadGame();if(saved)void this.start(saved.seed,saved);else this.ui.notify('No valid save was found. Start a new island.');},resume:()=>this.setScreen('playing'),save:()=>this.save(),mainMenu:()=>{if(this.activeWorld)this.save();this.setScreen('menu');},resetSave:()=>{resetSave();this.ui.setSaveAvailable(false);this.ui.notify('Saved world removed');},settings:s=>this.applySettings(s),setScreen:s=>this.setScreen(s),
@@ -63,7 +64,7 @@ export class GameApp {
   async init(){this.ui.setLoading(true);await this.loadingStage(3,'Bootstrapping renderer','Creating the WebGL pipeline and interface');await this.loadingStage(8,'Starting physics engine','Loading Rapier and preparing collision workers');await initPhysics();await this.loadingStage(13,'Preparing preview island','Generating a ready-to-play world behind the main menu');await this.makeWorld(WORLD.SEED);await this.warmUpWorld();this.activeWorld=false;this.ui.setLoading(false);this.setScreen('menu');this.installDevAPI();this.renderer.setAnimationLoop(t=>this.frame(t));}
   private async makeWorld(seed:number,saved?:GameState){
     this.worldSurvival?.dispose();this.weather?.dispose();this.islandMap?.dispose();
-    this.stationRenderer?.dispose();this.stationIds.clear();this.stationUI?.close();this.openStation=null;this.interactions.clear();this.knownStructures.clear();this.rainBarrel?.removeFromParent();this.structures?.dispose();this.worldItems?.dispose();this.physics?.dispose();this.environment?.dispose();
+    this.stationRenderer?.dispose();this.stationIds.clear();this.stationUI?.close();this.openStation=null;this.interactions.clear();this.gatheringFeedback.clear();this.knownStructures.clear();this.rainBarrel?.removeFromParent();this.structures?.dispose();this.worldItems?.dispose();this.physics?.dispose();this.environment?.dispose();
     await this.loadingStage(17,'Shaping terrain heightfield','Generating beaches, valleys, slopes and the player spawn');
     this.environment=new Environment(this.scene,seed,saved ? saved.worldGeneration ?? 1 : 2,true);
     await this.environment.populateAsync((progress,status,detail)=>this.loadingStage(progress,status,detail));
@@ -151,16 +152,31 @@ export class GameApp {
   }
   private registerNodes(){
     for(const node of this.environment.nodes){const object=this.environment.nodeObjects.get(node.id);if(!object)continue;
-      this.interactions.register({id:node.id,kind:'resource',object,position:()=>node.position,enabled:()=>node.remaining>0,info:()=>({title:GATHERING[node.kind].label,action:['fiber','berries','wood'].includes(node.kind)?'PICK UP':'GATHER',key:['fiber','berries','wood'].includes(node.kind)?keyLabel(this.settings.keybinds.interact):'LMB',detail:`${GATHERING[node.kind].itemId==='metal'?'METAL ORE':GATHERING[node.kind].itemId.toUpperCase()} · ${Math.ceil(node.remaining)} REMAINING`,progress:node.remaining/node.capacity}),interact:()=>this.gather(node)});
+      this.interactions.register({id:node.id,kind:'resource',object,position:()=>node.position,enabled:()=>node.remaining>0,info:()=>({title:GATHERING[node.kind].label,action:['fiber','berries','wood'].includes(node.kind)?'PICK UP':'GATHER',key:['fiber','berries','wood'].includes(node.kind)?keyLabel(this.settings.keybinds.interact):'LMB',detail:`${GATHERING[node.kind].itemId==='metal'?'METAL ORE':GATHERING[node.kind].itemId.toUpperCase()} · ${Math.ceil(node.remaining)} REMAINING`,progress:node.remaining/node.capacity}),interact:()=>this.gather(node,true,this.resourceStrike(node,object))});
     }
   }
-  private gather(node:ResourceNode,animate=true){if(this.cooldown>0)return;const result=this.simulation.gather(node);if(result.amount>0){this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();if(['tree','stone','metal','wood'].includes(node.kind))this.held.impact();this.impactFx.burst(node.position,node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries');this.ui.resourceHit(node.kind,result.amount,result.depleted);if(result.depleted&&node.kind==='tree')this.environment.fallTree(node.id,this.simulation.state.player.position);else this.environment.hitNode(node.id);this.audio.play(node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'||node.kind==='metal'?'stone':'pickup');this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);}}
+  private resourceStrike(node:ResourceNode,object?:THREE.Object3D):GatherStrike{
+    this.ray.setFromCamera(this.screenCenter,this.camera);this.ray.far=PLAYER.INTERACT_DISTANCE+1;
+    const hit=object?this.ray.intersectObject(object,true)[0]:undefined;
+    const fallback=new THREE.Vector3(node.position.x,node.position.y+(node.kind==='tree'?1.8:.55)*node.scale,node.position.z);
+    return this.gatheringFeedback.capture(node,this.ray.ray,hit?.point??fallback);
+  }
+  private gather(node:ResourceNode,animate=true,strike?:GatherStrike){
+    if(this.cooldown>0)return;const actual=strike??this.resourceStrike(node,this.environment.nodeObjects.get(node.id));const active=this.simulation.state.inventory[this.simulation.state.activeSlot]?.itemId;
+    const result=this.simulation.gather(node,actual.weakSpot);if(result.amount<=0)return;
+    this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();if(['tree','stone','metal','wood'].includes(node.kind))this.held.impact();
+    const kind=node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries';
+    this.impactFx.burst(actual.point,kind,actual.weakSpot?1.55:1);this.gatheringFeedback.onHit(node,actual.point,actual.weakSpot,result.depleted);this.ui.resourceHit(node.kind,result.amount,result.depleted,actual.weakSpot);
+    if(['tree','stone','metal'].includes(node.kind))this.audio.gather((active==='rock'||active==='hatchet'||active==='pickaxe'?active:null) as GatherTool|null,node.kind as 'tree'|'stone'|'metal',actual.weakSpot);else this.audio.play('pickup');
+    if(result.depleted&&node.kind==='tree'){this.environment.fallTree(node.id,this.simulation.state.player.position);this.audio.treeFall();}else if(!result.depleted)this.environment.hitNode(node.id,actual.weakSpot?1.45:1);
+    this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);
+  }
   private use(){
     if(this.cooldown>0)return;
     if(this.stationPlacement){this.placeStation(this.stationPlacement.kind,this.stationPlacement.position,this.buildRotation);return;}
     if(this.building){if(this.candidate){const s=this.simulation.place(this.candidate);if(s){this.syncStructures();this.impactFx.burst(this.candidate.position,'build');this.audio.play('build');this.held.hit();this.cooldown=.28;}else this.audio.play('error');}return;}
     const target=this.interactions.current;
-    if(target?.kind==='resource'){const node=this.environment.nodes.find(n=>n.id===target.id);if(node&&['tree','stone','metal'].includes(node.kind)){const active=this.simulation.state.inventory[this.simulation.state.activeSlot]?.itemId;if(active==='rock'||active==='hatchet'||active==='pickaxe'){this.held.hit();this.pendingHit={node,remaining:.13};this.cooldown=.62;}else target.interact();}else target.interact();return;}
+    if(target?.kind==='resource'){const node=this.environment.nodes.find(n=>n.id===target.id);if(node&&['tree','stone','metal'].includes(node.kind)){const active=this.simulation.state.inventory[this.simulation.state.activeSlot]?.itemId;if(active==='rock'||active==='hatchet'||active==='pickaxe'){this.held.hit();this.pendingHit={node,remaining:.13,strike:this.resourceStrike(node,target.object)};this.cooldown=.62;}else target.interact();}else target.interact();return;}
     const slot=this.simulation.state.activeSlot,item=this.simulation.state.inventory[slot]?.itemId;
     if(item&&ITEMS[item].consumable){if(this.simulation.consume(slot)){this.audio.play('eat');this.cooldown=.7;this.syncHeld();}}else{this.held.hit();this.cooldown=.5;}
   }
@@ -214,7 +230,7 @@ export class GameApp {
   private frame(timestamp:number){
     const dt=Math.min((timestamp-(this.last||timestamp))/1000,.1);this.last=timestamp;if(!this.environment||this.loading)return;this.elapsed+=dt;this.frameMs=THREE.MathUtils.lerp(this.frameMs,dt*1000,.04);this.fps=1000/Math.max(this.frameMs,1);this.cooldown=Math.max(0,this.cooldown-dt);
     const playing=this.screen==='playing',running=playing||this.screen==='inventory'||this.screen==='station';
-    if(this.pendingHit){if(!playing)this.pendingHit=null;else{this.pendingHit.remaining-=dt;if(this.pendingHit.remaining<=0){const node=this.pendingHit.node;this.pendingHit=null;const p=this.simulation.state.player.position;if(Math.hypot(p.x-node.position.x,p.z-node.position.z)<=PLAYER.INTERACT_DISTANCE+node.scale){this.cooldown=0;this.gather(node,false);}}}}
+    if(this.pendingHit){if(!playing)this.pendingHit=null;else{this.pendingHit.remaining-=dt;if(this.pendingHit.remaining<=0){const {node,strike}=this.pendingHit;this.pendingHit=null;const p=this.simulation.state.player.position;if(Math.hypot(p.x-node.position.x,p.z-node.position.z)<=PLAYER.INTERACT_DISTANCE+node.scale){this.cooldown=0;this.gather(node,false,strike);}}}}
     if(running&&this.activeWorld){
       this.accumulator+=this.capturePaused?0:dt;let steps=0;while(this.accumulator>=1/60&&steps<6){this.player.tick(1/60,this.simulation.state,playing);this.simulation.tick(1/60,this.player.sprinting);this.accumulator-=1/60;steps++;}
       if(this.timeMultiplier!==1)this.simulation.state.timeOfDay=(this.simulation.state.timeOfDay+dt*(this.timeMultiplier-1)*24/1800)%24;
@@ -231,7 +247,7 @@ export class GameApp {
     }
     this.projection.update(dt,playing&&this.player.sprinting);
     const hour=this.activeWorld?this.simulation.state.timeOfDay:9.4;
-    this.environment.update(dt,hour,this.camera.position);const weather=this.weather.update(running?dt:0,this.simulation.state,this.environment.atmosphere,this.camera.position,this.settings.quality==='ultra'?'high':this.settings.quality);this.environment.windStrength=weather.wind;this.audio.setWeather(weather.rain);this.islandMap.update(this.simulation.state.player.position,this.player.yaw,ensureProgression(this.simulation.state).waypoint);this.stationRenderer.update(ensureProgression(this.simulation.state).stations,this.elapsed,this.camera.position);if(this.openStation){const s=this.station(this.openStation);if(s)this.stationUI.update(s,this.simulation.state.inventory);}this.impactFx.update(dt);this.updateTorchLight(playing);this.debug.update(this.physics,this.simulation.state.structures);
+    this.environment.update(dt,hour,this.camera.position);const weather=this.weather.update(running?dt:0,this.simulation.state,this.environment.atmosphere,this.camera.position,this.settings.quality==='ultra'?'high':this.settings.quality);this.environment.windStrength=weather.wind;this.audio.setWeather(weather.rain);this.islandMap.update(this.simulation.state.player.position,this.player.yaw,ensureProgression(this.simulation.state).waypoint);this.stationRenderer.update(ensureProgression(this.simulation.state).stations,this.elapsed,this.camera.position);if(this.openStation){const s=this.station(this.openStation);if(s)this.stationUI.update(s,this.simulation.state.inventory);}this.impactFx.update(dt);this.gatheringFeedback.update(dt,this.camera);this.updateTorchLight(playing);this.debug.update(this.physics,this.simulation.state.structures);
     // Keep diagnostics for the complete frame, including the separate viewmodel pass.
     this.renderer.info.autoReset=false;this.renderer.info.reset();
     const px=this.camera.position.x,py=this.camera.position.y,pz=this.camera.position.z,rx=this.camera.rotation.x,ry=this.camera.rotation.y,rz=this.camera.rotation.z;

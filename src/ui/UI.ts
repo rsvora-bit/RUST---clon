@@ -178,11 +178,12 @@ export class UI {
     window.setTimeout(() => {item.classList.add('leaving'); window.setTimeout(() => item.remove(),260);},pickup?2200:3200);
   }
 
-  resourceHit(kind: ResourceNode['kind'], amount: number, depleted = false): void {
+  resourceHit(kind: ResourceNode['kind'], amount: number, depleted = false, weakSpot = false): void {
     const feedback=this.find<HTMLElement>('.resource-feedback');
     const resourceLabels:Record<ResourceNode['kind'],string>=this.settings.language==='cs'?{tree:'DŘEVO',wood:'DŘEVO',stone:'KÁMEN',metal:'KOVOVÁ RUDA',fiber:'VLÁKNO',berries:'BOBULE'}:{tree:'WOOD',wood:'WOOD',stone:'STONE',metal:'METAL ORE',fiber:'CLOTH FIBER',berries:'BERRIES'};
-    feedback.className=`resource-feedback ${kind}${depleted?' depleted':''}`;
-    feedback.innerHTML=`<span class="resource-hit-mark"><i></i><i></i></span><div><strong>+${amount}</strong><small>${resourceLabels[kind]}${depleted?' · '+this.tx('depleted'):''}</small></div>`;
+    feedback.className=`resource-feedback ${kind}${depleted?' depleted':''}${weakSpot?' weak-spot':''}`;
+    const weak=this.settings.language==='cs'?'SLABÉ MÍSTO':'WEAK SPOT';
+    feedback.innerHTML=`<span class="resource-hit-mark"><i></i><i></i></span><div><strong>+${amount}</strong><small>${resourceLabels[kind]}${weakSpot?' · '+weak:''}${depleted?' · '+this.tx('depleted'):''}</small></div>`;
     void feedback.offsetWidth;
     feedback.classList.add('show');
     window.clearTimeout(this.resourceFeedbackTimer);
