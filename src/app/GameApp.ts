@@ -14,7 +14,7 @@ import {Input} from '../input/Input';
 import {GameSimulation} from '../simulation/GameSimulation';
 import {UI} from '../ui/UI';
 import {keyLabel} from '../ui/i18n';
-import {AudioMixer} from '../audio/AudioMixer';
+import {AudioMixer,type FootstepSurface} from '../audio/AudioMixer';
 import {HeldItem} from '../rendering/HeldItem';
 import {ImpactFX} from '../rendering/ImpactFX';
 import {StructureRenderer} from '../building/StructureRenderer';
@@ -51,7 +51,7 @@ export class GameApp {
     });
     this.stationUI=new StationUI(uiRoot,{move:(id,a,b,split)=>{const station=this.station(id);if(station&&!transfer(this.simulation.state.inventory,station,a,b,split,p=>this.simulation.fitsQueue(p)))this.ui.notify('Transfer blocked: slot type, capacity or reserved crafting space');},takeAll:id=>{const s=this.station(id);if(s)takeAll(this.simulation.state.inventory,s,p=>this.simulation.fitsQueue(p));},toggle:id=>{const s=this.station(id);if(s)s.active=!s.active;},spawn:id=>{ensureProgression(this.simulation.state).spawnId=id;this.ui.notify('Respawn point set');},close:()=>{this.stationUI.close();this.openStation=null;this.setScreen('playing');}});
     this.terminal=new DevTerminal(uiRoot,open=>{if(open){this.terminalReturn=this.screen;this.setScreen('pause');}else this.setScreen(this.terminalReturn);});this.registerCommands();
-    this.input.onLook=(x,y)=>{if(this.screen==='playing'&&this.player)this.player.look(x,y);};this.input.onKey=code=>this.onKey(code);
+    this.input.onLook=(x,y)=>{if(this.screen==='playing'&&this.player){this.player.look(x,y);this.held.look(x,y);}};this.input.onKey=code=>this.onKey(code);
     this.input.onClick=button=>{if(this.screen!=='playing')return;if(!this.input.locked){void this.input.lock();if(button===0){this.leftDown=true;this.use();}if(button===2){this.building=false;this.candidate=null;this.structures.preview(null);}return;}if(button===0){this.leftDown=true;this.use();}if(button===2){this.building=false;this.candidate=null;this.structures.preview(null);}};
     this.input.onWheel=dir=>{if(this.screen!=='playing')return;if(this.building)this.cyclePiece(dir);else{this.simulation.selectSlot((this.simulation.state.activeSlot+dir+6)%6);this.syncHeld();}};
     this.input.onLockChange=locked=>{if(!locked){this.leftDown=false;if(this.screen==='playing'&&!this.loading)this.setScreen('pause');}};
@@ -76,7 +76,7 @@ export class GameApp {
     // colliders after the physics bridge is rebuilt so invisible resources do
     // not become walls on a continued island.
     for (const node of this.environment.nodes) if ((this.simulation.state.nodeChanges[node.id] ?? node.remaining) <= 0) this.physics.removeNodeCollider(node.id);
-    this.player=new PlayerController(this.physics,this.camera,this.input,this.settings,this.simulation.state);this.player.onStep=()=>this.audio.play('step');
+    this.player=new PlayerController(this.physics,this.camera,this.input,this.settings,this.simulation.state);this.player.onStep=speed=>this.audio.footstep(this.footstepSurface(),speed);
     await this.loadingStage(80,'Placing landmarks','Populating survival points of interest and weather systems');this.worldSurvival=new WorldSurvival(this.environment,this.scene,seed);this.worldSurvival.populate(this.simulation.state);this.physics.setStructure('landmarks',this.worldSurvival.collisionBoxes());this.weather=new Weather(this.scene);
     await this.loadingStage(84,'Preparing map and stations','Building navigation, station renderers and interaction data');this.islandMap=new IslandMap(this.uiContainer,this.worldSurvival,this.environment,p=>{const progress=ensureProgression(this.simulation.state);if(p)progress.waypoint=p;else delete progress.waypoint;},()=>{this.islandMap.close();this.setScreen('playing');});
     this.stationRenderer=new StationRenderer(this.scene);this.syncStations();
@@ -121,6 +121,8 @@ export class GameApp {
     if(this.screen!=='playing')return;
     if(/^Digit[1-6]$/.test(code)){this.simulation.selectSlot(Number(code.slice(-1))-1);this.building=false;this.syncHeld();}
     if(code===keys.jump)this.player.jump();
+    if(code===keys.autoRun){const enabled=this.player.toggleAutoRun();this.ui.notify(this.settings.language==='cs'?(enabled?'Automatický běh zapnut':'Automatický běh vypnut'):(enabled?'Auto-run enabled':'Auto-run disabled'));}
+    if(code===keys.inspect)this.held.inspect();
     if(code===keys.interact)this.interactions.trigger();
     if(code===keys.build)this.toggleBuild();
     if(code===keys.rotate&&(this.building||this.stationPlacement))this.buildRotation+=Math.PI/2;
@@ -152,7 +154,7 @@ export class GameApp {
       this.interactions.register({id:node.id,kind:'resource',object,position:()=>node.position,enabled:()=>node.remaining>0,info:()=>({title:GATHERING[node.kind].label,action:['fiber','berries','wood'].includes(node.kind)?'PICK UP':'GATHER',key:['fiber','berries','wood'].includes(node.kind)?keyLabel(this.settings.keybinds.interact):'LMB',detail:`${GATHERING[node.kind].itemId==='metal'?'METAL ORE':GATHERING[node.kind].itemId.toUpperCase()} · ${Math.ceil(node.remaining)} REMAINING`,progress:node.remaining/node.capacity}),interact:()=>this.gather(node)});
     }
   }
-  private gather(node:ResourceNode,animate=true){if(this.cooldown>0)return;const result=this.simulation.gather(node);if(result.amount>0){this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();this.impactFx.burst(node.position,node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries');this.ui.resourceHit(node.kind,result.amount,result.depleted);if(result.depleted&&node.kind==='tree')this.environment.fallTree(node.id,this.simulation.state.player.position);else this.environment.hitNode(node.id);this.audio.play(node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'||node.kind==='metal'?'stone':'pickup');this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);}}
+  private gather(node:ResourceNode,animate=true){if(this.cooldown>0)return;const result=this.simulation.gather(node);if(result.amount>0){this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();if(['tree','stone','metal','wood'].includes(node.kind))this.held.impact();this.impactFx.burst(node.position,node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'?'metal':node.kind as 'fiber'|'berries');this.ui.resourceHit(node.kind,result.amount,result.depleted);if(result.depleted&&node.kind==='tree')this.environment.fallTree(node.id,this.simulation.state.player.position);else this.environment.hitNode(node.id);this.audio.play(node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'||node.kind==='metal'?'stone':'pickup');this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);}}
   private use(){
     if(this.cooldown>0)return;
     if(this.stationPlacement){this.placeStation(this.stationPlacement.kind,this.stationPlacement.position,this.buildRotation);return;}
@@ -196,6 +198,18 @@ export class GameApp {
     const water=new THREE.Mesh(new THREE.CircleGeometry(.39,20),new THREE.MeshStandardMaterial({color:'#6096a3',roughness:.15,metalness:.6}));water.rotation.x=-Math.PI/2;water.position.y=.70;g.add(water);this.scene.add(g);this.rainBarrel=g;
     this.interactions.register({id:'rain-collector',kind:'water',object:g,position:()=>g.position,enabled:()=>true,info:()=>({title:'Rain collector',action:'DRINK FRESH WATER',key:keyLabel(this.settings.keybinds.interact),detail:'A little kindness left behind.'}),interact:()=>{this.simulation.state.player.stats.thirst=Math.min(100,this.simulation.state.player.stats.thirst+35);this.ui.notify('Hydration +35');this.audio.play('eat');}});
   }
+  private footstepSurface():FootstepSurface{
+    const p=this.simulation.state.player.position;
+    // Player-built floors/foundations get a dry timber transient; natural ground
+    // maps the procedural biome to distinct sand/grass/forest/rock profiles.
+    const onTimber=this.simulation.state.structures.some(s=>{if(!['foundation','floor','roof'].includes(s.pieceType))return false;const dx=Math.abs(s.position.x-p.x),dz=Math.abs(s.position.z-p.z);return dx<1.55&&dz<1.55&&Math.abs(p.y-s.position.y)<1.25;});
+    if(onTimber)return 'wood';
+    const biome=this.environment.biomeAt(p.x,p.z);
+    if(biome==='COAST')return 'sand';
+    if(biome==='ROCKY UPLAND')return 'rock';
+    if(biome==='FOREST')return 'forest';
+    return 'grass';
+  }
   private tutorial(){if(this.stationPlacement)return `${STATIONS[this.stationPlacement.kind].name} · LMB place · R rotate · ${this.stationPlacement.valid?'READY':'Aim at a clear surface'}`;const s=this.simulation.state,waypoint=ensureProgression(s).waypoint;if(waypoint)return `WAYPOINT ${Math.round(Math.hypot(waypoint.x-s.player.position.x,waypoint.z-s.player.position.z))} m · M map · G structure maintenance`; if(s.structures.length>=5)return 'Make this shore your own.  ·  ESC to save your world';if(s.structures.length>0)return 'Build your shelter.  ·  Q selects a piece · R rotates';if(this.simulation.count('plan'))return 'Equip your building plan.  ·  B to build';if(this.simulation.count('wood')>=25&&this.simulation.count('fiber')>=10)return 'You have the essentials.  ·  TAB to craft a building plan';return 'Find your footing.  ·  Gather wood and wild flax · TAB for crafting';}
   private frame(timestamp:number){
     const dt=Math.min((timestamp-(this.last||timestamp))/1000,.1);this.last=timestamp;if(!this.environment||this.loading)return;this.elapsed+=dt;this.frameMs=THREE.MathUtils.lerp(this.frameMs,dt*1000,.04);this.fps=1000/Math.max(this.frameMs,1);this.cooldown=Math.max(0,this.cooldown-dt);
@@ -211,7 +225,7 @@ export class GameApp {
       this.autoSave+=dt;if(this.autoSave>60){this.save(false);this.autoSave=0;}
       if(playing){this.updateBuild();this.interactions.update(this.camera,PLAYER.INTERACT_DISTANCE,[this.groundMesh,...this.structures.objects.values()].filter(o=>o!==this.interactions.current?.object));if(this.leftDown&&!this.building&&this.interactions.current?.kind==='resource'&&this.cooldown<=0)this.use();}
       else this.structures.preview(null);
-      this.held.update(dt,this.player.speed);
+      this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching);
     } else if(this.screen==='menu'||(this.screen==='settings'&&!this.activeWorld)){
       const p=this.environment.spawn;this.camera.position.set(p.x+29,this.environment.heightAt(p.x+29,p.z+25)+9,p.z+25);this.camera.lookAt(p.x-25,10,p.z-60);
     }
@@ -221,7 +235,7 @@ export class GameApp {
     // Keep diagnostics for the complete frame, including the separate viewmodel pass.
     this.renderer.info.autoReset=false;this.renderer.info.reset();
     const px=this.camera.position.x,py=this.camera.position.y,pz=this.camera.position.z,rx=this.camera.rotation.x,ry=this.camera.rotation.y,rz=this.camera.rotation.z;
-    if(playing&&this.settings.cameraShake){const speed=Math.min(1,this.player.speed/7.1),kick=this.player.sprinting?.0045:.0015;this.camera.position.x+=Math.sin(this.elapsed*13.7)*kick*speed;this.camera.position.y+=Math.sin(this.elapsed*19.1)*kick*.55*speed;this.camera.rotation.z+=Math.sin(this.elapsed*10.3)*kick*.6*speed;}
+    if(playing&&this.settings.cameraShake&&this.player.sprinting){const kick=.00115;this.camera.position.x+=Math.sin(this.elapsed*13.7)*kick;this.camera.position.y+=Math.sin(this.elapsed*19.1)*kick*.45;}
     const blur=this.settings.motionBlur&&playing?Math.min(.55,Math.max(0,(this.player.speed-2)*.09)):0;this.canvas.classList.toggle('motion-blur-active',blur>.02);this.canvas.style.setProperty('--motion-blur',`${blur.toFixed(2)}px`);
     this.renderer.render(this.scene,this.camera);this.camera.position.set(px,py,pz);this.camera.rotation.set(rx,ry,rz,'YXZ');if(playing)this.held.render(this.renderer);
     this.uiTimer+=dt;if(this.uiTimer>=.1){this.uiTimer=0;const state=this.simulation.state,p=state.player.position;const stats=this.renderer.info.render;

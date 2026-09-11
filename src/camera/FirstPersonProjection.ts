@@ -20,8 +20,11 @@ export class FirstPersonProjection {
   setBaseFov(value:number){this.base=normalizeFov(value);this.sprintOffset=0;this.apply();}
   resize(aspect:number){this.camera.aspect=Math.max(.1,aspect);this.apply();}
   update(dt:number,sprinting:boolean){
-    const target=sprinting?2:0;
-    this.sprintOffset=MathUtils.damp(this.sprintOffset,target,10,dt);
+    // Survival FPS feel: the sprint kick should register subconsciously rather
+    // than looking like a zoom effect. 0.85° is enough to sell speed without
+    // changing aiming feel or creating motion sickness on wide FOVs.
+    const target=sprinting?.85:0;
+    this.sprintOffset=MathUtils.damp(this.sprintOffset,target,8,dt);
     if(Math.abs(this.sprintOffset-target)<.001)this.sprintOffset=target;
     const fov=normalizeFov(this.base+this.sprintOffset);
     if(Math.abs(this.camera.fov-fov)>.00001)this.apply();

@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.2.4%20%7C%20EA--02.4-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.4.0%20%7C%20EA--04-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.2.4 / EA-02.4` · **11 September 2026**
+**Current release:** `v0.4.0 / EA-04` · **11 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -81,9 +81,9 @@ The main idea is simple:
 ### 🎒 Player & UI
 - Inventory and quick belt
 - Crafting queue
-- First-person held items
+- First-person hands with animated held tools, equip transitions, sway, sprint pose and inspect
 - Configurable FOV and viewmodel FOV
-- Mouse sensitivity, invert Y and head bob settings
+- Frame-rate independent mouse look, separate X/Y sensitivity, auto-run, invert Y and head bob settings
 - Render scale, shadows, compass and crosshair settings
 - Map, waypoints, diagnostics and developer telemetry
 
@@ -94,18 +94,18 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 
 ## 🚀 Current development focus
 
-**v0.2.x** is focused on making the foundation reliable before larger content expansion.
+**v0.4.x** is focused on first-person game feel, movement and viewmodel presentation.
 
-- ✅ Stable yaw-based first-person movement
-- ✅ Cross-device mouse-look filtering and burst protection
+- ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
+- ✅ Frame-rate independent mouse-look accumulation and burst protection
 - ✅ Detailed staged world loading
 - ✅ Shader compilation and GPU warm-up before gameplay
 - ✅ Falling-tree resource depletion
 - ✅ Expanded settings and diagnostics
 - ✅ Automated CI validation
 - 🔧 GitHub Pages deployment for the new standalone repository
-- 🎨 Next major focus: graphics, environment and atmosphere overhaul
-- 🔊 Planned: improved ambience, footsteps, harvesting, weather and interaction audio
+- ✅ Animated hands/tools with swing, recoil, sway, sprint pose and inspect
+- ✅ Speed- and surface-aware procedural footsteps
 
 ---
 

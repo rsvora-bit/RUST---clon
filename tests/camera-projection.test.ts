@@ -20,8 +20,8 @@ describe('first person camera projection',()=>{
  });
  it('adds a small sprint offset and clamps safely at the configured maximum',()=>{
   const camera=new PerspectiveCamera(),projection=new FirstPersonProjection(camera);projection.setBaseFov(75);
-  projection.update(1/60,true);expect(camera.fov).toBeGreaterThan(75);expect(camera.fov).toBeLessThan(77);
-  for(let i=0;i<120;i++)projection.update(1/60,true);expect(camera.fov).toBeCloseTo(77,8);
+  projection.update(1/60,true);expect(camera.fov).toBeGreaterThan(75);expect(camera.fov).toBeLessThan(76);
+  for(let i=0;i<120;i++)projection.update(1/60,true);expect(camera.fov).toBeCloseTo(75.85,8);
   projection.setBaseFov(100);for(let i=0;i<120;i++)projection.update(1/60,true);expect(camera.fov).toBeCloseTo(100,8);
   for(let i=0;i<120;i++)projection.update(1/60,false);expect(camera.fov).toBeCloseTo(100,8);
   expect(normalizeFov(500)).toBe(100);expect(normalizeFov(-4)).toBe(60);expect(normalizeFov(NaN)).toBe(90);
