@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {WORLD} from '../config/balance';
-import type {GraphicsQuality} from '../core/types';
+import type {GraphicsQuality,ShadowQuality} from '../core/types';
 
 export class Atmosphere {
   readonly sky:THREE.Mesh<THREE.SphereGeometry,THREE.ShaderMaterial>;
@@ -44,6 +44,11 @@ export class Atmosphere {
 
   setQuality(q:GraphicsQuality):void{
     this.sun.castShadow=q!=='low';const size=q==='ultra'?3072:q==='high'?2048:q==='medium'?1024:768;this.sun.shadow.radius=q==='ultra'?4:q==='high'?3:2;
+    if(this.sun.shadow.mapSize.x!==size){this.sun.shadow.mapSize.set(size,size);this.sun.shadow.map?.dispose();this.sun.shadow.map=null;}
+  }
+  setShadowSettings(enabled:boolean,quality:ShadowQuality,distance:number):void{
+    this.sun.castShadow=enabled;const size=quality==='high'?3072:quality==='medium'?2048:1024,d=Math.max(35,Math.min(120,distance));this.sun.shadow.radius=quality==='high'?4:quality==='medium'?3:2;
+    this.sun.shadow.camera.left=this.sun.shadow.camera.bottom=-d;this.sun.shadow.camera.right=this.sun.shadow.camera.top=d;this.sun.shadow.camera.far=Math.max(150,d*3.1);this.sun.shadow.camera.updateProjectionMatrix();
     if(this.sun.shadow.mapSize.x!==size){this.sun.shadow.mapSize.set(size,size);this.sun.shadow.map?.dispose();this.sun.shadow.map=null;}
   }
   dispose():void{this.sky.geometry.dispose();this.sky.material.dispose();this.ocean.geometry.dispose();this.ocean.material.dispose();this.scene.remove(this.sky,this.ocean,this.sun,this.sun.target,this.fill);this.sun.shadow.map?.dispose();}

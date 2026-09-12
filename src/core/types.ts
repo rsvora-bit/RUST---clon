@@ -4,6 +4,7 @@ export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'ha
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';
+export type ShadowQuality = 'low'|'medium'|'high';
 export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|'crouch'|'interact'|'inventory'|'build'|'rotate'|'cycleBuild'|'use'|'map'|'maintenance'|'autoRun'|'inspect';
 export type Keybinds = Record<KeybindAction,string>;
 export interface ItemDefinition {id:ItemId; displayName:string; description:string; category:ItemCategory; icon:string; maxStack:number; placeable?:boolean; consumable?:boolean; tags:string[]}
@@ -17,7 +18,7 @@ export interface PlayerStats {health:number; hunger:number; thirst:number; stami
 export interface CraftJob {recipeId:string; remaining:number; total:number}
 export interface GameState {progression?:{version:1;stations:Station[];spawnId?:string;waypoint?:{x:number;z:number};weather:{kind:'clear'|'rain'|'fog'|'storm';blend:number;rain?:number;mist?:number;storm?:number;remaining:number};lootGenerated:boolean};version:1; worldGeneration?:1|2; seed:number; elapsed:number; timeOfDay:number; player:{position:Vec3; yaw:number; pitch:number; stats:PlayerStats}; inventory:(ItemStack|null)[]; activeSlot:number; structures:Structure[]; nodeChanges:Record<string,number>; drops:DroppedItem[]; craftQueue:CraftJob[]; nextId:number}
 export interface SaveSlotSummary {slot:number; exists:boolean; seed?:number; savedAt?:number; elapsed?:number; timeOfDay?:number; structures?:number; worldGeneration?:1|2}
-export interface Settings {language:Language; sensitivityX:number; sensitivityY:number; fov:number; viewmodelFov:number; invertY:boolean; headBob:boolean; cameraShake:boolean; motionBlur:boolean; masterVolume:number; musicVolume:number; effectsVolume:number; ambientVolume:number; quality:GraphicsQuality; renderScale:number; shadows:boolean; crosshairOpacity:number; crosshairScale:number; hudScale:number; hudOpacity:number; brightness:number; showCompass:boolean; showFps:boolean; showTutorialHints:boolean; keybinds:Keybinds}
+export interface Settings {language:Language; sensitivityX:number; sensitivityY:number; fov:number; viewmodelFov:number; invertY:boolean; headBob:boolean; cameraShake:boolean; motionBlur:boolean; masterVolume:number; musicVolume:number; effectsVolume:number; ambientVolume:number; quality:GraphicsQuality; renderScale:number; shadows:boolean; shadowQuality:ShadowQuality; shadowDistance:number; foliageDensity:number; postProcessing:boolean; ambientOcclusion:boolean; bloom:boolean; crosshairOpacity:number; crosshairScale:number; hudScale:number; hudOpacity:number; brightness:number; showCompass:boolean; showFps:boolean; showTutorialHints:boolean; keybinds:Keybinds}
 export interface BuildCandidate {pieceType:PieceType; position:Vec3; rotation:number; valid:boolean; reason:string; parentId?:string; socketId?:string; snapped:boolean}
 export type Screen = 'menu'|'playing'|'inventory'|'pause'|'settings'|'dead'|'station';
 export interface InteractionInfo {title:string; action:string; key:string; detail?:string; progress?:number}
