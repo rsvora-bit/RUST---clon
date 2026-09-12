@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.0';
-export const GAME_BUILD='EA-07';
-export const GAME_RELEASE_DATE='2026-09-11';
+export const GAME_VERSION='0.7.1';
+export const GAME_BUILD='EA-07.1';
+export const GAME_RELEASE_DATE='2026-09-12';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.1',date:'2026-09-12',title:'UI reliability & graphics controls patch',changes:[
+    'Fixed per-slot delete confirmation so the selected local world is removed, the save browser refreshes immediately and active autosave detaches safely.',
+    'Rebuilt the in-game pause surface into a larger survival-game menu with direct save management and clearer actions.',
+    'Fixed FPS counter and tutorial-hint toggles so ON/OFF state updates immediately and persists correctly.',
+    'Reverted grass to a stable material path to eliminate driver-dependent black/collapsed vegetation artifacts.',
+    'Expanded graphics settings with foliage density, independent shadow quality/distance and post-processing, ambient-occlusion and bloom controls.'
+  ]},
   {version:'0.7.0',date:'2026-09-11',title:'Classic menu, save slots & HUD settings',changes:[
     'Restored the original left-aligned Tideland menu language with a cleaner modern survival-game presentation.',
     'Added five independent local world save slots with timestamps, seed/playtime metadata, loading and per-slot deletion.',

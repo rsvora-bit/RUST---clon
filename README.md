@@ -12,7 +12,7 @@
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.0 / EA-07` · **11 September 2026**
+**Current release:** `v0.7.1 / EA-07.1` · **11 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 

@@ -24,6 +24,9 @@ export class WorldPostFX {
   private readonly output:OutputPass;
   private enabled=false;
   private quality:GraphicsQuality='high';
+  private userEnabled=true;
+  private userSsao=true;
+  private userBloom=true;
 
   constructor(private readonly renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera){
     this.composer=new EffectComposer(renderer);
@@ -35,12 +38,13 @@ export class WorldPostFX {
     this.setQuality('high');
   }
 
-  setQuality(q:GraphicsQuality):void{
-    this.quality=q;this.enabled=q==='high'||q==='ultra';
-    this.ssao.enabled=this.enabled;this.bloom.enabled=this.enabled;this.grade.enabled=this.enabled;this.output.enabled=this.enabled;
-    this.ssao.kernelRadius=q==='ultra'?10:7;this.ssao.minDistance=q==='ultra'?.002:.0025;this.ssao.maxDistance=q==='ultra'?.09:.07;
-    this.bloom.strength=q==='ultra'?.19:.12;this.bloom.radius=q==='ultra'?.46:.34;this.bloom.threshold=q==='ultra'?.91:.95;
+  private syncPasses():void{
+    const qualityAllows=this.quality!=='low';this.enabled=this.userEnabled&&qualityAllows;this.ssao.enabled=this.enabled&&this.userSsao;this.bloom.enabled=this.enabled&&this.userBloom;this.grade.enabled=this.enabled;this.output.enabled=this.enabled;
   }
+  setQuality(q:GraphicsQuality):void{
+    this.quality=q;this.ssao.kernelRadius=q==='ultra'?10:7;this.ssao.minDistance=q==='ultra'?.002:.0025;this.ssao.maxDistance=q==='ultra'?.09:.07;this.bloom.strength=q==='ultra'?.19:.12;this.bloom.radius=q==='ultra'?.46:.34;this.bloom.threshold=q==='ultra'?.91:.95;this.syncPasses();
+  }
+  setUserSettings(enabled:boolean,ssao:boolean,bloom:boolean):void{this.userEnabled=enabled;this.userSsao=ssao;this.userBloom=bloom;this.syncPasses();}
 
   update(timeOfDay:number,weatherBlend:number,storm:number):void{
     const night=1-THREE.MathUtils.smoothstep(Math.sin((timeOfDay-6)/24*Math.PI*2),-.16,.28);
@@ -51,5 +55,5 @@ export class WorldPostFX {
   render():void{if(this.enabled)this.composer.render();else this.renderer.render(this.renderPass.scene,this.renderPass.camera);}
   resize(width:number,height:number,pixelRatio:number):void{this.composer.setPixelRatio(Math.max(.5,pixelRatio));this.composer.setSize(Math.max(1,width),Math.max(1,height));}
   dispose():void{this.composer.dispose();}
-  diagnostics(){return {enabled:this.enabled,quality:this.quality,ssao:this.ssao.enabled,bloom:this.bloom.enabled,bloomStrength:this.bloom.strength};}
+  diagnostics(){return {enabled:this.enabled,quality:this.quality,ssao:this.ssao.enabled,bloom:this.bloom.enabled,bloomStrength:this.bloom.strength,userEnabled:this.userEnabled};}
 }

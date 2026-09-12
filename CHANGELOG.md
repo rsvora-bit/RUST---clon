@@ -1,3 +1,11 @@
+## v0.7.1 / EA-07.1 — UI reliability & graphics controls
+
+- Fixed individual save-slot deletion and immediate save-browser refresh.
+- Rebuilt the pause menu into a larger, clearer in-game surface.
+- Fixed FPS/tutorial ON/OFF toggles and persistence.
+- Reverted unstable custom grass vertex fading and reduced default foliage density.
+- Added foliage density, shadow quality/distance and post-processing/SSAO/bloom controls.
+
 # Tideland changelog
 
 ## 0.7.0 — 2026-09-11

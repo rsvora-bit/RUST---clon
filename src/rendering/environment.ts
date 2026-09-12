@@ -51,6 +51,7 @@ export class Environment {
   private readonly invisible=new THREE.MeshBasicMaterial({visible:false});
   private cullClock=0;
   private quality:'low'|'medium'|'high'|'ultra'='high';
+  private foliageDensity=.72;
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:1|2=2,deferPopulation=false){
     this.root.name='Tideland — procedural island';scene.add(this.root);
@@ -227,14 +228,13 @@ export class Environment {
     const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number}[];x:number;z:number;type:number}>();
     const textureA=grassTexture(525),textureB=grassTexture(623,true);
     for(const map of [textureA,textureB]){
-      const mat=new THREE.MeshLambertMaterial({map,alphaTest:.45,side:THREE.DoubleSide,emissive:0x253017,emissiveIntensity:.2});
-      mat.onBeforeCompile=shader=>{
-        shader.uniforms.windTime=this.windUniform;shader.uniforms.grassCamera=this.cameraUniform;shader.uniforms.grassDistance=this.grassDistanceUniform;
-        shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float windTime; uniform vec3 grassCamera; uniform float grassDistance; varying float vGrassFade;');
-        shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>\nvec3 worldGrass=(modelMatrix*instanceMatrix*vec4(position,1.)).xyz;float dist=distance(worldGrass.xz,grassCamera.xz);vGrassFade=1.-smoothstep(grassDistance*.62,grassDistance,dist);float wind=sin(windTime*1.45+worldGrass.x*.21+worldGrass.z*.14)*.07+sin(windTime*.74+worldGrass.z*.33)*.03;transformed.x+=wind*position.y*position.y;transformed.y*=max(.0,vGrassFade);`);
-      };this.grassMaterials.push(mat);this.materials.add(mat);
+      // Keep meadow cards on the stable material path. The previous custom
+      // vertex-distance fade could collapse blades into dark/black strips on
+      // some ANGLE/WebGL drivers. Chunk culling still keeps the GPU cost bounded.
+      const mat=new THREE.MeshLambertMaterial({map,color:0xd3d8ba,alphaTest:.5,side:THREE.DoubleSide,emissive:0x1b2415,emissiveIntensity:.12});
+      this.grassMaterials.push(mat);this.materials.add(mat);
     }
-    const total=WORLD.GRASS_DENSITY;
+    const total=Math.floor(WORLD.GRASS_DENSITY*.72);
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
       const near=count<14500,x=near?this.spawn.x+(rand()-.5)*85:(rand()-.5)*560,z=near?this.spawn.z+(rand()-.5)*85:(rand()-.5)*560;
       const h=this.heightAt(x,z);if(h<2||h>35||this.terrain.slopeAt(x,z)>.76)continue;
@@ -244,7 +244,7 @@ export class Environment {
     }
     for(const chunk of chunks.values()){
       const mesh=new THREE.InstancedMesh(geometry,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=true;
-      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.19+rand()*.04,.11,.80+rand()*.2));});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
+      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.20+rand()*.035,.24,.58+rand()*.16));});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
     }
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
@@ -261,11 +261,12 @@ export class Environment {
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=quality==='low'?62:quality==='medium'?86:quality==='high'?112:128;
-    const fraction=quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
+    const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
     for(const batch of this.treeBatches){batch.trunks.count=batch.fullCount;batch.crowns.count=batch.fullCount;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'))o.castShadow=quality==='high'||quality==='ultra';});this.cullClock=0;
   }
+  setFoliageDensity(value:number):void {this.foliageDensity=Math.max(.25,Math.min(1,value));this.setQuality(this.quality);}
   syncNodes(nodeChanges:Record<string,number>):void {
     for(const node of this.nodes){
       const remaining=nodeChanges[node.id]??node.remaining;node.remaining=remaining;
