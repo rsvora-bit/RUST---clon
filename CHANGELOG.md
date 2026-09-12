@@ -1,3 +1,11 @@
+## v0.7.2 — Settings navigation & telemetry polish (2026-09-12)
+
+- Fixed Settings escape/back navigation and restyled utility buttons so browser-default white controls cannot leak into the UI.
+- Rebuilt F3 telemetry into modular Performance, Player, Camera and World panels.
+- Added telemetry size, opacity and per-module visibility settings.
+- Upgraded the compact FPS chip with frame time.
+- Intentionally leaves world graphics unchanged for the next dedicated graphics pass.
+
 ## v0.7.1 / EA-07.1 — UI reliability & graphics controls
 
 - Fixed individual save-slot deletion and immediate save-browser refresh.

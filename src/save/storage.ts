@@ -151,6 +151,12 @@ function normalizeSettings(value: unknown): Settings {
     showCompass: typeof value.showCompass === 'boolean' ? value.showCompass : DEFAULT_SETTINGS.showCompass,
     showFps: typeof value.showFps === 'boolean' ? value.showFps : DEFAULT_SETTINGS.showFps,
     showTutorialHints: typeof value.showTutorialHints === 'boolean' ? value.showTutorialHints : DEFAULT_SETTINGS.showTutorialHints,
+    telemetryScale: finite(value.telemetryScale, 0.7, 1.4) ? value.telemetryScale : DEFAULT_SETTINGS.telemetryScale,
+    telemetryOpacity: finite(value.telemetryOpacity, 0.55, 1) ? value.telemetryOpacity : DEFAULT_SETTINGS.telemetryOpacity,
+    telemetryPerformance: typeof value.telemetryPerformance === 'boolean' ? value.telemetryPerformance : DEFAULT_SETTINGS.telemetryPerformance,
+    telemetryPlayer: typeof value.telemetryPlayer === 'boolean' ? value.telemetryPlayer : DEFAULT_SETTINGS.telemetryPlayer,
+    telemetryCamera: typeof value.telemetryCamera === 'boolean' ? value.telemetryCamera : DEFAULT_SETTINGS.telemetryCamera,
+    telemetryWorld: typeof value.telemetryWorld === 'boolean' ? value.telemetryWorld : DEFAULT_SETTINGS.telemetryWorld,
     keybinds
   };
 }
