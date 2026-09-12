@@ -117,6 +117,7 @@ export class GameApp {
     if(code==='Escape'&&this.maintenancePanel){this.maintenancePanel.remove();this.maintenancePanel=null;this.setScreen('playing');return;}
     if(code==='Escape'&&this.stationUI.isOpen){this.stationUI.close();this.openStation=null;this.setScreen('playing');return;}
     if(code===keys.maintenance&&this.screen==='playing'){this.structureMenu();return;}
+    if(code==='Escape'&&this.screen==='settings'){this.ui.backFromSettings();return;}
     if(code==='F3'){this.ui.toggleDiagnostics();return;}
     if(code==='Escape'){if(this.screen==='playing'||this.screen==='inventory')this.setScreen('pause');else if(this.screen==='pause')this.setScreen('playing');else if(this.screen==='settings')this.setScreen(this.activeWorld?'pause':'menu');return;}
     if(code===keys.inventory){if(this.screen==='playing')this.setScreen('inventory');else if(this.screen==='inventory')this.setScreen('playing');return;}

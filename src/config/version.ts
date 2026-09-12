@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.1';
-export const GAME_BUILD='EA-07.1';
+export const GAME_VERSION='0.7.2';
+export const GAME_BUILD='EA-07.2';
 export const GAME_RELEASE_DATE='2026-09-12';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.2',date:'2026-09-12',title:'Settings navigation & telemetry polish',changes:[
+    'Reworked Settings navigation with a compact themed back control and Escape fallback so the player cannot get trapped in Settings.',
+    'Standardized Settings action buttons so Manage Saves and other controls no longer fall back to bright browser-default styling.',
+    'Redesigned the F3 developer telemetry into separate Performance, Player, Camera and World modules.',
+    'Added telemetry size, opacity and per-module visibility controls while keeping the lightweight FPS chip independently configurable.',
+    'Improved the FPS chip with frame time and clearer visual hierarchy without changing world rendering.'
+  ]},
   {version:'0.7.1',date:'2026-09-12',title:'UI reliability & graphics controls patch',changes:[
     'Fixed per-slot delete confirmation so the selected local world is removed, the save browser refreshes immediately and active autosave detaches safely.',
     'Rebuilt the in-game pause surface into a larger survival-game menu with direct save management and clearer actions.',
