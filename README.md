@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.0%20%7C%20EA--07-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.2%20%7C%20EA--07.2-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.2 / EA-07.1` · **11 September 2026**
+**Current release:** `v0.7.2 / EA-07.2` · **12 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -280,6 +280,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.6.0 / EA-06`
+`EARLY ACCESS DEVELOPMENT · v0.7.2 / EA-07.2`
 
 </div>
