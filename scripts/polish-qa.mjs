@@ -9,7 +9,11 @@ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()
 const check=(label,value)=>{assert.ok(value,label);results.push(label);console.log('PASS',label)};
 const shot=async name=>{await page.waitForTimeout(250);await page.screenshot({path:`${outputDir}/${name}.png`,timeout:60000})};
 try{
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__TIDELAND);await page.getByRole('button',{name:'01 NEW GAME'}).click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing');await page.waitForTimeout(800);
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__TIDELAND);
+await page.locator('.loading-screen').waitFor({state:'hidden',timeout:60000});
+await page.locator('[data-action="new"]').click();
+await page.locator('[data-save-action="new"][data-save-slot="1"]').click();
+await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing');await page.waitForTimeout(800);
 check('New Game',await page.evaluate(()=>window.__TIDELAND.snapshot().structures.length===0));
 const movement=await page.evaluate(()=>window.__TIDELAND.physics().position);await page.keyboard.down('w');await page.waitForTimeout(600);await page.keyboard.up('w');check('W movement',await page.evaluate(p=>Math.hypot(window.__TIDELAND.physics().position.x-p.x,window.__TIDELAND.physics().position.z-p.z)>.5,movement));
 await page.keyboard.down('Shift');await page.keyboard.down('w');await page.waitForTimeout(500);await page.keyboard.up('w');await page.keyboard.up('Shift');results.push('Sprint input exercised');
