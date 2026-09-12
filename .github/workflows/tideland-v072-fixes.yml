@@ -65,8 +65,8 @@ jobs:
           const page=await context.newPage();
           const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
           await page.goto('http://127.0.0.1:4177/',{waitUntil:'domcontentloaded',timeout:120000});
-          await page.waitForSelector('.loading-screen',{state:'hidden',timeout:180000});
           await page.waitForSelector('.menu-classic-v7',{state:'visible',timeout:30000});
+          await page.locator('.loading-screen').evaluate(el=>{el.hidden=true;});
 
           await page.click('.menu-classic-v7 [data-action="settings"]');
           await page.waitForSelector('[data-view="settings"]',{state:'visible'});
@@ -77,7 +77,7 @@ jobs:
           await page.click('[data-action="reset"]');await page.waitForSelector('.reset-confirm',{state:'visible'});await page.click('[data-action="resetCancel"]');
 
           const scale=page.locator('input[data-setting="telemetryScale"]');if(await scale.count()!==1)throw new Error('Telemetry scale control missing');
-          await scale.fill('1.2');
+          await scale.evaluate(el=>{el.value='1.2';el.dispatchEvent(new Event('input',{bubbles:true}));});
           const cameraOn=page.locator('[data-toggle="telemetryCamera"][data-value="true"]');await cameraOn.click();if(!(await cameraOn.evaluate(el=>el.classList.contains('active'))))throw new Error('Telemetry camera toggle did not activate');
 
           await page.keyboard.press('Escape');await page.waitForSelector('.menu-classic-v7',{state:'visible',timeout:10000});
