@@ -19,7 +19,7 @@ export class GameSimulation {
 
   constructor(seed: number, spawn: Vec3, saved?: GameState) {
     this.state = saved ? structuredClone(saved) : {
-      version: 1, worldGeneration: 3, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,
+      version: 1, worldGeneration: 4, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,
       player: { position: { ...spawn }, yaw: 0, pitch: 0, stats: { ...SURVIVAL.STARTING_STATS } },
       inventory: Array.from({ length: INVENTORY.SLOTS }, (_, i) => i === 0 ? { itemId: 'rock', count: 1 } : i === 1 ? { itemId: 'torch', count: 1 } : null),
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
@@ -77,7 +77,7 @@ export class GameSimulation {
     const remaining = this.state.nodeChanges[node.id] ?? node.remaining;
     if (remaining <= 0) return { amount: 0, depleted: true };
     const active = this.state.inventory[this.state.activeSlot]?.itemId;
-    if (['tree', 'stone', 'metal'].includes(node.kind) && active !== 'rock' && active !== 'hatchet' && active !== 'pickaxe') {
+    if (['tree', 'stone', 'metal', 'sulfur', 'hqmetal'].includes(node.kind) && active !== 'rock' && active !== 'hatchet' && active !== 'pickaxe') {
       this.onNotify('Equip a rock, hatchet or pickaxe');
       return { amount: 0, depleted: false };
     }

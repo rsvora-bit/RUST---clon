@@ -230,8 +230,9 @@ export class UI {
       this.find('.compass-line').style.backgroundPositionX = `${-degrees*2}px`;
       this.find('.biome-label').textContent = hud.biome.toUpperCase();
       const interaction = hud.interaction;
-      const promptHTML = interaction ? `<span class="interaction-key"><kbd>${esc(interaction.key)}</kbd></span><div class="interaction-copy"><strong>${esc(this.interactionAction(interaction.action))}</strong><span>${esc(interaction.title)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
-      const prompt = this.find('.interaction-prompt');
+      const nameOnly=Boolean(interaction&&!interaction.action);
+      const promptHTML = interaction ? nameOnly?`<div class="interaction-copy resource-name-only"><strong>${esc(interaction.title)}</strong></div>`:`<span class="interaction-key"><kbd>${esc(interaction.key)}</kbd></span><div class="interaction-copy"><strong>${esc(this.interactionAction(interaction.action))}</strong><span>${esc(interaction.title)}${interaction.detail ? ` <i>·</i> ${esc(interaction.detail)}` : ''}</span>${interaction.progress !== undefined ? `<i class="interaction-progress" style="width:${interaction.progress*100}%"></i>` : ''}</div>` : '';
+      const prompt = this.find('.interaction-prompt');prompt.classList.toggle('resource-target',nameOnly);
       if(prompt.innerHTML !== promptHTML) prompt.innerHTML = promptHTML;
       const gameScreen=this.find('.game-screen');
       gameScreen.classList.toggle('targeted',Boolean(interaction));
@@ -303,6 +304,8 @@ export class UI {
     this.find<HTMLElement>('.status-pill.wet').hidden=!wet;
     this.find<HTMLElement>('.status-pill.cold').hidden=!cold;
   }
+
+  setDevModes(fly:boolean,god:boolean):void{for(const [mode,on] of [['fly',fly],['god',god]] as const){const button=this.root.querySelector<HTMLButtonElement>(`[data-dev="${mode}"]`);if(!button)continue;button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));}}
 
   private renderHotbar(hud: HUDData): void {
     const hash = JSON.stringify([hud.inventory.slice(0,6),hud.activeSlot]);

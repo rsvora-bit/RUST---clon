@@ -9,9 +9,9 @@ export class IslandTerrain {
   readonly heightTexture:THREE.DataTexture;
   readonly spawn:{x:number;y:number;z:number};
   private readonly step=WORLD.SIZE/WORLD.RESOLUTION;
-  constructor(seed:number,readonly generation:1|2|3=3){
+  constructor(seed:number,readonly generation:1|2|3|4=4){
     this.noise=new Noise(seed);
-    if(generation>=3){const rand=randomSource(seed+0x31a7),angle=rand()*Math.PI*2,radius=174+rand()*34;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
+    if(generation>=3){const rand=randomSource(seed+0x31a7),angle=rand()*Math.PI*2,radius=generation>=4?238+rand()*28:174+rand()*34;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
     else this.spawn={x:28,y:6.1,z:212};
     const n=WORLD.RESOLUTION;
     this.geometry=new THREE.PlaneGeometry(WORLD.SIZE,WORLD.SIZE,n,n);this.geometry.rotateX(-Math.PI/2);
@@ -32,7 +32,7 @@ export class IslandTerrain {
   }
   private rawHeight(x:number,z:number):number {
     if(this.generation===1)return this.legacyHeight(x,z);
-    const base=this.geologicalHeight(x,z);
+    const base=this.generation>=4?this.expandedHeight(x,z):this.geologicalHeight(x,z);
     if(this.generation===2)return base;
     const starter=1-smoothstep(13,35,Math.hypot(x-this.spawn.x,z-this.spawn.z));
     return base*(1-starter)+4.3*starter;
@@ -72,6 +72,29 @@ export class IslandTerrain {
     const preserveSpawn=1-smoothstep(20,44,Math.hypot(x-28,z-212));
     return h*(1-preserveSpawn)+this.legacyHeight(x,z)*preserveSpawn;
   }
+  /** Generation 4 spreads elevation across several ridges and uses a warped,
+   * lobed coastline so the island reads as a broad landmass rather than a
+   * near-perfect circle with one mountain in the middle. */
+  private expandedHeight(x:number,z:number):number {
+    const n=this.noise;
+    const wx=x+(n.fbm(x*.0043+7,z*.0043-13,3)-.5)*84;
+    const wz=z+(n.fbm(x*.0043-21,z*.0043+9,3)-.5)*70;
+    const angle=Math.atan2(wz,wx),radius=Math.hypot(wx/1.035,wz/.965);
+    const coastNoise=(n.fbm(Math.cos(angle)*1.55+31,Math.sin(angle)*1.55-17,3)-.5)*48;
+    const edge=319+Math.sin(angle*2+.6)*31+Math.sin(angle*5-1.15)*17+Math.sin(angle*9+.4)*7+coastNoise-radius;
+    let h=-12+14.2*smoothstep(-38,22,edge)+3.9*smoothstep(12,96,edge);
+    const land=smoothstep(20,112,edge);
+    const ridgeWest=Math.exp(-Math.pow((wx*.78+wz*.24+104)/67,2)-Math.pow((wz+55)/178,2));
+    const ridgeNorth=Math.exp(-Math.pow((wx-18)/142,2)-Math.pow((wz+178)/62,2));
+    const ridgeEast=Math.exp(-Math.pow((wx-151)/74,2)-Math.pow((wz-24)/128,2));
+    const southHills=Math.exp(-Math.pow((wx+34)/155,2)-Math.pow((wz-146)/80,2));
+    const centralValley=Math.exp(-Math.pow((wx+5)/86,2)-Math.pow((wz+3)/108,2));
+    const folded=n.fbm(wx*.013+5,wz*.012-7,4),detail=n.fbm(wx*.031-11,wz*.028+4,3);
+    h+=(ridgeWest*(22+folded*18)+ridgeNorth*(18+folded*16)+ridgeEast*(24+detail*14)+southHills*(9+folded*8)-centralValley*8.5)*land;
+    h+=(folded-.48)*8.5*land+(detail-.5)*3.2*smoothstep(8,70,edge);
+    return h;
+  }
+
   /** Triangle interpolation is identical to the indexed Rapier ground mesh. */
   heightAt(x:number,z:number):number {
     const n=WORLD.RESOLUTION,u=(x+WORLD.SIZE/2)/this.step,v=(z+WORLD.SIZE/2)/this.step;
@@ -82,5 +105,5 @@ export class IslandTerrain {
   }
   slopeAt(x:number,z:number):number{return Math.hypot(this.heightAt(x+2,z)-this.heightAt(x-2,z),this.heightAt(x,z+2)-this.heightAt(x,z-2))/4;}
   biomeAt(x:number,z:number):string {const h=this.heightAt(x,z);if(h<3.5)return 'COAST';if(h>29||this.slopeAt(x,z)>.7)return 'ROCKY UPLAND';if(this.forestAt(x,z)>.48)return 'FOREST';return 'GRASSLAND';}
-  forestAt(x:number,z:number):number{if(this.generation===2)return (this.noise.fbm(x*.007+8,z*.007+11,3)*.78+this.noise.at(x*.039,z*.039)*.22)*(1-smoothstep(38,57,this.heightAt(x,z)));return this.noise.fbm(x*.018+8,z*.018+11,3)*(1-smoothstep(26,43,this.heightAt(x,z)));}
+  forestAt(x:number,z:number):number{if(this.generation===2)return (this.noise.fbm(x*.007+8,z*.007+11,3)*.78+this.noise.at(x*.039,z*.039)*.22)*(1-smoothstep(38,57,this.heightAt(x,z)));if(this.generation>=4)return (this.noise.fbm(x*.011+8,z*.011+11,4)*.82+this.noise.at(x*.031,z*.031)*.18)*(1-smoothstep(34,50,this.heightAt(x,z)));return this.noise.fbm(x*.018+8,z*.018+11,3)*(1-smoothstep(26,43,this.heightAt(x,z)));}
 }

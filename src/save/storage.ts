@@ -20,7 +20,7 @@ export function validateGameState(value: unknown): value is GameState {
   // The menu accepts ten digit seeds. Keep the complete safe-integer range
   // here so a valid custom island can be saved and continued later.
   if (!record(value) || value.version !== 1 || !integer(value.seed, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) || !finite(value.elapsed, 0, 1e10) || !finite(value.timeOfDay, 0, 24) || !integer(value.nextId, 1)) return false;
-  if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3) return false;
+  if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3 && value.worldGeneration !== 4) return false;
   if (!record(value.player) || !position(value.player.position) || !stats(value.player.stats) || !finite(value.player.yaw) || !finite(value.player.pitch, -Math.PI / 2, Math.PI / 2)) return false;
   if (!Array.isArray(value.inventory) || value.inventory.length !== INVENTORY.SLOTS || !value.inventory.every(item => item === null || stack(item)) || !integer(value.activeSlot, 0, INVENTORY.HOTBAR_SLOTS - 1)) return false;
   if (!Array.isArray(value.structures) || value.structures.length > BUILDING_RULES.MAX_STRUCTURES || !Array.isArray(value.drops) || value.drops.length > SAVE.MAX_DROPS) return false;
