@@ -4,7 +4,7 @@ import type {ResourceNode,Vec3,Structure} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
-import {barkTexture,grassTexture,pineTexture,leavesTexture,stoneMaterial,terrainMaterial,groundDecalTexture} from '../world/materials';
+import {barkTexture,pineTexture,leavesTexture,stoneMaterial,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,broadleafGeometry,trunkGeometry,rockGeometry,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
@@ -84,15 +84,13 @@ export class Environment {
   heightAt(x:number,z:number):number{return this.terrain.heightAt(x,z);}
   biomeAt(x:number,z:number):string{return this.terrain.biomeAt(x,z);}
   private foliageMaterial(tex:THREE.Texture,color:number):THREE.MeshLambertMaterial {
-    // Foliage gets a restrained green lift so back-lit cards still read as
-    // needle/leaf volume.  The texture remains the primary color source; this
-    // only keeps the shaded side from becoming a featureless silhouette.
-    const mat=new THREE.MeshLambertMaterial({map:tex,color,vertexColors:true,alphaTest:.38,side:THREE.DoubleSide,emissive:0x394435,emissiveIntensity:.12});
-    mat.onBeforeCompile=s=>{s.uniforms.windTime=this.windUniform;s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nuniform float windTime;');s.vertexShader=s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-      #ifdef USE_INSTANCING
-      float treePhase=instanceMatrix[3].x*.14+instanceMatrix[3].z*.11;transformed.x+=sin(windTime*1.05+treePhase+position.y*.6)*.045*max(0.,position.y-2.);
-      #endif`);};return mat;
+    // Opaque alpha cutouts write depth in the same way in color and shadow passes.
+    // No vertex deformation: the old wind shader only moved the color geometry.
+    return new THREE.MeshLambertMaterial({map:tex,color,alphaTest:.38,
+      transparent:false,depthWrite:true,side:THREE.DoubleSide,
+      emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.055});
   }
+
   private own<T extends THREE.BufferGeometry>(g:T):T {this.geometries.add(g);return g;}
   private addNode(kind:ResourceNode['kind'],x:number,z:number,scale:number,rotation:number,capacity:number):ResourceNode {
     const node:ResourceNode={id:`${kind}-${this.nodes.length}`,kind,position:{x,y:this.heightAt(x,z),z},scale,rotation,capacity,remaining:capacity};this.nodes.push(node);return node;
@@ -125,11 +123,11 @@ export class Environment {
       // attribute and the entire canopy falls to black.
       if(!crown.getAttribute('color')){const colors=new Float32Array(crown.getAttribute('position').count*3);colors.fill(1);crown.setAttribute('color',new THREE.BufferAttribute(colors,3));}
       const trunks=new THREE.InstancedMesh(trunk,this.bark,entries.length),crowns=new THREE.InstancedMesh(crown,species===1||species===4?this.leaves:this.pine,entries.length);
-      const broad=species===1||species===4;trunks.name=broad?'Oak trunks':'Pine trunks';crowns.name=broad?'Oak canopy':'Pine canopy';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=true;crowns.receiveShadow=true;this.root.add(trunks,crowns);
+      const broad=species===1||species===4;trunks.name=broad?'Oak trunks':'Pine trunks';crowns.name=broad?'Oak canopy':'Pine canopy';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=true;crowns.receiveShadow=false;this.root.add(trunks,crowns);
       const hitGeometry=this.own(new THREE.CylinderGeometry(.37,.45,broad?7.7:12.8,6));hitGeometry.translate(0,broad?3.85:6.4,0);
       entries.forEach(({node},index)=>{
         this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);crowns.setMatrixAt(index,m);trunks.setColorAt(index,new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12));
-        const col=species===1||species===4?new THREE.Color().setHSL(.27+(rand()-.5)*.05,.28,.56+rand()*.14):new THREE.Color().setHSL(.25+(rand()-.5)*.04,.34,.48+rand()*.15);crowns.setColorAt(index,col);
+        const col=species===1||species===4?new THREE.Color().setHSL(.27+(rand()-.5)*.05,.10,.84+rand()*.12):new THREE.Color().setHSL(.25+(rand()-.5)*.04,.12,.82+rand()*.13);crowns.setColorAt(index,col);
         this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:m}]);
         const hit=new THREE.Mesh(hitGeometry,this.invisible);this.place(hit,node);
         this.colliders.push({nodeId:node.id,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
@@ -192,7 +190,7 @@ export class Environment {
   private populateUnderstory():void {
     const rand=randomSource(this.seed+4421),fernG=this.own(fernGeometry()),twigG=this.own(twigGeometry()),tuftG=this.own(grassGeometry());
     const fernM=new THREE.MeshLambertMaterial({color:0x526d40,side:THREE.DoubleSide});
-    const tuftTex=grassTexture(991,true),tuftM=new THREE.MeshLambertMaterial({map:tuftTex,color:0xc1b78d,alphaTest:.42,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
+    const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
     const fernPos:{x:number;y:number;z:number;s:number;r:number}[]=[],twigPos:{x:number;y:number;z:number;s:number;r:number}[]=[],tuftPos:{x:number;y:number;z:number;s:number;r:number}[]=[];
     for(let i=0;i<9000&&(fernPos.length<720||twigPos.length<620||tuftPos.length<680);i++){
       const x=(rand()-.5)*550,z=(rand()-.5)*550,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<2||h>34||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;const forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
@@ -226,17 +224,13 @@ export class Environment {
   }
   private populateGrass():void {
     const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number}[];x:number;z:number;type:number}>();
-    const textureA=grassTexture(525),textureB=grassTexture(623,true);
-    for(const map of [textureA,textureB]){
-      // Keep meadow cards on the stable material path. The previous custom
-      // vertex-distance fade could collapse blades into dark/black strips on
-      // some ANGLE/WebGL drivers. Chunk culling still keeps the GPU cost bounded.
-      const mat=new THREE.MeshLambertMaterial({map,color:0xd3d8ba,alphaTest:.5,side:THREE.DoubleSide,emissive:0x1b2415,emissiveIntensity:.12});
+    for(const color of [0xffffff,0xd5c39a]){
+      const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
       this.grassMaterials.push(mat);this.materials.add(mat);
     }
-    const total=Math.floor(WORLD.GRASS_DENSITY*.72);
+    const total=16000;
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
-      const near=count<14500,x=near?this.spawn.x+(rand()-.5)*85:(rand()-.5)*560,z=near?this.spawn.z+(rand()-.5)*85:(rand()-.5)*560;
+      const near=count<2800,x=near?this.spawn.x+(rand()-.5)*85:(rand()-.5)*560,z=near?this.spawn.z+(rand()-.5)*85:(rand()-.5)*560;
       const h=this.heightAt(x,z);if(h<2||h>35||this.terrain.slopeAt(x,z)>.76)continue;
       const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3);if(rand()>smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)continue;
       const cx=Math.floor(x/40),cz=Math.floor(z/40),type=rand()<smoothstep(.44,.7,patch)*.36?1:0,key=`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){chunk={positions:[],x:cx*40+20,z:cz*40+20,type};chunks.set(key,chunk);}
@@ -244,12 +238,12 @@ export class Environment {
     }
     for(const chunk of chunks.values()){
       const mesh=new THREE.InstancedMesh(geometry,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=true;
-      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.20+rand()*.035,.24,.58+rand()*.16));});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
+      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.20+rand()*.035,.10,.84+rand()*.12));});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
     }
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
     this.windUniform.value+=dt*this.windStrength;this.cameraUniform.value.copy(cameraPosition);this.atmosphere.update(dt,timeOfDay,cameraPosition);this.cullClock-=dt;
-    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:118;for(const c of this.grassChunks)c.mesh.visible=c.center.distanceToSquared(cameraPosition)<(d+32)*(d+32);const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
+    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:118;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
     for(const [id,hit] of this.hits){const elapsed=hit.elapsed+dt,obj=this.nodeObjects.get(id),refs=this.instances.get(id);if(elapsed>.4){this.hits.delete(id);if(obj)obj.rotation.z=0;if(refs)for(const ref of refs){ref.mesh.setMatrixAt(ref.index,ref.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}else{hit.elapsed=elapsed;const amount=Math.sin(elapsed*34)*(1-elapsed/.4)*.022*hit.intensity;if(obj)obj.rotation.z=amount;if(refs)for(const ref of refs){this.matrixDummy.matrix.copy(ref.matrix);this.matrixDummy.matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.rotation.z=amount;this.matrixDummy.updateMatrix();ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}}
     for(const [id,fall] of this.fallingTrees){
       fall.elapsed+=dt;const fallT=Math.min(1,fall.elapsed/fall.duration),eased=1-Math.pow(1-fallT,3),fadeStart=fall.duration+fall.hold,total=fadeStart+fall.fade;
