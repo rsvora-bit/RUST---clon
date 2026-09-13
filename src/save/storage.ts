@@ -136,6 +136,7 @@ function normalizeSettings(value: unknown): Settings {
     ambientVolume: finite(value.ambientVolume, 0, 1) ? value.ambientVolume : DEFAULT_SETTINGS.ambientVolume,
     quality: ['low','medium','high','ultra'].includes(String(value.quality)) ? value.quality as Settings['quality'] : DEFAULT_SETTINGS.quality,
     renderScale: finite(value.renderScale, 0.5, 1) ? value.renderScale : DEFAULT_SETTINGS.renderScale,
+    vsync: typeof value.vsync === 'boolean' ? value.vsync : DEFAULT_SETTINGS.vsync,
     shadows: typeof value.shadows === 'boolean' ? value.shadows : DEFAULT_SETTINGS.shadows,
     shadowQuality: value.shadowQuality === 'low' || value.shadowQuality === 'medium' || value.shadowQuality === 'high' ? value.shadowQuality : DEFAULT_SETTINGS.shadowQuality,
     shadowDistance: finite(value.shadowDistance, 35, 120) ? value.shadowDistance : DEFAULT_SETTINGS.shadowDistance,

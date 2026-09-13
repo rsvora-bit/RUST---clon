@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.2';
-export const GAME_BUILD='EA-07.2';
-export const GAME_RELEASE_DATE='2026-09-12';
+export const GAME_VERSION='0.7.3';
+export const GAME_BUILD='EA-07.3';
+export const GAME_RELEASE_DATE='2026-09-13';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.3',date:'2026-09-13',title:'Save controls, frame sync & gathering polish',changes:[
+    'Fixed save-slot confirmation overlays inheriting disabled pointer events; Delete, Cancel and the new close button now work reliably.',
+    'Added a persistent V-Sync setting: ON uses display-synchronized animation frames, while OFF uncaps game-loop submissions within browser limits.',
+    'Strengthened material-specific harvesting particles for wood, stone, metal, fiber and berries with a larger pooled effect budget.',
+    'Increased procedural gatherable loose-wood and berry-bush availability while keeping decorative foliage density separate.',
+    'Documented the current rendering-stability foundation already on main: depth-based AO, lower vegetation draw/triangle load and corrected Render Scale canvas sizing.'
+  ]},
   {version:'0.7.2',date:'2026-09-12',title:'Settings navigation & telemetry polish',changes:[
     'Reworked Settings navigation with a compact themed back control and Escape fallback so the player cannot get trapped in Settings.',
     'Standardized Settings action buttons so Manage Saves and other controls no longer fall back to bright browser-default styling.',

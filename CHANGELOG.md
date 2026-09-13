@@ -1,3 +1,11 @@
+## v0.7.3 / EA-07.3 — Save controls, frame sync & gathering polish (2026-09-13)
+
+- Fixed per-slot delete/overwrite confirmation overlays so their buttons receive pointer input; added an explicit close button.
+- Added persistent V-Sync control. ON follows display-synchronized animation frames; OFF uncaps game-loop submissions within browser limits.
+- Increased material-specific harvesting particle density and variation for wood, stone, metal, fiber and berries.
+- Increased gatherable loose-wood and berry-bush spawns across procedural islands.
+- Documented the rendering-stability foundation already merged to main: depth-based AO, substantially lower vegetation draw/triangle load and corrected Render Scale canvas sizing.
+
 ## v0.7.2 — Settings navigation & telemetry polish (2026-09-12)
 
 - Fixed Settings escape/back navigation and restyled utility buttons so browser-default white controls cannot leak into the UI.
