@@ -18,7 +18,9 @@ export const GATHERING: Record<ResourceNode['kind'], GatherRule> = {
   tree: { itemId: 'wood', amount: 18, preferredTool: 'hatchet', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:18,hatchet:42,pickaxe:12}, label: 'Tree' },
   wood: { itemId: 'wood', amount: 35, preferredTool: 'hatchet', toolMultiplier: 1, label: 'Driftwood' },
   stone: { itemId: 'stone', amount: 14, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:14,hatchet:7,pickaxe:34}, label: 'Stone deposit' },
-  metal: { itemId: 'ore', amount: 8, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:8,hatchet:4,pickaxe:22}, label: 'Metal deposit' },
+  metal: { itemId: 'ore', amount: 8, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:8,hatchet:4,pickaxe:22}, label: 'Metal ore deposit' },
+  sulfur: { itemId: 'sulfurOre', amount: 7, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:6,hatchet:3,pickaxe:20}, label: 'Sulfur ore deposit' },
+  hqmetal: { itemId: 'hqMetalOre', amount: 3, preferredTool: 'pickaxe', toolMultiplier: 1, weakSpotMultiplier:1.5, toolYield:{rock:2,hatchet:1,pickaxe:8}, label: 'High quality metal deposit' },
   fiber: { itemId: 'fiber', amount: 25, toolMultiplier: 1, label: 'Wild flax' },
   berries: { itemId: 'berries', amount: 4, toolMultiplier: 1, label: 'Berry bush' },
 };

@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import {WORLD} from '../config/balance';
-import {Noise,smoothstep} from '../world/noise';
+import {Noise,randomSource,smoothstep} from '../world/noise';
 
 export class IslandTerrain {
   readonly noise:Noise;
   readonly geometry:THREE.PlaneGeometry;
   readonly heights:Float32Array;
   readonly heightTexture:THREE.DataTexture;
-  readonly spawn={x:28,y:6.1,z:212};
+  readonly spawn:{x:number;y:number;z:number};
   private readonly step=WORLD.SIZE/WORLD.RESOLUTION;
-  constructor(seed:number,readonly generation:1|2=2){
-    this.noise=new Noise(seed);const n=WORLD.RESOLUTION;
+  constructor(seed:number,readonly generation:1|2|3=3){
+    this.noise=new Noise(seed);
+    if(generation>=3){const rand=randomSource(seed+0x31a7),angle=rand()*Math.PI*2,radius=174+rand()*34;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
+    else this.spawn={x:28,y:6.1,z:212};
+    const n=WORLD.RESOLUTION;
     this.geometry=new THREE.PlaneGeometry(WORLD.SIZE,WORLD.SIZE,n,n);this.geometry.rotateX(-Math.PI/2);
     const p=this.geometry.getAttribute('position');this.heights=new Float32Array((n+1)*(n+1));
     const colors=new Float32Array(p.count*3),weights=new Float32Array(p.count*3),texData=new Uint8Array(p.count*4);
@@ -28,7 +31,11 @@ export class IslandTerrain {
     this.spawn.y=this.heightAt(this.spawn.x,this.spawn.z)+2;
   }
   private rawHeight(x:number,z:number):number {
-    return this.generation===2?this.geologicalHeight(x,z):this.legacyHeight(x,z);
+    if(this.generation===1)return this.legacyHeight(x,z);
+    const base=this.geologicalHeight(x,z);
+    if(this.generation===2)return base;
+    const starter=1-smoothstep(13,35,Math.hypot(x-this.spawn.x,z-this.spawn.z));
+    return base*(1-starter)+4.3*starter;
   }
   private legacyHeight(x:number,z:number):number {
     const n=this.noise;const wx=x+(n.fbm(x*.007,z*.007,3)-.5)*40,wz=z+(n.fbm(x*.007+32,z*.007-11,3)-.5)*35;

@@ -3,7 +3,9 @@ import type { ItemDefinition, ItemId } from '../core/types';
 const item = (id: ItemId, displayName: string, description: string, category: ItemDefinition['category'], maxStack: number, tags: string[], extra: Partial<ItemDefinition> = {}): ItemDefinition => ({ id, displayName, description, category, maxStack, tags, icon: `assets/icons/${id}.svg`, ...extra });
 
 export const ITEMS: Record<ItemId, ItemDefinition> = {
-  ore: item('ore', 'Raw metal resource', 'Process with fuel at a field processor.', 'resource', 1000, ['survival'], {placeable:false}),
+  ore: item('ore', 'Metal ore', 'Dense iron-bearing ore collected from mineral nodes. Process it at a field processor.', 'resource', 1000, ['survival'], {placeable:false}),
+  sulfurOre: item('sulfurOre', 'Sulfur ore', 'Bright sulfur-bearing rock gathered from rare yellow mineral deposits.', 'resource', 1000, ['survival','crafting'], {placeable:false}),
+  hqMetalOre: item('hqMetalOre', 'High quality metal ore', 'A rare dense metallic ore found in the richest dark mineral deposits.', 'resource', 250, ['survival','crafting'], {placeable:false}),
   storage: item('storage', 'Storage box', 'Place from your hotbar; E opens 18 slots.', 'building', 1, ['survival'], {placeable:true}),
   furnace: item('furnace', 'Field processor', 'Converts raw resources into game crafting fragments.', 'building', 1, ['survival'], {placeable:true}),
   workbench1: item('workbench1', 'Workbench level 1', 'Unlocks recipes while standing within 5 meters.', 'building', 1, ['survival'], {placeable:true}),
