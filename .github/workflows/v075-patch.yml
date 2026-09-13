@@ -21,7 +21,25 @@ jobs:
           ref: feature/v075-world-shape-ui
           fetch-depth: 0
       - name: Apply patch
-        run: python3 scripts/apply-v075.py
+        run: |
+          python3 scripts/apply-v075.py
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('tests/terrain-generation.test.ts')
+          s=p.read_text()
+          old='expect(state.worldGeneration).toBe(3);expect(validateGameState(state)).toBe(true);'
+          new='expect(state.worldGeneration).toBe(4);expect(validateGameState(state)).toBe(true);expect(validateGameState({...state,worldGeneration:3})).toBe(true);'
+          if old not in s: raise SystemExit('missing terrain generation expectation anchor')
+          p.write_text(s.replace(old,new,1))
+
+          p=Path('tests/v074-world-variety.test.ts')
+          s=p.read_text()
+          old="it('accepts generation 3 save snapshots',()=>{\n    const sim=new GameSimulation(99,{x:0,y:5,z:0});expect(sim.state.worldGeneration).toBe(3);expect(validateGameState(sim.state)).toBe(true);\n  });"
+          new="it('accepts generation 3 save snapshots while new worlds use generation 4',()=>{\n    const sim=new GameSimulation(99,{x:0,y:5,z:0});expect(sim.state.worldGeneration).toBe(4);expect(validateGameState(sim.state)).toBe(true);expect(validateGameState({...sim.state,worldGeneration:3})).toBe(true);\n  });"
+          if old not in s: raise SystemExit('missing v0.7.4 generation compatibility test anchor')
+          p.write_text(s.replace(old,new,1))
+          PY
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
