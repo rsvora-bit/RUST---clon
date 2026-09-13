@@ -1,0 +1,50 @@
+name: Apply and validate Tideland v0.7.3
+
+on:
+  push:
+    branches:
+      - fix/v073-small-polish
+    paths:
+      - scripts/apply-v073.py
+      - .github/workflows/v073-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/v073-small-polish
+          fetch-depth: 0
+      - name: Apply patch
+        run: python3 scripts/apply-v073.py
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Verify release markers
+        run: |
+          grep -q "GAME_VERSION='0.7.3'" src/config/version.ts
+          grep -q "GAME_BUILD='EA-07.3'" src/config/version.ts
+          grep -q '"version": "0.7.3"' package.json
+          grep -q 'pointer-events:auto' src/ui/style.css
+          grep -q "vsync:true" src/config/balance.ts
+      - name: Commit validated patch
+        run: |
+          rm -f scripts/apply-v073.py .github/workflows/v073-patch.yml
+          git config user.name "Roman Svora"
+          git config user.email "roman.svora.ml@gmail.com"
+          git add -A
+          git commit -m "Tideland v0.7.3: save, frame sync and gathering polish"
+          git push origin HEAD:fix/v073-small-polish
