@@ -25,6 +25,7 @@ jobs:
       - name: Keep regression test Node-only
         run: |
           cat > tests/v076-loot-interactions.test.ts <<'EOF'
+          // @ts-nocheck
           import {describe,expect,it} from 'vitest';
           import {readFileSync} from 'node:fs';
 
