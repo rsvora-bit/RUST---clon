@@ -182,9 +182,9 @@ export class Environment {
       this.place(group,node);
     };
     create('wood',29.5,209,1);create('fiber',31,207.5,1.2);create('berries',35,208,1.3);create('fiber',22,210,1.15);create('wood',19,202,1.1);
-    for(let i=0,count=0;i<1900&&count<150;i++){
+    for(let i=0,count=0;i<3400&&count<260;i++){
       const x=(rand()-.5)*520,z=(rand()-.5)*520,h=this.heightAt(x,z);if(h<2.3||h>30||this.terrain.slopeAt(x,z)>.6||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;
-      if(rand()>.55)continue;create(rand()<.28?'wood':rand()<.34?'berries':'fiber',x,z,.75+rand()*.45);count++;
+      if(rand()>.62)continue;const roll=rand();create(roll<.40?'wood':roll<.70?'berries':'fiber',x,z,.75+rand()*.45);count++;
     }
   }
   private populateUnderstory():void {

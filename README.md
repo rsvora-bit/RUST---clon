@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.2%20%7C%20EA--07.2-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.3%20%7C%20EA--07.3-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.2 / EA-07.2` · **12 September 2026**
+**Current release:** `v0.7.3 / EA-07.3` · **13 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -88,7 +88,7 @@ The main idea is simple:
 - Speed- and surface-aware footsteps
 - Five local save slots with per-slot load/delete management
 - HUD scale/opacity, crosshair size, FPS counter and tutorial visibility settings
-- Render scale, brightness, shadows, compass and crosshair settings
+- Render scale, brightness, V-Sync/frame pacing, shadows, compass and crosshair settings
 - Map, waypoints, diagnostics and developer telemetry
 
 ### 💾 Persistence
@@ -113,6 +113,8 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 - ✅ High/Ultra SSAO, subtle bloom and color grading with Low/Medium performance fallback
 - ✅ Detailed staged world loading and GPU warm-up
 - ✅ Expanded settings, localization and diagnostics
+- ✅ Reliable multi-save confirmation controls, optional V-Sync/frame pacing and denser gatherable loose wood/berry resources
+- ✅ Current rendering-stability foundation with depth-based AO and reduced vegetation render cost
 - ✅ Automated CI validation and GitHub Pages deployment
 
 ---
@@ -233,6 +235,9 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.7.3` | Save-dialog reliability, V-Sync/frame pacing, gathering FX and resource-density polish |
+| `v0.7.2` | Settings navigation and configurable performance telemetry |
+| `v0.7.1` | Save/UI reliability, pause-menu polish and expanded graphics controls |
 | `v0.6.0` | Environment rendering, water, vegetation, atmosphere and scalable post FX |
 | `v0.5.0` | Gathering weak spots, per-tool yields, particles and tree-fall audio |
 | `v0.4.0` | Movement feel, first-person hands and tool animations |
@@ -280,6 +285,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.7.2 / EA-07.2`
+`EARLY ACCESS DEVELOPMENT · v0.7.3 / EA-07.3`
 
 </div>
