@@ -29,7 +29,7 @@ jobs:
           exit 1
       - name: Verify save confirmation and V-Sync controls
         run: |
-          cat > /tmp/v073-smoke.mjs <<'EOF'
+          cat > .v073-smoke.mjs <<'EOF'
           import {chromium} from 'playwright-core';
           import assert from 'node:assert/strict';
           const browser=await chromium.launch({headless:true});
@@ -47,7 +47,7 @@ jobs:
             await page.locator('.pause-screen [data-action="manageSaves"]').click();
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
             const modal=page.locator('.delete-slot-confirm');
-            await assert.doesNotReject(()=>modal.waitFor({state:'visible',timeout:5000}));
+            await modal.waitFor({state:'visible',timeout:5000});
             await page.locator('.delete-slot-confirm [data-action="deleteSlotCancel"]').click();
             assert.equal(await modal.isHidden(),true,'Cancel must close delete confirmation');
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
@@ -72,4 +72,5 @@ jobs:
             console.log('v0.7.3 browser interaction smoke passed');
           } finally { await browser.close(); }
           EOF
-          node /tmp/v073-smoke.mjs
+          node .v073-smoke.mjs
+          rm -f .v073-smoke.mjs
