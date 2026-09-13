@@ -88,8 +88,19 @@ export function bushGeometry():THREE.BufferGeometry {
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
   const colors=new Float32Array(geo.getAttribute('position').count*3);colors.fill(1);geo.setAttribute('color',new THREE.BufferAttribute(colors,3));return geo;
 }
+/** Small bent blades use real silhouettes, so distant alpha cards cannot turn
+ * into dark quads. One shared 21-triangle tuft is instanced across the island. */
 export function grassGeometry():THREE.BufferGeometry {
-  const a=card(1.18,1.04,0,0,0,0,0),b=card(1.18,1.04,0,0,0,0,Math.PI/2);const geo=mergeGeometries([a,b])!;a.dispose();b.dispose();return geo;
+  const r=randomSource(615),positions:number[]=[],colors:number[]=[],indices:number[]=[];
+  for(let blade=0;blade<7;blade++){
+    const angle=r()*Math.PI*2,x=(r()-.5)*.48,z=(r()-.5)*.48;
+    const height=.36+r()*.55,width=.018+r()*.024,lean=.09+r()*.18;
+    const dx=Math.cos(angle),dz=Math.sin(angle),base=positions.length/3;
+    const points=[[-width,0,0],[width,0,0],[-width*.55,height*.53,lean*.35],[width*.55,height*.53,lean*.35],[0,height,lean]];
+    for(const [side,y,bend] of points){positions.push(x+dx*side-dz*bend,y,z+dz*side+dx*bend);const t=y/height;colors.push(.23+t*.22,.29+t*.23,.115+t*.13);}
+    indices.push(base,base+1,base+2,base+1,base+3,base+2,base+2,base+3,base+4);
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setIndex(indices);geo.computeVertexNormals();return geo;
 }
 export function fiberGeometry():THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[];

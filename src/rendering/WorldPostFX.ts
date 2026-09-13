@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
-import {SSAOPass} from 'three/addons/postprocessing/SSAOPass.js';
+import {DepthAO} from './DepthAO';
+import {FXAAShader} from 'three/addons/shaders/FXAAShader.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
@@ -18,7 +19,8 @@ const gradingShader={
 export class WorldPostFX {
   private readonly composer:EffectComposer;
   private readonly renderPass:RenderPass;
-  private readonly ssao:SSAOPass;
+  private readonly ssao:DepthAO;
+  private readonly antialias:ShaderPass;
   private readonly bloom:UnrealBloomPass;
   private readonly grade:ShaderPass;
   private readonly output:OutputPass;
@@ -29,20 +31,22 @@ export class WorldPostFX {
   private userBloom=true;
 
   constructor(private readonly renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.PerspectiveCamera){
-    this.composer=new EffectComposer(renderer);
+    const target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1,THREE.UnsignedIntType)});
+    this.composer=new EffectComposer(renderer,target);
     this.renderPass=new RenderPass(scene,camera);this.composer.addPass(this.renderPass);
-    this.ssao=new SSAOPass(scene,camera,1,1);this.ssao.kernelRadius=7;this.ssao.minDistance=.0025;this.ssao.maxDistance=.075;this.composer.addPass(this.ssao);
+    this.ssao=new DepthAO(camera);this.composer.addPass(this.ssao);
     this.bloom=new UnrealBloomPass(new THREE.Vector2(1,1),.15,.38,.94);this.composer.addPass(this.bloom);
     this.grade=new ShaderPass(gradingShader);this.composer.addPass(this.grade);
     this.output=new OutputPass();this.composer.addPass(this.output);
+    this.antialias=new ShaderPass(FXAAShader);this.composer.addPass(this.antialias);
     this.setQuality('high');
   }
 
   private syncPasses():void{
-    const qualityAllows=this.quality!=='low';this.enabled=this.userEnabled&&qualityAllows;this.ssao.enabled=this.enabled&&this.userSsao;this.bloom.enabled=this.enabled&&this.userBloom;this.grade.enabled=this.enabled;this.output.enabled=this.enabled;
+    const qualityAllows=this.quality==='high'||this.quality==='ultra';this.enabled=this.userEnabled&&qualityAllows;this.ssao.enabled=this.enabled&&this.userSsao;this.bloom.enabled=this.enabled&&this.userBloom;this.grade.enabled=this.enabled;this.output.enabled=this.enabled;
   }
   setQuality(q:GraphicsQuality):void{
-    this.quality=q;this.ssao.kernelRadius=q==='ultra'?10:7;this.ssao.minDistance=q==='ultra'?.002:.0025;this.ssao.maxDistance=q==='ultra'?.09:.07;this.bloom.strength=q==='ultra'?.19:.12;this.bloom.radius=q==='ultra'?.46:.34;this.bloom.threshold=q==='ultra'?.91:.95;this.syncPasses();
+    this.quality=q;this.ssao.uniforms.strength.value=q==='ultra'?.8:.65;this.bloom.strength=q==='ultra'?.09:.055;this.bloom.radius=q==='ultra'?.46:.34;this.bloom.threshold=q==='ultra'?.91:.95;this.syncPasses();
   }
   setUserSettings(enabled:boolean,ssao:boolean,bloom:boolean):void{this.userEnabled=enabled;this.userSsao=ssao;this.userBloom=bloom;this.syncPasses();}
 
@@ -53,7 +57,7 @@ export class WorldPostFX {
   }
 
   render():void{if(this.enabled)this.composer.render();else this.renderer.render(this.renderPass.scene,this.renderPass.camera);}
-  resize(width:number,height:number,pixelRatio:number):void{this.composer.setPixelRatio(Math.max(.5,pixelRatio));this.composer.setSize(Math.max(1,width),Math.max(1,height));}
-  dispose():void{this.composer.dispose();}
+  resize(width:number,height:number,pixelRatio:number):void{this.composer.setPixelRatio(Math.max(.5,pixelRatio));this.composer.setSize(Math.max(1,width),Math.max(1,height));this.antialias.uniforms.resolution.value.set(1/Math.max(1,width*pixelRatio),1/Math.max(1,height*pixelRatio));}
+  dispose():void{for(const pass of this.composer.passes)pass.dispose();this.composer.dispose();}
   diagnostics(){return {enabled:this.enabled,quality:this.quality,ssao:this.ssao.enabled,bloom:this.bloom.enabled,bloomStrength:this.bloom.strength,userEnabled:this.userEnabled};}
 }

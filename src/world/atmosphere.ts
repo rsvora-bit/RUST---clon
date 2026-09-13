@@ -36,7 +36,7 @@ export class Atmosphere {
 
   update(dt:number,time:number,camera:THREE.Vector3):void{
     this.elapsed+=dt;const a=(time-6)/24*Math.PI*2;this.sunDirection.set(-Math.cos(a)*.75,Math.sin(a),.42).normalize();this.daylight=THREE.MathUtils.smoothstep(this.sunDirection.y,-.16,.26);
-    this.sun.intensity=.055+this.daylight*2.72;this.sun.color.setRGB(1,.72+this.daylight*.21,.53+this.daylight*.34);this.fill.intensity=.31+this.daylight*.98;this.fill.color.setRGB(.49+this.daylight*.21,.59+this.daylight*.21,.84);this.fill.groundColor.setRGB(.14+this.daylight*.15,.16+this.daylight*.17,.15+this.daylight*.13);
+    this.sun.intensity=.055+this.daylight*2.72;this.sun.color.setRGB(1,.72+this.daylight*.21,.53+this.daylight*.34);this.fill.intensity=.31+this.daylight*1.55;this.fill.color.setRGB(.49+this.daylight*.21,.59+this.daylight*.21,.84);this.fill.groundColor.setRGB(.14+this.daylight*.25,.16+this.daylight*.27,.15+this.daylight*.22);
     this.fog.color.setRGB(.05+.48*this.daylight,.078+.55*this.daylight,.14+.61*this.daylight);this.fog.density=.00128+(1-this.daylight)*.00162;
     const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDirection,105);this.sky.position.copy(camera);
     this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);
