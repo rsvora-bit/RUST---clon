@@ -17,7 +17,7 @@ describe('v0.7.4 seeded world variety',()=>{
     expect(GATHERING.sulfur.itemId).toBe('sulfurOre');expect(GATHERING.hqmetal.itemId).toBe('hqMetalOre');
     expect(ITEMS.sulfurOre.displayName).toBe('Sulfur ore');expect(ITEMS.hqMetalOre.displayName).toContain('High quality');
   });
-  it('accepts generation 3 save snapshots',()=>{
-    const sim=new GameSimulation(99,{x:0,y:5,z:0});expect(sim.state.worldGeneration).toBe(3);expect(validateGameState(sim.state)).toBe(true);
+  it('accepts generation 3 save snapshots while new worlds use generation 4',()=>{
+    const sim=new GameSimulation(99,{x:0,y:5,z:0});expect(sim.state.worldGeneration).toBe(4);expect(validateGameState(sim.state)).toBe(true);expect(validateGameState({...sim.state,worldGeneration:3})).toBe(true);
   });
 });

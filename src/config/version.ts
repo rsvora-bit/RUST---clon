@@ -1,9 +1,17 @@
-export const GAME_VERSION='0.7.4';
-export const GAME_BUILD='EA-07.4';
+export const GAME_VERSION='0.7.5';
+export const GAME_BUILD='EA-07.5';
 export const GAME_RELEASE_DATE='2026-09-13';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.5',date:'2026-09-13',title:'Expanded island, cleaner resource HUD & horizon pass',changes:[
+    'Added world generation 4 with a substantially larger irregular coastline, multiple separated hill/ridge systems and seed-dependent starter shores instead of one dominant central mound.',
+    'Reduced decorative boulder density on generation 4 and added spacing checks so trees, boulders and harvestable mineral nodes no longer spawn through one another.',
+    'Simplified hit-resource prompts to large resource names such as Metal Ore, Sulfur Ore and High Quality Metal Ore instead of the old GATHER/deposit/remaining block.',
+    'Expanded generation-4 vegetation and resource distribution farther toward the new coastline while keeping older save generations spatially unchanged.',
+    'Added an original procedural distant-mountain horizon backdrop plus an extra high cloud veil to give the ocean skyline more depth without copying external game assets.',
+    'Added persistent active-state highlighting for F3 Fly Mode and God Mode controls.'
+  ]},
   {version:'0.7.4',date:'2026-09-13',title:'Seeded world variety, loot & developer tools',changes:[
     'Added world generation 3 with deterministic seed-based starter shores and made blank New World creation generate a fresh random seed while preserving generation 1/2 saves.',
     'Added seeded rain collectors and sixteen scattered salvage crates with common, decent and rare lucky loot tiers.',
