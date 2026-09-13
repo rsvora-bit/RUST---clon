@@ -46,6 +46,8 @@ export class Environment {
   private readonly bark:THREE.MeshStandardMaterial;
   private readonly stone:THREE.MeshStandardMaterial;
   private readonly metal:THREE.MeshStandardMaterial;
+  private readonly sulfur:THREE.MeshStandardMaterial;
+  private readonly hqmetal:THREE.MeshStandardMaterial;
   private readonly fiber:THREE.MeshStandardMaterial;
   private readonly berries:THREE.MeshStandardMaterial;
   private readonly invisible=new THREE.MeshBasicMaterial({visible:false});
@@ -53,16 +55,16 @@ export class Environment {
   private quality:'low'|'medium'|'high'|'ultra'='high';
   private foliageDensity=.72;
 
-  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:1|2=2,deferPopulation=false){
+  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:1|2|3=3,deferPopulation=false){
     this.root.name='Tideland — procedural island';scene.add(this.root);
     this.terrain=new IslandTerrain(seed,worldGeneration);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
     const terrainMat=terrainMaterial(),ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(),color:0xb6b4a4,roughness:.97});
     this.leaves=this.foliageMaterial(leavesTexture(),0xffffff);this.pine=this.foliageMaterial(pineTexture(),0xffffff);
-    this.stone=stoneMaterial(0xd5d0bf);this.metal=stoneMaterial(0x8d8273);
+    this.stone=stoneMaterial(0xd5d0bf);this.metal=stoneMaterial(0x766d63);this.sulfur=stoneMaterial(0xa9a45d);this.hqmetal=stoneMaterial(0x59666a);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
-    [this.bark,this.leaves,this.pine,this.stone,this.metal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
+    [this.bark,this.leaves,this.pine,this.stone,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
     if(!deferPopulation)this.populateNow();
   }
   private populateNow():void {
@@ -103,7 +105,8 @@ export class Environment {
     // Keep the starter clearing readable from the default first-person heading.
     // The first hand-placed trees still frame the spawn, but no trunk fills the
     // reticle at arm's length before the player has had a chance to look around.
-    for(const [x,z,scale,species] of [[6,198,.86,0],[55,200,.96,1],[-4,190,1.02,0],[53,181,.84,0]] as const)treeNodes.push({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
+    const starterTrees=this.terrain.generation>=3?[[this.spawn.x-22,this.spawn.z-11,.86,0],[this.spawn.x+23,this.spawn.z-9,.96,1],[this.spawn.x-18,this.spawn.z+18,1.02,0],[this.spawn.x+20,this.spawn.z+17,.84,0]] as const:[[6,198,.86,0],[55,200,.96,1],[-4,190,1.02,0],[53,181,.84,0]] as const;
+    for(const [x,z,scale,species] of starterTrees)treeNodes.push({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
     const modern=this.terrain.generation===2;
     for(let i=0;i<(modern?12000:7000)&&treeNodes.length<(modern?820:560);i++){
       const x=(rand()-.5)*580,z=(rand()-.5)*580,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z);
@@ -137,8 +140,10 @@ export class Environment {
   private populateRocks():void {
     const rand=randomSource(this.seed+283),geos=[this.own(rockGeometry(51)),this.own(rockGeometry(114)),this.own(rockGeometry(221))];
     const boulders:{x:number;y:number;z:number;sx:number;sy:number;sz:number;rot:number;variant:number}[]=[];
-    // A broken coastal outcrop anchors the first view and frames the inland valley.
-    for(const [x,z,sx,sy,sz] of [[-3,185,6,5.8,4.6],[-10,183,4.2,3.4,3.7],[-1,190,4,2.5,3.5],[68,180,6.5,6,5],[71,183,4,3,5]] as const)boulders.push({x,y:this.heightAt(x,z)-.1,z,sx,sy,sz,rot:rand()*6.28,variant:Math.floor(rand()*3)});
+    const anchors=this.terrain.generation>=3
+      ? [[this.spawn.x-31,this.spawn.z-26,6,5.8,4.6],[this.spawn.x-38,this.spawn.z-22,4.2,3.4,3.7],[this.spawn.x+37,this.spawn.z-25,6.5,6,5]] as const
+      : [[-3,185,6,5.8,4.6],[-10,183,4.2,3.4,3.7],[68,180,6.5,6,5]] as const;
+    for(const [x,z,sx,sy,sz] of anchors)boulders.push({x,y:this.heightAt(x,z)-.1,z,sx,sy,sz,rot:rand()*6.28,variant:Math.floor(rand()*3)});
     for(let i=0;i<950;i++){
       const x=(rand()-.5)*570,z=(rand()-.5)*570,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
       if(h<.7||Math.hypot(x-this.spawn.x,z-this.spawn.z)<20)continue;
@@ -148,18 +153,23 @@ export class Environment {
     for(let v=0;v<3;v++){
       const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.stone,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+rand()*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
     }
-    const make=(kind:'stone'|'metal',x:number,z:number,size:number)=>{
-      const node=this.addNode(kind,x,z,size,rand()*6.28,kind==='stone'?240:180),group=new THREE.Group(),main=new THREE.Mesh(geos[Math.floor(rand()*3)]!,kind==='metal'?this.metal:this.stone);main.position.y=.52;main.scale.set(.94,.82,.88);main.castShadow=main.receiveShadow=true;group.add(main);
-      const secondary=new THREE.Mesh(geos[Math.floor(rand()*3)]!,kind==='metal'?this.metal:this.stone);secondary.position.set(.57,.22,.19);secondary.scale.set(.5,.5,.55);secondary.castShadow=true;group.add(secondary);
-      if(kind==='metal'){
-        const veinMat=new THREE.MeshStandardMaterial({color:0xb99967,metalness:.48,roughness:.62});this.materials.add(veinMat);const vein=new THREE.Mesh(this.own(new THREE.DodecahedronGeometry(.16,0)),veinMat);vein.position.set(-.46,.89,.42);vein.scale.set(2.3,.46,.65);group.add(vein);
+    const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
+      const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;
+      const material=kind==='stone'?this.stone:kind==='metal'?this.metal:kind==='sulfur'?this.sulfur:this.hqmetal;
+      const node=this.addNode(kind,x,z,size,rand()*6.28,capacity),group=new THREE.Group(),main=new THREE.Mesh(geos[Math.floor(rand()*3)]!,material);main.position.y=.52;main.scale.set(.94,.82,.88);main.castShadow=main.receiveShadow=true;group.add(main);
+      const secondary=new THREE.Mesh(geos[Math.floor(rand()*3)]!,material);secondary.position.set(.57,.22,.19);secondary.scale.set(.5,.5,.55);secondary.castShadow=true;group.add(secondary);
+      if(kind!=='stone'){
+        const colors={metal:0xb46e43,sulfur:0xe0c83d,hqmetal:0xacc7ce} as const,veinMat=new THREE.MeshStandardMaterial({color:colors[kind],metalness:kind==='sulfur'?.08:.62,roughness:kind==='sulfur'?.76:.38,emissive:kind==='sulfur'?0x302700:kind==='hqmetal'?0x10191b:0x1e0d05,emissiveIntensity:.18});this.materials.add(veinMat);
+        const chunks=kind==='hqmetal'?3:kind==='sulfur'?5:4;for(let j=0;j<chunks;j++){const vein=new THREE.Mesh(this.own(new THREE.DodecahedronGeometry(.12+rand()*.07,0)),veinMat);const a=rand()*Math.PI*2;vein.position.set(Math.cos(a)*(.38+rand()*.24),.48+rand()*.55,Math.sin(a)*(.34+rand()*.22));vein.scale.set(1.3+rand()*1.5,.38+rand()*.45,.55+rand()*.65);vein.rotation.set(rand(),rand()*6.28,rand());group.add(vein);}
       }
+      group.name=kind==='stone'?'Stone node':kind==='metal'?'Metal ore node':kind==='sulfur'?'Sulfur ore node':'High quality metal ore node';
       this.place(group,node);this.colliders.push({nodeId:node.id,position:{x,y:node.position.y+.5*size,z},halfExtents:{x:.67*size,y:.73*size,z:.61*size},rotation:node.rotation});
     };
-    make('stone',24,206,.95);make('stone',35,199,1.1);make('metal',60,175,1.1);
-    for(let i=0,count=0;i<2400&&count<118;i++){
-      const x=(rand()-.5)*540,z=(rand()-.5)*540,h=this.heightAt(x,z);if(h<2.1||Math.hypot(x-this.spawn.x,z-this.spawn.z)<16||this.terrain.slopeAt(x,z)>.9)continue;
-      if(rand()>(h>20?.7:.27))continue;make(rand()<.25?'metal':'stone',x,z,.8+rand()*.65);count++;
+    if(this.terrain.generation>=3){make('stone',this.spawn.x+10,this.spawn.z-10,.95);make('stone',this.spawn.x-13,this.spawn.z-8,1.08);make('metal',this.spawn.x+18,this.spawn.z+12,1.05);}
+    else {make('stone',24,206,.95);make('stone',35,199,1.1);make('metal',60,175,1.1);}
+    for(let i=0,count=0;i<3600&&count<155;i++){
+      const x=(rand()-.5)*540,z=(rand()-.5)*540,h=this.heightAt(x,z);if(h<2.1||Math.hypot(x-this.spawn.x,z-this.spawn.z)<17||this.terrain.slopeAt(x,z)>.9)continue;
+      if(rand()>(h>20?.72:.31))continue;const roll=rand(),kind=roll<.57?'stone':roll<.80?'metal':roll<.95?'sulfur':'hqmetal';make(kind,x,z,.8+rand()*.65);count++;
     }
   }
   private populatePlants():void {
@@ -181,7 +191,8 @@ export class Environment {
       }
       this.place(group,node);
     };
-    create('wood',29.5,209,1);create('fiber',31,207.5,1.2);create('berries',35,208,1.3);create('fiber',22,210,1.15);create('wood',19,202,1.1);
+    if(this.terrain.generation>=3){create('wood',this.spawn.x+8,this.spawn.z-7,1);create('fiber',this.spawn.x-7,this.spawn.z-8,1.2);create('berries',this.spawn.x+10,this.spawn.z+8,1.3);create('fiber',this.spawn.x-10,this.spawn.z+9,1.15);create('wood',this.spawn.x+4,this.spawn.z+13,1.1);}
+    else {create('wood',29.5,209,1);create('fiber',31,207.5,1.2);create('berries',35,208,1.3);create('fiber',22,210,1.15);create('wood',19,202,1.1);}
     for(let i=0,count=0;i<3400&&count<260;i++){
       const x=(rand()-.5)*520,z=(rand()-.5)*520,h=this.heightAt(x,z);if(h<2.3||h>30||this.terrain.slopeAt(x,z)>.6||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;
       if(rand()>.62)continue;const roll=rand();create(roll<.40?'wood':roll<.70?'berries':'fiber',x,z,.75+rand()*.45);count++;

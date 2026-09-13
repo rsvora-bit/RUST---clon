@@ -1,9 +1,17 @@
-export const GAME_VERSION='0.7.3';
-export const GAME_BUILD='EA-07.3';
+export const GAME_VERSION='0.7.4';
+export const GAME_BUILD='EA-07.4';
 export const GAME_RELEASE_DATE='2026-09-13';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.4',date:'2026-09-13',title:'Seeded world variety, loot & developer tools',changes:[
+    'Added world generation 3 with deterministic seed-based starter shores and made blank New World creation generate a fresh random seed while preserving generation 1/2 saves.',
+    'Added seeded rain collectors and sixteen scattered salvage crates with common, decent and rare lucky loot tiers.',
+    'Added distinct stone, metal ore, sulfur ore and high-quality metal ore deposits with seeded random distribution and original procedural mineral styling.',
+    'Removed the oversized relay scaffold and the visible world-space trail ribbon; map trails remain available only on the island survey.',
+    'Replaced the timer-limited V-Sync OFF loop with a MessageChannel uncapped scheduler and added F3 Fly, God and Heal developer controls.',
+    'Replaced the save-manager close glyph with an explicit Back control and made History/Help overlays close automatically when the screen changes.'
+  ]},
   {version:'0.7.3',date:'2026-09-13',title:'Save controls, frame sync & gathering polish',changes:[
     'Fixed save-slot confirmation overlays inheriting disabled pointer events; Delete, Cancel and the new close button now work reliably.',
     'Added a persistent V-Sync setting: ON uses display-synchronized animation frames, while OFF uncaps game-loop submissions within browser limits.',

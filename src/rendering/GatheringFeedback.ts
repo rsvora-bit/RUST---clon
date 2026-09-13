@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import type {ResourceNode,Vec3} from '../core/types';
 
-type WeakKind='tree'|'stone'|'metal';
+type WeakKind='tree'|'stone'|'metal'|'sulfur'|'hqmetal';
 type Spot={nodeId:string;kind:WeakKind;position:THREE.Vector3;root:THREE.Group;sequence:number;age:number};
 type HitMark={root:THREE.Group;material:THREE.MeshBasicMaterial;life:number;max:number};
 export interface GatherStrike {point:THREE.Vector3;weakSpot:boolean}
 
-const eligible=(kind:ResourceNode['kind']):kind is WeakKind=>kind==='tree'||kind==='stone'||kind==='metal';
+const eligible=(kind:ResourceNode['kind']):kind is WeakKind=>kind==='tree'||kind==='stone'||kind==='metal'||kind==='sulfur'||kind==='hqmetal';
 const hash=(value:string):number=>{let h=2166136261;for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
 const unit=(seed:number,offset:number)=>((Math.imul(seed^(offset*0x9e3779b9),1664525)+1013904223)>>>0)/4294967296;
 
@@ -83,7 +83,7 @@ export class GatheringFeedback {
   }
 
   private hitMark(point:Vec3,kind:ResourceNode['kind'],strong:boolean):void{
-    const color=kind==='tree'||kind==='wood'?(strong?0xffd6a1:0xe7bf88):(kind==='metal'?(strong?0xffe6a0:0xc9b28d):0xe3e1d7);
+    const color=kind==='tree'||kind==='wood'?(strong?0xffd6a1:0xe7bf88):(kind==='sulfur'?(strong?0xffef6b:0xd6c856):kind==='hqmetal'?(strong?0xd9f3f6:0x9db8bd):kind==='metal'?(strong?0xffc28f:0xbd8b68):0xe3e1d7);
     const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.92,depthWrite:false,toneMapped:false});
     const root=new THREE.Group();root.position.set(point.x,point.y,point.z);root.name='Gathering hit mark';
     for(const a of [Math.PI/4,-Math.PI/4]){const mesh=new THREE.Mesh(this.sparkBar,material);mesh.rotation.z=a;mesh.renderOrder=9;root.add(mesh);}root.scale.setScalar(strong?1.15:.82);this.scene.add(root);

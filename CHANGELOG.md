@@ -1,3 +1,13 @@
+## v0.7.4 / EA-07.4 — Seeded world variety, loot & developer tools (2026-09-13)
+
+- Added generation 3 with deterministic seed-based starter spawn/clearing and fresh random seeds for blank New World creation. Existing generation 1/2 saves keep their old world layout.
+- Added multiple seeded rain collectors plus sixteen scattered salvage crates with common, decent and rare lucky loot tables.
+- Added distinct stone, metal ore, sulfur ore and high-quality metal ore deposits with random seed-driven distribution and original procedural mineral styling.
+- Removed the oversized relay tower and the accidental-looking world-space trail ribbon; trails remain on the island map only.
+- Replaced timer-based V-Sync OFF scheduling with a MessageChannel uncapped render submission loop.
+- Added F3 Fly Mode, God Mode and Heal/Vitals development controls.
+- Added an explicit Back button to save management and fixed History/Help overlays remaining visible after entering gameplay or Settings.
+
 ## v0.7.3 / EA-07.3 — Save controls, frame sync & gathering polish (2026-09-13)
 
 - Fixed per-slot delete/overwrite confirmation overlays so their buttons receive pointer input; added an explicit close button.

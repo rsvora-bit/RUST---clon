@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.3%20%7C%20EA--07.3-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.4%20%7C%20EA--07.4-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.3 / EA-07.3` · **13 September 2026**
+**Current release:** `v0.7.4 / EA-07.4` · **13 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -65,7 +65,7 @@ The main idea is simple:
 - Distance culling and quality settings
 
 ### 🪓 Survival & interaction
-- Harvestable trees, stone, metal, fiber and berries
+- Harvestable trees, stone, metal ore, sulfur ore, high-quality metal ore, fiber and berries
 - Hunger, thirst, stamina and health
 - Tools and resource-specific gathering
 - Dropped items and world persistence
@@ -89,7 +89,7 @@ The main idea is simple:
 - Five local save slots with per-slot load/delete management
 - HUD scale/opacity, crosshair size, FPS counter and tutorial visibility settings
 - Render scale, brightness, V-Sync/frame pacing, shadows, compass and crosshair settings
-- Map, waypoints, diagnostics and developer telemetry
+- Map, waypoints, diagnostics and developer telemetry with fly/god/vitals controls
 
 ### 💾 Persistence
 The browser locally persists worlds, settings, inventory, crafting, structures, doors, drops, depleted resource nodes and survival progression.
@@ -113,7 +113,11 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 - ✅ High/Ultra SSAO, subtle bloom and color grading with Low/Medium performance fallback
 - ✅ Detailed staged world loading and GPU warm-up
 - ✅ Expanded settings, localization and diagnostics
-- ✅ Reliable multi-save confirmation controls, optional V-Sync/frame pacing and denser gatherable loose wood/berry resources
+- ✅ Reliable multi-save confirmation controls, explicit Back navigation and auto-closing History overlays
+- ✅ Seed-driven generation 3 spawns, scattered rain collectors and tiered salvage crates
+- ✅ Stone, metal, sulfur and high-quality metal mineral node variants with seeded random distribution
+- ✅ Optional V-Sync/frame pacing with an uncapped OFF scheduler plus F3 fly/god/vitals tools
+- ✅ Denser gatherable loose wood/berry resources
 - ✅ Current rendering-stability foundation with depth-based AO and reduced vegetation render cost
 - ✅ Automated CI validation and GitHub Pages deployment
 
