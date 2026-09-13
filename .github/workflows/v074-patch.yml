@@ -1,0 +1,53 @@
+name: Apply and validate Tideland v0.7.4
+
+on:
+  push:
+    branches:
+      - feature/v074-world-variety
+    paths:
+      - scripts/apply-v074.py
+      - .github/workflows/v074-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/v074-world-variety
+          fetch-depth: 0
+      - name: Apply patch
+        run: python3 scripts/apply-v074.py
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Verify v0.7.4 markers
+        run: |
+          grep -q "GAME_VERSION='0.7.4'" src/config/version.ts
+          grep -q "GAME_BUILD='EA-07.4'" src/config/version.ts
+          grep -q 'new MessageChannel()' src/app/GameApp.ts
+          grep -q "worldGeneration: 3" src/simulation/GameSimulation.ts
+          grep -q 'Collapsed relay site' src/survival/WorldSurvival.ts
+          grep -q 'hqMetalOre' src/items/definitions.ts
+          grep -q 'sulfurOre' src/items/definitions.ts
+          grep -q '← BACK' src/ui/UI.ts
+      - name: Commit validated patch
+        run: |
+          rm -f scripts/apply-v074.py .github/workflows/v074-patch.yml
+          git config user.name "Roman Svora"
+          git config user.email "roman.svora.ml@gmail.com"
+          git add -A
+          git commit -m "Tideland v0.7.4: world variety, loot and dev tools"
+          git push origin HEAD:feature/v074-world-variety
