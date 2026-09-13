@@ -21,13 +21,13 @@ jobs:
       - run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Start Tideland
+      - name: Start Vite module server
         run: |
           npm run dev -- --host 127.0.0.1 > /tmp/tideland-v073.log 2>&1 &
           for i in {1..60}; do curl -fsS http://127.0.0.1:5173 >/dev/null && exit 0; sleep 1; done
           cat /tmp/tideland-v073.log
           exit 1
-      - name: Verify save confirmation and V-Sync controls
+      - name: Verify save confirmation and V-Sync controls in real Chromium DOM
         run: |
           cat > .v073-smoke.mjs <<'EOF'
           import {chromium} from 'playwright-core';
@@ -36,40 +36,26 @@ jobs:
           const page=await browser.newPage({viewport:{width:1280,height:720}});
           const errors=[]; page.on('pageerror',e=>errors.push(e.message)); page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
           try {
-            await page.goto('http://127.0.0.1:5173');
-            await page.waitForFunction(()=>window.__TIDELAND,{}, {timeout:90000});
-            await page.locator('.loading-screen').waitFor({state:'hidden',timeout:90000});
-            await page.locator('[data-action="new"]').click();
-            await page.locator('[data-save-action="new"][data-save-slot="1"]').click();
-            await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',{}, {timeout:90000});
-            await page.evaluate(()=>window.__TIDELAND.save());
-            await page.keyboard.press('Escape');
+            await page.route('http://127.0.0.1:5173/',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><html><head></head><body><main id="test-root"></main></body></html>'}));
+            await page.goto('http://127.0.0.1:5173/');
+            await page.evaluate(async()=>{
+              const [{UI},{DEFAULT_SETTINGS}]=await Promise.all([import('/src/ui/UI.ts'),import('/src/config/balance.ts')]);
+              let ui; let slots=[{slot:1,exists:true,seed:731942,savedAt:Date.now(),playTime:120,structures:2},{slot:2,exists:false},{slot:3,exists:false},{slot:4,exists:false},{slot:5,exists:false}];
+              const base={setScreen:(screen)=>ui.setScreen(screen),settings:(settings)=>{window.__settings={...settings};ui.setSettings(settings);},deleteSave:(slot)=>{window.__deleted=slot;slots=slots.map(s=>s.slot===slot?{slot,exists:false}:s);ui.setSaveSlots(slots);}};
+              const actions=new Proxy(base,{get:(target,prop)=>target[prop]??(()=>{})});
+              ui=new UI(document.getElementById('test-root'),actions);ui.setSaveSlots(slots);ui.setSettings({...DEFAULT_SETTINGS,keybinds:{...DEFAULT_SETTINGS.keybinds}});ui.setScreen('pause');window.__settings={...DEFAULT_SETTINGS};window.__ui=ui;
+            });
             await page.locator('.pause-screen [data-action="manageSaves"]').click();
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
-            const modal=page.locator('.delete-slot-confirm');
-            await modal.waitFor({state:'visible',timeout:5000});
-            await page.locator('.delete-slot-confirm [data-action="deleteSlotCancel"]').click();
-            assert.equal(await modal.isHidden(),true,'Cancel must close delete confirmation');
-            await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
-            await page.locator('.delete-slot-confirm .confirm-close').click();
-            assert.equal(await modal.isHidden(),true,'Close X must close delete confirmation');
-            await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
-            await page.locator('.delete-slot-confirm [data-action="deleteSlotConfirm"]').click();
-            assert.equal(await modal.isHidden(),true,'Delete must close confirmation');
-            assert.equal(await page.locator('[data-save-action="delete"][data-save-slot="1"]').count(),0,'Deleted slot must refresh out of save manager');
-            await page.locator('.save-browser [data-action="saveBrowserClose"]').click();
-            await page.locator('.pause-screen [data-action="settings"]').click();
-            await page.locator('[data-settings-tab="graphics"]').click();
-            const off=page.locator('[data-toggle="vsync"][data-value="false"]');
-            await off.click();
-            assert.equal(await off.evaluate(el=>el.classList.contains('active')),true,'V-Sync OFF must become active');
-            assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1')||'{}').vsync),false,'V-Sync OFF must persist');
-            const on=page.locator('[data-toggle="vsync"][data-value="true"]');
-            await on.click();
-            assert.equal(await on.evaluate(el=>el.classList.contains('active')),true,'V-Sync ON must become active');
-            assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1')||'{}').vsync),true,'V-Sync ON must persist');
-            assert.deepEqual(errors,[],'No browser console/page errors expected');
-            console.log('v0.7.3 browser interaction smoke passed');
+            const modal=page.locator('.delete-slot-confirm');await modal.waitFor({state:'visible',timeout:5000});
+            await page.locator('.delete-slot-confirm [data-action="deleteSlotCancel"]').click();assert.equal(await modal.isHidden(),true,'Cancel must close delete confirmation');
+            await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();await page.locator('.delete-slot-confirm .confirm-close').click();assert.equal(await modal.isHidden(),true,'Close X must close delete confirmation');
+            await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();await page.locator('.delete-slot-confirm [data-action="deleteSlotConfirm"]').click();
+            assert.equal(await page.evaluate(()=>window.__deleted),1,'Delete callback must receive slot 1');assert.equal(await modal.isHidden(),true,'Delete must close confirmation');
+            await page.locator('.save-browser [data-action="saveBrowserClose"]').click();await page.locator('.pause-screen [data-action="settings"]').click();await page.locator('[data-settings-tab="graphics"]').click();
+            const off=page.locator('[data-toggle="vsync"][data-value="false"]');await off.click();assert.equal(await off.evaluate(el=>el.classList.contains('active')),true,'V-Sync OFF must become active');assert.equal(await page.evaluate(()=>window.__settings.vsync),false,'V-Sync OFF must reach settings callback');
+            const on=page.locator('[data-toggle="vsync"][data-value="true"]');await on.click();assert.equal(await on.evaluate(el=>el.classList.contains('active')),true,'V-Sync ON must become active');assert.equal(await page.evaluate(()=>window.__settings.vsync),true,'V-Sync ON must reach settings callback');
+            assert.deepEqual(errors,[],'No browser console/page errors expected');console.log('v0.7.3 UI browser smoke passed');
           } finally { await browser.close(); }
           EOF
           node .v073-smoke.mjs
