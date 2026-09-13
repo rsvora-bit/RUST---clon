@@ -48,7 +48,7 @@ jobs:
             await page.locator('.pause-screen [data-action="manageSaves"]').click();
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();
             const modal=page.locator('.delete-slot-confirm');await modal.waitFor({state:'visible',timeout:5000});
-            await page.locator('.delete-slot-confirm [data-action="deleteSlotCancel"]').click();assert.equal(await modal.isHidden(),true,'Cancel must close delete confirmation');
+            await page.locator('.delete-slot-confirm button:not(.confirm-close)[data-action="deleteSlotCancel"]').click();assert.equal(await modal.isHidden(),true,'Cancel must close delete confirmation');
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();await page.locator('.delete-slot-confirm .confirm-close').click();assert.equal(await modal.isHidden(),true,'Close X must close delete confirmation');
             await page.locator('[data-save-action="delete"][data-save-slot="1"]').click();await page.locator('.delete-slot-confirm [data-action="deleteSlotConfirm"]').click();
             assert.equal(await page.evaluate(()=>window.__deleted),1,'Delete callback must receive slot 1');assert.equal(await modal.isHidden(),true,'Delete must close confirmation');
