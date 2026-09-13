@@ -1,3 +1,26 @@
+## v0.7.7 / EA-07.7 — Building Grades & Hammer (2026-09-13)
+
+- Added Wood, Stone and Metal building grades with 250 / 600 / 1000 durability and piece-specific upgrade costs.
+- Added visually distinct, original procedural stone masonry and weathered metal panel construction while preserving per-piece material batching.
+- Added the craftable Builder's Hammer, original inventory icon and procedural first-person held model with existing equip, sway, sprint and inspect behavior.
+- Added a compact Hammer + RMB structure HUD/menu for atomic upgrades, proportional repairs, safe door-hinge rotation and one-second hold demolition.
+- Added a reusable `damageStructure(id, amount)` lifecycle API for future combat, raids and decay.
+- Added safe v0.7.6 structure migration to full-health Wood plus grade/current-health persistence and door regression coverage.
+
+## v0.7.6 / EA-07.6 — Loot cache breakup & harvesting interaction fixes (2026-09-13)
+
+- Added visible breakup and collapse for emptied salvage caches and removed consumed caches from saved worlds.
+- Restored concise HP/durability readouts for harvestable trees and mineral nodes.
+- Reserved E for pickups and world interactions while resource strikes remain on primary attack.
+- Fixed instance-based resource hit wobble and stale loot interaction/physics cleanup.
+
+## v0.7.5 / EA-07.5 — Expanded island, cleaner resource HUD & horizon pass (2026-09-13)
+
+- Added generation 4 with a larger irregular coastline, separated ridge systems and seed-dependent starter shores while preserving older world generations.
+- Improved procedural prop spacing, expanded vegetation/resource distribution and reduced decorative boulder density.
+- Simplified resource target labels and added an original procedural distant-mountain horizon and cloud veil.
+- Added persistent highlighting for F3 Fly Mode and God Mode.
+
 ## v0.7.4 / EA-07.4 — Seeded world variety, loot & developer tools (2026-09-13)
 
 - Added generation 3 with deterministic seed-based starter spawn/clearing and fresh random seeds for blank New World creation. Existing generation 1/2 saves keep their old world layout.

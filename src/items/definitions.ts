@@ -21,6 +21,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   berries: item('berries', 'Wild berries', 'A small meal that restores 9 food and 5 hydration. Double-click to eat.', 'food', 20, ['food'], { consumable: true }),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),
+  hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),
   plan: item('plan', 'Building plan', 'Equip to place foundations, walls, doorways, doors, floors and roofs. Press B to choose a piece.', 'building', 1, ['build']),
   bandage: item('bandage', 'Field dressing', 'Clean plant-fiber dressing. Restores 24 health. Double-click to use.', 'utility', 5, ['healing'], { consumable: true }),
   canteen: item('canteen', 'Rainwater pouch', 'A small collector of fresh water. Restores 42 hydration. Double-click to drink.', 'utility', 3, ['water'], { consumable: true }),

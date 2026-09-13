@@ -32,6 +32,7 @@ export class PhysicsWorld {
   }
   setStructure(id:string,boxes:CollisionBox[]){this.removeStructure(id);this.structureColliders.set(id,boxes.map(b=>this.createBox(b)));}
   removeStructure(id:string){for(const c of this.structureColliders.get(id)??[])this.world.removeCollider(c,true);this.structureColliders.delete(id);}
+  hasStructure(id:string){return this.structureColliders.has(id);}
   removeNodeCollider(id:string){const collider=this.naturalColliders.get(id);if(collider){this.world.removeCollider(collider,true);this.naturalColliders.delete(id);}}
   move(delta:Vec3){
     this.controller.computeColliderMovement(this.collider,delta);

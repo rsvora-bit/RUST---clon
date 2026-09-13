@@ -1,6 +1,6 @@
 import type {Station} from '../survival/stations';
 export type Vec3 = {x:number; y:number; z:number};
-export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'sulfurOre'|'hqMetalOre'|'hatchet'|'pickaxe'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll';
+export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'sulfurOre'|'hqMetalOre'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll';
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';
@@ -11,7 +11,8 @@ export interface ItemDefinition {id:ItemId; displayName:string; description:stri
 export interface ItemStack {itemId:ItemId; count:number}
 export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number}
 export type PieceType = 'foundation'|'wall'|'doorway'|'floor'|'roof'|'door';
-export interface Structure {id:string; pieceType:PieceType; position:Vec3; rotation:number; health:number; grade?:'wood'|'stone'|'metal'; maxHealth?:number; createdAt:number; open?:boolean; parentId?:string; socketId?:string}
+export type StructureGrade = 'wood'|'stone'|'metal';
+export interface Structure {id:string; pieceType:PieceType; position:Vec3; rotation:number; /** Legacy v0.7.6 health mirror. */ health:number; grade?:StructureGrade; currentHealth?:number; maxHealth?:number; createdAt:number; open?:boolean; flipped?:boolean; parentId?:string; socketId?:string}
 export interface ResourceNode {id:string; kind:'tree'|'stone'|'metal'|'sulfur'|'hqmetal'|'fiber'|'berries'|'wood'; position:Vec3; scale:number; rotation:number; capacity:number; remaining:number; depletedAt?:number}
 export interface DroppedItem {id:string; stack:ItemStack; position:Vec3}
 export interface PlayerStats {health:number; hunger:number; thirst:number; stamina:number}
@@ -21,6 +22,6 @@ export interface SaveSlotSummary {slot:number; exists:boolean; seed?:number; sav
 export interface Settings {language:Language; sensitivityX:number; sensitivityY:number; fov:number; viewmodelFov:number; invertY:boolean; headBob:boolean; cameraShake:boolean; motionBlur:boolean; masterVolume:number; musicVolume:number; effectsVolume:number; ambientVolume:number; quality:GraphicsQuality; renderScale:number; vsync:boolean; shadows:boolean; shadowQuality:ShadowQuality; shadowDistance:number; foliageDensity:number; postProcessing:boolean; ambientOcclusion:boolean; bloom:boolean; crosshairOpacity:number; crosshairScale:number; hudScale:number; hudOpacity:number; brightness:number; showCompass:boolean; showFps:boolean; showTutorialHints:boolean; telemetryScale:number; telemetryOpacity:number; telemetryPerformance:boolean; telemetryPlayer:boolean; telemetryCamera:boolean; telemetryWorld:boolean; keybinds:Keybinds}
 export interface BuildCandidate {pieceType:PieceType; position:Vec3; rotation:number; valid:boolean; reason:string; parentId?:string; socketId?:string; snapped:boolean}
 export type Screen = 'menu'|'playing'|'inventory'|'pause'|'settings'|'dead'|'station';
-export interface InteractionInfo {title:string; action:string; key:string; detail?:string; progress?:number}
+export interface InteractionInfo {title:string; action:string; key:string; detail?:string; progress?:number; structure?:{grade:StructureGrade;currentHealth:number;maxHealth:number}}
 export interface HUDData {stats:PlayerStats; inventory:(ItemStack|null)[]; activeSlot:number; compass:number; biome:string; timeOfDay:number; interaction:InteractionInfo|null; build:{piece:PieceType;valid:boolean;reason:string;cost:string}|null; fps:number; diagnostics:string; tutorial:string}
 export interface UIActions {respawn:()=>void;newGame:(seed?:number,slot?:number)=>void;continueGame:(slot?:number)=>void;resume:()=>void;save:()=>void;mainMenu:()=>void;resetSave:()=>void;deleteSave:(slot:number)=>void;settings:(settings:Settings)=>void;setScreen:(screen:Screen)=>void;moveItem:(from:number,to:number,split:boolean)=>void;dropItem:(slot:number)=>void;consume:(slot:number)=>void;craft:(id:string)=>void;canCraft:(id:string)=>boolean;selectSlot:(slot:number)=>void;selectPiece:(piece:PieceType)=>void;dev:(action:string,value?:number)=>void}

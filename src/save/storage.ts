@@ -6,6 +6,7 @@ import { BUILDING_RULES, INVENTORY, SAVE } from '../config/gameplay';
 import { ITEMS, isItemId } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import { PIECES, validateStructurePlacement } from '../building/rules';
+import {migrateStructure} from '../building/grades';
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const finite = (value: unknown, min = -1e6, max = 1e6): value is number => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
@@ -27,11 +28,16 @@ export function validateGameState(value: unknown): value is GameState {
   const ids = new Set<string>();
   const parsedStructures: Structure[] = [];
   for (const entry of value.structures) {
-    if (!record(entry) || !identifier(entry.id) || ids.has(entry.id) || typeof entry.pieceType !== 'string' || !Object.hasOwn(PIECES, entry.pieceType) || !position(entry.position) || !finite(entry.rotation) || !finite(entry.health, 0, typeof entry.maxHealth==='number'?entry.maxHealth:BUILDING_RULES.HEALTH) || !finite(entry.createdAt, 0, value.elapsed)) return false;
+    if (!record(entry) || !identifier(entry.id) || ids.has(entry.id) || typeof entry.pieceType !== 'string' || !Object.hasOwn(PIECES, entry.pieceType) || !position(entry.position) || !finite(entry.rotation) || !finite(entry.createdAt, 0, value.elapsed)) return false;
     if ((entry.parentId !== undefined && !identifier(entry.parentId)) || (entry.socketId !== undefined && !identifier(entry.socketId)) || (entry.open !== undefined && typeof entry.open !== 'boolean')) return false;
     if ((entry.parentId === undefined) !== (entry.socketId === undefined)) return false;
     if(entry.grade!==undefined&&!['wood','stone','metal'].includes(entry.grade as string))return false;
-    if(entry.maxHealth!==undefined&&entry.maxHealth!==({wood:250,stone:600,metal:1000}[entry.grade as 'wood'|'stone'|'metal']))return false;
+    if(entry.flipped!==undefined&&(entry.pieceType!=='door'||typeof entry.flipped!=='boolean'))return false;
+    const expectedMax=({wood:250,stone:600,metal:1000}[(entry.grade??'wood') as 'wood'|'stone'|'metal']);
+    if(entry.maxHealth!==undefined&&entry.maxHealth!==expectedMax)return false;
+    const health=entry.currentHealth??entry.health??expectedMax;
+    if(!finite(health,0,expectedMax)||entry.health!==undefined&&!finite(entry.health,0,expectedMax)||entry.currentHealth!==undefined&&!finite(entry.currentHealth,0,expectedMax))return false;
+    if(entry.health!==undefined&&entry.currentHealth!==undefined&&entry.health!==entry.currentHealth)return false;
     const structure = entry as unknown as Structure;
     if (validateStructurePlacement({ ...structure, valid: true, reason: '', snapped: !!structure.socketId }, parsedStructures)) return false;
     ids.add(entry.id);
@@ -58,12 +64,13 @@ export function validateGameState(value: unknown): value is GameState {
 
 interface SaveEnvelope {savedAt:number; state:GameState}
 const slotKey=(slot:number):string=>`${SAVE.GAME_KEY}:slot:${Math.max(1,Math.min(SAVE.SLOT_COUNT,Math.trunc(slot)))}`;
+function migrateState(state:GameState):GameState {const migrated=structuredClone(state);for(const structure of migrated.structures)migrateStructure(structure);return migrated;}
 function decodeSave(raw:string|null):SaveEnvelope|null {
   if(!raw||raw.length>12_000_000)return null;
   try {
     const parsed:unknown=JSON.parse(raw);
-    if(validateGameState(parsed))return {savedAt:0,state:parsed};
-    if(record(parsed)&&finite(parsed.savedAt,0,Number.MAX_SAFE_INTEGER)&&validateGameState(parsed.state))return {savedAt:parsed.savedAt,state:parsed.state};
+    if(validateGameState(parsed))return {savedAt:0,state:migrateState(parsed)};
+    if(record(parsed)&&finite(parsed.savedAt,0,Number.MAX_SAFE_INTEGER)&&validateGameState(parsed.state))return {savedAt:parsed.savedAt,state:migrateState(parsed.state)};
   } catch { /* Invalid or partial browser storage entry. */ }
   return null;
 }
@@ -80,7 +87,8 @@ export function saveGame(state: GameState, slot=1): boolean {
   try {
     if (!validateGameState(state)) return false;
     migrateLegacySave();
-    localStorage.setItem(slotKey(slot), JSON.stringify({savedAt:Date.now(),state} satisfies SaveEnvelope));
+    const canonical=migrateState(state);
+    localStorage.setItem(slotKey(slot), JSON.stringify({savedAt:Date.now(),state:canonical} satisfies SaveEnvelope));
     return true;
   } catch { return false; }
 }

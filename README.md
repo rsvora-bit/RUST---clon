@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.4%20%7C%20EA--07.4-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.7%20%7C%20EA--07.7-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.4 / EA-07.4` · **13 September 2026**
+**Current release:** `v0.7.7 / EA-07.7` · **13 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -74,7 +74,9 @@ The main idea is simple:
 ### 🧱 Building & progression
 - Building plan with placeable structures
 - Placement validation and collision checks
-- Doors and persistent structures
+- Persistent foundations, walls, doorways, floors, roofs and hinged doors
+- Wood, Stone and Metal grades with durability, upgrades and proportional repair costs
+- Builder's Hammer with structure HUD, one-second hold demolition and safe door-hinge rotation
 - Workbench progression and crafting requirements
 - Survival stations and station upgrades
 
@@ -92,13 +94,13 @@ The main idea is simple:
 - Map, waypoints, diagnostics and developer telemetry with fly/god/vitals controls
 
 ### 💾 Persistence
-The browser locally persists worlds, settings, inventory, crafting, structures, doors, drops, depleted resource nodes and survival progression.
+The browser locally persists worlds, settings, inventory, crafting, structure grades/health, doors, drops, depleted resource nodes and survival progression. Saves from v0.7.6 migrate in place: structures without grade or current health load as full-health Wood.
 
 ---
 
 ## 🚀 Current development focus
 
-**v0.7.x** is focused on menu usability, multi-save persistence and player-configurable interface scale.
+**v0.7.x** now combines the menu/save foundation with deeper building progression and browser-safe structure maintenance.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -120,6 +122,9 @@ The browser locally persists worlds, settings, inventory, crafting, structures, 
 - ✅ Denser gatherable loose wood/berry resources
 - ✅ Current rendering-stability foundation with depth-based AO and reduced vegetation render cost
 - ✅ Automated CI validation and GitHub Pages deployment
+- ✅ Wood → Stone → Metal building upgrades with persistent durability
+- ✅ Craftable first-person Builder's Hammer with upgrade, repair, rotate and hold-demolish actions
+- ✅ Safe v0.7.6 save migration and future-facing structure damage lifecycle API
 
 ---
 
@@ -134,15 +139,13 @@ Game-style main/pause menus, tabbed settings, remappable controls, graphics/audi
 ### `v0.4.x` — Movement & first-person feel
 Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
 
-### Future
-- Graphics, terrain, vegetation, water, lighting and atmosphere overhaul
-- Deeper crafting and progression
-- More meaningful landmarks and exploration
-- Better building variety
-- Improved survival balancing
-- More environmental interaction
-- Expanded world events and points of interest
-- Continued optimization for both Windows and macOS browsers
+### Next milestones
+- `v0.7.8`: death, respawn and dropped backpack/corpse container
+- `v0.7.9`: scrap, components and recycler
+- `v0.8.0`: tech tree, blueprint unlocks and deeper workbench progression
+- `v0.8.1`: base ownership and upkeep
+- `v0.9.0+`: procedural roads, monuments/POIs, equipment and hazardous zones
+- Later: farming, AI, world events, electricity, ocean gameplay, vehicles and multiplayer
 
 The roadmap is intentionally flexible. Features are added when they improve the core survival experience rather than simply increasing the feature count.
 
@@ -166,7 +169,8 @@ The roadmap is intentionally flexible. Features are added when they improve the 
 | `B` | Building plan |
 | `Q` | Cycle building piece |
 | `R` | Rotate building piece |
-| Right click | Cancel building placement |
+| Right click | Cancel building placement / open Hammer menu while aiming at a structure |
+| Builder's Hammer + `RMB` | Upgrade, repair, rotate or hold-demolish a structure |
 | `Esc` | Pause |
 | `F3` | Developer telemetry |
 
@@ -239,6 +243,10 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.7.7` | Building grades, durability and Builder's Hammer maintenance loop |
+| `v0.7.6` | Loot-cache cleanup and harvesting interaction fixes |
+| `v0.7.5` | Expanded generation-4 island, resource HUD and procedural horizon |
+| `v0.7.4` | Seeded world variety, salvage loot and developer tools |
 | `v0.7.3` | Save-dialog reliability, V-Sync/frame pacing, gathering FX and resource-density polish |
 | `v0.7.2` | Settings navigation and configurable performance telemetry |
 | `v0.7.1` | Save/UI reliability, pause-menu polish and expanded graphics controls |
@@ -289,6 +297,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.7.3 / EA-07.3`
+`EARLY ACCESS DEVELOPMENT · v0.7.7 / EA-07.7`
 
 </div>

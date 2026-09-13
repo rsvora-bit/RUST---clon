@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.6';
-export const GAME_BUILD='EA-07.6';
+export const GAME_VERSION='0.7.7';
+export const GAME_BUILD='EA-07.7';
 export const GAME_RELEASE_DATE='2026-09-13';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.7',date:'2026-09-13',title:'Building Grades & Hammer',changes:[
+    'Added Wood, Stone and Metal grades with 250 / 600 / 1000 durability, distinctive procedural geometry/material treatments and piece-specific upgrade costs.',
+    'Added the craftable Builder\'s Hammer with an original icon, first-person model, equip motion and a compact RMB maintenance interface.',
+    'Added atomic upgrades, proportional 25% repairs, one-second hold demolition and safe door-hinge rotation.',
+    'Added a reusable damageStructure API that removes destroyed structures, descendant pieces, colliders, interaction targets and stale sockets through the existing synchronization path.',
+    'Migrates v0.7.6 structures without grade or currentHealth to full-health Wood while preserving door and building persistence.'
+  ]},
   {version:'0.7.6',date:'2026-09-13',title:'Loot cache breakup & harvesting interaction fixes',changes:[
     'Emptied salvage caches now break apart into visible pieces, collapse and disappear after the final item is removed, and the depleted cache is removed from the saved world.',
     'Harvestable trees and mineral nodes keep their clean target names while restoring remaining / maximum HP and a compact durability bar.',

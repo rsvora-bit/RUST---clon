@@ -14,6 +14,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
 
   hatchet: { id: 'hatchet', resultItemId: 'hatchet', resultCount: 1, ingredients: { wood: 90, stone: 60, fiber: 10 }, category: 'Tools', craftTime: 3 },
   pickaxe: { id: 'pickaxe', resultItemId: 'pickaxe', resultCount: 1, ingredients: { wood: 90, stone: 90, fiber: 10 }, category: 'Tools', craftTime: 3 },
+  hammer: { id: 'hammer', resultItemId: 'hammer', resultCount: 1, ingredients: { wood: 50, metal: 12 }, category: 'Tools', craftTime: 2.5 },
   plan: { id: 'plan', resultItemId: 'plan', resultCount: 1, ingredients: { wood: 25, fiber: 10 }, category: 'Building', craftTime: 1.5 },
   bandage: { id: 'bandage', resultItemId: 'bandage', resultCount: 1, ingredients: { fiber: 20 }, category: 'Survival', craftTime: 2 },
   canteen: { id: 'canteen', resultItemId: 'canteen', resultCount: 1, ingredients: { fiber: 35, metal: 8 }, category: 'Survival', craftTime: 3 },

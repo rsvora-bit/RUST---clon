@@ -78,7 +78,7 @@ export class HeldItem {
     if(item==='rock'){
       const r=this.mesh(rockGeometry(492),this.stone,.24,-.09,-.65);r.scale.set(.17,.12,.18);r.rotation.set(.5,.3,.2);
       this.addArm(-1,-.15,-.12,-.59,.25,true);
-    }else if(item==='hatchet'||item==='pickaxe'||item==='torch'){
+    }else if(item==='hatchet'||item==='pickaxe'||item==='hammer'||item==='torch'){
       const handle=this.mesh(new THREE.CylinderGeometry(.028,.043,.54,10),this.wood,.29,.075,-.64);handle.rotation.z=-.18;
       if(item==='hatchet'){
         const shape=new THREE.Shape();shape.moveTo(-.15,-.095);shape.lineTo(.08,-.05);shape.lineTo(.08,.055);shape.lineTo(-.13,.10);shape.quadraticCurveTo(-.19,0,-.15,-.095);
@@ -87,6 +87,14 @@ export class HeldItem {
       }
       if(item==='pickaxe'){
         const head=this.mesh(new THREE.CylinderGeometry(.019,.037,.36,8),this.metal,.27,.30,-.64);head.rotation.z=1.4;
+        this.addArm(-1,-.08,-.18,-.61,.2,true);
+      }
+      if(item==='hammer'){
+        const head=this.mesh(new THREE.BoxGeometry(.31,.115,.12,3,2,2),this.metal,.28,.31,-.64);head.rotation.z=-.17;
+        const face=this.mesh(new THREE.CylinderGeometry(.068,.068,.075,12),this.metal,.12,.34,-.64);face.rotation.z=Math.PI/2-.17;
+        const clawShape=new THREE.Shape();clawShape.moveTo(0,-.055);clawShape.lineTo(.17,-.09);clawShape.lineTo(.14,-.02);clawShape.lineTo(.17,.07);clawShape.lineTo(0,.055);
+        const claw=this.mesh(new THREE.ExtrudeGeometry(clawShape,{depth:.045,bevelEnabled:true,bevelSize:.006,bevelThickness:.006,bevelSegments:1}),this.metal,.37,.31,-.665);claw.rotation.z=-.17;
+        for(let i=0;i<5;i++){const wrap=this.mesh(new THREE.TorusGeometry(.037,.004,5,14),this.wrap,.34,.08+i*.014,-.64);wrap.rotation.x=Math.PI/2;}
         this.addArm(-1,-.08,-.18,-.61,.2,true);
       }
       if(item==='torch'){
@@ -126,7 +134,7 @@ export class HeldItem {
     this.t+=dt;
     if(this.unequip>0){this.unequip=Math.max(0,this.unequip-dt*5.8);if(this.unequip===0&&this.pending!==undefined)this.build(this.pending);}
     this.equip=Math.max(0,this.equip-dt*5.2);
-    const swingRate=this.active==='pickaxe'?2.65:this.active==='hatchet'?3.15:this.active==='rock'?3.55:4.1;
+    const swingRate=this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='rock'?3.55:4.1;
     this.swing=Math.max(0,this.swing-dt*swingRate);
     this.recoil=Math.max(0,this.recoil-dt*7.8);
     this.inspectTime=Math.max(0,this.inspectTime-dt);
@@ -138,7 +146,9 @@ export class HeldItem {
     const action=1-this.swing;
     const envelope=this.swing>0?Math.sin(action*Math.PI):0;
     let swingPitch=0,swingYaw=0,swingRoll=0,swingX=0,swingY=0,swingZ=0;
-    if(this.active==='hatchet'){
+    if(this.active==='hammer'){
+      swingPitch=-envelope*.58;swingYaw=envelope*.10;swingRoll=-envelope*.31;swingX=-envelope*.055;swingY=envelope*.04;swingZ=-envelope*.09;
+    }else if(this.active==='hatchet'){
       swingPitch=-envelope*.72;swingYaw=envelope*.16;swingRoll=-envelope*.42;swingX=-envelope*.075;swingY=envelope*.035;swingZ=-envelope*.10;
     }else if(this.active==='pickaxe'){
       swingPitch=-envelope*.96;swingYaw=envelope*.08;swingRoll=-envelope*.24;swingX=-envelope*.045;swingY=envelope*.055;swingZ=-envelope*.135;

@@ -7,6 +7,7 @@ import { ITEMS, isItemId } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import { copyInventory, deductCosts, hasCosts, insertItem, itemCount, moveStack, type InventorySlots } from '../inventory/inventory';
 import { PIECES, validateStructurePlacement } from '../building/rules';
+import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,upgradeStructure} from '../building/grades';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
@@ -24,6 +25,7 @@ export class GameSimulation {
       inventory: Array.from({ length: INVENTORY.SLOTS }, (_, i) => i === 0 ? { itemId: 'rock', count: 1 } : i === 1 ? { itemId: 'torch', count: 1 } : null),
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
     };
+    for(const structure of this.state.structures)migrateStructure(structure);
     ensureProgression(this.state);
   }
 
@@ -189,7 +191,7 @@ export class GameSimulation {
     if (!deductCosts(this.state.inventory, PIECES[candidate.pieceType].cost)) { this.onNotify('Not enough resources'); return null; }
     const structure: Structure = {
       id: `structure-${this.state.nextId++}`, pieceType: candidate.pieceType, position: { ...candidate.position }, rotation: candidate.rotation,
-      health: BUILDING_RULES.HEALTH, createdAt: this.state.elapsed,
+      health: BUILDING_RULES.HEALTH, currentHealth:BUILDING_RULES.HEALTH, maxHealth:BUILDING_RULES.HEALTH, grade:'wood', createdAt: this.state.elapsed,
       ...(candidate.parentId ? { parentId: candidate.parentId, socketId: candidate.socketId } : {}),
       ...(candidate.pieceType === 'door' ? { open: false } : {}),
     };
@@ -204,6 +206,12 @@ export class GameSimulation {
     structure.open = !structure.open;
     return true;
   }
+
+  upgradeStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?upgradeStructure(this.state,structure):{ok:false,reason:'not-found' as const};}
+  repairStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?repairStructure(this.state,structure):{ok:false,reason:'not-found' as const};}
+  demolishStructure(id:string){return demolishStructure(this.state,id);}
+  rotateStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?rotateStructure(structure):{ok:false,reason:'not-found' as const};}
+  damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}
 
   resetStats(): void { this.state.player.stats = { ...SURVIVAL.STARTING_STATS }; }
 }

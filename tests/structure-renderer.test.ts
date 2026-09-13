@@ -23,4 +23,10 @@ describe('rendered structure regressions',()=>{
     const box=r.boxes(floor)[0];expect(box.halfExtents.y*2).toBe(BUILD.THICKNESS);expect(box.position.y+box.halfExtents.y).toBeCloseTo(5+BUILD.THICKNESS);
     const wall=r.make('wall');expect(wall.children.length).toBeLessThanOrEqual(3);r.dispose();
   });
+  it('keeps grade silhouettes distinct within a small draw-call budget',()=>{
+    const r=renderer(),wood=r.make('wall',false,'wood'),stone=r.make('wall',false,'stone'),metal=r.make('wall',false,'metal');
+    const signature=(group:THREE.Group)=>group.children.map(child=>child instanceof THREE.Mesh?Array.from(child.geometry.getAttribute('position').array).map(value=>Number(value).toFixed(3)).join(','):'').join('|');
+    expect([wood,stone,metal].every(group=>group.children.length<=3)).toBe(true);
+    expect(new Set([signature(wood),signature(stone),signature(metal)]).size).toBe(3);r.dispose();
+  });
 });
