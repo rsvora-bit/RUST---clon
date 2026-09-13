@@ -31,6 +31,12 @@ jobs:
           new='version: 1, worldGeneration: 3, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,'
           if old not in s: raise SystemExit('missing GameSimulation worldGeneration anchor')
           p.write_text(s.replace(old,new,1))
+          p=Path('tests/terrain-generation.test.ts')
+          s=p.read_text()
+          old='expect(state.worldGeneration).toBe(2);expect(validateGameState(state)).toBe(true);'
+          new='expect(state.worldGeneration).toBe(3);expect(validateGameState(state)).toBe(true);'
+          if old not in s: raise SystemExit('missing terrain generation test anchor')
+          p.write_text(s.replace(old,new,1))
           PY
       - name: Set up Node.js
         uses: actions/setup-node@v4
