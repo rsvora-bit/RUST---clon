@@ -21,7 +21,17 @@ jobs:
           ref: feature/v074-world-variety
           fetch-depth: 0
       - name: Apply patch
-        run: python3 scripts/apply-v074.py
+        run: |
+          python3 scripts/apply-v074.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/simulation/GameSimulation.ts')
+          s=p.read_text()
+          old='version: 1, worldGeneration: 2, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,'
+          new='version: 1, worldGeneration: 3, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,'
+          if old not in s: raise SystemExit('missing GameSimulation worldGeneration anchor')
+          p.write_text(s.replace(old,new,1))
+          PY
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
