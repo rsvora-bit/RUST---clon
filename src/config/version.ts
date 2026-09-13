@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.5';
-export const GAME_BUILD='EA-07.5';
+export const GAME_VERSION='0.7.6';
+export const GAME_BUILD='EA-07.6';
 export const GAME_RELEASE_DATE='2026-09-13';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.6',date:'2026-09-13',title:'Loot cache breakup & harvesting interaction fixes',changes:[
+    'Emptied salvage caches now break apart into visible pieces, collapse and disappear after the final item is removed, and the depleted cache is removed from the saved world.',
+    'Harvestable trees and mineral nodes keep their clean target names while restoring remaining / maximum HP and a compact durability bar.',
+    'Interact/E is now reserved for pickups and world interactions; trees and mineral nodes can only be harvested with the primary attack input.',
+    'Reworked tree/resource hit wobble to animate from the immutable base instance matrix so trees no longer blink out or temporarily vanish after a strike.',
+    'Station synchronization now cleans stale interaction and physics entries when disposable loot caches are consumed.'
+  ]},
   {version:'0.7.5',date:'2026-09-13',title:'Expanded island, cleaner resource HUD & horizon pass',changes:[
     'Added world generation 4 with a substantially larger irregular coastline, multiple separated hill/ridge systems and seed-dependent starter shores instead of one dominant central mound.',
     'Reduced decorative boulder density on generation 4 and added spacing checks so trees, boulders and harvestable mineral nodes no longer spawn through one another.',
