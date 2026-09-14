@@ -4,21 +4,15 @@ import type {Environment} from '../rendering/environment';
 import type {GameState,ItemId,Vec3} from '../core/types';
 import {ensureProgression} from './progression';
 import {createStation,type Station} from './stations';
-import {insertItem} from '../inventory/inventory';
 import {woodMaterial} from '../rendering/materials';
 import {randomSource} from '../world/noise';
+import {fillSalvageLoot,initializeWorldEconomy,type LootTier} from './economy';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp'];
-type LootTier='common'|'decent'|'lucky';
-const LOOT:Record<LootTier,{item:ItemId;min:number;max:number;chance:number}[]>={
-  common:[{item:'wood',min:25,max:90,chance:.82},{item:'stone',min:20,max:75,chance:.72},{item:'fiber',min:10,max:40,chance:.58},{item:'berries',min:2,max:8,chance:.34},{item:'ore',min:8,max:28,chance:.30}],
-  decent:[{item:'ore',min:28,max:75,chance:.88},{item:'metal',min:8,max:28,chance:.72},{item:'sulfurOre',min:15,max:55,chance:.68},{item:'bandage',min:1,max:3,chance:.48},{item:'canteen',min:1,max:2,chance:.35},{item:'hatchet',min:1,max:1,chance:.18},{item:'pickaxe',min:1,max:1,chance:.18}],
-  lucky:[{item:'hqMetalOre',min:8,max:28,chance:.95},{item:'sulfurOre',min:45,max:130,chance:.92},{item:'ore',min:65,max:180,chance:.92},{item:'metal',min:20,max:65,chance:.85},{item:'bandage',min:2,max:5,chance:.68},{item:'canteen',min:1,max:3,chance:.55},{item:'pickaxe',min:1,max:1,chance:.42},{item:'hatchet',min:1,max:1,chance:.36}]
-};
 
 export class WorldSurvival {
-  readonly pois:Landmark[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
+  readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
   private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});
   constructor(private env:Environment,scene:T.Scene,private seed:number){
     scene.add(this.group);const rand=randomSource(seed+1939);
@@ -37,16 +31,19 @@ export class WorldSurvival {
     }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);}
   }
   private tier(rand:()=>number):LootTier{const roll=rand();return roll<.60?'common':roll<.92?'decent':'lucky';}
-  private fillLoot(s:Station,tier:LootTier,rand:()=>number){let added=0;for(const entry of LOOT[tier]){if(rand()>entry.chance)continue;const amount=entry.min+Math.floor(rand()*(entry.max-entry.min+1));if(insertItem(s.inventory,entry.item,amount)<amount)added++;}if(!added){const fallback=tier==='lucky'?'hqMetalOre':tier==='decent'?'ore':'wood';insertItem(s.inventory,fallback,tier==='lucky'?10:tier==='decent'?35:45);}}
+  fillLoot(s:Station,tier:LootTier,rand:()=>number){fillSalvageLoot(s,tier,rand);}
   populate(state:GameState){
-    const progress=ensureProgression(state),existing=new Set(progress.stations.map(s=>s.id));
-    for(const poi of this.pois){const id=`loot-${poi.id}`,pos={x:poi.position.x+2.7,y:this.env.heightAt(poi.position.x+2.7,poi.position.z+2.4),z:poi.position.z+2.4},rand=randomSource(this.seed+8000+poi.kind*313);if(!existing.has(id)){const s=createStation(id,'loot',pos,rand()*Math.PI*2);this.fillLoot(s,this.tier(rand),rand);progress.stations.push(s);existing.add(id);}}
-    const rand=randomSource(this.seed+12091),placed:Vec3[]=[];
-    for(let tries=0,index=0;tries<6500&&index<16;tries++){
-      const span=this.env.terrain.generation>=4?640:530,x=(rand()-.5)*span,z=(rand()-.5)*span,y=this.env.heightAt(x,z);if(y<2.2||y>33||this.env.terrain.slopeAt(x,z)>.48||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<24)continue;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<24))continue;
-      const pos={x,y:y+.02,z};placed.push(pos);const id=`loot-field-${index}`,lootRand=randomSource(this.seed+24000+index*977);if(!existing.has(id)){const s=createStation(id,'loot',pos,lootRand()*Math.PI*2);this.fillLoot(s,this.tier(lootRand),lootRand);progress.stations.push(s);existing.add(id);}index++;
+    const progress=ensureProgression(state),existing=new Set(progress.stations.map(s=>s.id)),legacyEconomy=progress.lootGenerated&&progress.economyVersion===undefined;
+    if(!progress.lootGenerated){
+      for(const poi of this.pois){const id=`loot-${poi.id}`,pos={x:poi.position.x+2.7,y:this.env.heightAt(poi.position.x+2.7,poi.position.z+2.4),z:poi.position.z+2.4},rand=randomSource(this.seed+8000+poi.kind*313);if(!existing.has(id)){const s=createStation(id,'loot',pos,rand()*Math.PI*2);this.fillLoot(s,this.tier(rand),rand);progress.stations.push(s);existing.add(id);}}
+      const rand=randomSource(this.seed+12091),placed:Vec3[]=[];
+      for(let tries=0,index=0;tries<6500&&index<16;tries++){
+        const span=this.env.terrain.generation>=4?640:530,x=(rand()-.5)*span,z=(rand()-.5)*span,y=this.env.heightAt(x,z);if(y<2.2||y>33||this.env.terrain.slopeAt(x,z)>.48||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<24)continue;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<24))continue;
+        const pos={x,y:y+.02,z};placed.push(pos);const id=`loot-field-${index}`,lootRand=randomSource(this.seed+24000+index*977);if(!existing.has(id)){const s=createStation(id,'loot',pos,lootRand()*Math.PI*2);this.fillLoot(s,this.tier(lootRand),lootRand);progress.stations.push(s);existing.add(id);}index++;
+      }
+      progress.lootGenerated=true;
     }
-    progress.lootGenerated=true;
+    this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh)o.geometry.dispose();});this.group.removeFromParent();[this.wood,this.metal,this.cloth].forEach(m=>m.dispose());}

@@ -54,6 +54,7 @@ export function validateGameState(value: unknown): value is GameState {
     if (!record(job) || typeof job.recipeId !== 'string' || !Object.hasOwn(RECIPES, job.recipeId) || !finite(job.total, 0, 3600) || !finite(job.remaining, 0, job.total) || job.total !== RECIPES[job.recipeId].craftTime) return false;
   }
   if(value.progression!==undefined){const p=value.progression;if(!record(p)||p.version!==1||!validateStations(p.stations)||typeof p.lootGenerated!=='boolean'||!record(p.weather)||!['clear','rain','fog','storm'].includes(p.weather.kind as string)||!finite(p.weather.blend,0,1)||!finite(p.weather.remaining,0,3600))return false;
+    if(p.economyVersion!==undefined&&!integer(p.economyVersion,1,1))return false;
     const weather=p.weather;if(['rain','mist','storm'].some(k=>weather[k]!==undefined&&!finite(weather[k],0,1)))return false;
     if(p.spawnId!==undefined&&(typeof p.spawnId!=='string'||!p.stations.some(s=>s.id===p.spawnId&&s.kind==='bedroll')))return false;
     if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-360,360)||!finite(p.waypoint.z,-360,360)))return false;

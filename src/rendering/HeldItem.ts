@@ -5,7 +5,7 @@ import type {ItemId} from '../core/types';
 import {woodMaterial,stoneMaterial} from './materials';
 
 const smoothPalm=(y:number)=>Math.max(0,1-Math.abs(y-.25));
-const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3'];
+const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3'];
 
 export class HeldItem {
   readonly scene=new THREE.Scene();

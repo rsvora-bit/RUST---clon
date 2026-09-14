@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.8';
-export const GAME_BUILD='EA-07.8';
+export const GAME_VERSION='0.7.9';
+export const GAME_BUILD='EA-07.9';
 export const GAME_RELEASE_DATE='2026-09-14';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.9',date:'2026-09-14',title:'Salvage Economy & Recycler',changes:[
+    'Added Scrap plus Wiring, Gears, Machine Parts and rare Tech Parts as original exploration-economy items with tiered salvage-cache distribution.',
+    'Added two deterministic world Salvage Recyclers at the Coastal Utility Shack and Quarry Outpost with protected component inputs and Scrap/Metal outputs.',
+    'Added atomic, timed and persistent recycler jobs that survive save/reload without consuming input twice or losing components to full outputs.',
+    'Added a one-time economy bootstrap for v0.7.8 worlds using stable supplemental cache IDs without rewriting existing containers.',
+    'Separated player-placeable, bounded world-station and Lost Pack limits while preserving furnace, campfire, death recovery and building persistence.'
+  ]},
   {version:'0.7.8',date:'2026-09-14',title:'Death, Respawn & Lost Pack',changes:[
     'Added an idempotent persistent death transaction that moves carried slots into one original Lost Pack while preserving crafting, stations and world drops.',
     'Added dead-save/reload restoration, a reusable player damage API and modal WASHED AWAY context without inventory rollback exploits.',

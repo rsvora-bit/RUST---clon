@@ -188,3 +188,11 @@ Reconciliation update combining the useful local Codex work with the newer GitHu
 ## 0.1.0 — 2026-09-08
 
 Initial early-access survival foundation: procedural island, gathering, crafting, building, stations, weather, local saves, map/waypoints, first-person viewmodel, diagnostics and QA tooling.
+## v0.7.9 / EA-07.9 — Salvage Economy & Recycler (2026-09-14)
+
+- Added Scrap, Wiring, Gears, Machine Parts and rare Tech Parts with original Tideland icons and tiered exploration loot.
+- Added deterministic world Salvage Recyclers at the Coastal Utility Shack and Quarry Outpost.
+- Recycler jobs use protected component inputs, protected Scrap/Metal outputs, atomic capacity checks and persistent remaining time.
+- Existing v0.7.8 worlds receive three stable one-time salvage caches without changing previously generated loot.
+- Added bounded world-station accounting and retained furnace, campfire, Lost Pack, Hammer and save compatibility.
+- Scrap is reserved for the future v0.8.0 Tech Tree; no blueprint or research system is included yet.
