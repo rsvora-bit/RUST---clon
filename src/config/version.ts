@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.7.7';
-export const GAME_BUILD='EA-07.7';
-export const GAME_RELEASE_DATE='2026-09-13';
+export const GAME_VERSION='0.7.8';
+export const GAME_BUILD='EA-07.8';
+export const GAME_RELEASE_DATE='2026-09-14';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.7.8',date:'2026-09-14',title:'Death, Respawn & Lost Pack',changes:[
+    'Added an idempotent persistent death transaction that moves carried slots into one original Lost Pack while preserving crafting, stations and world drops.',
+    'Added dead-save/reload restoration, a reusable player damage API and modal WASHED AWAY context without inventory rollback exploits.',
+    'Added collision-aware Sleeping Roll respawn with shore fallback, clean movement/tool reset and the shared Rock + Torch survivor kit.',
+    'Added persistent Lost Pack map markers, procedural field-pack rendering and shared disposable-container cleanup for Lost Packs and salvage caches.',
+    'Supports up to five deterministic Lost Packs and removes renderer, Rapier collider, interaction target and save data after final recovery.'
+  ]},
   {version:'0.7.7',date:'2026-09-13',title:'Building Grades & Hammer',changes:[
     'Added Wood, Stone and Metal grades with 250 / 600 / 1000 durability, distinctive procedural geometry/material treatments and piece-specific upgrade costs.',
     'Added the craftable Builder\'s Hammer with an original icon, first-person model, equip motion and a compact RMB maintenance interface.',

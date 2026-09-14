@@ -182,4 +182,7 @@ export class PlayerController {
   }
   debugText(){const d=this.cameraDebug(),v=(a:number[])=>a.map(n=>n.toFixed(3)).join(', ');return `CAMERA BASIS\nEYES ${v(d.world)}\nLOCAL ${v(d.local)}\nYAW ${d.yaw.toFixed(3)} / CAMERA ${d.cameraYaw.toFixed(3)}\nPITCH ${d.pitch.toFixed(3)} ROLL ${d.roll.toFixed(3)}\nQUAT ${v(d.quaternion)}\nCAM FWD ${v(d.forward)}\nMOVE FWD ${v(d.movementForward)}\nANGLE ${d.angle.toFixed(5)}°\nVELOCITY ${v(d.velocity)}\nEYE XZ OFFSET ${d.horizontalEyeOffset.toFixed(4)} m\nFOV V ${d.fov.toFixed(2)} ASPECT ${d.aspect.toFixed(3)}\nAUTO-RUN ${d.autoRun?'ON':'OFF'}  CROUCH ${d.crouching?'ON':'OFF'}\n${d.hierarchy.join(' ← ')}`;}
   teleport(p:Vec3){this.physics.teleport(p);this.vertical=0;this.velocity.set(0,0);this.targetVelocity.set(0,0);this.landingKick=0;this.landingAge=10;this.currentEye.set(p.x,p.y+PLAYER.EYE_HEIGHT-this.crouchBlend*PLAYER.CROUCH_EYE_DROP,p.z);this.previousEye.copy(this.currentEye);this.renderCamera(1);}
+  resetForRespawn(p:Vec3){
+    this.autoRun=false;this.sprinting=false;this.crouching=false;this.grounded=false;this.jumpRequested=false;this.jumpCooldown=0;this.crouchBlend=0;this.stride=0;this.stepDistance=0;this.swayX=this.swayY=this.swayRoll=0;this.speed=0;this.teleport(p);
+  }
 }

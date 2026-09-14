@@ -8,6 +8,7 @@ import { RECIPES } from '../crafting/recipes';
 import { copyInventory, deductCosts, hasCosts, insertItem, itemCount, moveStack, type InventorySlots } from '../inventory/inventory';
 import { PIECES, validateStructurePlacement } from '../building/rules';
 import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,upgradeStructure} from '../building/grades';
+import {createStarterInventory} from '../inventory/starter';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
@@ -22,7 +23,7 @@ export class GameSimulation {
     this.state = saved ? structuredClone(saved) : {
       version: 1, worldGeneration: 4, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,
       player: { position: { ...spawn }, yaw: 0, pitch: 0, stats: { ...SURVIVAL.STARTING_STATS } },
-      inventory: Array.from({ length: INVENTORY.SLOTS }, (_, i) => i === 0 ? { itemId: 'rock', count: 1 } : i === 1 ? { itemId: 'torch', count: 1 } : null),
+      inventory: createStarterInventory(),
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
     };
     for(const structure of this.state.structures)migrateStructure(structure);
@@ -212,6 +213,13 @@ export class GameSimulation {
   demolishStructure(id:string){return demolishStructure(this.state,id);}
   rotateStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?rotateStructure(structure):{ok:false,reason:'not-found' as const};}
   damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}
+
+  damagePlayer(amount:number,cause='environment'):{ok:boolean;health:number;killed:boolean;cause:string}{
+    const health=this.state.player.stats.health,safeCause=typeof cause==='string'?cause.slice(0,80):'environment';
+    if(!Number.isFinite(amount)||amount<=0)return {ok:false,health,killed:health<=0,cause:safeCause};
+    this.state.player.stats.health=Math.max(0,health-amount);
+    return {ok:true,health:this.state.player.stats.health,killed:this.state.player.stats.health===0,cause:safeCause};
+  }
 
   resetStats(): void { this.state.player.stats = { ...SURVIVAL.STARTING_STATS }; }
 }

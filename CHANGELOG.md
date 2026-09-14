@@ -1,3 +1,12 @@
+## v0.7.8 / EA-07.8 — Death, Respawn & Lost Pack (2026-09-14)
+
+- Added a one-shot persistent death transaction and reusable `damagePlayer(amount, cause?)` API.
+- Carried inventory now remains in an original procedural Lost Pack while crafting queues, world drops and station inventories stay untouched.
+- Added collision-aware Sleeping Roll respawn with shore fallback and an exact Rock + Torch starter kit.
+- Dead state and Lost Packs survive save/reload without duplication or pre-death inventory rollback.
+- Added Lost Pack map markers and shared disposable-container cleanup for Lost Packs and salvage caches.
+- Empty and over-limit Lost Packs cleanly remove saved state, Three.js objects, Rapier colliders and interaction targets.
+
 ## v0.7.7 / EA-07.7 — Building Grades & Hammer (2026-09-13)
 
 - Added Wood, Stone and Metal building grades with 250 / 600 / 1000 durability and piece-specific upgrade costs.

@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.7%20%7C%20EA--07.7-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.8%20%7C%20EA--07.8-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.7 / EA-07.7` · **13 September 2026**
+**Current release:** `v0.7.8 / EA-07.8` · **14 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -125,6 +125,9 @@ The browser locally persists worlds, settings, inventory, crafting, structure gr
 - ✅ Wood → Stone → Metal building upgrades with persistent durability
 - ✅ Craftable first-person Builder's Hammer with upgrade, repair, rotate and hold-demolish actions
 - ✅ Safe v0.7.6 save migration and future-facing structure damage lifecycle API
+- ✅ Persistent death lifecycle with dead-save/reload protection and a reusable player damage API
+- ✅ Recoverable Lost Packs, Sleeping Roll respawn, shore fallback and Rock + Torch respawn kit
+- ✅ Lost Pack map markers and shared disposable-container cleanup with salvage caches
 
 ---
 
@@ -140,7 +143,6 @@ Game-style main/pause menus, tabbed settings, remappable controls, graphics/audi
 Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
 
 ### Next milestones
-- `v0.7.8`: death, respawn and dropped backpack/corpse container
 - `v0.7.9`: scrap, components and recycler
 - `v0.8.0`: tech tree, blueprint unlocks and deeper workbench progression
 - `v0.8.1`: base ownership and upkeep
@@ -243,6 +245,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.7.8` | Death, respawn, persistent Lost Packs and Sleeping Roll recovery loop |
 | `v0.7.7` | Building grades, durability and Builder's Hammer maintenance loop |
 | `v0.7.6` | Loot-cache cleanup and harvesting interaction fixes |
 | `v0.7.5` | Expanded generation-4 island, resource HUD and procedural horizon |
@@ -297,6 +300,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.7.7 / EA-07.7`
+`EARLY ACCESS DEVELOPMENT · v0.7.8 / EA-07.8`
 
 </div>

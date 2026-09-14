@@ -1,6 +1,7 @@
 import type { ItemId, PlayerStats, ResourceNode } from '../core/types';
 
 export const INVENTORY = { SLOTS: 30, HOTBAR_SLOTS: 6, MAX_CRAFT_QUEUE: 5 } as const;
+export const DEATH = { MAX_LOST_PACKS: 5 } as const;
 export const SURVIVAL = {
   STARTING_STATS: { health: 100, hunger: 86, thirst: 78, stamina: 100 } satisfies PlayerStats,
   STARVATION_DAMAGE: 0.35,

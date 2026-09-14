@@ -9,8 +9,8 @@ describe('v0.7.6 loot and harvesting interaction fixes',()=>{
     expect(renderer).toContain('collapseLoot(id:string):boolean');
     expect(renderer).toContain('this.collapsing.set(id');
     expect(renderer).toContain('if(t>=1){this.collapsing.delete(id);this.disposeObject(fx.group);this.objects.delete(id);}');
-    expect(app).toContain("if(s.kind!=='loot'||s.inventory.some(Boolean))return;");
-    expect(app).toContain('this.stationRenderer.collapseLoot(s.id)');
+    expect(app).toContain('consumeEmptyContainer(this.simulation.state,s.id)');
+    expect(app).toContain('this.stationRenderer.collapseContainer(s.id)');
   });
 
   it('keeps hard-resource HP visible and does not bind Interact/E to harvesting',()=>{

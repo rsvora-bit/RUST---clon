@@ -57,7 +57,8 @@ export function validateGameState(value: unknown): value is GameState {
     const weather=p.weather;if(['rain','mist','storm'].some(k=>weather[k]!==undefined&&!finite(weather[k],0,1)))return false;
     if(p.spawnId!==undefined&&(typeof p.spawnId!=='string'||!p.stations.some(s=>s.id===p.spawnId&&s.kind==='bedroll')))return false;
     if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-360,360)||!finite(p.waypoint.z,-360,360)))return false;
-    for(const s of p.stations){if(ids.has(s.id))return false;ids.add(s.id);if(/^station-\d+$/.test(s.id)&&Number(s.id.slice(8))>=value.nextId)return false;}
+    if(p.death!==undefined){const death=p.death;if(!record(death)||!integer(death.sequence,1)||!['dead','respawned'].includes(death.phase as string)||!position(death.position)||!finite(death.occurredAt,0,value.elapsed as number)||death.cause!==undefined&&(typeof death.cause!=='string'||death.cause.length>80)||death.packId!==undefined&&(typeof death.packId!=='string'||!p.stations.some(s=>s.id===death.packId&&s.kind==='deathbag')))return false;}
+    for(const s of p.stations){if(ids.has(s.id))return false;ids.add(s.id);const generated=/^(?:station|deathbag)-(\d+)$/.exec(s.id);if(generated&&Number(generated[1])>=value.nextId)return false;}
   }
   return true;
 }
