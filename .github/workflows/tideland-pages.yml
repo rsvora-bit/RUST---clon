@@ -3,6 +3,7 @@ name: Deploy Tideland to GitHub Pages
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   workflow_dispatch:
 
 permissions:
@@ -20,6 +21,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,6 +40,9 @@ jobs:
       - name: Build Tideland
         run: npm run build
 
+      - name: Build latest and version archive
+        run: node scripts/build-version-archive.mjs site
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
@@ -44,7 +51,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     environment:

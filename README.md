@@ -20,6 +20,22 @@
 
 ---
 
+## 🎮 Play Tideland
+
+### Latest build
+
+[▶ PLAY LATEST](https://rsvora-bit.github.io/RUST---clon/)
+
+### Version archive
+
+[🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
+
+Latest stable: [▶ PLAY v0.7.9](https://rsvora-bit.github.io/RUST---clon/versions/v0.7.9/)
+
+Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
+
+---
+
 ## 🏝️ What is Tideland?
 
 **Tideland** is an original procedural first-person survival sandbox running directly in a web browser. The world is generated at runtime and combines exploration, resource gathering, crafting, building, survival systems, weather, persistence and first-person interaction into one continuously evolving project.
