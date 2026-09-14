@@ -1,4 +1,5 @@
 import type {Station} from '../survival/stations';
+import type {TechNodeId,TechState} from '../crafting/techTree';
 export type Vec3 = {x:number; y:number; z:number};
 export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll';
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
@@ -9,7 +10,7 @@ export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|
 export type Keybinds = Record<KeybindAction,string>;
 export interface ItemDefinition {id:ItemId; displayName:string; description:string; category:ItemCategory; icon:string; maxStack:number; placeable?:boolean; consumable?:boolean; tags:string[]}
 export interface ItemStack {itemId:ItemId; count:number}
-export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number}
+export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number; requiredTech?:TechNodeId}
 export type PieceType = 'foundation'|'wall'|'doorway'|'floor'|'roof'|'door';
 export type StructureGrade = 'wood'|'stone'|'metal';
 export interface Structure {id:string; pieceType:PieceType; position:Vec3; rotation:number; /** Legacy v0.7.6 health mirror. */ health:number; grade?:StructureGrade; currentHealth?:number; maxHealth?:number; createdAt:number; open?:boolean; flipped?:boolean; parentId?:string; socketId?:string}
@@ -18,7 +19,7 @@ export interface DroppedItem {id:string; stack:ItemStack; position:Vec3}
 export interface PlayerStats {health:number; hunger:number; thirst:number; stamina:number}
 export interface CraftJob {recipeId:string; remaining:number; total:number}
 export interface DeathState {sequence:number;phase:'dead'|'respawned';position:Vec3;occurredAt:number;cause?:string;packId?:string}
-export interface GameState {progression?:{version:1;stations:Station[];spawnId?:string;waypoint?:{x:number;z:number};death?:DeathState;economyVersion?:number;weather:{kind:'clear'|'rain'|'fog'|'storm';blend:number;rain?:number;mist?:number;storm?:number;remaining:number};lootGenerated:boolean};version:1; worldGeneration?:1|2|3|4; seed:number; elapsed:number; timeOfDay:number; player:{position:Vec3; yaw:number; pitch:number; stats:PlayerStats}; inventory:(ItemStack|null)[]; activeSlot:number; structures:Structure[]; nodeChanges:Record<string,number>; drops:DroppedItem[]; craftQueue:CraftJob[]; nextId:number}
+export interface GameState {progression?:{version:1;stations:Station[];spawnId?:string;waypoint?:{x:number;z:number};death?:DeathState;economyVersion?:number;tech?:TechState;weather:{kind:'clear'|'rain'|'fog'|'storm';blend:number;rain?:number;mist?:number;storm?:number;remaining:number};lootGenerated:boolean};version:1; worldGeneration?:1|2|3|4; seed:number; elapsed:number; timeOfDay:number; player:{position:Vec3; yaw:number; pitch:number; stats:PlayerStats}; inventory:(ItemStack|null)[]; activeSlot:number; structures:Structure[]; nodeChanges:Record<string,number>; drops:DroppedItem[]; craftQueue:CraftJob[]; nextId:number}
 export interface SaveSlotSummary {slot:number; exists:boolean; seed?:number; savedAt?:number; elapsed?:number; timeOfDay?:number; structures?:number; worldGeneration?:1|2|3|4}
 export interface Settings {language:Language; sensitivityX:number; sensitivityY:number; fov:number; viewmodelFov:number; invertY:boolean; headBob:boolean; cameraShake:boolean; motionBlur:boolean; masterVolume:number; musicVolume:number; effectsVolume:number; ambientVolume:number; quality:GraphicsQuality; renderScale:number; vsync:boolean; shadows:boolean; shadowQuality:ShadowQuality; shadowDistance:number; foliageDensity:number; postProcessing:boolean; ambientOcclusion:boolean; bloom:boolean; crosshairOpacity:number; crosshairScale:number; hudScale:number; hudOpacity:number; brightness:number; showCompass:boolean; showFps:boolean; showTutorialHints:boolean; telemetryScale:number; telemetryOpacity:number; telemetryPerformance:boolean; telemetryPlayer:boolean; telemetryCamera:boolean; telemetryWorld:boolean; keybinds:Keybinds}
 export interface BuildCandidate {pieceType:PieceType; position:Vec3; rotation:number; valid:boolean; reason:string; parentId?:string; socketId?:string; snapped:boolean}

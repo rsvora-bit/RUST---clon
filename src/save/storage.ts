@@ -7,6 +7,7 @@ import { ITEMS, isItemId } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import { PIECES, validateStructurePlacement } from '../building/rules';
 import {migrateStructure} from '../building/grades';
+import {ensureTech,validTechNode} from '../crafting/techTree';
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const finite = (value: unknown, min = -1e6, max = 1e6): value is number => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
@@ -55,6 +56,7 @@ export function validateGameState(value: unknown): value is GameState {
   }
   if(value.progression!==undefined){const p=value.progression;if(!record(p)||p.version!==1||!validateStations(p.stations)||typeof p.lootGenerated!=='boolean'||!record(p.weather)||!['clear','rain','fog','storm'].includes(p.weather.kind as string)||!finite(p.weather.blend,0,1)||!finite(p.weather.remaining,0,3600))return false;
     if(p.economyVersion!==undefined&&!integer(p.economyVersion,1,1))return false;
+    if(p.tech!==undefined&&(!record(p.tech)||p.tech.version!==1||!Array.isArray(p.tech.unlocked)||p.tech.unlocked.length>32||new Set(p.tech.unlocked).size!==p.tech.unlocked.length||!p.tech.unlocked.every(validTechNode)))return false;
     const weather=p.weather;if(['rain','mist','storm'].some(k=>weather[k]!==undefined&&!finite(weather[k],0,1)))return false;
     if(p.spawnId!==undefined&&(typeof p.spawnId!=='string'||!p.stations.some(s=>s.id===p.spawnId&&s.kind==='bedroll')))return false;
     if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-360,360)||!finite(p.waypoint.z,-360,360)))return false;
@@ -66,7 +68,7 @@ export function validateGameState(value: unknown): value is GameState {
 
 interface SaveEnvelope {savedAt:number; state:GameState}
 const slotKey=(slot:number):string=>`${SAVE.GAME_KEY}:slot:${Math.max(1,Math.min(SAVE.SLOT_COUNT,Math.trunc(slot)))}`;
-function migrateState(state:GameState):GameState {const migrated=structuredClone(state);for(const structure of migrated.structures)migrateStructure(structure);return migrated;}
+function migrateState(state:GameState):GameState {const migrated=structuredClone(state);for(const structure of migrated.structures)migrateStructure(structure);ensureTech(migrated);return migrated;}
 function decodeSave(raw:string|null):SaveEnvelope|null {
   if(!raw||raw.length>12_000_000)return null;
   try {

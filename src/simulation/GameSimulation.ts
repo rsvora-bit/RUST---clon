@@ -9,6 +9,7 @@ import { copyInventory, deductCosts, hasCosts, insertItem, itemCount, moveStack,
 import { PIECES, validateStructurePlacement } from '../building/rules';
 import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,upgradeStructure} from '../building/grades';
 import {createStarterInventory} from '../inventory/starter';
+import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
@@ -27,7 +28,7 @@ export class GameSimulation {
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
     };
     for(const structure of this.state.structures)migrateStructure(structure);
-    ensureProgression(this.state);
+    ensureProgression(this.state);ensureTech(this.state);
   }
 
   tick(dt: number, sprinting: boolean): void {
@@ -162,19 +163,22 @@ export class GameSimulation {
     if (Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.HOTBAR_SLOTS) this.state.activeSlot = slot;
   }
 
-  canCraft(recipeId: string): boolean {
-    const recipe = Object.hasOwn(RECIPES, recipeId) ? RECIPES[recipeId] : undefined;
-    if (!recipe || (recipe.requiredWorkbenchLevel??0)>nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position) || this.state.craftQueue.length >= INVENTORY.MAX_CRAFT_QUEUE || !hasCosts(this.state.inventory, recipe.ingredients)) return false;
-    const inventory = copyInventory(this.state.inventory);
-    deductCosts(inventory, recipe.ingredients);
-    return this.fitsQueue(inventory, [...this.state.craftQueue, { recipeId, remaining: recipe.craftTime, total: recipe.craftTime }]);
+  craftStatus(recipeId: string):{craftable:boolean;reason:'ok'|'unknown'|'locked'|'workbench'|'resources'|'inventory-space'|'queue-full';requiredTech?:TechNodeId;requiredWorkbench?:number}{
+    const recipe=Object.hasOwn(RECIPES,recipeId)?RECIPES[recipeId]:undefined;if(!recipe)return {craftable:false,reason:'unknown'};
+    const tech=ensureTech(this.state);if(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech))return {craftable:false,reason:'locked',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    const level=nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position);if((recipe.requiredWorkbenchLevel??0)>level)return {craftable:false,reason:'workbench',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    if(this.state.craftQueue.length>=INVENTORY.MAX_CRAFT_QUEUE)return {craftable:false,reason:'queue-full',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    if(!hasCosts(this.state.inventory,recipe.ingredients))return {craftable:false,reason:'resources',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    const inventory=copyInventory(this.state.inventory);deductCosts(inventory,recipe.ingredients);if(!this.fitsQueue(inventory,[...this.state.craftQueue,{recipeId,remaining:recipe.craftTime,total:recipe.craftTime}]))return {craftable:false,reason:'inventory-space',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    return {craftable:true,reason:'ok',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
   }
+  canCraft(recipeId: string): boolean { return this.craftStatus(recipeId).craftable; }
 
   craft(recipeId: string): boolean {
     const recipe = Object.hasOwn(RECIPES, recipeId) ? RECIPES[recipeId] : undefined;
     if (!recipe) return false;
-    if (!this.canCraft(recipeId)) {
-      this.onNotify((recipe.requiredWorkbenchLevel??0)>nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position)?`Requires workbench level ${recipe.requiredWorkbenchLevel}`:!hasCosts(this.state.inventory, recipe.ingredients) ? 'Not enough resources' : this.state.craftQueue.length >= INVENTORY.MAX_CRAFT_QUEUE ? 'Crafting queue is full' : 'Make room for the crafted item');
+    const status=this.craftStatus(recipeId);if (!status.craftable) {
+      this.onNotify(status.reason==='locked'?`Research ${TECH_NODES[recipe.requiredTech!].displayName} first`:status.reason==='workbench'?`Requires workbench level ${recipe.requiredWorkbenchLevel}`:status.reason==='resources'?'Not enough resources':status.reason==='queue-full'?'Crafting queue is full':'Make room for the crafted item');
       return false;
     }
     deductCosts(this.state.inventory, recipe.ingredients);
@@ -207,6 +211,8 @@ export class GameSimulation {
     structure.open = !structure.open;
     return true;
   }
+
+  researchTech(nodeId:TechNodeId):ResearchResult{return researchTech(this.state,nodeId,this.state.player.position);}
 
   upgradeStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?upgradeStructure(this.state,structure):{ok:false,reason:'not-found' as const};}
   repairStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?repairStructure(this.state,structure):{ok:false,reason:'not-found' as const};}

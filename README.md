@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.9%20%7C%20EA--07.9-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.0%20%7C%20EA--08.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.7.9 / EA-07.9` · **14 September 2026**
+**Current release:** `v0.8.0 / EA-08.0` · **14 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.7.9](https://rsvora-bit.github.io/RUST---clon/versions/v0.7.9/)
+Latest stable: [▶ PLAY v0.8.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.8.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -162,7 +162,7 @@ Game-style main/pause menus, tabbed settings, remappable controls, graphics/audi
 Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
 
 ### Next milestones
-- `v0.8.0`: tech tree, blueprint unlocks and deeper workbench progression using saved Scrap
+- `v0.8.0`: persistent Tech Tree research, Scrap progression and deeper Workbench tiers
 - `v0.8.1`: base ownership and upkeep
 - `v0.9.0+`: procedural roads, monuments/POIs, equipment and hazardous zones
 - Later: farming, AI, world events, electricity, ocean gameplay, vehicles and multiplayer
@@ -263,6 +263,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.8.0` | Persistent Tech Tree research, Scrap progression and Workbench II–III recipe unlocks |
 | `v0.7.9` | Scrap, salvage components, tiered component loot and persistent world Recyclers |
 | `v0.7.8` | Death, respawn, persistent Lost Packs and Sleeping Roll recovery loop |
 | `v0.7.7` | Building grades, durability and Builder's Hammer maintenance loop |
@@ -319,6 +320,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.7.9 / EA-07.9`
+`EARLY ACCESS DEVELOPMENT · v0.8.0 / EA-08.0`
 
 </div>

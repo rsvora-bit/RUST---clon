@@ -1,9 +1,15 @@
-export const GAME_VERSION='0.7.9';
-export const GAME_BUILD='EA-07.9';
+export const GAME_VERSION='0.8.0';
+export const GAME_BUILD='EA-08.0';
 export const GAME_RELEASE_DATE='2026-09-14';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.8.0',date:'2026-09-14',title:'Tech Tree & Workbench Progression',changes:[
+    'Added persistent Workbench research knowledge with atomic Scrap transactions, prerequisites and legacy v0.7.9 migration by highest existing Workbench.',
+    'Added the original Tideland Tech Tree UI with readable locked, available and unlocked states plus Workbench tier requirements.',
+    'Added recipe locks for improved tooling, Workbench II/III, Field Medicine, Advanced Fabrication and Workshop Lighting while preserving essential starter recipes.',
+    'Tech knowledge survives save/reload, death and Lost Pack recovery while physical Workbench proximity remains required for advanced crafting.'
+  ]},
   {version:'0.7.9',date:'2026-09-14',title:'Salvage Economy & Recycler',changes:[
     'Added Scrap plus Wiring, Gears, Machine Parts and rare Tech Parts as original exploration-economy items with tiered salvage-cache distribution.',
     'Added two deterministic world Salvage Recyclers at the Coastal Utility Shack and Quarry Outpost with protected component inputs and Scrap/Metal outputs.',

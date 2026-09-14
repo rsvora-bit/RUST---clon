@@ -196,3 +196,9 @@ Initial early-access survival foundation: procedural island, gathering, crafting
 - Existing v0.7.8 worlds receive three stable one-time salvage caches without changing previously generated loot.
 - Added bounded world-station accounting and retained furnace, campfire, Lost Pack, Hammer and save compatibility.
 - Scrap is reserved for the future v0.8.0 Tech Tree; no blueprint or research system is included yet.
+## v0.8.0 / EA-08.0 — Tech Tree & Workbench Progression (2026-09-14)
+
+- Added persistent Workbench research knowledge with atomic Scrap transactions, prerequisites and legacy v0.7.9 migration by highest existing Workbench.
+- Added the original Tideland Tech Tree UI with readable locked, available and unlocked states plus Workbench tier requirements.
+- Added recipe locks for improved tooling, Workbench II/III, Field Medicine, Advanced Fabrication and Workshop Lighting while preserving essential starter recipes.
+- Tech knowledge survives save/reload, death and Lost Pack recovery while physical Workbench proximity remains required for advanced crafting.

@@ -5,6 +5,7 @@ import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
 import { ITEMS } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
+import {ensureTech,TECH_NODES} from '../crafting/techTree';
 import { PIECES } from '../building/rules';
 import {keyLabel,t,type TranslationKey} from './i18n';
 import './style.css';
@@ -353,17 +354,19 @@ export class UI {
     const filtered = recipes.filter(recipe => this.recipeCategory === 'all' || ITEMS[recipe.resultItemId].category === this.recipeCategory || (this.recipeCategory === 'utility' && ['utility','food'].includes(ITEMS[recipe.resultItemId].category)));
     if(!filtered.some(recipe => recipe.id === this.selectedRecipe) && filtered[0]) this.selectedRecipe = filtered[0].id;
     this.root.querySelectorAll<HTMLElement>('[data-category]').forEach(button => button.classList.toggle('active', button.dataset.category === this.recipeCategory));
+    const tech=ensureTech(state);
     this.find('.recipe-grid').innerHTML = filtered.map(recipe => {
       const possible = Object.entries(recipe.ingredients).every(([id,count]) => this.owned(id as ItemId,state) >= count!);
-      return `<button class="recipe-item ${recipe.id === this.selectedRecipe?'selected':''} ${possible?'available':''}" data-recipe="${esc(recipe.id)}" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span>${esc(ITEMS[recipe.resultItemId].displayName)}</span>${possible?'<i></i>':''}</button>`;
+      const locked=Boolean(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech));
+      return `<button class="recipe-item ${recipe.id === this.selectedRecipe?'selected':''} ${possible&&!locked?'available':''} ${locked?'locked':''}" data-recipe="${esc(recipe.id)}" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span>${esc(ITEMS[recipe.resultItemId].displayName)}</span>${locked?'<b>LOCKED</b>':possible?'<i></i>':''}</button>`;
     }).join('');
     const recipe = RECIPES[this.selectedRecipe];
     if(!recipe) {this.find('.recipe-detail').innerHTML = '<p class="no-recipes">No recipes in this category.</p>';return;}
     const possible = Object.entries(recipe.ingredients).every(([id,count]) => this.owned(id as ItemId,state) >= count!);
     const result = ITEMS[recipe.resultItemId];
-    const craftable=this.actions.canCraft(recipe.id);
-    const blockedLabel=(recipe.requiredWorkbenchLevel??0)>nearbyWorkbench(state.progression?.stations??[],state.player.position)?`REQUIRES WORKBENCH LEVEL ${recipe.requiredWorkbenchLevel}`:!possible?'MISSING RESOURCES':state.craftQueue.length>=INVENTORY.MAX_CRAFT_QUEUE?'QUEUE FULL':'MAKE ROOM IN INVENTORY';
-    this.find('.recipe-detail').innerHTML = `<div class="recipe-result"><div>${icon(recipe.resultItemId)}</div><span><small>${esc(recipe.category.toUpperCase())} <i>·</i> ${recipe.craftTime} SEC</small><h3>${esc(result.displayName)}</h3><p>${esc(result.description)}</p></span></div><div class="ingredients-heading"><span>REQUIRES</span><span>HAVE / NEED</span></div><div class="ingredients">${Object.entries(recipe.ingredients).map(([id,count]) => {const owned=this.owned(id as ItemId,state);return `<div class="ingredient ${owned<count!?'missing':''}">${icon(id as ItemId)}<span>${esc(ITEMS[id as ItemId].displayName)}</span><b>${owned}<i> / ${count}</i></b></div>`;}).join('')}</div><button class="primary-button craft-button" data-action="craft" ${craftable?'':'disabled'}>${craftable?`CRAFT ${recipe.resultCount>1?`×${recipe.resultCount}`:''}`:blockedLabel} ${craftable?chevron:'<span>⊖</span>'}</button>`;
+    const craftable=this.actions.canCraft(recipe.id),locked=Boolean(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech)),techName=recipe.requiredTech?TECH_NODES[recipe.requiredTech].displayName:'';
+    const blockedLabel=locked?`RESEARCH: ${techName}`:(recipe.requiredWorkbenchLevel??0)>nearbyWorkbench(state.progression?.stations??[],state.player.position)?`REQUIRES WORKBENCH LEVEL ${recipe.requiredWorkbenchLevel}`:!possible?'MISSING RESOURCES':state.craftQueue.length>=INVENTORY.MAX_CRAFT_QUEUE?'QUEUE FULL':'MAKE ROOM IN INVENTORY';
+    this.find('.recipe-detail').innerHTML = `<div class="recipe-result"><div>${icon(recipe.resultItemId)}</div><span><small>${esc(recipe.category.toUpperCase())} <i>·</i> ${recipe.craftTime} SEC${locked?' · LOCKED':''}</small><h3>${esc(result.displayName)}</h3><p>${esc(result.description)}</p>${locked?`<em class="recipe-tech-lock">Research ${esc(techName)} at a Workbench.</em>`:''}</span></div><div class="ingredients-heading"><span>REQUIRES</span><span>HAVE / NEED</span></div><div class="ingredients">${Object.entries(recipe.ingredients).map(([id,count]) => {const owned=this.owned(id as ItemId,state);return `<div class="ingredient ${owned<count!?'missing':''}">${icon(id as ItemId)}<span>${esc(ITEMS[id as ItemId].displayName)}</span><b>${owned}<i> / ${count}</i></b></div>`;}).join('')}</div><button class="primary-button craft-button" data-action="craft" ${craftable?'':'disabled'}>${craftable?`CRAFT ${recipe.resultCount>1?`×${recipe.resultCount}`:''}`:blockedLabel} ${craftable?chevron:'<span>⊖</span>'}</button>`;
     this.find('.craft-queue').innerHTML = `<div class="section-heading"><h3>CRAFTING QUEUE</h3><span>${state.craftQueue.length?state.craftQueue[0]?.remaining===0?'MAKE ROOM':`${state.craftQueue.length} IN PROGRESS`:'READY'}</span></div>${state.craftQueue.length?`<div class="queue-items">${state.craftQueue.map(job=>{const queuedRecipe=RECIPES[job.recipeId];return queuedRecipe?`<div class="queue-item" title="${esc(ITEMS[queuedRecipe.resultItemId].displayName)}">${icon(queuedRecipe.resultItemId)}<span>${job.remaining===0?'READY':`${Math.ceil(job.remaining)}s`}</span><i style="width:${Math.min(100,(1-job.remaining/job.total)*100)}%"></i></div>`:'';}).join('')}</div>`:'<p>Your next idea starts here.</p>'}`;
   }
 
