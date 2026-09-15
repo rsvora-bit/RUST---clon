@@ -54,6 +54,10 @@ jobs:
           path: site
 
   deploy:
+    # GitHub Pages environment protection allows deployments from main only.
+    # Tag pushes still run the full archive build above; the following main
+    # push publishes the same tag snapshot into /versions/<tag>/.
+    if: github.ref_type == 'branch'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
