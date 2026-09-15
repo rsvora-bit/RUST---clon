@@ -3,9 +3,9 @@ import {Noise,randomSource} from './noise';
 
 function canvas(size:number):[HTMLCanvasElement,CanvasRenderingContext2D]{const c=document.createElement('canvas');c.width=c.height=size;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas 2D unavailable');return [c,ctx];}
 function texture(c:HTMLCanvasElement,repeat=1):THREE.CanvasTexture {const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(repeat,repeat);t.anisotropy=8;return t;}
-export function groundTexture(kind:'grass'|'sand'|'rock'|'dirt',seed:number):THREE.CanvasTexture {
+export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',seed:number):THREE.CanvasTexture {
   const [c,ctx]=canvas(512),n=new Noise(seed),rand=randomSource(seed);const img=ctx.createImageData(512,512);
-  const base=kind==='grass'?[88,98,69]:kind==='sand'?[172,162,138]:kind==='dirt'?[101,82,58]:[108,107,96];
+  const base=kind==='grass'?[88,98,69]:kind==='dry'?[139,122,76]:kind==='sand'?[172,162,138]:kind==='dirt'?[101,82,58]:kind==='snow'?[211,218,218]:[108,107,96];
   for(let y=0;y<512;y++)for(let x=0;x<512;x++){
     const u=x/512,vv=y/512,u2=u*u*(3-2*u),v2=vv*vv*(3-2*vv);
     const sample=(dx:number,dy:number)=>n.fbm(dx*.025,dy*.025,4);
@@ -60,24 +60,27 @@ export function leavesTexture(seed=667):THREE.CanvasTexture {
   return texture(c);
 }
 export function terrainMaterial():THREE.MeshStandardMaterial {
-  const grass=groundTexture('grass',184),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712);
+  const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),snow=groundTexture('snow',1181);
   const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0});
-  mat.userData.textures=[grass,sand,rock,dirt];
+  mat.userData.textures=[grass,dry,sand,rock,dirt,snow];
   mat.onBeforeCompile=shader=>{
-    shader.uniforms.grassTex={value:grass};shader.uniforms.sandTex={value:sand};shader.uniforms.rockTex={value:rock};shader.uniforms.dirtTex={value:dirt};
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 surfaceWeights; varying vec3 vGroundPosition; varying vec3 vGroundNormal; varying vec3 vGroundWeights;');
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGroundPosition=position; vGroundNormal=normal; vGroundWeights=surfaceWeights;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D grassTex; uniform sampler2D sandTex; uniform sampler2D rockTex; uniform sampler2D dirtTex; varying vec3 vGroundPosition; varying vec3 vGroundNormal; varying vec3 vGroundWeights;\nfloat groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1.,0.)),f.x),mix(groundHash(i+vec2(0.,1.)),groundHash(i+1.),f.x),f.y);}');
+    shader.uniforms.grassTex={value:grass};shader.uniforms.dryTex={value:dry};shader.uniforms.sandTex={value:sand};shader.uniforms.rockTex={value:rock};shader.uniforms.dirtTex={value:dirt};shader.uniforms.snowTex={value:snow};
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 surfaceWeights; attribute vec3 surfaceClimate; varying vec3 vGroundPosition; varying vec3 vGroundNormal; varying vec3 vGroundWeights; varying vec3 vGroundClimate;');
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvGroundPosition=position; vGroundNormal=normal; vGroundWeights=surfaceWeights; vGroundClimate=surfaceClimate;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D grassTex; uniform sampler2D dryTex; uniform sampler2D sandTex; uniform sampler2D rockTex; uniform sampler2D dirtTex; uniform sampler2D snowTex; varying vec3 vGroundPosition; varying vec3 vGroundNormal; varying vec3 vGroundWeights; varying vec3 vGroundClimate;\nfloat groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}\nfloat groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1.,0.)),f.x),mix(groundHash(i+vec2(0.,1.)),groundHash(i+1.),f.x),f.y);}');
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 gp=vGroundPosition;vec3 blend=pow(abs(vGroundNormal),vec3(4.0));blend/=max(.001,blend.x+blend.y+blend.z);
       vec2 warp=vec2(groundNoise(gp.xz*.09),groundNoise(gp.zx*.07+17.));vec2 guv=gp.xz*.23+warp*.72;
       vec3 grassCol=mix(texture2D(grassTex,guv).rgb,texture2D(grassTex,mat2(.8,.6,-.6,.8)*guv*.43+7.).rgb,.38);
+      vec3 dryCol=mix(texture2D(dryTex,guv*.82).rgb,texture2D(dryTex,mat2(.6,.8,-.8,.6)*guv*.37+19.).rgb,.36);
+      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);
       vec3 sandCol=mix(texture2D(sandTex,gp.xz*.16).rgb,texture2D(sandTex,gp.xz*.73+warp).rgb,.20);
       vec3 dirtCol=mix(texture2D(dirtTex,gp.xz*.27).rgb,texture2D(dirtTex,gp.xz*.91+13.).rgb,.25);
       vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;
       float macro=groundNoise(gp.xz*.13+warp*2.)*.62+groundNoise(gp.xz*.034)*.38;float soil=smoothstep(.43,.69,macro)*(1.-vGroundWeights.x)*(1.-vGroundWeights.y*.65);grassCol=mix(grassCol,dirtCol,soil*.68);
       float micro=groundNoise(gp.xz*3.7)*.72+groundNoise(gp.xz*11.3)*.28;grassCol*=.83+.25*micro;dirtCol*=.86+.22*micro;
       float wet=smoothstep(2.4,.0,gp.y);sandCol=mix(sandCol,sandCol*vec3(.62,.68,.69),wet*.55);
-      diffuseColor.rgb*=sandCol*vGroundWeights.x+rockCol*vGroundWeights.y+grassCol*vGroundWeights.z;`);
+      vec3 climateGrass=mix(grassCol,dryCol,vGroundClimate.x);climateGrass=mix(climateGrass,snowCol,vGroundClimate.y*(1.-vGroundWeights.y*.88));climateGrass=mix(climateGrass,climateGrass*vec3(.72,.88,.69),vGroundClimate.z*.24);
+      diffuseColor.rgb*=sandCol*vGroundWeights.x+rockCol*vGroundWeights.y+climateGrass*vGroundWeights.z;`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       float viewDist=length(vViewPosition);float relief=(groundNoise(vGroundPosition.xz*5.)*.044+groundNoise(vGroundPosition.xz*21.)*.010)*(1.-smoothstep(10.,72.,viewDist));vec3 dx=dFdx(vViewPosition),dy=dFdy(vViewPosition);vec3 r1=cross(dy,normal),r2=cross(normal,dx);float det=dot(dx,r1);normal=normalize(abs(det)*normal-sign(det)*(dFdx(relief)*r1+dFdy(relief)*r2));`);
   };return mat;

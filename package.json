@@ -1,6 +1,6 @@
 {
   "name": "tideland-survival",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:browser": "node scripts/polish-qa.mjs",
     "test:death": "node scripts/death-respawn-qa.mjs",
-    "test:salvage": "node scripts/salvage-recycler-qa.mjs"
+    "test:salvage": "node scripts/salvage-recycler-qa.mjs",
+    "test:world": "node scripts/world-overhaul-qa.mjs"
   },
   "dependencies": {
     "three": "^0.180.0",

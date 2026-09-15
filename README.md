@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.8.0%20%7C%20EA--08.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.0%20%7C%20EA--09.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.8.0 / EA-08.0` · **14 September 2026**
+**Current release:** `v0.9.0 / EA-09.0` · **15 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.8.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.8.0/)
+Latest stable: [▶ PLAY v0.9.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -74,8 +74,11 @@ The main idea is simple:
 ## ⚙️ Current gameplay systems
 
 ### 🌍 World
-- Procedural island terrain and biomes
-- Forests, grass, rocks, resources and coastal detail
+- Generation-5 1280-m procedural archipelago with irregular coasts, satellite islands, ridges, valleys and a safe starter shore
+- Regional temperate forest, grassland, arid, alpine, rocky-mountain and coastal biomes
+- Terrain-following roads connecting established POIs
+- Cached topographic island map with hillshade, biome colors, grid coordinates, pan/zoom and persistent markers
+- Biome-aware forests, palms, alpine conifers, grass, rocks, resources and coastal detail
 - Day/night progression and atmosphere
 - Dynamic rain, fog and storms
 - Distance culling and quality settings
@@ -100,7 +103,7 @@ The main idea is simple:
 - Inventory and quick belt
 - Crafting queue
 - First-person hands with animated held tools, equip transitions, sway, sprint pose and inspect
-- Tuned acceleration/deceleration, air control, crouch transitions and landing response
+- Tuned acceleration/deceleration, air control, crouch transitions, landing response and height-scaled fall damage
 - Configurable FOV and viewmodel FOV
 - Frame-rate independent mouse look, separate X/Y sensitivity, auto-run, invert Y and head bob settings
 - Speed- and surface-aware footsteps
@@ -110,13 +113,13 @@ The main idea is simple:
 - Map, waypoints, diagnostics and developer telemetry with fly/god/vitals controls
 
 ### 💾 Persistence
-The browser locally persists worlds, settings, inventory, crafting, structure grades/health, doors, drops, depleted resource nodes and survival progression. Saves from v0.7.6 migrate in place: structures without grade or current health load as full-health Wood.
+The browser locally persists world generation, settings, inventory, crafting, research, structure grades/health, doors, stations, drops, depleted resource nodes and survival progression. Historical generation 1–4 worlds continue on their original 720-m terrain; only new v0.9.0 worlds use generation 5.
 
 ---
 
 ## 🚀 Current development focus
 
-**v0.7.x** now combines the menu/save foundation with deeper building progression and browser-safe structure maintenance.
+**v0.9.0** establishes a larger, regionally coherent world foundation around the existing survival, building and research loop.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -147,6 +150,12 @@ The browser locally persists worlds, settings, inventory, crafting, structure gr
 - ✅ Scrap, Wiring, Gears, Machine Parts and rare Tech Parts from tiered salvage caches
 - ✅ Two persistent world Salvage Recyclers with atomic, timed Scrap/Metal processing
 - ✅ One-time v0.7.8 economy bootstrap without overwriting existing loot
+- ✅ Persistent Scrap-funded Tech Tree with Workbench I–III recipe progression
+- ✅ Generation-5 1280-m archipelago with regional climate, satellite islands and safe legacy-world loading
+- ✅ Biome-aware procedural terrain, palms, alpine conifers and bounded resource distribution
+- ✅ Terrain-following POI roads and cached topographic map with hillshade, grid, pan and zoom
+- ✅ Three-layer distant mountain backdrop, expanded ocean and coordinated storm atmosphere
+- ✅ Landing-speed fall damage through the existing player damage/death lifecycle
 
 ---
 
@@ -162,9 +171,7 @@ Game-style main/pause menus, tabbed settings, remappable controls, graphics/audi
 Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
 
 ### Next milestones
-- `v0.8.0`: persistent Tech Tree research, Scrap progression and deeper Workbench tiers
-- `v0.8.1`: base ownership and upkeep
-- `v0.9.0+`: procedural roads, monuments/POIs, equipment and hazardous zones
+- `v0.9.1+`: deeper POIs, equipment, hazardous zones, ownership and upkeep
 - Later: farming, AI, world events, electricity, ocean gameplay, vehicles and multiplayer
 
 The roadmap is intentionally flexible. Features are added when they improve the core survival experience rather than simply increasing the feature count.
@@ -263,6 +270,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.9.0` | World generation 5, regional biomes, roads, topographic map, atmosphere and fall damage |
 | `v0.8.0` | Persistent Tech Tree research, Scrap progression and Workbench II–III recipe unlocks |
 | `v0.7.9` | Scrap, salvage components, tiered component loot and persistent world Recyclers |
 | `v0.7.8` | Death, respawn, persistent Lost Packs and Sleeping Roll recovery loop |
@@ -320,6 +328,6 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.8.0 / EA-08.0`
+`EARLY ACCESS DEVELOPMENT · v0.9.0 / EA-09.0`
 
 </div>

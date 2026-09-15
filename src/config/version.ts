@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.8.0';
-export const GAME_BUILD='EA-08.0';
-export const GAME_RELEASE_DATE='2026-09-14';
+export const GAME_VERSION='0.9.0';
+export const GAME_BUILD='EA-09.0';
+export const GAME_RELEASE_DATE='2026-09-15';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.9.0',date:'2026-09-15',title:'World Overhaul Part I',changes:[
+    'Added generation 5: a 1280-m deterministic archipelago with irregular coasts, satellite islands, broad ridges, valleys and a protected starter shelf while generations 1–4 remain compatible.',
+    'Added coherent temperate forest, grassland, arid, alpine, rocky-mountain and coastal climate regions with biome-aware procedural terrain, palms, conifers and bounded vegetation.',
+    'Added terrain-following roads between established POIs plus a cached topographic island survey with biome colors, hillshade, grid coordinates, pan/zoom and persistent markers.',
+    'Expanded the procedural sky, storm ocean and layered distant horizon, and added landing-transition fall damage with teleport and God Mode safety.',
+    'Added generation, world-size, terrain, biome and landing telemetry plus deterministic world/save regression coverage.'
+  ]},
   {version:'0.8.0',date:'2026-09-14',title:'Tech Tree & Workbench Progression',changes:[
     'Added persistent Workbench research knowledge with atomic Scrap transactions, prerequisites and legacy v0.7.9 migration by highest existing Workbench.',
     'Added the original Tideland Tech Tree UI with readable locked, available and unlocked states plus Workbench tier requirements.',

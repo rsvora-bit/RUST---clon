@@ -5,7 +5,7 @@ import {validateGameState} from '../src/save/storage';
 describe('world generation compatibility',()=>{
  it('preserves legacy saves and records the generator on new worlds',()=>{
   const state=new GameSimulation(731942,{x:28,y:6,z:212}).state;
-  expect(state.worldGeneration).toBe(4);expect(validateGameState(state)).toBe(true);expect(validateGameState({...state,worldGeneration:3})).toBe(true);
+  expect(state.worldGeneration).toBe(5);expect(validateGameState(state)).toBe(true);expect(validateGameState({...state,worldGeneration:3})).toBe(true);
   delete state.worldGeneration;
   expect(validateGameState(state)).toBe(true);
   expect(new GameSimulation(state.seed,state.player.position,state).state.worldGeneration).toBeUndefined();

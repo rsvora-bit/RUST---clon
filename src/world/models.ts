@@ -45,6 +45,13 @@ export function broadleafGeometry(variant=0):THREE.BufferGeometry {
   }
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
+
+/** Low-cost original palm crown for arid/coastal generation-five groves. */
+export function palmGeometry():THREE.BufferGeometry{
+  const positions:number[]=[],uvs:number[]=[],indices:number[]=[];
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,base=positions.length/3,len=3.1+(i%3)*.28,w=.48;const x=Math.cos(a),z=Math.sin(a);positions.push(-z*w,7.8,x*w, x*len-z*w*.35,7.15,z*len+x*w*.35, x*len+z*w*.35,7.15,z*len-x*w*.35, z*w,7.8,-x*w);uvs.push(0,0,0,1,1,1,1,0);indices.push(base,base+1,base+2,base,base+2,base+3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(indices);g.computeVertexNormals();return g;
+}
 export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[],r=randomSource(781+variant*391);
   const height=broadleaf?8:variant===1?15:variant===2?10.8:12.8;

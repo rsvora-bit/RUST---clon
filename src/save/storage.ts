@@ -22,7 +22,7 @@ export function validateGameState(value: unknown): value is GameState {
   // The menu accepts ten digit seeds. Keep the complete safe-integer range
   // here so a valid custom island can be saved and continued later.
   if (!record(value) || value.version !== 1 || !integer(value.seed, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) || !finite(value.elapsed, 0, 1e10) || !finite(value.timeOfDay, 0, 24) || !integer(value.nextId, 1)) return false;
-  if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3 && value.worldGeneration !== 4) return false;
+  if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3 && value.worldGeneration !== 4 && value.worldGeneration !== 5) return false;
   if (!record(value.player) || !position(value.player.position) || !stats(value.player.stats) || !finite(value.player.yaw) || !finite(value.player.pitch, -Math.PI / 2, Math.PI / 2)) return false;
   if (!Array.isArray(value.inventory) || value.inventory.length !== INVENTORY.SLOTS || !value.inventory.every(item => item === null || stack(item)) || !integer(value.activeSlot, 0, INVENTORY.HOTBAR_SLOTS - 1)) return false;
   if (!Array.isArray(value.structures) || value.structures.length > BUILDING_RULES.MAX_STRUCTURES || !Array.isArray(value.drops) || value.drops.length > SAVE.MAX_DROPS) return false;
@@ -59,7 +59,8 @@ export function validateGameState(value: unknown): value is GameState {
     if(p.tech!==undefined&&(!record(p.tech)||p.tech.version!==1||!Array.isArray(p.tech.unlocked)||p.tech.unlocked.length>32||new Set(p.tech.unlocked).size!==p.tech.unlocked.length||!p.tech.unlocked.every(validTechNode)))return false;
     const weather=p.weather;if(['rain','mist','storm'].some(k=>weather[k]!==undefined&&!finite(weather[k],0,1)))return false;
     if(p.spawnId!==undefined&&(typeof p.spawnId!=='string'||!p.stations.some(s=>s.id===p.spawnId&&s.kind==='bedroll')))return false;
-    if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-360,360)||!finite(p.waypoint.z,-360,360)))return false;
+    const worldHalf=value.worldGeneration===5?640:360;
+    if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-worldHalf,worldHalf)||!finite(p.waypoint.z,-worldHalf,worldHalf)))return false;
     if(p.death!==undefined){const death=p.death;if(!record(death)||!integer(death.sequence,1)||!['dead','respawned'].includes(death.phase as string)||!position(death.position)||!finite(death.occurredAt,0,value.elapsed as number)||death.cause!==undefined&&(typeof death.cause!=='string'||death.cause.length>80)||death.packId!==undefined&&(typeof death.packId!=='string'||!p.stations.some(s=>s.id===death.packId&&s.kind==='deathbag')))return false;}
     for(const s of p.stations){if(ids.has(s.id))return false;ids.add(s.id);const generated=/^(?:station|deathbag)-(\d+)$/.exec(s.id);if(generated&&Number(generated[1])>=value.nextId)return false;}
   }

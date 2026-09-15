@@ -4,10 +4,10 @@ import {GameSimulation} from '../src/simulation/GameSimulation';
 import {GATHERING} from '../src/config/gameplay';
 
 describe('v0.7.5 expanded world and resource labels',()=>{
-  it('records generation 4 on new worlds and keeps the terrain deterministic',()=>{
+  it('keeps generation 4 terrain deterministic while new worlds record generation 5',()=>{
     const a=new IslandTerrain(445152874,4),b=new IslandTerrain(445152874,4);
     const state=new GameSimulation(445152874,a.spawn).state;
-    expect(state.worldGeneration).toBe(4);
+    expect(state.worldGeneration).toBe(5);
     expect(a.heights).toEqual(b.heights);
     const samples=[0,Math.PI/4,Math.PI/2,Math.PI*3/4,Math.PI,Math.PI*5/4,Math.PI*3/2,Math.PI*7/4].map(angle=>a.heightAt(Math.cos(angle)*300,Math.sin(angle)*300));
     expect(Math.max(...samples)-Math.min(...samples)).toBeGreaterThan(2);

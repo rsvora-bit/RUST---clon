@@ -44,4 +44,12 @@ describe('first-person movement feel',()=>{
     const {player,game,mock}=rig();mock.grounded=false;player.jump();player.tick(1/60,game,true);const first=player.cameraDebug().jumpCooldown;expect(first).toBeGreaterThan(.2);
     player.grounded=true;mock.grounded=false;player.jump();player.tick(1/60,game,true);const second=player.cameraDebug().jumpCooldown;expect(second).toBeLessThan(first);expect(second).toBeGreaterThan(0);
   });
+
+  it('emits one landing impact for a real fall but suppresses safe teleports',()=>{
+    const {player,game,mock}=rig(),landings:number[]=[];player.onLand=speed=>landings.push(speed);
+    player.grounded=false;mock.grounded=true;(player as unknown as {vertical:number;suppressLanding:boolean}).vertical=-20;(player as unknown as {suppressLanding:boolean}).suppressLanding=false;player.tick(1/60,game,true);
+    expect(landings).toHaveLength(1);expect(landings[0]).toBeGreaterThan(20);
+    player.teleport({x:2,y:20,z:2});mock.grounded=true;(player as unknown as {vertical:number}).vertical=-25;player.tick(1/60,game,true);
+    expect(landings).toHaveLength(1);
+  });
 });

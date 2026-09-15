@@ -14,6 +14,8 @@ export class PlayerController {
   autoRun=false;
   speed=0;
   headBob=false;
+  lastLandingSpeed=0;
+  lastFallDamage=0;
 
   private vertical=0;
   private jumpRequested=false;
@@ -33,8 +35,10 @@ export class PlayerController {
   private previousEye=new THREE.Vector3();
   private currentEye=new THREE.Vector3();
   private stepDistance=0;
+  private suppressLanding=true;
 
   onStep:(speed:number)=>void=()=>{};
+  onLand:(impactSpeed:number)=>void=()=>{};
 
   constructor(readonly physics:PhysicsWorld,readonly camera:THREE.PerspectiveCamera,private input:Input,private settings:Settings,state:GameState){
     this.yaw=state.player.yaw;
@@ -55,7 +59,7 @@ export class PlayerController {
     this.camera.rotation.set(this.pitch,this.yaw,this.settings.cameraShake?this.swayRoll:0);
   }
 
-  jump(){this.jumpRequested=true;}
+  jump(){this.jumpRequested=true;this.suppressLanding=false;}
   toggleAutoRun(){this.autoRun=!this.autoRun;return this.autoRun;}
   setSettings(s:Settings){this.settings=s;this.headBob=s.headBob;}
 
@@ -122,10 +126,16 @@ export class PlayerController {
     this.grounded=this.physics.move({x:this.velocity.x*dt,y:this.vertical*dt,z:this.velocity.y*dt});
     if(this.grounded&&this.vertical<0)this.vertical=-1.2;
 
+    if(wasGrounded&&!this.grounded)this.suppressLanding=false;
+
     if(this.grounded&&!wasGrounded&&impactVelocity<-2.5){
-      this.landingKick=THREE.MathUtils.clamp((-impactVelocity-2.5)*.011,0,.105);
+      const impactSpeed=-impactVelocity;
+      this.lastLandingSpeed=impactSpeed;
+      this.landingKick=THREE.MathUtils.clamp((impactSpeed-2.5)*.011,0,.105);
       this.landingAge=0;
       this.jumpCooldown=Math.max(this.jumpCooldown,.08);
+      if(this.suppressLanding)this.suppressLanding=false;
+      else this.onLand(impactSpeed);
     }
 
     this.speed=Math.hypot(this.velocity.x,this.velocity.y);
@@ -181,7 +191,7 @@ export class PlayerController {
     return {controller:position,world:world.toArray(),local:this.camera.position.toArray(),quaternion:this.camera.quaternion.toArray(),yaw:this.yaw,cameraYaw:this.camera.rotation.y,pitch:this.camera.rotation.x,roll:this.camera.rotation.z,forward:forward.toArray(),movementForward:movement.toArray(),velocity:[this.velocity.x,0,this.velocity.y],angle:THREE.MathUtils.radToDeg(forward.angleTo(movement)),hierarchy,bodyRotation:this.physics.body.rotation(),horizontalEyeOffset:Math.hypot(world.x-position.x,world.z-position.z),fov:this.camera.fov,aspect:this.camera.aspect,autoRun:this.autoRun,crouching:this.crouching,jumpCooldown:this.jumpCooldown};
   }
   debugText(){const d=this.cameraDebug(),v=(a:number[])=>a.map(n=>n.toFixed(3)).join(', ');return `CAMERA BASIS\nEYES ${v(d.world)}\nLOCAL ${v(d.local)}\nYAW ${d.yaw.toFixed(3)} / CAMERA ${d.cameraYaw.toFixed(3)}\nPITCH ${d.pitch.toFixed(3)} ROLL ${d.roll.toFixed(3)}\nQUAT ${v(d.quaternion)}\nCAM FWD ${v(d.forward)}\nMOVE FWD ${v(d.movementForward)}\nANGLE ${d.angle.toFixed(5)}°\nVELOCITY ${v(d.velocity)}\nEYE XZ OFFSET ${d.horizontalEyeOffset.toFixed(4)} m\nFOV V ${d.fov.toFixed(2)} ASPECT ${d.aspect.toFixed(3)}\nAUTO-RUN ${d.autoRun?'ON':'OFF'}  CROUCH ${d.crouching?'ON':'OFF'}\n${d.hierarchy.join(' ← ')}`;}
-  teleport(p:Vec3){this.physics.teleport(p);this.vertical=0;this.velocity.set(0,0);this.targetVelocity.set(0,0);this.landingKick=0;this.landingAge=10;this.currentEye.set(p.x,p.y+PLAYER.EYE_HEIGHT-this.crouchBlend*PLAYER.CROUCH_EYE_DROP,p.z);this.previousEye.copy(this.currentEye);this.renderCamera(1);}
+  teleport(p:Vec3,suppressLanding=true){this.physics.teleport(p);this.vertical=0;this.velocity.set(0,0);this.targetVelocity.set(0,0);this.grounded=false;this.landingKick=0;this.landingAge=10;this.suppressLanding=suppressLanding;this.currentEye.set(p.x,p.y+PLAYER.EYE_HEIGHT-this.crouchBlend*PLAYER.CROUCH_EYE_DROP,p.z);this.previousEye.copy(this.currentEye);this.renderCamera(1);}
   resetForRespawn(p:Vec3){
     this.autoRun=false;this.sprinting=false;this.crouching=false;this.grounded=false;this.jumpRequested=false;this.jumpCooldown=0;this.crouchBlend=0;this.stride=0;this.stepDistance=0;this.swayX=this.swayY=this.swayRoll=0;this.speed=0;this.teleport(p);
   }

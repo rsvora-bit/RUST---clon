@@ -1,3 +1,12 @@
+## v0.9.0 / EA-09.0 — World Overhaul Part I (2026-09-15)
+
+- Added generation 5: a larger 1280-m deterministic island archipelago with irregular coasts, satellite islands, regional ridges and valleys, and a safe starter shelf.
+- Added coherent temperate forest, grassland, arid, alpine, rocky-mountain and coastal regions with original procedural ground treatments and biome-aware vegetation.
+- Added visible terrain-following roads between existing POIs and a cached topographic map with biome colors, hillshade, coordinate grid, pan/zoom, POIs, Recyclers, Lost Packs, player heading and waypoint markers.
+- Expanded the procedural sky, storm palette, ocean response and three-layer distant mountain backdrop without external game assets.
+- Added landing-transition fall damage through the existing player damage/death lifecycle, including safe teleport suppression, God Mode protection and F3 impact telemetry.
+- New worlds use generation 5; existing generation 1–4 saves keep their historical terrain dimensions and layouts.
+
 ## v0.7.8 / EA-07.8 — Death, Respawn & Lost Pack (2026-09-14)
 
 - Added a one-shot persistent death transaction and reusable `damagePlayer(amount, cause?)` API.

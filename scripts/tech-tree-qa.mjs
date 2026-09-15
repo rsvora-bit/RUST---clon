@@ -9,7 +9,7 @@ const wait=async(fn,ms=120000)=>{const end=Date.now()+ms;while(Date.now()<end){i
 const boot=async()=>{await page.goto(base);await wait(()=>!!window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden',timeout:120000})};
 const openWorkbench=async()=>{const station=await page.evaluate(()=>window.__TIDELAND.snapshot().progression.stations.find(s=>s.kind==='workbench1'));await page.evaluate(s=>window.__TIDELAND.stationOpen(s.id),station);await page.locator('.survival-panel:not(.world-map)').waitFor({state:'visible'});return station};
 try{
-  await boot();pass('v0.8.0 build is visible',/v0\.8\.0|EA-08\.0/.test(await page.locator('.menu-footer').innerText()));
+  await boot();pass('current build is visible',/v0\.9\.0|EA-09\.0/.test(await page.locator('.menu-footer').innerText()));
   await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
   pass('New game initializes empty tech state',await page.evaluate(()=>Array.isArray(window.__TIDELAND.snapshot().progression.tech.unlocked)&&window.__TIDELAND.snapshot().progression.tech.unlocked.length===0));
   await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('wood',300);g.addItem('metal',60);a.command('spawn workbench1');});
