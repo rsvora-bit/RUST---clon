@@ -54,6 +54,14 @@ export function pineTexture():THREE.CanvasTexture {
   }
   return texture(c);
 }
+/** Original palm leaflet mask; UV length follows each bent frond. */
+export function palmTexture(seed=905):THREE.CanvasTexture {
+  const [c,ctx]=canvas(256),rand=randomSource(seed);ctx.lineCap='round';
+  ctx.strokeStyle='#8b9859';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(128,255);ctx.lineTo(128,12);ctx.stroke();
+  for(let i=0;i<33;i++){const y=25+i*6.7,width=Math.sin((y-12)/245*Math.PI)*108;
+    for(const side of [-1,1]){ctx.strokeStyle=['#547041','#668047','#7d9457'][Math.floor(rand()*3)]!;ctx.lineWidth=3.5+rand()*2;ctx.beginPath();ctx.moveTo(128,y+14);ctx.quadraticCurveTo(128+side*width*.5,y+4,128+side*width,y-13);ctx.stroke();}}
+  return texture(c);
+}
 export function leavesTexture(seed=667):THREE.CanvasTexture {
   const [c,ctx]=canvas(256),rand=randomSource(seed);ctx.strokeStyle='#686040';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(128,255);ctx.lineTo(133,34);ctx.stroke();
   for(let i=0;i<120;i++){const x=25+rand()*205,y=15+rand()*220,dx=x-128,dy=y-125;if(dx*dx/15000+dy*dy/15000>1)continue;const a=rand()*6.28,l=6+rand()*13;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle=['#384a2b','#4d6036','#657a3f','#7b8745','#849452'][Math.floor(rand()*5)]!;ctx.beginPath();ctx.moveTo(0,-l);ctx.quadraticCurveTo(l*.8,-l*.1,0,l);ctx.quadraticCurveTo(-l*.8,-l*.1,0,-l);ctx.fill();ctx.strokeStyle='rgba(175,180,107,.3)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(0,-l);ctx.lineTo(0,l);ctx.stroke();ctx.restore();}

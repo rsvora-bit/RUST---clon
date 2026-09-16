@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const outputDir=process.env.TIDELAND_QA_DIR||'test-results/building-grades';fs.mkdirSync(outputDir,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
 const pass=(label,value)=>{assert.ok(value,label);console.log('PASS',label);};
 const shot=async name=>{await page.waitForTimeout(250);await page.screenshot({path:`${outputDir}/${name}.png`,timeout:60000});};

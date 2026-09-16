@@ -1,3 +1,13 @@
+## v0.9.1 / EA-09.1 — World Art & Stabilization (2026-09-16)
+
+- Improved deterministic POI roads with a shared low-resolution terrain-cost grid, water/slope/elevation avoidance, conservative smoothing and terrain-following strips with original dirt/gravel detail and soft edges.
+- Added temperature/moisture/elevation-aware palms and alpine conifers, dedicated procedural palm foliage and trunks, smoother vegetation cover and road/POI clearance in new generation-5 worlds.
+- Broadened continuous dry-grass/arid and cold-grass/snow transition bands in terrain and the cached map; terrain heights, physics heightfields and seed-dependent spawn remain unchanged.
+- Replaced regular horizon rings with seeded disconnected mountain groups, asymmetric ridges, varied peaks and three atmospheric depth layers totaling 1,344 triangles and three draw calls.
+- Existing generation 1–4 saves keep their legacy generators. Existing v0.9.0 gen5 saves without worldRevision keep layout revision 1, including original resources, colliders, POIs and roads; new gen5 worlds explicitly save revision 2. No inventory, structures, stations, progression, research or Lost Packs are reset.
+- Added deterministic road/climate/legacy-heightfield tests, real archived-v0.9.0 save QA and relative performance probes; repaired stale QA fixtures/selectors/timing and unified CI on Node 22.
+- npm audit still reports two moderate development-only findings in Vitest/@vitest/mocker (GHSA-82fw-gwwq-j7x9). The advisory requires a major Vitest upgrade; dependencies were not changed with a force fix.
+
 ## v0.9.0 / EA-09.0 — World Overhaul Part I (2026-09-15)
 
 - Added generation 5: a larger 1280-m deterministic island archipelago with irregular coasts, satellite islands, regional ridges and valleys, and a safe starter shelf.

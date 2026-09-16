@@ -49,8 +49,15 @@ export function broadleafGeometry(variant=0):THREE.BufferGeometry {
 /** Low-cost original palm crown for arid/coastal generation-five groves. */
 export function palmGeometry():THREE.BufferGeometry{
   const positions:number[]=[],uvs:number[]=[],indices:number[]=[];
-  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,base=positions.length/3,len=3.1+(i%3)*.28,w=.48;const x=Math.cos(a),z=Math.sin(a);positions.push(-z*w,7.8,x*w, x*len-z*w*.35,7.15,z*len+x*w*.35, x*len+z*w*.35,7.15,z*len-x*w*.35, z*w,7.8,-x*w);uvs.push(0,0,0,1,1,1,1,0);indices.push(base,base+1,base+2,base,base+2,base+3);}
+  for(let i=0;i<12;i++){const angle=i/12*Math.PI*2,dx=Math.cos(angle),dz=Math.sin(angle),base=positions.length/3,length=3.0+(i%3)*.32;
+    for(let j=0;j<=5;j++){const t=j/5,reach=length*t,y=7.8+Math.sin(t*Math.PI)*.48-t*t*1.15,width=.46*(1-t*.78);
+      for(const side of [-1,1]){positions.push(dx*reach-dz*width*side,y,dz*reach+dx*width*side);uvs.push((side+1)/2,t);}
+      if(j<5){const k=base+j*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}}
+  }
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(indices);g.computeVertexNormals();return g;
+}
+export function palmTrunkGeometry():THREE.BufferGeometry{
+  const g=new THREE.CylinderGeometry(.11,.25,7.8,7,10);g.translate(0,3.9,0);const p=g.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i),t=y/7.8,ring=1+.04*Math.sin(y*19);p.setXYZ(i,p.getX(i)*ring+t*t*.36,y,p.getZ(i)*ring);}g.computeVertexNormals();return g;
 }
 export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[],r=randomSource(781+variant*391);

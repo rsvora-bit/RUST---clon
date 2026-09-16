@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.0%20%7C%20EA--09.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.1%20%7C%20EA--09.1-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.9.0 / EA-09.0` · **15 September 2026**
+**Current release:** `v0.9.1 / EA-09.1` · **16 September 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.9.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.0/)
+Latest stable: [▶ PLAY v0.9.1](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.1/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -113,13 +113,13 @@ The main idea is simple:
 - Map, waypoints, diagnostics and developer telemetry with fly/god/vitals controls
 
 ### 💾 Persistence
-The browser locally persists world generation, settings, inventory, crafting, research, structure grades/health, doors, stations, drops, depleted resource nodes and survival progression. Historical generation 1–4 worlds continue on their original 720-m terrain; only new v0.9.0 worlds use generation 5.
+The browser locally persists world generation, settings, inventory, crafting, research, structure grades/health, doors, stations, drops, depleted resource nodes and survival progression. Historical generation 1–4 worlds continue on their original 720-m terrain; worlds created since v0.9.0 use generation 5. Existing v0.9.0 gen5 saves keep their historical revision-1 layout, while new v0.9.1 gen5 worlds explicitly store `worldRevision: 2` for improved roads and vegetation. Terrain heights and saved player/world state are preserved.
 
 ---
 
 ## 🚀 Current development focus
 
-**v0.9.0** establishes a larger, regionally coherent world foundation around the existing survival, building and research loop.
+**v0.9.1 / EA-09.1 — World Art & Stabilization** polishes the Generation 5 foundation with terrain-aware roads, climate-correct palms, continuous biome/vegetation transitions and an original layered mountain panorama.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -270,6 +270,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.9.1` | Terrain-aware roads, climate-correct vegetation, continuous biome bands, distant massifs and save-safe stabilization |
 | `v0.9.0` | World generation 5, regional biomes, roads, topographic map, atmosphere and fall damage |
 | `v0.8.0` | Persistent Tech Tree research, Scrap progression and Workbench II–III recipe unlocks |
 | `v0.7.9` | Scrap, salvage components, tiered component loot and persistent world Recyclers |
@@ -328,6 +329,16 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.9.0 / EA-09.0`
+`EARLY ACCESS DEVELOPMENT · v0.9.1 / EA-09.1`
 
 </div>
+
+### v0.9.1 validation and layout compatibility
+
+`src/terrain/roads.ts` shares one 12-m cost grid between all POI routes. New-layout vegetation leaves road/POI corridors clear; the routing layout is reused for rendering and the map. `src/world/climate.ts` shares continuous cover bands, and `src/world/horizon.ts` batches disconnected original massifs into three nonphysical meshes. Historical gen5 resources, species placement, colliders and roads are intentionally retained on revision 1 rather than migrated underneath a player or base. Cosmetic ground blending, palm materials and the horizon also apply to historical worlds.
+
+For browser QA, start the app on port 5173, set `CHROME_BIN` to the installed Chrome executable, then run `npm run test:performance` followed by `npm run test:world-art`. The performance probe first boots the immutable v0.9.0 archive with seed 731942, High quality, 1280×720 and DPR1; it also exports a real archived save fixture. The world-art probe transfers that fixture into isolated local storage and checks old and new layouts. Generated evidence stays under ignored `test-results/`. Functional harnesses optionally accept `TIDELAND_QA_ANGLE=metal` on macOS; performance comparisons must use the same backend for both builds. `polish-qa.mjs` uses the historical generation-1 construction clearing; Generation 5 is covered separately.
+
+`npm audit` reports two moderate Vitest/@vitest/mocker development-tool findings under GHSA-82fw-gwwq-j7x9. The patched range begins with Vitest 4.1.11, a major upgrade from this project's 3.x; no dependency or force-fix change was made in this stabilization release.
+
+Release validation (macOS Chrome/ANGLE Metal, seed 731942, High, 1280×720 DPR1, identical spawn camera, 60 real frame intervals): archived v0.9.0 vs v0.9.1 measured 60.00 vs 60.01 FPS, 16.666 vs 16.664 ms, 612 vs 617 draw calls, 3,390,261 vs 3,163,616 triangles and 1,318 nodes in both. Startup was 5,661 vs 4,455 ms including page loading. The refresh-limited FPS is a relative smoke check, not a GPU capacity benchmark; SwiftShader startup timed out on this device. Unit validation: 185 tests in 25 files.

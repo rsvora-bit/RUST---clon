@@ -1,9 +1,17 @@
-export const GAME_VERSION='0.9.0';
-export const GAME_BUILD='EA-09.0';
-export const GAME_RELEASE_DATE='2026-09-15';
+export const GAME_VERSION='0.9.1';
+export const GAME_BUILD='EA-09.1';
+export const GAME_RELEASE_DATE='2026-09-16';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.9.1',date:'2026-09-16',title:'World Art & Stabilization',changes:[
+    'Improved deterministic POI roads with lightweight terrain-cost routing, conservative corner smoothing, ground-following strips and original dirt/gravel detail with soft edges.',
+    'Added climate-correct palm and conifer selection, dedicated procedural palm fronds/trunks, continuous vegetation cover and road clearance for new generation-5 worlds.',
+    'Broadened continuous dry-grass/arid and cold-grass/snow transition bands, including the cached topographic map, without changing terrain heights.',
+    'Replaced uniform horizon rings with seeded disconnected mountain groups, asymmetric ridges, hero peaks and three inexpensive atmospheric depth layers.',
+    'Preserved generations 1–4 and v0.9.0 generation-5 layouts through an explicit generation-5 layout revision; existing inventory, structures, stations, research and Lost Packs stay intact.',
+    'Added road/climate/legacy-heightfield and archived-save regression coverage, portable QA graphics backends and actual browser frame-interval performance measurements; unified Actions on Node 22.'
+  ]},
   {version:'0.9.0',date:'2026-09-15',title:'World Overhaul Part I',changes:[
     'Added generation 5: a 1280-m deterministic archipelago with irregular coasts, satellite islands, broad ridges, valleys and a protected starter shelf while generations 1–4 remain compatible.',
     'Added coherent temperate forest, grassland, arid, alpine, rocky-mountain and coastal climate regions with biome-aware procedural terrain, palms, conifers and bounded vegetation.',

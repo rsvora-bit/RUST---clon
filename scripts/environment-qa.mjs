@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const label=process.env.TIDELAND_QA_LABEL||'after';
 const output=process.env.TIDELAND_QA_DIR||`.npm-cache/graphics-v080/${label}`;
 fs.mkdirSync(output,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle','--use-angle=metal']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'metal'}`]});
 const errors=[],warnings=[],samples=[];
 try {
   const page=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
@@ -14,6 +14,7 @@ try {
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());if(m.type()==='warning')warnings.push(m.text());});
   await page.goto(process.env.TIDELAND_URL||'http://127.0.0.1:5173');
   await page.waitForFunction(()=>window.__TIDELAND,{},{timeout:90000});
+  await page.locator('#world-seed').fill('731942');
   await page.locator('[data-action="new"]').click();
   await page.locator('[data-save-action="new"][data-save-slot="1"]').click();
   await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',{},{timeout:90000});

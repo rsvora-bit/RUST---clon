@@ -1,10 +1,10 @@
 import {describe,it,expect} from 'vitest';
 import * as THREE from 'three';
-import {grassGeometry,pineGeometry,broadleafGeometry,bushGeometry} from '../src/world/models';
+import {grassGeometry,pineGeometry,broadleafGeometry,bushGeometry,palmGeometry,palmTrunkGeometry} from '../src/world/models';
 
 describe('foliage geometry stability',()=>{
   it('has finite, unit-length normals and no degenerate triangles across variants',()=>{
-    const geometries=[grassGeometry(),bushGeometry(),...[0,1,2].map(pineGeometry),...[0,1].map(broadleafGeometry)];
+    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1].map(broadleafGeometry)];
     const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
     try {
       for(const geometry of geometries){

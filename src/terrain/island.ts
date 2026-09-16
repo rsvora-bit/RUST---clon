@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {WORLD,WORLD_GENERATION_5} from '../config/balance';
 import type {WorldGeneration} from '../core/types';
 import {Noise,randomSource,smoothstep} from '../world/noise';
+import {surfaceClimate} from '../world/climate';
 
 export type TerrainBiome='COAST'|'TEMPERATE FOREST'|'TEMPERATE GRASSLAND'|'ARID'|'SNOW / ALPINE'|'ROCKY MOUNTAIN';
 export interface ClimateSample{temperature:number;moisture:number;continentalness:number}
@@ -30,10 +31,10 @@ export class IslandTerrain {
     this.geometry.computeVertexNormals();const normals=this.geometry.getAttribute('normal');
     for(let i=0;i<p.count;i++){
       const x=p.getX(i),z=p.getZ(i),h=p.getY(i),slope=1-normals.getY(i),n1=this.noise.fbm(x*.09,z*.09,3);
-      const biome=this.generation===5?this.biomeAtRaw(x,z,h,slope):'',rock=Math.max(smoothstep(.13,.43,slope),smoothstep(this.generation===5?43:31,this.generation===5?70:52,h))*.95;
+      const rock=Math.max(smoothstep(.13,.43,slope),smoothstep(this.generation===5?43:31,this.generation===5?70:52,h))*.95;
       const sand=(1-smoothstep(1.6,4.8,h))*(1-rock);
       weights.set([sand,rock,1-sand-rock],i*3);
-      const variation=.87+n1*.24;let tr=1,tg=1,tb=1,arid=0,snow=0,forest=0;if(this.generation===5){const c=this.climateAtRaw(x,z,h);snow=Math.max((1-smoothstep(.32,.46,c.temperature))*smoothstep(16,45,h),smoothstep(52,69,h))*(1-smoothstep(.42,.82,slope));arid=smoothstep(.51,.66,c.temperature)*(1-smoothstep(.38,.58,c.moisture))*(1-snow);forest=smoothstep(.46,.66,c.moisture)*(1-arid)*(1-snow)*smoothstep(2.5,8,h)*(1-smoothstep(40,58,h));tr=.95+(.78-.95)*forest;tg=1+(.94-1)*forest;tb=.86+(.72-.86)*forest;tr+=(1.08-tr)*arid;tg+=(.93-tg)*arid;tb+=(.70-tb)*arid;tr+=(1.28-tr)*snow;tg+=(1.30-tg)*snow;tb+=(1.34-tb)*snow;if(biome==='ROCKY MOUNTAIN'){tr+=(.91-tr)*rock;tg+=(.94-tg)*rock;tb+=(.96-tb)*rock;}}colors.set([variation*tr,variation*tg,variation*tb],i*3);
+      const variation=.87+n1*.24;let tr=1,tg=1,tb=1,arid=0,snow=0,forest=0;if(this.generation===5){const c=this.climateAtRaw(x,z,h);({snow,arid,forest}=surfaceClimate(c,h,slope));tr=.95+(.78-.95)*forest;tg=1+(.94-1)*forest;tb=.86+(.72-.86)*forest;tr+=(1.08-tr)*arid;tg+=(.93-tg)*arid;tb+=(.70-tb)*arid;tr+=(1.28-tr)*snow;tg+=(1.30-tg)*snow;tb+=(1.34-tb)*snow;tr+=(.91-tr)*rock;tg+=(.94-tg)*rock;tb+=(.96-tb)*rock;}colors.set([variation*tr,variation*tg,variation*tb],i*3);
       climateWeights.set([arid,snow,forest],i*3);
     }
     this.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));this.geometry.setAttribute('surfaceWeights',new THREE.BufferAttribute(weights,3));this.geometry.setAttribute('surfaceClimate',new THREE.BufferAttribute(climateWeights,3));

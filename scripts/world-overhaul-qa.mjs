@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+const expectedVersion=JSON.parse(readFileSync(new URL('../package.json',import.meta.url))).version;
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,7 +7,7 @@ import fs from 'node:fs';
 const base=process.env.TIDELAND_QA_URL||'http://localhost:5173';
 const out=process.env.TIDELAND_QA_DIR||'test-results/world-overhaul';fs.mkdirSync(out,{recursive:true});
 const executablePath=process.env.CHROME_BIN||'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const browser=await chromium.launch({headless:true,executablePath,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader']});
+const browser=await chromium.launch({headless:true,executablePath,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],results=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
 const pass=(label,value)=>{assert.ok(value,label);results.push(label);console.log('PASS',label)};
@@ -15,7 +17,7 @@ const boot=async()=>{await page.goto(base);await page.evaluate(()=>localStorage.
 const continueGame=async()=>{await page.locator('[data-action="continue"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing')};
 
 try{
-  await boot();pass('v0.9.0 build is visible',/v0\.9\.0|EA-09\.0/.test(await page.locator('.menu-footer').innerText()));
+  await boot();pass('Current build is visible',(await page.locator('.menu-footer').innerText()).includes(`v${expectedVersion}`));
   await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
   const world=await page.evaluate(()=>window.__TIDELAND.world());
   pass('New game uses generation 5',world.generation===5);pass('Generation 5 uses 1280m / 384 terrain',world.size===1280&&world.resolution===384);

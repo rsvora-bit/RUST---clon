@@ -1,15 +1,18 @@
+import {readFileSync} from 'node:fs';
+const expectedVersion=JSON.parse(readFileSync(new URL('../package.json',import.meta.url))).version;
 import {chromium} from 'playwright-core';
 import fs from 'node:fs';
 const base=process.env.TIDELAND_QA_URL||'http://localhost:5173';
 const out=process.env.TIDELAND_QA_DIR||'test-results/tech-tree';fs.mkdirSync(out,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],results=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+page.setDefaultTimeout(180000);
 const pass=(label,value)=>{if(!value)throw Error(label);results.push(label);console.log('PASS',label)};
 const wait=async(fn,ms=120000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await page.evaluate(fn))return;await page.waitForTimeout(500)}throw Error('browser state timeout')};
 const boot=async()=>{await page.goto(base);await wait(()=>!!window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden',timeout:120000})};
 const openWorkbench=async()=>{const station=await page.evaluate(()=>window.__TIDELAND.snapshot().progression.stations.find(s=>s.kind==='workbench1'));await page.evaluate(s=>window.__TIDELAND.stationOpen(s.id),station);await page.locator('.survival-panel:not(.world-map)').waitFor({state:'visible'});return station};
 try{
-  await boot();pass('current build is visible',/v0\.9\.0|EA-09\.0/.test(await page.locator('.menu-footer').innerText()));
+  await boot();pass('current build is visible',(await page.locator('.menu-footer').innerText()).includes(`v${expectedVersion}`));
   await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
   pass('New game initializes empty tech state',await page.evaluate(()=>Array.isArray(window.__TIDELAND.snapshot().progression.tech.unlocked)&&window.__TIDELAND.snapshot().progression.tech.unlocked.length===0));
   await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('wood',300);g.addItem('metal',60);a.command('spawn workbench1');});

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type {GraphicsQuality,ShadowQuality} from '../core/types';
+import {mountainLayer} from './horizon';
 
 export class Atmosphere {
   readonly sky:THREE.Mesh<THREE.SphereGeometry,THREE.ShaderMaterial>;
@@ -10,9 +11,10 @@ export class Atmosphere {
   readonly horizon=new THREE.Group();private horizonGeometries:THREE.BufferGeometry[]=[];private horizonMaterials:THREE.Material[]=[];
   readonly sunDirection=new THREE.Vector3(-.5,.72,.4).normalize();
   private elapsed=0;private daylight=1;
+  private readonly stormTint=new THREE.Color(.29,.27,.38);private readonly mountainTint=new THREE.Color();
   get daylightAmount(){return this.daylight;}
 
-  constructor(readonly scene:THREE.Scene,heightTexture:THREE.DataTexture,readonly terrainSize=720){
+  constructor(readonly scene:THREE.Scene,heightTexture:THREE.DataTexture,readonly terrainSize=720,private readonly seed=731942){
     this.sky=new THREE.Mesh(new THREE.SphereGeometry(1600,40,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{sunDir:{value:this.sunDirection},daylight:{value:1},clock:{value:0},weather:{value:0}},vertexShader:`varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
       varying vec3 vDirection;uniform vec3 sunDir;uniform float daylight;uniform float clock;uniform float weather;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}float fbm(vec2 p){float f=0.;f+=.5*noise(p);p=p*2.03+17.2;f+=.25*noise(p);p=p*2.01-12.7;f+=.125*noise(p);p=p*2.04+8.2;f+=.0625*noise(p);return f;}
@@ -35,20 +37,18 @@ export class Atmosphere {
   }
 
   private buildHorizon():void{
-    const ring=(radius:number,segments:number,phase:number,height:number,color:number,opacity:number)=>{
-      const vertices:number[]=[],indices:number[]=[];
-      for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2,r=radius+Math.sin(a*5+phase)*22+Math.sin(a*11-phase)*9,peak=22+height*(.30+.48*Math.pow(Math.max(0,Math.sin(a*3.0+phase)),2)+.28*Math.pow(Math.max(0,Math.sin(a*7.0-phase*.7)),4));vertices.push(Math.cos(a)*r,-92,Math.sin(a)*r,Math.cos(a)*r,peak,Math.sin(a)*r);}
-      for(let i=0;i<segments;i++){const b=i*2;indices.push(b,b+1,b+2,b+1,b+3,b+2);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();const m=new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide,fog:true});const mesh=new THREE.Mesh(g,m);mesh.renderOrder=-5;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
-    };
-    const scale=this.terrainSize>720?1.28:1;ring(830*scale,128,.8,112,0x668297,.52);ring(1080*scale,144,2.15,175,0x8299a8,.34);ring(1370*scale,160,4.05,245,0xa2adba,.22);
+    for(let layer=2;layer>=0;layer--){
+      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,depthWrite:false,side:THREE.DoubleSide,fog:true});
+      const mesh=new THREE.Mesh(g,m);mesh.name=`Distant massif layer ${layer}`;mesh.userData.layer=layer;mesh.renderOrder=-5;mesh.frustumCulled=false;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
+    }
   }
 
   update(dt:number,time:number,camera:THREE.Vector3):void{
     this.elapsed+=dt;const a=(time-6)/24*Math.PI*2;this.sunDirection.set(-Math.cos(a)*.75,Math.sin(a),.42).normalize();this.daylight=THREE.MathUtils.smoothstep(this.sunDirection.y,-.16,.26);
     this.sun.intensity=.055+this.daylight*2.72;this.sun.color.setRGB(1,.72+this.daylight*.21,.53+this.daylight*.34);this.fill.intensity=.31+this.daylight*1.55;this.fill.color.setRGB(.49+this.daylight*.21,.59+this.daylight*.21,.84);this.fill.groundColor.setRGB(.14+this.daylight*.25,.16+this.daylight*.27,.15+this.daylight*.22);
-    const storm=this.sky.material.uniforms.weather.value as number;this.fog.color.setRGB(.05+.48*this.daylight,.078+.55*this.daylight,.14+.61*this.daylight).lerp(new THREE.Color(.29,.27,.38),storm*.45);this.fog.density=.00105+(1-this.daylight)*.00162+storm*.00048;
+    const storm=this.sky.material.uniforms.weather.value as number;this.fog.color.setRGB(.05+.48*this.daylight,.078+.55*this.daylight,.14+.61*this.daylight).lerp(this.stormTint,storm*.45);this.fog.density=.00105+(1-this.daylight)*.00162+storm*.00048;
     const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDirection,105);this.sky.position.copy(camera);this.horizon.position.set(camera.x,camera.y-28,camera.z);
-    this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.horizonMaterials.forEach((m,i)=>{const basic=m as THREE.MeshBasicMaterial;basic.color.set(i===0?0x668297:i===1?0x8299a8:0xa2adba).lerp(new THREE.Color(0x625a78),storm*.58);});
+    this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.horizonMaterials.forEach((m,i)=>{const layer=2-i,basic=m as THREE.MeshBasicMaterial;basic.color.setRGB(.055+this.daylight*(.22+layer*.065),.075+this.daylight*(.30+layer*.06),.12+this.daylight*(.35+layer*.055));this.mountainTint.setRGB(.13+this.daylight*.18,.12+this.daylight*.16,.18+this.daylight*.19);basic.color.lerp(this.mountainTint,storm*.58);const sunset=(1-this.daylight)*Math.max(0,this.sunDirection.y+.16);basic.color.r+=sunset*.2;});
   }
 
   setQuality(q:GraphicsQuality):void{
