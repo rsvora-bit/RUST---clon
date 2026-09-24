@@ -1,0 +1,7 @@
+export class DevTerminal {
+ private commands=new Map<string,{help:string;run:(args:string[])=>string|void|Promise<string|void>}>();readonly root=document.createElement('section');private input=document.createElement('input');private log=document.createElement('pre');
+ constructor(parent:HTMLElement,private onOpen:(open:boolean)=>void){this.root.className='dev-terminal';this.root.hidden=true;this.input.placeholder='help';this.root.append(this.log,this.input);parent.append(this.root);this.register('help','List commands',()=>[...this.commands].map(([n,v])=>`${n}  ${v.help}`).join('\n'));this.input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){this.close();return;}if(e.key==='Enter'){void this.execute(this.input.value);this.input.value='';}});}
+ register(name:string,help:string,run:(args:string[])=>string|void|Promise<string|void>){this.commands.set(name,{help,run});}
+ async execute(line:string){const [name,...args]=line.trim().split(/\s+/);try{const c=this.commands.get(name);const result=c?await c.run(args):'Unknown command. Enter help.';this.log.textContent+=`\n> ${line}\n${result??'OK'}`;this.log.scrollTop=this.log.scrollHeight;return result;}catch(e){const message=e instanceof Error?e.message:String(e);this.log.textContent+=`\n${message}`;return message;}}
+ get isOpen(){return !this.root.hidden;}toggle(){if(this.isOpen)this.close();else{this.root.hidden=false;this.onOpen(true);this.input.focus();}}close(){this.root.hidden=true;this.onOpen(false);}
+}

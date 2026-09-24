@@ -1,0 +1,223 @@
+## v0.9.1 / EA-09.1 — World Art & Stabilization (2026-09-16)
+
+- Improved deterministic POI roads with a shared low-resolution terrain-cost grid, water/slope/elevation avoidance, conservative smoothing and terrain-following strips with original dirt/gravel detail and soft edges.
+- Added temperature/moisture/elevation-aware palms and alpine conifers, dedicated procedural palm foliage and trunks, smoother vegetation cover and road/POI clearance in new generation-5 worlds.
+- Broadened continuous dry-grass/arid and cold-grass/snow transition bands in terrain and the cached map; terrain heights, physics heightfields and seed-dependent spawn remain unchanged.
+- Replaced regular horizon rings with seeded disconnected mountain groups, asymmetric ridges, varied peaks and three atmospheric depth layers totaling 1,344 triangles and three draw calls.
+- Existing generation 1–4 saves keep their legacy generators. Existing v0.9.0 gen5 saves without worldRevision keep layout revision 1, including original resources, colliders, POIs and roads; new gen5 worlds explicitly save revision 2. No inventory, structures, stations, progression, research or Lost Packs are reset.
+- Added deterministic road/climate/legacy-heightfield tests, real archived-v0.9.0 save QA and relative performance probes; repaired stale QA fixtures/selectors/timing and unified CI on Node 22.
+- npm audit still reports two moderate development-only findings in Vitest/@vitest/mocker (GHSA-82fw-gwwq-j7x9). The advisory requires a major Vitest upgrade; dependencies were not changed with a force fix.
+
+## v0.9.0 / EA-09.0 — World Overhaul Part I (2026-09-15)
+
+- Added generation 5: a larger 1280-m deterministic island archipelago with irregular coasts, satellite islands, regional ridges and valleys, and a safe starter shelf.
+- Added coherent temperate forest, grassland, arid, alpine, rocky-mountain and coastal regions with original procedural ground treatments and biome-aware vegetation.
+- Added visible terrain-following roads between existing POIs and a cached topographic map with biome colors, hillshade, coordinate grid, pan/zoom, POIs, Recyclers, Lost Packs, player heading and waypoint markers.
+- Expanded the procedural sky, storm palette, ocean response and three-layer distant mountain backdrop without external game assets.
+- Added landing-transition fall damage through the existing player damage/death lifecycle, including safe teleport suppression, God Mode protection and F3 impact telemetry.
+- New worlds use generation 5; existing generation 1–4 saves keep their historical terrain dimensions and layouts.
+
+## v0.7.8 / EA-07.8 — Death, Respawn & Lost Pack (2026-09-14)
+
+- Added a one-shot persistent death transaction and reusable `damagePlayer(amount, cause?)` API.
+- Carried inventory now remains in an original procedural Lost Pack while crafting queues, world drops and station inventories stay untouched.
+- Added collision-aware Sleeping Roll respawn with shore fallback and an exact Rock + Torch starter kit.
+- Dead state and Lost Packs survive save/reload without duplication or pre-death inventory rollback.
+- Added Lost Pack map markers and shared disposable-container cleanup for Lost Packs and salvage caches.
+- Empty and over-limit Lost Packs cleanly remove saved state, Three.js objects, Rapier colliders and interaction targets.
+
+## v0.7.7 / EA-07.7 — Building Grades & Hammer (2026-09-13)
+
+- Added Wood, Stone and Metal building grades with 250 / 600 / 1000 durability and piece-specific upgrade costs.
+- Added visually distinct, original procedural stone masonry and weathered metal panel construction while preserving per-piece material batching.
+- Added the craftable Builder's Hammer, original inventory icon and procedural first-person held model with existing equip, sway, sprint and inspect behavior.
+- Added a compact Hammer + RMB structure HUD/menu for atomic upgrades, proportional repairs, safe door-hinge rotation and one-second hold demolition.
+- Added a reusable `damageStructure(id, amount)` lifecycle API for future combat, raids and decay.
+- Added safe v0.7.6 structure migration to full-health Wood plus grade/current-health persistence and door regression coverage.
+
+## v0.7.6 / EA-07.6 — Loot cache breakup & harvesting interaction fixes (2026-09-13)
+
+- Added visible breakup and collapse for emptied salvage caches and removed consumed caches from saved worlds.
+- Restored concise HP/durability readouts for harvestable trees and mineral nodes.
+- Reserved E for pickups and world interactions while resource strikes remain on primary attack.
+- Fixed instance-based resource hit wobble and stale loot interaction/physics cleanup.
+
+## v0.7.5 / EA-07.5 — Expanded island, cleaner resource HUD & horizon pass (2026-09-13)
+
+- Added generation 4 with a larger irregular coastline, separated ridge systems and seed-dependent starter shores while preserving older world generations.
+- Improved procedural prop spacing, expanded vegetation/resource distribution and reduced decorative boulder density.
+- Simplified resource target labels and added an original procedural distant-mountain horizon and cloud veil.
+- Added persistent highlighting for F3 Fly Mode and God Mode.
+
+## v0.7.4 / EA-07.4 — Seeded world variety, loot & developer tools (2026-09-13)
+
+- Added generation 3 with deterministic seed-based starter spawn/clearing and fresh random seeds for blank New World creation. Existing generation 1/2 saves keep their old world layout.
+- Added multiple seeded rain collectors plus sixteen scattered salvage crates with common, decent and rare lucky loot tables.
+- Added distinct stone, metal ore, sulfur ore and high-quality metal ore deposits with random seed-driven distribution and original procedural mineral styling.
+- Removed the oversized relay tower and the accidental-looking world-space trail ribbon; trails remain on the island map only.
+- Replaced timer-based V-Sync OFF scheduling with a MessageChannel uncapped render submission loop.
+- Added F3 Fly Mode, God Mode and Heal/Vitals development controls.
+- Added an explicit Back button to save management and fixed History/Help overlays remaining visible after entering gameplay or Settings.
+
+## v0.7.3 / EA-07.3 — Save controls, frame sync & gathering polish (2026-09-13)
+
+- Fixed per-slot delete/overwrite confirmation overlays so their buttons receive pointer input; added an explicit close button.
+- Added persistent V-Sync control. ON follows display-synchronized animation frames; OFF uncaps game-loop submissions within browser limits.
+- Increased material-specific harvesting particle density and variation for wood, stone, metal, fiber and berries.
+- Increased gatherable loose-wood and berry-bush spawns across procedural islands.
+- Documented the rendering-stability foundation already merged to main: depth-based AO, substantially lower vegetation draw/triangle load and corrected Render Scale canvas sizing.
+
+## v0.7.2 — Settings navigation & telemetry polish (2026-09-12)
+
+- Fixed Settings escape/back navigation and restyled utility buttons so browser-default white controls cannot leak into the UI.
+- Rebuilt F3 telemetry into modular Performance, Player, Camera and World panels.
+- Added telemetry size, opacity and per-module visibility settings.
+- Upgraded the compact FPS chip with frame time.
+- Intentionally leaves world graphics unchanged for the next dedicated graphics pass.
+
+## v0.7.1 / EA-07.1 — UI reliability & graphics controls
+
+- Fixed individual save-slot deletion and immediate save-browser refresh.
+- Rebuilt the pause menu into a larger, clearer in-game surface.
+- Fixed FPS/tutorial ON/OFF toggles and persistence.
+- Reverted unstable custom grass vertex fading and reduced default foliage density.
+- Added foliage density, shadow quality/distance and post-processing/SSAO/bloom controls.
+
+# Tideland changelog
+
+## 0.7.0 — 2026-09-11
+
+Classic menu, save-slot and interface settings overhaul.
+
+- Restored the original left-aligned Tideland menu style, modernized with clearer state/meta information instead of the large dashboard-like v0.3 panel.
+- Added five independent local save slots with seed, playtime, structure count and saved-time metadata.
+- Added load/new/manage save flows with per-slot overwrite and deletion confirmation.
+- Fixed deleted active saves being silently recreated by the 60-second autosave or main-menu transition.
+- Added HUD scale, HUD opacity, crosshair size, FPS counter and tutorial-hint controls.
+- Added world brightness/exposure control and kept all new interface preferences persistent per browser.
+
+## 0.6.0 — 2026-09-11
+
+Environment graphics overhaul.
+
+- Expanded grass/dirt/rock/sand terrain blending with wet shoreline sand and stronger close-range detail.
+- Added tree color variation, ferns, fallen twigs, dry meadow tufts and low-cost ground decals.
+- Improved procedural rock relief and shoreline detail with seaweed, driftwood and pebbles.
+- Reworked water with multi-scale wave normals, reflected sky tones, shallows and animated shoreline foam.
+- Improved distance fog, shadows, layered clouds, moonlight sky detail and night stars.
+- Added High/Ultra SSAO/contact shading, subtle bloom and color grading while keeping Low/Medium on the direct renderer path.
+
+## 0.5.0 — 2026-09-11
+
+Gathering and weak-spot overhaul.
+
+- Added world-space tree hit marks, a red X weak spot and 50% bonus yield for accurate follow-up hits.
+- Added stone/metal sparkle weak spots using the same skill-hit loop.
+- Moved wood/stone/metal particles to the real impact point and increased material-specific burst readability.
+- Increased visible tree/resource hit reaction, especially on weak-spot strikes.
+- Extended final tree falls with a ground-rest phase plus procedural creak and crash audio.
+- Added distinct harvesting sounds for rock, hatchet and pickaxe.
+- Rebalanced harvestables around explicit per-tool resource gain on each hit.
+
+## 0.4.0 — 2026-09-11
+
+Movement, camera feel and first-person animation overhaul.
+
+- Added tuned acceleration/deceleration, stronger reverse braking and restrained air control.
+- Reduced sprint FOV kick to a subtle `0.85°`, with smooth crouch transitions, landing bob and light walking sway.
+- Made mouse-look accumulation independent of render-frame batching while retaining burst protection.
+- Added jump cooldown, survival-FPS crouch/sprint restrictions and remappable auto-run (`Caps Lock` by default).
+- Added speed- and surface-aware footsteps for coast sand, grassland, forest, rocky terrain and timber structures.
+- Rebuilt the procedural first-person rig with persistent hands and more physical rock, hatchet, pickaxe and torch presentation.
+- Added item-specific swing arcs, equip/unequip transitions, mouse-driven tool sway, sprint pose, hit recoil and inspect (`X` by default).
+
+## 0.3.0 — 2026-09-11
+
+Game menu, settings and Czech localization update.
+
+- Rebuilt the main menu as a full-screen game surface over the live island with a dark translucent panel and prominent Play action.
+- Added `PLAY GAME → NEW GAME / CONTINUE / LOAD` and a safety confirmation before starting over an existing local world.
+- Split settings into Gameplay, Controls, Graphics and Audio pages.
+- Added functional keybind remapping and independent horizontal/vertical mouse sensitivity.
+- Added world/viewmodel FOV, head bob, camera shake and lightweight motion blur controls.
+- Added Low, Medium, High and Ultra graphics presets.
+- Added independent Master, Music, Effects and Ambient volume controls.
+- Added persistent EN/CZ language switching for the main menus, settings and common HUD labels/actions.
+
+## 0.2.4 — 2026-09-11
+
+Survival HUD overhaul.
+
+- Reworked health, water and food into compact survival-game status panels with warning/critical states.
+- Rebuilt the quick belt with a stronger selected slot, cleaner numbering and condition strips for tools.
+- Made interaction prompts action-first and added gathering hit feedback at the reticle.
+- Added damage/low-health screen feedback plus contextual Wet and Cold indicators.
+- Added a live gameplay crafting queue with progress and remaining time.
+- Resource gains now use icon-based pickup notifications instead of generic text-only messages.
+- Unified HUD typography, panel opacity, spacing and responsive layout while leaving developer telemetry behind F3.
+
+## 0.2.3 — 2026-09-11
+
+World startup and harvesting polish.
+
+- Split procedural island population into real loading phases with browser paint/yield points between expensive generation passes.
+- Expanded the loading screen to show Engine, Terrain, World, Physics, Systems and GPU Warm-up phases with live task details.
+- Uses async shader compilation when available, warms eight camera headings and waits for stable frame pacing before gameplay begins.
+- Reuses the already-prepared default menu island for a fresh game with the same seed instead of rebuilding it immediately.
+- Fixed depleted resource synchronization so destroyed resource visuals are actually removed.
+- Trees now fall away from the player on the final hit, remain on the ground briefly, then sink and disappear.
+
+## 0.2.2 — 2026-09-11
+
+Input stability and loading warm-up patch.
+
+- Added a real staged world-loading meter with named phases and percentages.
+- Pre-compiles shaders and renders warm-up frames before gameplay/menu is revealed.
+- Mouse-look events are coalesced once per display frame instead of changing the camera for every browser event.
+- Caps accumulated mouse bursts after stalls to prevent sudden camera jumps.
+- Normalizes pointer movement for high-DPI/Retina displays.
+- Sensitivity now ranges from `0.05×` to `2.50×` with a lower base rotation scale.
+- Resets FPS timing after warm-up so shader compilation no longer appears as sustained low startup FPS.
+
+## 0.2.1 — 2026-09-11
+
+Cross-device camera/settings patch.
+
+- Preserved the current world FOV behaviour that is working correctly on the Windows reference build.
+- Added held-item/viewmodel FOV, invert Y and optional head bob.
+- Added render scale, dynamic shadows, crosshair opacity and compass controls.
+- Added Reset Camera, Reset Settings and Reload Latest Build controls.
+- Added version/build identification to F3 telemetry for PC/Mac comparison.
+- Existing settings migrate to safe defaults for the new fields; world saves are untouched.
+
+## 0.2.0 — 2026-09-11
+
+Reconciliation update combining the useful local Codex work with the newer GitHub camera/movement and Pages fixes.
+
+- Restored direct vertical FOV control (`60°–100°`) so the setting has the strong, immediate effect expected from the original build.
+- Preserved the corrected yaw-based WASD movement fix.
+- Completed station placement collision checks against resources, player structures, survival stations and landmarks.
+- Stations clear grass under their footprint and the world has a 500-station safety limit.
+- Improved landmark placement/spacing and safer debug teleporting to POIs.
+- Smoother independent rain/fog/storm transitions and animated station fire.
+- Added workbench-specific recipes and cleaner first-person handling of station kits.
+- Added GitHub Pages auto-deployment, visible version/build information and an in-game History panel.
+- Expanded survival browser QA for station placement and persistence.
+
+## 0.1.0 — 2026-09-08
+
+Initial early-access survival foundation: procedural island, gathering, crafting, building, stations, weather, local saves, map/waypoints, first-person viewmodel, diagnostics and QA tooling.
+## v0.7.9 / EA-07.9 — Salvage Economy & Recycler (2026-09-14)
+
+- Added Scrap, Wiring, Gears, Machine Parts and rare Tech Parts with original Tideland icons and tiered exploration loot.
+- Added deterministic world Salvage Recyclers at the Coastal Utility Shack and Quarry Outpost.
+- Recycler jobs use protected component inputs, protected Scrap/Metal outputs, atomic capacity checks and persistent remaining time.
+- Existing v0.7.8 worlds receive three stable one-time salvage caches without changing previously generated loot.
+- Added bounded world-station accounting and retained furnace, campfire, Lost Pack, Hammer and save compatibility.
+- Scrap is reserved for the future v0.8.0 Tech Tree; no blueprint or research system is included yet.
+## v0.8.0 / EA-08.0 — Tech Tree & Workbench Progression (2026-09-14)
+
+- Added persistent Workbench research knowledge with atomic Scrap transactions, prerequisites and legacy v0.7.9 migration by highest existing Workbench.
+- Added the original Tideland Tech Tree UI with readable locked, available and unlocked states plus Workbench tier requirements.
+- Added recipe locks for improved tooling, Workbench II/III, Field Medicine, Advanced Fabrication and Workshop Lighting while preserving essential starter recipes.
+- Tech knowledge survives save/reload, death and Lost Pack recovery while physical Workbench proximity remains required for advanced crafting.

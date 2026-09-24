@@ -1,0 +1,31 @@
+import {readFileSync} from 'node:fs';
+const expectedVersion=JSON.parse(readFileSync(new URL('../package.json',import.meta.url))).version;
+import {chromium} from 'playwright-core';
+import fs from 'node:fs';
+const base=process.env.TIDELAND_QA_URL||'http://localhost:5173';
+const out=process.env.TIDELAND_QA_DIR||'test-results/tech-tree';fs.mkdirSync(out,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
+const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],results=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+page.setDefaultTimeout(180000);
+const pass=(label,value)=>{if(!value)throw Error(label);results.push(label);console.log('PASS',label)};
+const wait=async(fn,ms=120000)=>{const end=Date.now()+ms;while(Date.now()<end){if(await page.evaluate(fn))return;await page.waitForTimeout(500)}throw Error('browser state timeout')};
+const boot=async()=>{await page.goto(base);await wait(()=>!!window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden',timeout:120000})};
+const openWorkbench=async()=>{const station=await page.evaluate(()=>window.__TIDELAND.snapshot().progression.stations.find(s=>s.kind==='workbench1'));await page.evaluate(s=>window.__TIDELAND.stationOpen(s.id),station);await page.locator('.survival-panel:not(.world-map)').waitFor({state:'visible'});return station};
+try{
+  await boot();pass('current build is visible',(await page.locator('.menu-footer').innerText()).includes(`v${expectedVersion}`));
+  await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
+  pass('New game initializes empty tech state',await page.evaluate(()=>Array.isArray(window.__TIDELAND.snapshot().progression.tech.unlocked)&&window.__TIDELAND.snapshot().progression.tech.unlocked.length===0));
+  await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('wood',300);g.addItem('metal',60);a.command('spawn workbench1');});
+  const station=await openWorkbench();pass('Workbench UI exposes research entry point',await page.locator('[data-action="techTree"]').count()===1);await page.locator('[data-action="techTree"]').click();
+  pass('Tech Tree opens with locked Tier I cards',await page.locator('.tech-tree-overlay:not([hidden])').isVisible()&&await page.locator('.tech-node.locked,.tech-node.resources').count()>=3);await page.screenshot({path:`${out}/01-tier1-locked.png`});
+  pass('Zero Scrap blocks research',await page.locator('.tech-node.resources').count()>=1);
+  await page.evaluate(()=>window.__TIDELAND.sim().addItem('scrap',35));await page.locator('[data-tech-action="close"]').click();await page.locator('[data-action="techTree"]').click();await page.locator('[data-tech-id="efficiencyTooling"]').click();
+  pass('Efficiency Tooling research succeeds',await page.evaluate(()=>window.__TIDELAND.snapshot().progression.tech.unlocked.includes('efficiencyTooling')));pass('Research consumes exact Scrap',await page.evaluate(()=>window.__TIDELAND.sim().count('scrap')===0));await page.screenshot({path:`${out}/02-tier1-unlocked.png`});
+  await page.locator('[data-tech-id="efficiencyTooling"]').click();pass('Duplicate research remains idempotent',await page.evaluate(()=>window.__TIDELAND.sim().count('scrap')===0));await page.locator('[data-tech-action="close"]').click();
+  await page.locator('[data-action="close"]').click();await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('wood',40);g.addItem('metal',15);g.state.player.position={x:0,y:5,z:0};});await page.keyboard.press('Tab');await page.locator('[data-recipe="workshop_pickaxe"]').click();pass('Unlocked recipe is visible after research',await page.locator('.recipe-detail').innerText().then(t=>t.includes('CRAFT')));await page.keyboard.press('Tab');
+  await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('scrap',80);});await openWorkbench();await page.locator('[data-action="techTree"]').click();await page.locator('[data-tech-id="workbench2Research"]').click();pass('Workbench II research persists',await page.evaluate(()=>window.__TIDELAND.snapshot().progression.tech.unlocked.includes('workbench2Research')));await page.locator('[data-tech-action="close"]').click();
+  await page.evaluate(()=>{const a=window.__TIDELAND;a.save();});await page.reload();await wait(()=>!!window.__TIDELAND);await page.locator('[data-action="continue"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');pass('Tech knowledge survives save/reload',await page.evaluate(()=>window.__TIDELAND.snapshot().progression.tech.unlocked.includes('workbench2Research')));
+  await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim();g.addItem('scrap',20);a.damagePlayer(100,'qa');});await wait(()=>window.__TIDELAND.getScreen()==='dead');pass('Death leaves Scrap in Lost Pack',await page.evaluate(()=>window.__TIDELAND.snapshot().progression.stations.some(s=>s.kind==='deathbag'&&s.inventory.some(x=>x?.itemId==='scrap'))));await page.locator('[data-action="respawn"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');pass('Tech knowledge survives death',await page.evaluate(()=>window.__TIDELAND.snapshot().progression.tech.unlocked.includes('efficiencyTooling')));
+  await page.setViewportSize({width:1920,height:1080});await page.screenshot({path:`${out}/03-1920-research.png`});
+  pass('No application console errors',errors.length===0);fs.writeFileSync(`${out}/results.json`,JSON.stringify({passed:true,results,errors},null,2));
+}catch(error){console.error('FAIL',error.message);fs.writeFileSync(`${out}/results.json`,JSON.stringify({passed:false,results,errors,error:error.message},null,2));process.exitCode=1}finally{await browser.close()}
