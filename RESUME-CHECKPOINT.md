@@ -5,7 +5,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 ## Git
 
 - Repository: `/Users/romansvora/Documents/Tideland`; canonical origin `https://github.com/rsvora-bit/RUST---clon.git`.
-- Pracovní branch: `codex/world-quality-next`; poslední combat/wildlife checkpoint `a379428` (`Add persistent wildlife melee encounters`). Equipment slice je ověřen a ukládá se jako následující lokální checkpoint.
+- Pracovní branch: `codex/world-quality-next`; poslední commit `e794411` (`Add persistent craftable field clothing`). Ranged slice je ověřen a ukládá se jako další lokální checkpoint.
 - Při povinném `git fetch origin` se `origin/main` nečekaně posunul z `19cd35b2a52f6d7929afc1e0bf64b8db322766b4` na `7c5748eca1949379304316347cff0c1d9208a64e` (`Merge branch 'main' ...`). Mění mimo jiné world revision 3 zpět na 2 a upravuje foliage, atmosféru i QA. Větev je 15 commitů napřed a 2 pozadu; merge-base je `19cd35b`. Změnu jsem neslučoval, neresetoval ani nepřepisoval, protože jde o odlišný world layout s důsledky pro save compatibility. Před integrací či pushnutím je nutná samostatná kontrola tohoto upstream rozdílu.
 - Nepracoval jsem na lokální `main`; neproběhl push, PR, tag ani release.
 - Každá další validovaná gameplay vrstva se ukládá do samostatného lokálního checkpointu; QA artefakty zůstávají v ignorované `test-results/`.
@@ -15,8 +15,8 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 1. Dokončit world-art/performance QA — **COMPLETE** (native Metal GPU verified; podklady níže).
 2. Combat foundation — **COMPLETE** po `npm test`, buildu a typed-damage/death/Lost Pack browser průchodu.
 3. Melee — **COMPLETE for existing improvised tools** (rock/hatchet/pickaxe profiles, range/arc/occlusion, stamina cost, one damage per swing; actual aimed wildlife hit and harvest verified). New dedicated spear/blade tier remains NOT STARTED.
-4. Luk/projektily a střelné zbraně/náboje — NOT STARTED.
-5. Damage/death integration — **COMPLETE for typed player hits and wildlife melee**; projectile and human AI integration NOT STARTED.
+4. Luk/projektily a střelné zbraně/náboje — **IN PROGRESS** (luk, draw strength, balistický šíp, swept hit, wildlife damage, recoverable/persistent arrows runtime PASS; firearm/reload/ammunition tiers NOT STARTED).
+5. Damage/death integration — **IN PROGRESS** (typed player hits, wildlife melee/projectile and death flow wired; projectile lethal browser regression and human AI integration remain).
 6. Armor/equipment — **IN PROGRESS** (pět craftitelných kusů, čtyři persistentní sloty, damage-category mitigation, UI equip/save/load; durability a teplotní survival efekt zbývají).
 7. Durability/repair — NOT STARTED (trvanlivost staveb existuje, předmětů zatím neověřena).
 8. Wildlife — **COMPLETE for first hostile fauna slice** (seeded wolf/boar population, close-range AI LOD, melee interaction, persistent health/death, meat/hide rewards). Passive species/advanced behavior NOT STARTED.
@@ -61,11 +61,12 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Regression: `CHROME_BIN=... npm run test:death` PASS — death/dead save/respawn, movement po respawnu 0.52 m v nejvolnějším směru, Lost Pack recovery/map marker/save reload/building/doors; browser errors none.
 - Equipment: nové položky `shirt`, `pants`, `boots`, `warmJacket`, `protectiveHood`; recipes používají wildlife hide/fiber a pokročilé kusy Workbench 1. Volitelné `GameState.player.equipment` je pro starší saves zpětně kompatibilní, normalizuje se na prázdné sloty a validuje item/slot mapping. Nasazení vrací předchozí kus do téhož inventářového slotu. Typová ochrana je omezena a cold jacket browserově ověřená. Inventory footer dostal pointer-events opravu, protože dříve překrýval tlačítko WEAR.
 - `tests/equipment.test.ts`: tři cílené testy equip/swap, chybné položky/sloty, mitigace a legacy save reload.
-- Poslední plný `npm test`: **207/207 PASS**, 29 souborů. `npm run build`: PASS; existující upozornění na ~3.16 MB minified JS bundle. `test:combat` browser průchod včetně oblečení PASS; konzole/WebGL bez chyb.
-- Přesný další krok: první ranged loop (luk, projektil a recoverable šíp), následně item durability/repair; poté pokračovat remaining Goal systémy a regresní QA.
+- Ranged slice: nové `bow`/`arrow` definitions/icons/recipes; bow held mesh; hold/release draw strength; strength-scaled launch, gravity a swept segment-sphere actor detection s raycast terrain/building occlusion. Zásah ukládá actor HP/death+loot; každý dopad nechá recoverable world arrow. Přidán `src/combat/projectile.ts`, `tests/projectile.test.ts` (2), `scripts/ranged-qa.mjs`, `npm run test:ranged`; save bridge vrací skutečný success boolean. Save používá existující formát/`nodeChanges`, bez revision bumpu.
+- Poslední plný `npm test`: **209/209 PASS**, 30 souborů; `npm run build` PASS s existujícím ~3.17 MB bundle warningem. Chrome headless `test:ranged` PASS: výstřel odebere jeden šíp, balistický zásah poškodí wildlife, uloží poškození i sbíratelný šíp; browser console/WebGL errors none.
+- Přesný další krok: checkpoint ranged slice, implementovat persistentní tool/item durability a repair bench, poté pokračovat ostatními Goal systémy a regression QA.
 - Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge/push. `origin/main` má výše zaznamenanou neintegrovanou změnu, proto před budoucím publish nutné výslovně zkontrolovat divergenci.
 
-**INCOMPLETE.** World-art QA, melee/wildlife vertical slice a první persistentní equipment loop jsou ověřené. Ranged weapons, item durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
+**INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 

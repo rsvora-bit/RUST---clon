@@ -118,6 +118,7 @@ export class GameSimulation implements Damageable {
   }
 
   count(itemId: ItemId): number { return itemCount(this.state.inventory, itemId); }
+  removeItem(itemId:ItemId,count:number):boolean{return Number.isInteger(count)&&count>0&&deductCosts(this.state.inventory,{[itemId]:count});}
 
   moveItem(from: number, to: number, split = false): void {
     const preview = copyInventory(this.state.inventory);

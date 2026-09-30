@@ -103,6 +103,12 @@ export class HeldItem {
         this.flameOuter=this.mesh(new THREE.PlaneGeometry(.19,.29),flameMaterial(),.34,.525,-.65);this.flameOuter.renderOrder=102;
         this.flameInner=this.mesh(new THREE.PlaneGeometry(.11,.22),flameMaterial(),.345,.48,-.635);this.flameInner.renderOrder=103;
       }
+    }else if(item==='bow'){
+      const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
+      this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);
+      const string=this.mesh(new THREE.CylinderGeometry(.003,.003,.65,5),this.wrap,.05,.02,-.68);string.rotation.z=.12;
+      const grip=this.mesh(new THREE.CylinderGeometry(.027,.03,.13,8),this.wrap,.17,.02,-.68);grip.rotation.z=-.18;
+      this.addArm(-1,-.16,-.10,-.61,.21,true);
     }else if(item==='plan'){
       const paper=new THREE.MeshStandardMaterial({color:'#638b97',roughness:1,side:THREE.DoubleSide});const plane=this.mesh(new THREE.BoxGeometry(.37,.28,.009),paper,.05,-.055,-.66);plane.rotation.set(-.4,0,-.04);
       for(let i=0;i<4;i++){const line=this.mesh(new THREE.BoxGeometry(.29,.004,.003),new THREE.MeshBasicMaterial({color:'#c6d5ca'}),.05,-.11+i*.045,-.641);line.rotation.z=-.04;}

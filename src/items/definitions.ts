@@ -31,6 +31,8 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   boots: item('boots','Hide boots','Insulated boots for cold ground and rough terrain.','utility',1,['equipment']),
   warmJacket: item('warmJacket','Insulated jacket','A thick salvage-lined jacket that meaningfully slows cold exposure.','utility',1,['equipment','warmth']),
   protectiveHood: item('protectiveHood','Filter hood','A sealed field hood that offers limited protection from contaminated air.','utility',1,['equipment','hazard']),
+  bow: item('bow','Island hunting bow','A simple ash-and-fiber bow. Hold primary fire to draw, then release to loose an arrow.','tool',1,['weapon','ranged']),
+  arrow: item('arrow','Field arrow','A recoverable wood-shaft arrow with a forged salvage point.','resource',100,['ammunition','crafting']),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),
   hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),
