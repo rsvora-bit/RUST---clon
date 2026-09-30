@@ -1,3 +1,40 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-09-30
+
+Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je historický a popisuje starou větev v0.8.0.
+
+## Git
+
+- Repository: `/Users/romansvora/Documents/Tideland`; canonical origin `https://github.com/rsvora-bit/RUST---clon.git`.
+- Pracovní branch: `codex/world-quality-next`.
+- Aktuální HEAD: `3e7d613c07f86551f363cf3508355b6830177bf8` (`Improve moonlit world readability`).
+- `origin/main`: `19cd35b2a52f6d7929afc1e0bf64b8db322766b4`; main nebyl změněn. Neproběhl push, PR, tag ani merge.
+- Poslední ověření: čistý working tree, `git diff` prázdný.
+
+## Dokončeno v této větvi
+
+- World rendering a environment polish: terrain blending/ridges, forest density, pine readability, moonlit fill, water/shoreline, irregular distant mountain layers, relay skyline landmark a instanced tree culling/compaction.
+- Generation 5 vegetation je seed-stabilní; 68 000 instanced grass tufts, z toho 15 000 soustředěno v okolí spawnu (72×72 m). Další culling/quality tiers zůstávají aktivní. Nový test QA vyžaduje nejméně 68 000 instancí a pořizuje screenshot spawn understory.
+- POI cache mají odlišné loot tendence; save/reload zachovává staré stavy.
+- Opraveny pomalé headless-browser timingy v `scripts/polish-qa.mjs`; assertions pro gameplay a fyzické kolize zůstaly zachované.
+- Nedávné commity: `c377ff4` timing QA, `669e759` lokální grass cover, `3e7d613` noční ambient fill.
+
+## Validace posledního stavu
+
+- `npm test`: 189/189 prošlo (25 souborů).
+- `npm run build`: prošel; zůstává existující Vite upozornění na JS chunk větší než 500 kB.
+- `npm run test:browser`: 71 kontrol prošlo, žádné aplikační console errors; ověřeno také movement, gathering, inventory, crafting, stavba, save/load, 18 podlahových colliderů, dveře a LOW/MEDIUM/HIGH.
+- `npm run test:world-art` přes explicitní systémový Chrome: 31 kontrol prošlo, žádné console errors; kompatibilita archivovaných saveů v0.9.0 a v0.9.1 potvrzena. Plný běh proběhl při grass count 72k; aktuální 68k se liší jen celkovým limitem, 15k lokální skupina zůstala stejná. Aktuální screenshot z custom lokálního browser probe ověřil přesně 68k a novou noční intenzitu.
+- Performance probe na SwiftShaderu je výrazně variabilní: dvě baseline v0.9.0 měly 1.56 a 1.78 FPS. Při 72k aktuální běh ukázal 606 draw calls a 2.858M triangles oproti baseline 612 a 3.390M; FPS z těchto běhů nelze použít jako spolehlivý přímý závěr. Snížením na 68k se omezil nejistý dopad. Pro reálné GPU je třeba zopakovat nativní srovnání.
+- Screenshoty a JSON jsou v ignorované `test-results/`; necommitovat.
+
+## První kroky při pokračování
+
+1. Zkontrolovat `git status`, branch, HEAD, `git diff`; pracovní větev má zůstat `codex/world-quality-next`.
+2. Pokračovat world-art QA na přesně 68k/novém moonlight fill (pro `test:world-art` nastavit `CHROME_BIN=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); pak prověřit zbývající vizuální priority a případně gameplay progression.
+3. Průběžně zachovat malé logické commity. Nezvyšovat verzi, netagovat ani nemergovat, dokud celý zvolený rozsah není validovaný.
+
+**INCOMPLETE.** Tato práce není hotový release. Nezačínat znovu od začátku a nezaměňovat historický oddíl níže za současný stav.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
