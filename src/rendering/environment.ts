@@ -299,9 +299,9 @@ export class Environment {
       const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
       this.grassMaterials.push(mat);this.materials.add(mat);
     }
-    const total=this.terrain.generation===5?64000:16000;
+    const total=this.terrain.generation===5?68000:16000;
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
-      const near=count<(this.terrain.generation===5?9000:2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*85:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*85:(rand()-.5)*span;
+      const near=count<(this.terrain.generation===5?15000:2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*72:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*72:(rand()-.5)*span;
       const h=this.heightAt(x,z);if(h<2||h>48||this.terrain.slopeAt(x,z)>.55||!this.roadClear(x,z,3.1))continue;
       const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3);const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAt(x,z),h,this.terrain.slopeAt(x,z)):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
       const cx=Math.floor(x/40),cz=Math.floor(z/40),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){chunk={positions:[],x:cx*40+20,z:cz*40+20,type};chunks.set(key,chunk);}
