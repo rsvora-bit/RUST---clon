@@ -28,6 +28,9 @@ describe('seeded island wildlife',()=>{
     const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
     expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id)).toBe(false);
   });
+  it('keeps legacy generation wildlife layouts free of scavengers',()=>{
+    const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
+  });
   it('lets a scavenger attack nearby and keeps one shared humanoid model per species',()=>{
     const sites=[{x:180,y:3,z:40}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),actor=system.actors.find(a=>a.species==='islandScavenger')!;
     const attacks=vi.fn();actor.attackCooldown=0;tickWildlife(actor,1/60,{x:actor.position.x,y:actor.position.y,z:actor.position.z+1},()=>3,attacks);

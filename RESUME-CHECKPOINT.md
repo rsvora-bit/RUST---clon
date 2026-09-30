@@ -129,6 +129,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 ## Hostile scavenger checkpoint — 2026-10-01
 
 - Přidáni nejvýše dva deterministicí island scavengers u Generation-5 relay/quarry POI. Sdílejí stejnou combat/damage, melee a projectile cestu jako fauna; po porážce dávají scrap a wiring. Jejich health/death používá existující `nodeChanges`, bez save schema nebo world-generation identity změny.
+- Následná kontrola výslovně omezuje jejich spawn na Generation 5; test potvrzuje, že legacy Generation 4 wildlife layout scavengery nedostane.
 - Humanoid procedural low-poly model je jedna sloučená sdílená geometrie na druh; scéně jsou přidány pouze actor meshes. Fauna modely a jejich loot zůstaly stejné.
 - Rozšířeny `tests/wildlife-combat.test.ts`, přidán browser harness `scripts/scavenger-qa.mjs` a `npm run test:scavenger`.
 - Cílené Vitest: 7/7 PASS. Browser QA v instalovaném Chrome/Metal: deterministický spawn u industriální POI, útok na hráče, scrap+wiring loot, persistentní death po save/reload, bez browser/WebGL errors. Výstupy jsou ignored v `test-results/scavenger/`.
