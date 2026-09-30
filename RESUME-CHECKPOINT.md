@@ -14,7 +14,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 
 1. Dokončit world-art/performance QA — **COMPLETE** (native Metal GPU verified; podklady níže).
 2. Combat foundation — **COMPLETE** po `npm test`, buildu a reálném typed-damage/death/Lost Pack browser průchodu.
-3. Melee — NOT STARTED.
+3. Melee — IN PROGRESS (data-driven profiles and deterministic range/arc/occlusion/once-per-swing rules exist; not yet wired to live targets or browser gameplay).
 4. Luk/projektily a střelné zbraně/náboje — NOT STARTED.
 5. Damage/death integration — foundation COMPLETE; napojení zbraní a nepřátel NOT STARTED.
 6. Armor/equipment — NOT STARTED.
@@ -51,11 +51,11 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 
 - Přidán `src/combat/damage.ts`: `DamageType`, `DamagePacket`, `DamageResult`, `Damageable`, deterministické řešení zásahu a mitigace s 85% stropem, mapování legacy cause stringů. Absorbed hlásí mitigovanou část; overkill se nevydává za armor absorb.
 - `GameSimulation` implementuje `Damageable` a drží starý `damagePlayer(amount, cause)` kontrakt kompatibilní. `GameApp.applyPlayerDamage(packet)` zachovává god mode a napojuje lethal zásah na stávající smrt/Lost Pack lifecycle; starý API zůstává wrapperem. Typed bridge je dostupný přes lokální QA/debug API.
-- `tests/combat-damage.test.ts`: 5 testů kontraktů, mitigation, invalid/fatal zásahů a compatibility.
+- `tests/combat-damage.test.ts`: 5 testů kontraktů, mitigation, invalid/fatal zásahů a compatibility. `tests/melee-combat.test.ts`: 5 testů současných improvizovaných weapon profiles, range/forward arc/occlusion a single-hit swing claim.
 - `scripts/death-respawn-qa.mjs`: skutečný typed toxic lethal hit s ověřením cause/source, zachování dead save, Lost Pack/map marker/loot transfer, respawn kitu/statistik/collision-safe spawn, movement input, build/door a reload. Movement kontrola po respawnu bere v úvahu překážky kolem bedrollu: zkouší čtyři směry a požaduje ≥0,3 m; poslední běh naměřil 0.15/0.07/0.49/0.04 m, PASS při 0.49 m. Žádné browser console chyby.
 - Poslední úplný `npm test`: **194/194 PASS**, 26 souborů. `npm run build`: PASS (existující >500 kB bundle warning). Po drobné opravě semantics `absorbed` proběhlo cílených **5/5** combat testů a build znovu PASS.
 - Poslední runtime: `CHROME_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:death` PASS včetně typed damage/death/reload/respawn/Lost Pack/building. QA běžela přes nainstalovaný Chrome; Playwright bundled Chromium na tomto hostu chybí.
-- Přesný další krok: lokálně checkpointnout ověřenou foundation, poté začít melee vertical slice se starter rock/hatchet/spear-like weapon, deterministickou swing window/raycast ochranou proti zásahům přes stěny a jedním damageable target. Nejprve zmapovat inventory/use, resource gathering a UI feedback, pak testovat v browseru.
+- Přesný další krok: propojit `src/combat/melee.ts` se skutečným cílovým actor a `GameApp.use()`, nejprve s deterministicky umístěným wildlife threat. Teprve po runtime zásahu ověřit hit range/occlusion/cooldown a přidat feedback; potom rozšířit spear/tool item a save-safe animal death/loot.
 - Goal zůstává aktivní. Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge/push. `origin/main` má výše zaznamenanou neintegrovanou změnu, proto před budoucím publish nutné výslovně zkontrolovat divergenci.
 
 **INCOMPLETE.** World-art QA a combat foundation jsou dokončené; melee, ranged, armor, AI, POI progression, ownership, electricity a plná regression QA zbývají.
