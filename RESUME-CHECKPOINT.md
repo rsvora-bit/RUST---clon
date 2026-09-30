@@ -63,7 +63,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - `tests/equipment.test.ts`: tři cílené testy equip/swap, chybné položky/sloty, mitigace a legacy save reload.
 - Ranged slice: nové `bow`/`arrow` definitions/icons/recipes; bow held mesh; hold/release draw strength; strength-scaled launch, gravity a swept segment-sphere actor detection s raycast terrain/building occlusion. Zásah ukládá actor HP/death+loot; každý dopad nechá recoverable world arrow. Přidán `src/combat/projectile.ts`, `tests/projectile.test.ts` (2), `scripts/ranged-qa.mjs`, `npm run test:ranged`; save bridge vrací skutečný success boolean. Save používá existující formát/`nodeChanges`, bez revision bumpu.
 - Poslední plný `npm test`: **209/209 PASS**, 30 souborů; `npm run build` PASS s existujícím ~3.17 MB bundle warningem. Chrome headless `test:ranged` PASS: výstřel odebere jeden šíp, balistický zásah poškodí wildlife, uloží poškození i sbíratelný šíp; browser console/WebGL errors none.
-- Přesný další krok: checkpoint ranged slice, implementovat persistentní tool/item durability a repair bench, poté pokračovat ostatními Goal systémy a regression QA.
+- Ranged slice a následující durability/repair fáze byly následně dokončeny; viz jejich checkpointy níže.
 - Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge/push. `origin/main` má výše zaznamenanou neintegrovanou změnu, proto před budoucím publish nutné výslovně zkontrolovat divergenci.
 
 ## Durability/repair checkpoint — 2026-09-30
@@ -109,7 +109,20 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Screenshot browser QA je ignorovaný artefakt `test-results/door-lock/door-lock.png`.
 - Změněné soubory: `package.json`, `src/app/GameApp.ts`, `src/building/HammerMenu.ts`, `src/building/StructureRenderer.ts`, `src/core/types.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `tests/simulation.test.ts`, `tests/structure-renderer.test.ts`, nový `scripts/door-lock-qa.mjs`.
 - Aktuální commit zůstává `62a3d75`; zamykání dveří zatím není commitnuté. Pracovní větev `codex/world-quality-next`, žádný push/PR/release. `origin/main` divergence zůstává nevyřešena; před integrací ji nejdřív prozkoumat.
-- Další krok: commitnout ověřené zamykání dveří a pokračovat v cíli na další významnou vrstvu, nejdříve basic persistentní utility power loop (generator → switch → lamp) pouze pokud lze bezpečně napojit na stávající station/world/save architekturu; jinak navázat další hratelnou combat/progression vrstvou bez migrace, která by riskovala saves.
+- Zamykání dveří bylo po tomto checkpointu commitnuto jako `c3bc298`; tento systém je ověřený a dokončený.
+
+## Persistentní utility power checkpoint — 2026-10-01
+
+- Přidán lokální power loop `generator → field switch → caged lamp` přes existující persistentní seznam stanic. Bez změny save schema version, world generation nebo starých save dat.
+- Generátor přijímá dřevo ve fuel slotu, spotřebuje jeden kus za 120 herních sekund a ukládá časovač v existujícím `Station.job`. Spínač musí být do 11 m od běžícího/naplněného generátoru; lampa se napájí do 11 m od aktivního spínače. Síť se prostorově předfiltruje buckety; render a UI stav se obnovují omezenou frekvencí.
+- Research `advancedFabrication` odemyká generátor a spínač na Workbench II; `workshopLighting` odemyká lampu na Workbench III. Přidány originální procedural modely, SVG ikony a station UI pro fuel/toggle/status.
+- Unit testy ověřují spotřebu paliva, save validaci, range, stav spínače a úplný research/crafting řetězec. Browser QA `npm run test:power` v instalovaném Chrome s Metal ověřila skutečné vložení paliva přes UI, spuštění generátoru, časovanou spotřebu, aktivaci switch, napájení lampy, save/reload, odpojení po vypnutí switch a absenci browser/WebGL chyb.
+- QA nejdřív odhalila zastaralý power-status při otevření lampy krátce po přepnutí switch; opraveno vynuceným přepočtem při otevření station panelu.
+- Poslední úplné kontroly po opravě: `npm test` **222/222 PASS (33 souborů)**; `npm run build` PASS s existujícím Vite chunk-size warningem (~3.18 MB); `git diff --check` PASS.
+- Screenshot a výsledky jsou ignorované artefakty `test-results/power-network/`.
+- Soubory power změn: `package.json`, `public/assets/icons/{generator,lamp,powerSwitch}.svg`, `scripts/power-network-qa.mjs`, `src/app/GameApp.ts`, `src/core/types.ts`, `src/crafting/recipes.ts`, `src/crafting/techTree.ts`, `src/items/definitions.ts`, `src/rendering/HeldItem.ts`, `src/survival/StationRenderer.ts`, `src/survival/StationUI.ts`, `src/survival/stations.ts`, `tests/power-network.test.ts`, `tests/tech-tree.test.ts`.
+- Power část je nyní připravená k checkpoint commitu. Před commitem je HEAD `c3bc298`; pracovní branch `codex/world-quality-next`. Žádný push/PR/tag/release; divergence `origin/main` zůstává nevyřešena a musí se zkontrolovat zvlášť před integrací. Verze zůstává v0.9.1 / EA-09.1.
+- Další krok po power checkpointu: pokračovat další hratelnou progression vrstvou v aktivním cíli; prioritu zvolit podle aktuálního architektonického průzkumu a znovu ověřit saves/QA. Zatím nezačínat release.
 
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
