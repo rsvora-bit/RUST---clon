@@ -1,39 +1,60 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-09-30
 
-Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je historický a popisuje starou větev v0.8.0.
+Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je historie předchozího grafického úkolu. Cílem této relace je Goal **Tideland — Combat, Danger & Progression Expansion**. Goal je aktivní. V tomto rozhraní nelze vytvářet samostatné podúkoly pod Goal, proto se jejich stav vede níže a zde.
 
 ## Git
 
 - Repository: `/Users/romansvora/Documents/Tideland`; canonical origin `https://github.com/rsvora-bit/RUST---clon.git`.
-- Pracovní branch: `codex/world-quality-next`.
-- Aktuální HEAD: `3e7d613c07f86551f363cf3508355b6830177bf8` (`Improve moonlit world readability`).
-- `origin/main`: `19cd35b2a52f6d7929afc1e0bf64b8db322766b4`; main nebyl změněn. Neproběhl push, PR, tag ani merge.
-- Poslední ověření: čistý working tree, `git diff` prázdný.
+- Pracovní branch: `codex/world-quality-next`; před tímto checkpointem HEAD `de23d6b06f9d450005251262cb1a50bbcda292be`.
+- Při povinném `git fetch origin` se `origin/main` nečekaně posunul z `19cd35b2a52f6d7929afc1e0bf64b8db322766b4` na `7c5748eca1949379304316347cff0c1d9208a64e` (`Merge branch 'main' ...`). Mění mimo jiné world revision 3 zpět na 2 a upravuje foliage, atmosféru i QA. Větev je 15 commitů napřed a 2 pozadu; merge-base je `19cd35b`. Změnu jsem neslučoval, neresetoval ani nepřepisoval, protože jde o odlišný world layout s důsledky pro save compatibility. Před integrací či pushnutím je nutná samostatná kontrola tohoto upstream rozdílu.
+- Nepracoval jsem na lokální `main`; neproběhl push, PR, tag ani release.
+- Pracovní strom byl před touto aktualizací čistý; QA artefakty zůstávají v ignorované `test-results/`.
 
-## Dokončeno v této větvi
+## Goal a stav úkolů
 
-- World rendering a environment polish: terrain blending/ridges, forest density, pine readability, moonlit fill, water/shoreline, irregular distant mountain layers, relay skyline landmark a instanced tree culling/compaction.
-- Generation 5 vegetation je seed-stabilní; 68 000 instanced grass tufts, z toho 15 000 soustředěno v okolí spawnu (72×72 m). Další culling/quality tiers zůstávají aktivní. Nový test QA vyžaduje nejméně 68 000 instancí a pořizuje screenshot spawn understory.
-- POI cache mají odlišné loot tendence; save/reload zachovává staré stavy.
-- Opraveny pomalé headless-browser timingy v `scripts/polish-qa.mjs`; assertions pro gameplay a fyzické kolize zůstaly zachované.
-- Nedávné commity: `c377ff4` timing QA, `669e759` lokální grass cover, `3e7d613` noční ambient fill.
+1. Dokončit world-art/performance QA — **COMPLETE**.
+2. Combat foundation — **IN PROGRESS** (audit architektury; implementace začíná jako další krok).
+3. Melee — NOT STARTED.
+4. Luk/projektily a střelné zbraně/náboje — NOT STARTED.
+5. Damage/death integration — částečně existuje; nové typed combat napojení NOT STARTED.
+6. Armor/equipment — NOT STARTED.
+7. Durability/repair — NOT STARTED (trvanlivost staveb existuje, předmětů zatím neověřena).
+8. Wildlife — NOT STARTED.
+9. Hostile human AI — NOT STARTED.
+10. Loot tiers — částečně existují; rozšíření NOT STARTED.
+11. Přístup do high-tier POI — NOT STARTED.
+12. Base ownership/locks — NOT STARTED.
+13. Electricity — NOT STARTED.
+14. Balancing — NOT STARTED.
+15. Plná regression/runtime QA — NOT STARTED.
+16. Dokumentace/checkpoint/release decision — IN PROGRESS; nevydávat release, dokud neprojdou mandatory runtime kontroly.
 
-## Validace posledního stavu
+## Fáze 0 — dokončené ověření světa
 
-- `npm test`: 189/189 prošlo (25 souborů).
-- `npm run build`: prošel; zůstává existující Vite upozornění na JS chunk větší než 500 kB.
-- `npm run test:browser`: 71 kontrol prošlo, žádné aplikační console errors; ověřeno také movement, gathering, inventory, crafting, stavba, save/load, 18 podlahových colliderů, dveře a LOW/MEDIUM/HIGH.
-- `npm run test:world-art` přes explicitní systémový Chrome: 31 kontrol prošlo, žádné console errors; kompatibilita archivovaných saveů v0.9.0 a v0.9.1 potvrzena. Plný běh proběhl při grass count 72k; aktuální 68k se liší jen celkovým limitem, 15k lokální skupina zůstala stejná. Aktuální screenshot z custom lokálního browser probe ověřil přesně 68k a novou noční intenzitu.
-- Performance probe na SwiftShaderu je výrazně variabilní: dvě baseline v0.9.0 měly 1.56 a 1.78 FPS. Při 72k aktuální běh ukázal 606 draw calls a 2.858M triangles oproti baseline 612 a 3.390M; FPS z těchto běhů nelze použít jako spolehlivý přímý závěr. Snížením na 68k se omezil nejistý dopad. Pro reálné GPU je třeba zopakovat nativní srovnání.
-- Screenshoty a JSON jsou v ignorované `test-results/`; necommitovat.
+- `CHROME_BIN=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome npm run test:world-art`: **31/31 PASS**, `errors=[]`. Ověřeno generování Gen5 revision 3, přesně 68 000 instancí trávy, tree culling, climate-aware palms, road clearance, denní/večerní/noční/storm snímky, rychlý sweep kamery a save/reload stability.
+- Skutečný archivovaný save v0.9.0 (revize 1) zachoval world layout, ID/pozice resource nodes, hráče, inventář, stavby, stanice, Tech Tree i rozestavěné/upravené world state. Archivovaný v0.9.1 (revize 2) stejně zachoval svůj layout a data. QA nenašlo nové browser console, WebGL ani aplikační chyby.
+- Výstupní screenshoty jsou v `test-results/world-art/` (ignorované): `road-new`, `spawn-understory`, `palm-warm-coast`, pět biome view a day/evening/night/storm horizon. Ruční kontrola: cesta je čitelná a svět se načítá; zůstávají známé art nedostatky — travní pokryv je místy uniformní/ostrý, vzdálené hory působí hladce geometricky a některé blízké jehličnany jsou tmavé. Nejde o novou regresi této QA fáze.
+- Dvě měření v Chrome s `--use-angle=metal`; GPU renderer byl samostatně ověřen jako `ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)`. Seed `731942`, HIGH, 1280×720:
 
-## První kroky při pokračování
+  | Měření | v0.9.0 archiv | současná větev |
+  | --- | ---: | ---: |
+  | FPS / čas snímku | 59.996 / 16.668 ms | 60.002 / 16.666 ms |
+  | Draw calls | 612 | 606 |
+  | Trojúhelníky | 3 390 261 | 2 855 982 |
+  | World nodes | 1 318 | 1 598 |
+  | Startup | 7 716 ms | 6 937 ms, opakované teplé spuštění 2 762 ms |
 
-1. Zkontrolovat `git status`, branch, HEAD, `git diff`; pracovní větev má zůstat `codex/world-quality-next`.
-2. Pokračovat world-art QA na přesně 68k/novém moonlight fill (pro `test:world-art` nastavit `CHROME_BIN=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); pak prověřit zbývající vizuální priority a případně gameplay progression.
-3. Průběžně zachovat malé logické commity. Nezvyšovat verzi, netagovat ani nemergovat, dokud celý zvolený rozsah není validovaný.
+- FPS bylo synchronizované přibližně na 60 Hz; nejde o maximální propustnost GPU. Významnější stabilní signály jsou stejné FPS bez viditelné regrese, o 6 méně draw calls a přibližně o 15,8 % méně trojúhelníků; nárůst world nodes odpovídá hustší vegetaci. Startup závisí na studeném/teplém cache a nelze z těchto dvou běhů dělat přímé tvrzení o zrychlení.
+- Poslední doložený `npm test`: **189/189 PASS**, 25 souborů. `npm run build`: PASS s existujícím upozorněním Vite na JS chunk >500 kB. Kód se od těchto běhů nezměnil; tests/build zopakovat po prvním combat checkpointu.
 
-**INCOMPLETE.** Tato práce není hotový release. Nezačínat znovu od začátku a nezaměňovat historický oddíl níže za současný stav.
+## Combat audit a další přesný krok
+
+- Existuje `GameSimulation.damagePlayer(amount, cause)`, `GameApp.damagePlayer()` s god-mode/death lifecycle, Lost Pack, respawn, save persistence a `PlayerStats.health`. Není důvod přepisovat smrt hráče.
+- Následující krok: přidat malé typed combat kontrakty (`DamageType`, `DamagePacket`, výsledek, rozhraní damageable a čisté výpočty mitigace), zachovat staré volání `damagePlayer(number, cause)` jako kompatibilní wrapper, napojit hráče na stávající death handler a pokrýt testy. Poté ověřit skutečný browser damage/death/Lost Pack flow a vytvořit logický lokální commit.
+- Zatím nebyl změněn žádný herní kód v rámci nového combat Goal. Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge.
+- Po dokončení combat foundation pokračovat bez čekání další zprávy: melee a cílový damageable actor, pak ranged/equipment/hazards/AI/loot/access/base/electricity v pořadí podle bezpečných integračních závislostí. Goal není COMPLETE.
+
+**INCOMPLETE.** Světová QA je dokončena; celý Combat, Danger & Progression Goal zůstává otevřený.
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
