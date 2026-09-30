@@ -161,6 +161,16 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Branch `codex/world-quality-next`. Před tímto checkpointem HEAD `e81e0ef Record final world performance QA`; změny jsou stále lokální a necommitnuté. Neprovádět push/PR/release/tag; origin divergence nebyla řešena. Verze zůstává `0.9.1 / EA-09.1`.
 - Přiložený běhový screenshot: ignored `test-results/firearm/firearm-equipped.png`; výsledky: `test-results/firearm/results.json`.
 
+## Access-card POI progression checkpoint — 2026-10-01
+
+- Nové Gen5 světy nyní dostávají dvě deterministické high-tier sealed salvage cases u relay/quarry POI. Otevření vyžaduje `relayAccessCard`, kterou garantovaně dává poražený scavenger. Case obsahuje lucky salvage loot; unlock i inventory jsou součástí běžného station save datového modelu.
+- Přidán `secureCache` station kind, vizuálně odlišený kovový case, interakční stav LOCKED/UNLOCK a nová ikona/karta. `locked` je volitelné persistentní pole validované pouze pro secure cache, takže staré save objekty/cache zůstávají kompatibilní.
+- Změna se aplikuje pouze při první loot bootstrap fázi nového Generation 5 světa. Generation 1–4 ani existující Gen5 save s `lootGenerated` nezmění POI, inventář ani world layout.
+- Browser `test:scavenger` PASS: porážka, scrap/wiring/access card reward, sealed-case lock prompt, spotřebování karty, otevření obsazené cache a unlocked state po save/reload; 0 browser/WebGL errors. `test:firearm` znovu PASS v nativním Chrome/Metal včetně magazine save/reload.
+- Unit test `npm test`: **230/230 PASS, 34 souborů**. `npm run build` PASS; stávající ~3.19 MB JS chunk warning zůstává. Cílený station/wildlife test 53/53 PASS; `git diff --check` PASS.
+- Změněné soubory: `src/core/types.ts`, `src/items/definitions.ts`, `src/survival/stations.ts`, `src/survival/WorldSurvival.ts`, `src/survival/StationRenderer.ts`, `src/app/GameApp.ts`, `tests/salvage-recycler.test.ts`, `scripts/scavenger-qa.mjs`, `public/assets/icons/relayAccessCard.svg` a tento checkpoint.
+- Pracovní větev `codex/world-quality-next`; žádný push, PR, tag, release ani version bump. Následující krok: checkpoint commit, pak pokračovat další nedokončenou progresní/world oblastí.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.

@@ -25,6 +25,7 @@ describe('v0.7.9 salvage item definitions and persistence',()=>{
   it('enforces Scrap and component stack sizes',()=>{expect(ITEMS.scrap.maxStack).toBe(1000);expect(ITEMS.gears.maxStack).toBe(100);expect(ITEMS.wiring.maxStack).toBe(100);expect(ITEMS.machineParts.maxStack).toBe(100);expect(ITEMS.techParts.maxStack).toBe(50);});
   it('keeps salvage out of crafting recipes',()=>{const results=Object.values(RECIPES).map(r=>r.resultItemId);expect(results).not.toContain('scrap');for(const id of SALVAGE_COMPONENTS)expect(results).not.toContain(id);expect(results).not.toContain('recycler');});
   it('round-trips salvage inventory and world drops',()=>{vi.stubGlobal('localStorage',new MemoryStorage());const sim=game();sim.state.inventory[4]={itemId:'scrap',count:777};sim.state.drops.push({id:'drop-70',stack:{itemId:'techParts',count:2},position:pos});sim.state.nextId=71;expect(saveGame(sim.state,1)).toBe(true);const loaded=loadGame(1)!;expect(loaded.inventory[4]).toEqual({itemId:'scrap',count:777});expect(loaded.drops[0].stack).toEqual({itemId:'techParts',count:2});});
+  it('persists secure-cache locks while keeping existing cache station saves valid',()=>{const old=createStation('loot-old','loot',pos),secure=createStation('secure-cache-poi-1','secureCache',pos);secure.locked=true;expect(validateStations([old,secure])).toBe(true);secure.locked=false;expect(validateStations([old,secure])).toBe(true);(old as any).locked=true;expect(validateStations([old])).toBe(false);});
 });
 
 describe('Recycler slot rules and recipes',()=>{

@@ -8,13 +8,13 @@ import {maxDurability} from '../combat/durability';
 export const MAX_PLAYER_STATIONS=500;
 export const MAX_WORLD_STATIONS=64;
 const MAX_PERSISTED_STATIONS=MAX_PLAYER_STATIONS+MAX_WORLD_STATIONS+DEATH.MAX_LOST_PACKS;
-export const STATION_KINDS=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','loot','deathbag','recycler','generator','powerSwitch','lamp'] as const;
+export const STATION_KINDS=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','loot','secureCache','deathbag','recycler','generator','powerSwitch','lamp'] as const;
 export type StationKind=typeof STATION_KINDS[number];
-export interface Station {id:string;kind:StationKind;position:Vec3;rotation:number;inventory:(ItemStack|null)[];active:boolean;job:{recipe:string;remaining:number}|null;createdAt?:number}
+export interface Station {id:string;kind:StationKind;position:Vec3;rotation:number;inventory:(ItemStack|null)[];active:boolean;job:{recipe:string;remaining:number}|null;createdAt?:number;locked?:boolean}
 export const STATIONS:Record<StationKind,{name:string;slots:number;size:[number,number,number]}>= {
   storage:{name:'Timber storage',slots:18,size:[1.3,.75,.85]},furnace:{name:'Field processor',slots:5,size:[1.1,1.5,1.1]},
   workbench1:{name:'Workbench level 1',slots:0,size:[1.8,1,.8]},workbench2:{name:'Workbench level 2',slots:0,size:[1.8,1,.8]},workbench3:{name:'Workbench level 3',slots:0,size:[1.8,1,.8]},
-  campfire:{name:'Campfire',slots:1,size:[1,.3,1]},bedroll:{name:'Sleeping roll',slots:0,size:[.85,.2,1.9]},loot:{name:'Salvage cache',slots:12,size:[1,.8,.8]},
+  campfire:{name:'Campfire',slots:1,size:[1,.3,1]},bedroll:{name:'Sleeping roll',slots:0,size:[.85,.2,1.9]},loot:{name:'Salvage cache',slots:12,size:[1,.8,.8]},secureCache:{name:'Sealed salvage case',slots:12,size:[1.15,.86,.9]},
   deathbag:{name:'Lost Pack',slots:30,size:[1.15,.58,.82]},recycler:{name:'SALVAGE RECYCLER',slots:6,size:[2.05,1.45,1.35]},
   generator:{name:'FIELD GENERATOR',slots:1,size:[.9,.82,.62]},powerSwitch:{name:'FIELD SWITCH',slots:0,size:[.35,.75,.25]},lamp:{name:'CAGED UTILITY LAMP',slots:0,size:[.28,1.8,.28]},
 };
@@ -91,9 +91,9 @@ export function tickStation(s:Station,dt:number){
 }
 
 export function nearbyWorkbench(stations:Station[],p:Vec3){let level=0;for(const s of stations)if(s.kind.startsWith('workbench')&&Math.hypot(p.x-s.position.x,p.y-s.position.y,p.z-s.position.z)<=5)level=Math.max(level,Number(s.kind.slice(-1)));return level;}
-export const isDisposableContainer=(s:Station)=>s.kind==='loot'||s.kind==='deathbag';
-export const isWorldStation=(s:Station)=>s.kind==='loot'||s.kind==='recycler';
-export const isPlayerPlaceableStationKind=(kind:StationKind)=>kind!=='loot'&&kind!=='deathbag'&&kind!=='recycler';
+export const isDisposableContainer=(s:Station)=>s.kind==='loot'||s.kind==='secureCache'||s.kind==='deathbag';
+export const isWorldStation=(s:Station)=>s.kind==='loot'||s.kind==='secureCache'||s.kind==='recycler';
+export const isPlayerPlaceableStationKind=(kind:StationKind)=>kind!=='loot'&&kind!=='secureCache'&&kind!=='deathbag'&&kind!=='recycler';
 export const isPlaceableStationKind=isPlayerPlaceableStationKind;
 export const countPlayerStations=(stations:Station[])=>stations.filter(s=>isPlayerPlaceableStationKind(s.kind)).length;
 
@@ -112,7 +112,7 @@ export function validateStations(value:unknown):value is Station[]{
   if(countPlayerStations(stations)>MAX_PLAYER_STATIONS||stations.filter(isWorldStation).length>MAX_WORLD_STATIONS||stations.filter(s=>s.kind==='deathbag').length>DEATH.MAX_LOST_PACKS)return false;
   const ids=new Set();return stations.every(s=>{
     if(!s||typeof s.id!=='string'||s.id.length>100||ids.has(s.id)||!STATION_KINDS.includes(s.kind)||!s.position||![s.position.x,s.position.y,s.position.z,s.rotation].every(Number.isFinite)||!Array.isArray(s.inventory)||s.inventory.length!==STATIONS[s.kind].slots||typeof s.active!=='boolean'||s.createdAt!==undefined&&(!Number.isFinite(s.createdAt)||s.createdAt<0))return false;
-    ids.add(s.id);if(s.kind==='deathbag'&&(s.active||s.job!==null||s.createdAt===undefined))return false;
+    ids.add(s.id);if(s.locked!==undefined&&(s.kind!=='secureCache'||typeof s.locked!=='boolean'))return false;if(s.kind==='deathbag'&&(s.active||s.job!==null||s.createdAt===undefined))return false;
     if(!s.inventory.every(x=>x===null||(x&&isItemId(x.itemId)&&Number.isSafeInteger(x.count)&&x.count>0&&x.count<=ITEMS[x.itemId].maxStack&&(x.condition===undefined||(maxDurability(x.itemId)>0&&Number.isFinite(x.condition)&&x.condition>=1&&x.condition<=maxDurability(x.itemId))))))return false;
     if(s.kind==='furnace'&&!s.inventory.every((x,i)=>!x||(i<2?x.itemId==='ore':i===2?x.itemId==='wood':x.itemId==='metal')))return false;
     if(s.kind==='campfire'&&s.inventory[0]&&s.inventory[0].itemId!=='wood')return false;
