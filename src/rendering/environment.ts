@@ -74,7 +74,7 @@ export class Environment {
     const terrainMat=terrainMaterial(),ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(),color:0xb6b4a4,roughness:.97});
-    this.leaves=this.foliageMaterial(leavesTexture(),0xffffff);this.pine=this.foliageMaterial(pineTexture(),0xffffff);this.palm=this.foliageMaterial(palmTexture(),0xffffff);
+    this.leaves=this.foliageMaterial(leavesTexture(),0xffffff);this.pine=this.foliageMaterial(pineTexture(),0xffffff,.085);this.palm=this.foliageMaterial(palmTexture(),0xffffff);
     this.stone=stoneMaterial(0xd5d0bf);this.metal=stoneMaterial(0x8b7567);this.sulfur=stoneMaterial(0xb7a74a);this.hqmetal=stoneMaterial(0x65757d);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
     [this.bark,this.leaves,this.pine,this.palm,this.stone,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
@@ -98,12 +98,12 @@ export class Environment {
   }
   heightAt(x:number,z:number):number{return this.terrain.heightAt(x,z);}
   biomeAt(x:number,z:number):string{return this.terrain.biomeAt(x,z);}
-  private foliageMaterial(tex:THREE.Texture,color:number):THREE.MeshLambertMaterial {
+  private foliageMaterial(tex:THREE.Texture,color:number,emissiveIntensity=.055):THREE.MeshLambertMaterial {
     // Opaque alpha cutouts write depth in the same way in color and shadow passes.
     // No vertex deformation: the old wind shader only moved the color geometry.
     return new THREE.MeshLambertMaterial({map:tex,color,alphaTest:.38,
       transparent:false,depthWrite:true,side:THREE.DoubleSide,
-      emissive:0xffffff,emissiveMap:tex,emissiveIntensity:.055});
+      emissive:0xffffff,emissiveMap:tex,emissiveIntensity});
   }
 
   private own<T extends THREE.BufferGeometry>(g:T):T {this.geometries.add(g);return g;}
