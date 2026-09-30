@@ -22,6 +22,19 @@ describe('seeded island wildlife',()=>{
     expect(reloaded).toHaveLength(9);expect(reloaded.map(a=>a.id)).not.toContain(first[0]!.id);
     expect(reloaded.map(a=>a.id)).toContain(first[1]!.id);expect(reloaded.find(a=>a.id===first[1]!.id)?.health).toBe(37);
   });
+  it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');
+    expect(scavengers).toHaveLength(2);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
+    const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
+    expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id)).toBe(false);
+  });
+  it('lets a scavenger attack nearby and keeps one shared humanoid model per species',()=>{
+    const sites=[{x:180,y:3,z:40}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),actor=system.actors.find(a=>a.species==='islandScavenger')!;
+    const attacks=vi.fn();actor.attackCooldown=0;tickWildlife(actor,1/60,{x:actor.position.x,y:actor.position.y,z:actor.position.z+1},()=>3,attacks);
+    expect(attacks).toHaveBeenCalledOnce();expect(attacks).toHaveBeenCalledWith(12,actor.id);
+    const sameSpecies=system.actors.filter(a=>a.species==='islandScavenger');expect(sameSpecies).toHaveLength(1);expect(system.object(actor.id)).toBeInstanceOf(THREE.Mesh);
+    system.dispose();
+  });
   it('keeps boars calm until hit, then lets nearby wolves and boars attack on a cooldown',()=>{
     const boar=createWildlifePopulation({...context,biomeAt:()=>'GRASSLAND'})[0]!,wolf=createWildlifePopulation(context)[0]!;
     expect(boar.species).toBe('coastalBoar');expect(wolf.species).toBe('islandWolf');

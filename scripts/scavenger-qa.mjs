@@ -1,0 +1,22 @@
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const outputDir=process.env.TIDELAND_QA_DIR||'test-results/scavenger';fs.mkdirSync(outputDir,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
+const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+const pass=(label,value)=>{assert.ok(value,label);console.log('PASS',label);};
+try{
+  await page.goto(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5174',{waitUntil:'commit',timeout:30000});await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:300000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:300000});
+  await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:300000});await page.mouse.click(640,360);
+  const target=await page.evaluate(()=>{const a=window.__TIDELAND,actor=a.wildlife().find(x=>x.species==='islandScavenger');if(!actor)throw Error('No seeded industrial scavenger spawned');const g=a.sim(),x=actor.position.x-1.25,z=actor.position.z;g.state.inventory[0]={itemId:'hatchet',count:1,condition:100};g.selectSlot(0);a.teleport({x,y:a.height(x,z)+.06,z});a.lookAt({x:actor.position.x,y:actor.position.y+.95,z:actor.position.z});return {id:actor.id,health:actor.health};});
+  pass('A deterministic human scavenger spawns at an industrial POI',Boolean(target.id));
+  const pressure=await page.evaluate(id=>{const a=window.__TIDELAND;a.provokeWildlife(id);a.setCapturePaused(false);return a.snapshot().player.stats.health;},target.id);await page.waitForFunction(h=>window.__TIDELAND.snapshot().player.stats.health<h,pressure,{timeout:15000});
+  await page.evaluate(()=>window.__TIDELAND.setCapturePaused(true));pass('Scavenger attacks through the existing damage system',await page.evaluate(h=>window.__TIDELAND.snapshot().player.stats.health<h,pressure));
+  for(let hit=0;hit<12;hit++){const state=await page.evaluate(id=>{const a=window.__TIDELAND;return {health:a.wildlife().find(x=>x.id===id)?.health,state:a.wildlife().find(x=>x.id===id)?.state};},target.id);if(state.state==='dead')break;await page.evaluate(id=>window.__TIDELAND.strikeWildlife(id),target.id);await page.waitForTimeout(550);}
+  const loot=await page.evaluate(id=>{const a=window.__TIDELAND,g=a.sim(),actor=a.wildlife().find(x=>x.id===id),s=g.state;return {dead:actor?.state==='dead',saved:s.nodeChanges[id],items:s.inventory.filter(Boolean).map(x=>x.itemId),drops:s.drops.map(x=>x.stack.itemId),notice:document.querySelector('.notifications')?.textContent??''};},target.id);
+  pass('Defeated scavenger rewards scrap and wiring and records death',loot.dead&&loot.saved===0&&(loot.items.includes('scrap')||loot.drops.includes('scrap'))&&(loot.items.includes('wiring')||loot.drops.includes('wiring')));
+  await page.reload();await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:300000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:300000});await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:300000});
+  pass('Defeated scavenger remains absent after save and reload',await page.evaluate(id=>!window.__TIDELAND.wildlife().some(x=>x.id===id),target.id));pass('No browser application or WebGL errors',errors.length===0);
+  fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({passed:true,target,loot,errors},null,2));await page.screenshot({path:`${outputDir}/scavenger.png`});
+}finally{await browser.close();}

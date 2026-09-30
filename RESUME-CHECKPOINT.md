@@ -126,6 +126,17 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
+## Hostile scavenger checkpoint — 2026-10-01
+
+- Přidáni nejvýše dva deterministicí island scavengers u Generation-5 relay/quarry POI. Sdílejí stejnou combat/damage, melee a projectile cestu jako fauna; po porážce dávají scrap a wiring. Jejich health/death používá existující `nodeChanges`, bez save schema nebo world-generation identity změny.
+- Humanoid procedural low-poly model je jedna sloučená sdílená geometrie na druh; scéně jsou přidány pouze actor meshes. Fauna modely a jejich loot zůstaly stejné.
+- Rozšířeny `tests/wildlife-combat.test.ts`, přidán browser harness `scripts/scavenger-qa.mjs` a `npm run test:scavenger`.
+- Cílené Vitest: 7/7 PASS. Browser QA v instalovaném Chrome/Metal: deterministický spawn u industriální POI, útok na hráče, scrap+wiring loot, persistentní death po save/reload, bez browser/WebGL errors. Výstupy jsou ignored v `test-results/scavenger/`.
+- Úplné `npm test`: **224/224 PASS (33 souborů)**. `npm run build`: PASS; zůstává stávající Vite upozornění na bundle přibližně 3.18 MB. Ještě čeká finální commit této sekce.
+- Změněné soubory: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/scavenger-qa.mjs`, `package.json`, tento checkpoint dokument.
+- Větev `codex/world-quality-next`; žádný push/PR/tag/release, verze stále `0.9.1 / EA-09.1`. Předchozí commit `f9c42af`. Zkontrolovat stav a vytvořit lokální checkpoint commit; nepokračovat na main ani neřešit upstream divergence bez inspekce.
+- Další pracovní oblast vybrat po commitu z rozsáhlého cíle Combat, Danger & Progression Expansion; ověřit existující implementace před rozšířením, nepřidávat duplicity existujících loot profilů.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
