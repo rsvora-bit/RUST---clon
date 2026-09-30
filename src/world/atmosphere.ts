@@ -10,6 +10,7 @@ export class Atmosphere {
   readonly fog=new THREE.FogExp2(0xb1c6cf,.00145);
   readonly horizon=new THREE.Group();private horizonGeometries:THREE.BufferGeometry[]=[];private horizonMaterials:THREE.Material[]=[];
   readonly sunDirection=new THREE.Vector3(-.5,.72,.4).normalize();
+  private readonly illuminationDirection=new THREE.Vector3();
   private elapsed=0;private daylight=1;
   private readonly stormTint=new THREE.Color(.29,.27,.38);private readonly mountainTint=new THREE.Color();
   get daylightAmount(){return this.daylight;}
@@ -45,9 +46,9 @@ export class Atmosphere {
 
   update(dt:number,time:number,camera:THREE.Vector3):void{
     this.elapsed+=dt;const a=(time-6)/24*Math.PI*2;this.sunDirection.set(-Math.cos(a)*.75,Math.sin(a),.42).normalize();this.daylight=THREE.MathUtils.smoothstep(this.sunDirection.y,-.16,.26);
-    this.sun.intensity=.14+this.daylight*2.64;this.sun.color.setRGB(.52+this.daylight*.48,.62+this.daylight*.31,.88+this.daylight*.19);this.fill.intensity=1.05+this.daylight*1.05;this.fill.color.setRGB(.48+this.daylight*.22,.56+this.daylight*.20,.78+this.daylight*.16);this.fill.groundColor.setRGB(.26+this.daylight*.17,.28+this.daylight*.18,.34+this.daylight*.10);
+    this.sun.intensity=.28+this.daylight*2.50;this.sun.color.setRGB(.52+this.daylight*.48,.62+this.daylight*.31,.88+this.daylight*.19);this.fill.intensity=1.65+this.daylight*.55;this.fill.color.setRGB(.55+this.daylight*.15,.62+this.daylight*.14,.80+this.daylight*.12);this.fill.groundColor.setRGB(.40+this.daylight*.07,.42+this.daylight*.08,.48+this.daylight*.04);
     const storm=this.sky.material.uniforms.weather.value as number;this.fog.color.setRGB(.05+.48*this.daylight,.078+.55*this.daylight,.14+.61*this.daylight).lerp(this.stormTint,storm*.45);this.fog.density=.00105+(1-this.daylight)*.00162+storm*.00048;
-    const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDirection,105);this.sky.position.copy(camera);this.horizon.position.set(camera.x,camera.y-28,camera.z);
+    const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.illuminationDirection.copy(this.sunDirection).multiplyScalar(this.daylight).addScaledVector(this.sunDirection,-(1-this.daylight)).normalize();this.sun.position.copy(this.sun.target.position).addScaledVector(this.illuminationDirection,105);this.sky.position.copy(camera);this.horizon.position.set(camera.x,camera.y-28,camera.z);
     this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.horizonMaterials.forEach((m,i)=>{const layer=2-i,basic=m as THREE.MeshBasicMaterial;basic.color.setRGB(.055+this.daylight*(.22+layer*.065),.075+this.daylight*(.30+layer*.06),.12+this.daylight*(.35+layer*.055));this.mountainTint.setRGB(.13+this.daylight*.18,.12+this.daylight*.16,.18+this.daylight*.19);basic.color.lerp(this.mountainTint,storm*.58);const sunset=(1-this.daylight)*Math.max(0,this.sunDirection.y+.16);basic.color.r+=sunset*.2;});
   }
 
