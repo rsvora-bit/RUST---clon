@@ -99,6 +99,18 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Current uncommitted files before checkpoint: `package.json`, `src/app/GameApp.ts`, `src/combat/equipment.ts`, `src/survival/WorldSurvival.ts`, `tests/equipment.test.ts`, new `scripts/hazard-qa.mjs`, `src/survival/hazards.ts`, `tests/hazards.test.ts`.
 - Latest committed HEAD is `404ddb5`; hazard commit remains to be created. Continue without push/release; upstream divergence remains unresolved.
 
+## Door locks checkpoint — 2026-10-01
+
+- Přidáno persistentní zamykání pouze pro zavřené dveře přes stávající field hammer menu. Zamčené dveře nelze otevřít běžnou interakcí; nabídka umožňuje zamknout/odemknout a při změně se ihned překreslí viditelný kovový visací zámek.
+- `Structure.locked` je volitelné pole. Validátor saveů přijímá staré dveře bez tohoto pole, povoluje boolean pouze na dveřích a odmítá ostatní typy konstrukcí. Bez změny save verze ani world generation identity.
+- Unit testy pokrývají lock/unlock, blokování otevření, save/reload a validaci starých dat; renderer ověřuje zámek při změně stavu.
+- Přidán `scripts/door-lock-qa.mjs` a `npm run test:door-lock`. Browser ověřil placement dveří v platné konstrukci, kliknutí na lock UI, nemožnost otevření, zachování stavu po reloadu a unlock; žádné browser/WebGL chyby. Chromium z Playwright cache na hostu chybí; použil se instalovaný Google Chrome s Metal.
+- Po přidání této části `npm test`: **218/218 PASS, 32 souborů**. `npm run build`: PASS s existujícím upozorněním na velký JS chunk. `git diff --check`: PASS.
+- Screenshot browser QA je ignorovaný artefakt `test-results/door-lock/door-lock.png`.
+- Změněné soubory: `package.json`, `src/app/GameApp.ts`, `src/building/HammerMenu.ts`, `src/building/StructureRenderer.ts`, `src/core/types.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `tests/simulation.test.ts`, `tests/structure-renderer.test.ts`, nový `scripts/door-lock-qa.mjs`.
+- Aktuální commit zůstává `62a3d75`; zamykání dveří zatím není commitnuté. Pracovní větev `codex/world-quality-next`, žádný push/PR/release. `origin/main` divergence zůstává nevyřešena; před integrací ji nejdřív prozkoumat.
+- Další krok: commitnout ověřené zamykání dveří a pokračovat v cíli na další významnou vrstvu, nejdříve basic persistentní utility power loop (generator → switch → lamp) pouze pokud lze bezpečně napojit na stávající station/world/save architekturu; jinak navázat další hratelnou combat/progression vrstvou bez migrace, která by riskovala saves.
+
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague

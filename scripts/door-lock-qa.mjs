@@ -1,0 +1,21 @@
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const outputDir=process.env.TIDELAND_QA_DIR||'test-results/door-lock';fs.mkdirSync(outputDir,{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
+const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+const pass=(label,value)=>{assert.ok(value,label);console.log('PASS',label);};
+try{
+  await page.goto(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5173',{waitUntil:'commit',timeout:30000});await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:300000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:300000});
+  await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:300000});
+  await page.mouse.click(640,360);
+  const door=await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim(),p=g.state.player.position;g.state.inventory=Array(30).fill(null);g.state.inventory[0]={itemId:'hammer',count:1};g.addItem('wood',500);g.addItem('stone',200);g.addItem('metal',200);g.state.activeSlot=0;const foundation=a.placeAt('foundation',{x:p.x,y:a.height(p.x,p.z),z:p.z}).structure;if(!foundation)throw Error('Could not place QA foundation');const socket=a.sockets(foundation).find(s=>s.accepts.includes('doorway'));a.teleport({x:socket.position.x+2.5,y:socket.position.y+.06,z:socket.position.z});const frameResult=a.placeAt('doorway',socket.position);const frame=frameResult.structure;if(!frame)throw Error(`Could not place QA doorway: ${frameResult.candidate.reason}`);const doorSocket=a.sockets(frame).find(s=>s.accepts.includes('door'));const result=a.placeAt('door',doorSocket.position);if(!result.structure)throw Error(`Could not place QA door: ${result.candidate.reason}`);return result.structure;});
+  await page.evaluate(id=>{if(!window.__TIDELAND.openHammerForTest(id))throw Error('Could not open QA hammer menu');},door.id);await page.locator('.hammer-overlay').waitFor({state:'visible',timeout:10000});
+  await page.locator('[data-hammer-action="toggleLock"]').click();pass('Field hammer locks the closed door through the visible UI',await page.evaluate(id=>window.__TIDELAND.sim().state.structures.find(s=>s.id===id).locked===true,door.id));
+  await page.keyboard.press('Escape');await page.evaluate(id=>window.__TIDELAND.toggleDoor(id),door.id);pass('Locked door cannot be opened',await page.evaluate(id=>window.__TIDELAND.sim().state.structures.find(s=>s.id===id).open===false,door.id));
+  await page.evaluate(()=>window.__TIDELAND.save());await page.reload();await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:150000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:150000});await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});
+  pass('Locked state survives save and reload',await page.evaluate(id=>window.__TIDELAND.sim().state.structures.find(s=>s.id===id)?.locked===true,door.id));
+  const visible=await page.evaluate(id=>{const api=window.__TIDELAND;api.toggleDoorLock(id);const s=api.sim().state.structures.find(x=>x.id===id);return {locked:s.locked,names:api.sim().state.structures.map(x=>x.id)};},door.id);pass('Unlocked door returns to normal persistent state',!visible.locked);pass('No browser application or WebGL errors',errors.length===0);
+  fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({passed:true,doorId:door.id,errors},null,2));await page.screenshot({path:`${outputDir}/door-lock.png`});
+}finally{await browser.close();}

@@ -187,6 +187,14 @@ describe('modular building', () => {
     expect(door.open).toBe(false);
     expect(game.toggleDoor(door.id)).toBe(true);
     expect(door.open).toBe(true);
+    expect(game.toggleDoorLock(door.id)).toBeNull();
+    expect(game.toggleDoor(door.id)).toBe(true);
+    expect(game.toggleDoorLock(door.id)).toBe('locked');
+    expect(door.locked).toBe(true);
+    expect(game.toggleDoor(door.id)).toBe(false);
+    const lockedSave=structuredClone(game.state);expect(validateGameState(lockedSave)).toBe(true);expect(new GameSimulation(lockedSave.seed,spawn,lockedSave).state.structures.find(s=>s.id===door.id)?.locked).toBe(true);
+    expect(game.toggleDoorLock(door.id)).toBe('unlocked');
+    expect(game.toggleDoor(door.id)).toBe(true);
     expect(game.toggleDoor(first.id)).toBe(false);
     const cost = game.state.structures.reduce((sum, item) => sum + (PIECES[item.pieceType].cost.wood ?? 0), 0);
     expect(game.count('wood')).toBe(1200 - cost);
@@ -269,6 +277,10 @@ describe('versioned persistence', () => {
     localStorage.setItem(SAVE.GAME_KEY, JSON.stringify(state));
     expect(loadGame()).toBeNull();
     expect(hasSave()).toBe(false);
+  });
+
+  it('keeps locked doors save-compatible while rejecting locks on non-doors',()=>{
+    const state=createShelter().state,door=state.structures.find(s=>s.pieceType==='door')!;door.locked=true;expect(validateGameState(state)).toBe(true);delete door.locked;expect(validateGameState(state)).toBe(true);door.locked=true;door.pieceType='wall';expect(validateGameState(state)).toBe(false);
   });
 
   it('rejects missing structural parents and malformed JSON, and handles storage failure', () => {

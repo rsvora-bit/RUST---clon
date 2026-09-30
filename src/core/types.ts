@@ -14,7 +14,7 @@ export interface ItemStack {itemId:ItemId; count:number;condition?:number}
 export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number; requiredTech?:TechNodeId}
 export type PieceType = 'foundation'|'wall'|'doorway'|'floor'|'roof'|'door';
 export type StructureGrade = 'wood'|'stone'|'metal';
-export interface Structure {id:string; pieceType:PieceType; position:Vec3; rotation:number; /** Legacy v0.7.6 health mirror. */ health:number; grade?:StructureGrade; currentHealth?:number; maxHealth?:number; createdAt:number; open?:boolean; flipped?:boolean; parentId?:string; socketId?:string}
+export interface Structure {id:string; pieceType:PieceType; position:Vec3; rotation:number; /** Legacy v0.7.6 health mirror. */ health:number; grade?:StructureGrade; currentHealth?:number; maxHealth?:number; createdAt:number; open?:boolean; locked?:boolean; flipped?:boolean; parentId?:string; socketId?:string}
 export interface ResourceNode {id:string; kind:'tree'|'stone'|'metal'|'sulfur'|'hqmetal'|'fiber'|'berries'|'wood'; position:Vec3; scale:number; rotation:number; capacity:number; remaining:number; depletedAt?:number}
 export interface DroppedItem {id:string; stack:ItemStack; position:Vec3}
 export interface PlayerStats {health:number; hunger:number; thirst:number; stamina:number}

@@ -18,6 +18,9 @@ describe('rendered structure regressions',()=>{
     door.open=true;r.sync([door]);root.updateMatrixWorld(true);
     expect(ray.intersectObject(root,true)).toHaveLength(0);r.dispose();
   });
+  it('adds a visible padlock only while a door is locked and keeps old door data valid',()=>{
+    const r=renderer(),door:Structure={id:'door-lock',pieceType:'door',position:{x:0,y:0,z:0},rotation:0,health:250,createdAt:0,open:false};r.sync([door]);expect(r.objects.get(door.id)?.getObjectByName('Visible door padlock')).toBeUndefined();door.locked=true;r.sync([door]);expect(r.objects.get(door.id)?.getObjectByName('Visible door padlock')).toBeTruthy();door.locked=false;r.sync([door]);expect(r.objects.get(door.id)?.getObjectByName('Visible door padlock')).toBeUndefined();r.dispose();
+  });
   it('uses the socket thickness for upper-floor collision and batches repeated boards',()=>{
     const r=renderer();const floor:Structure={id:'floor',pieceType:'floor',position:{x:0,y:5,z:0},rotation:0,health:250,createdAt:0};
     const box=r.boxes(floor)[0];expect(box.halfExtents.y*2).toBe(BUILD.THICKNESS);expect(box.position.y+box.halfExtents.y).toBeCloseTo(5+BUILD.THICKNESS);

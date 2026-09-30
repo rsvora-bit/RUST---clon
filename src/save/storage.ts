@@ -34,7 +34,7 @@ export function validateGameState(value: unknown): value is GameState {
   const parsedStructures: Structure[] = [];
   for (const entry of value.structures) {
     if (!record(entry) || !identifier(entry.id) || ids.has(entry.id) || typeof entry.pieceType !== 'string' || !Object.hasOwn(PIECES, entry.pieceType) || !position(entry.position) || !finite(entry.rotation) || !finite(entry.createdAt, 0, value.elapsed)) return false;
-    if ((entry.parentId !== undefined && !identifier(entry.parentId)) || (entry.socketId !== undefined && !identifier(entry.socketId)) || (entry.open !== undefined && typeof entry.open !== 'boolean')) return false;
+    if ((entry.parentId !== undefined && !identifier(entry.parentId)) || (entry.socketId !== undefined && !identifier(entry.socketId)) || (entry.open !== undefined && typeof entry.open !== 'boolean') || (entry.locked !== undefined && (entry.pieceType!=='door'||typeof entry.locked!=='boolean'))) return false;
     if ((entry.parentId === undefined) !== (entry.socketId === undefined)) return false;
     if(entry.grade!==undefined&&!['wood','stone','metal'].includes(entry.grade as string))return false;
     if(entry.flipped!==undefined&&(entry.pieceType!=='door'||typeof entry.flipped!=='boolean'))return false;

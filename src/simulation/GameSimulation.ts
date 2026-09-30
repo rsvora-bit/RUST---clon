@@ -235,9 +235,14 @@ export class GameSimulation implements Damageable {
 
   toggleDoor(id: string): boolean {
     const structure = this.state.structures.find(item => item.id === id && item.pieceType === 'door');
-    if (!structure) return false;
+    if (!structure||structure.locked) return false;
     structure.open = !structure.open;
     return true;
+  }
+
+  toggleDoorLock(id:string):'locked'|'unlocked'|null{
+    const door=this.state.structures.find(item=>item.id===id&&item.pieceType==='door');if(!door||door.open)return null;
+    door.locked=!door.locked;return door.locked?'locked':'unlocked';
   }
 
   researchTech(nodeId:TechNodeId):ResearchResult{return researchTech(this.state,nodeId,this.state.player.position);}
