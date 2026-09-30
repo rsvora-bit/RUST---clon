@@ -31,7 +31,7 @@ export class Environment {
   private readonly instances=new Map<string,InstanceRef[]>();
   private readonly resources:THREE.Object3D[]=[];
   private readonly grassChunks:GrassChunk[]=[];
-  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number}[]=[];
+  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;visible:boolean}[]}[]=[];
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
   private readonly detailMeshes:{mesh:THREE.InstancedMesh;fullCount:number;minimum:'low'|'medium'|'high'}[]=[];
   private readonly decalMeshes:THREE.InstancedMesh[]=[];
@@ -64,6 +64,7 @@ export class Environment {
   private cullClock=0;
   private quality:'low'|'medium'|'high'|'ultra'='high';
   private foliageDensity=.72;
+  get renderedTreeCount():number{return this.treeBatches.reduce((n,b)=>n+b.instances.filter(t=>t.visible).length,0);}
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:1|2|3=3){
     this.root.name='Tideland — procedural island';scene.add(this.root);
@@ -119,11 +120,13 @@ export class Environment {
   }
   private populateTrees():void {
     const rand=randomSource(this.seed+139),treeNodes:{node:ResourceNode;species:number}[]=[];
+    const useTreeGrid=this.terrain.generation===5&&this.worldRevision>=3,treeGrid=new Map<string,{x:number;z:number}[]>(),cellKey=(x:number,z:number)=>`${Math.floor(x/4)},${Math.floor(z/4)}`;
+    const rememberTree=(tree:{node:ResourceNode;species:number})=>{treeNodes.push(tree);if(useTreeGrid){const key=cellKey(tree.node.position.x,tree.node.position.z),cell=treeGrid.get(key)??[];cell.push(tree.node.position);treeGrid.set(key,cell);}};
     // Keep the starter clearing readable from the default first-person heading.
     // The first hand-placed trees still frame the spawn, but no trunk fills the
     // reticle at arm's length before the player has had a chance to look around.
     const starterTrees=this.terrain.generation>=3?[[this.spawn.x-22,this.spawn.z-11,.86,0],[this.spawn.x+23,this.spawn.z-9,.96,1],[this.spawn.x-18,this.spawn.z+18,1.02,0],[this.spawn.x+20,this.spawn.z+17,.84,0]] as const:[[6,198,.86,0],[55,200,.96,1],[-4,190,1.02,0],[53,181,.84,0]] as const;
-    for(const [x,z,scale,species] of starterTrees)if(this.roadClear(x,z,4.4))treeNodes.push({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
+    for(const [x,z,scale,species] of starterTrees)if(this.roadClear(x,z,4.4))rememberTree({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
     const modern=this.terrain.generation===2,expanded=this.terrain.generation>=4,g5=this.terrain.generation===5;
     const treeLimit=g5?(this.worldRevision>=3?1180:900):expanded?620:modern?820:560,treeAttempts=g5?(this.worldRevision>=3?27000:18000):expanded?9000:modern?12000:7000;
     for(let i=0;i<treeAttempts&&treeNodes.length<treeLimit;i++){
@@ -131,10 +134,10 @@ export class Environment {
       if(h<4||h>(g5?58:38)||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<30||!this.roadClear(x,z,4.4))continue;
       const density=smoothstep(.32,.68,forest),climateDensity=g5&&this.worldRevision>=2?vegetationCover(this.terrain.climateAt(x,z),h,slope):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
-      if(treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4))continue;
+      let overlaps=false;if(useTreeGrid){for(let dz=-1;dz<=1&&!overlaps;dz++)for(let dx=-1;dx<=1&&!overlaps;dx++)for(const t of treeGrid.get(`${Math.floor(x/4)+dx},${Math.floor(z/4)+dz}`)??[])if(Math.hypot(t.x-x,t.z-z)<4){overlaps=true;break;}}else overlaps=treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4);if(overlaps)continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
       const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,this.worldRevision>=2?this.terrain.climateAt(x,z):undefined,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
-      treeNodes.push({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
+      rememberTree({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
     }
     for(let species=0;species<6;species++){
       const palm=species===5,broad=species===1||species===4||palm,entries=treeNodes.filter(t=>t.species===species),trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():species===1||species===4?broadleafGeometry(species===4?1:0):pineGeometry(species===2?1:species===3?2:0));
@@ -145,13 +148,13 @@ export class Environment {
       const trunks=new THREE.InstancedMesh(trunk,this.bark,entries.length),crowns=new THREE.InstancedMesh(crown,palm?this.palm:species===1||species===4?this.leaves:this.pine,entries.length);
       trunks.name=palm?'Palm trunks':broad?'Oak trunks':'Pine trunks';crowns.name=palm?'Palm canopy':broad?'Oak canopy':'Pine canopy';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=true;crowns.receiveShadow=false;this.root.add(trunks,crowns);
       const hitGeometry=this.own(new THREE.CylinderGeometry(.37,.45,broad?7.7:12.8,6));hitGeometry.translate(0,broad?3.85:6.4,0);
-      entries.forEach(({node},index)=>{
+      const batchInstances:{id:string;x:number;z:number;matrix:THREE.Matrix4;visible:boolean}[]=[];entries.forEach(({node},index)=>{
         this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);crowns.setMatrixAt(index,m);trunks.setColorAt(index,new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12));
         const col=palm?new THREE.Color().setHSL(.24+(rand()-.5)*.04,.14,.84+rand()*.12):species===1||species===4?new THREE.Color().setHSL(.27+(rand()-.5)*.05,.10,.84+rand()*.12):new THREE.Color().setHSL(.25+(rand()-.5)*.04,.12,.82+rand()*.13);crowns.setColorAt(index,col);
-        this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:m}]);
+        this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:m}]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,visible:true});
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
         this.colliders.push({nodeId:node.id,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
-      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();this.treeBatches.push({trunks,crowns,fullCount:entries.length});
+      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();this.treeBatches.push({trunks,crowns,fullCount:entries.length,instances:batchInstances});
     }
   }
   private populateRocks():void {
@@ -291,7 +294,7 @@ export class Environment {
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
     this.windUniform.value+=dt*this.windStrength;this.cameraUniform.value.copy(cameraPosition);this.atmosphere.update(dt,timeOfDay,cameraPosition);this.cullClock-=dt;
-    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:118;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
+    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:this.quality==='high'?118:136;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const treeDistance=this.quality==='low'?250:this.quality==='medium'?360:this.quality==='high'?520:720,treeDistanceSq=treeDistance*treeDistance;for(const batch of this.treeBatches){let changedTrunks=false,changedCrowns=false;for(let i=0;i<batch.instances.length;i++){const tree=batch.instances[i]!,dx=tree.x-cameraPosition.x,dz=tree.z-cameraPosition.z,show=dx*dx+dz*dz<treeDistanceSq&&this.nodeObjects.get(tree.id)?.visible!==false;if(show===tree.visible)continue;tree.visible=show;const matrix=show?tree.matrix:this.hiddenMatrix;batch.trunks.setMatrixAt(i,matrix);batch.crowns.setMatrixAt(i,matrix);changedTrunks=changedCrowns=true;}if(changedTrunks)batch.trunks.instanceMatrix.needsUpdate=true;if(changedCrowns)batch.crowns.instanceMatrix.needsUpdate=true;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
     for(const [id,hit] of this.hits){const elapsed=hit.elapsed+dt,obj=this.nodeObjects.get(id),refs=this.instances.get(id);if(elapsed>.4){this.hits.delete(id);if(obj)obj.rotation.z=0;if(refs)for(const ref of refs){ref.mesh.setMatrixAt(ref.index,ref.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}else{hit.elapsed=elapsed;const amount=Math.sin(elapsed*34)*(1-elapsed/.4)*.022*hit.intensity;if(obj)obj.rotation.z=amount;if(refs){this.hitRotation.makeRotationZ(amount);for(const ref of refs){this.matrixDummy.matrix.copy(ref.matrix).multiply(this.hitRotation);ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}}}
     for(const [id,fall] of this.fallingTrees){
       fall.elapsed+=dt;const fallT=Math.min(1,fall.elapsed/fall.duration),eased=1-Math.pow(1-fallT,3),fadeStart=fall.duration+fall.hold,total=fadeStart+fall.fade;
