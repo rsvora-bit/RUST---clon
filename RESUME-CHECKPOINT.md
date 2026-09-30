@@ -74,7 +74,8 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Inventory ukazuje condition bar/detail a nabízí `REPAIR AT WORKBENCH`; oprava spotřebuje item-specific materiály a obnoví 45 condition. Workbench musí být do 5 m.
 - Přidán `tests/durability.test.ts` (3 testy: přesun/drop/pickup/break, oprava/cena/save validity, legacy stack/validace).
 - Validace po aktuálních změnách: cílené **74/74 PASS**, plné `npm test` **212/212 PASS (31 souborů)**, `npm run build` PASS; existující upozornění na velký JS chunk cca 3.17 MB.
-- `git diff --check` PASS. Samostatný browser průchod UI opravou ještě neproběhl; před dalším větším systémem ho doplnit, případně rozšířit combat QA.
+- `git diff --check` PASS. Browser `test:ranged` rozšířen a PASS: vystřelení/recoverable arrow, inventářové UI opravy, správné spotřebování 12 stone + 6 wood, `save()===true`, reload/Continue a zachovaná condition 65; bez aplikačních/WebGL chyb. QA vygenerovalo jen ignorované `test-results/ranged/` artefakty.
+- `scripts/ranged-qa.mjs` nyní obsahuje skutečnou UI/reload regresi pro opravu; QA fixture používá správnou nulovou kapacitu Workbench inventáře.
 - Aktuální změněné soubory: `src/app/GameApp.ts`, `src/core/types.ts`, `src/inventory/inventory.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `src/survival/stations.ts`, `src/ui/UI.ts`, `src/ui/style.css`, `src/combat/durability.ts` (nový), `tests/durability.test.ts` (nový).
 - Při obnovení nejdřív `git status` a `git diff`; zachovat celý tento rozpracovaný stav. Poslední potvrzený HEAD `8aaa1d8`. Neprovádět push/release; divergence origin/main není vyřešena.
 
