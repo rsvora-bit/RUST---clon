@@ -138,6 +138,16 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Větev `codex/world-quality-next`; žádný push/PR/tag/release, verze stále `0.9.1 / EA-09.1`. Předchozí commit `f9c42af`. Zkontrolovat stav a vytvořit lokální checkpoint commit; nepokračovat na main ani neřešit upstream divergence bez inspekce.
 - Další pracovní oblast vybrat po commitu z rozsáhlého cíle Combat, Danger & Progression Expansion; ověřit existující implementace před rozšířením, nepřidávat duplicity existujících loot profilů.
 
+## Final world-art/performance QA — 2026-10-01
+
+- Dokončena první položka aktivního Codex Goal: Chrome s ANGLE Metal, 1280×720, seed 731942, preset HIGH. Výkon je omezený synchronizací na 60 FPS, takže FPS/frame time potvrzují absenci viditelného propadu, nikoli maximální GPU propustnost.
+- Archiv v0.9.0 versus aktuální v0.9.1 checkout: FPS **59.996 → 60.002**, frame time **16.668 → 16.666 ms**, draw calls **612 → 618** (+~1 %), triangles **3,390,261 → 2,856,582** (-15.7 %), startup **2,893 → 2,582 ms** (-10.7 %), resource node count **1,318 → 1,598** (+280; současná revision obsahuje více world nodes). Běh používá nativní Chrome/Metal; nespoléhá pouze na SwiftShader.
+- `npm run test:performance`: PASS proti skutečnému publikovanému archivu v0.9.0; obě app verze bez console/page errors. `npm run test:world-art`: **31/31 kontrol PASS**, včetně skutečného archivovaného v0.9.0 a v0.9.1 save reload, node/POI/road identity, structures/colliders, horizon/grass/tree culling/palm climate/road clearance a revision-3 save reload. Camera sweep bez WebGL/application errors.
+- Prohlédnuté screenshots aktuálního světa: HIGH spawn/understory, grassland, rocky mountain, road, warm coast palm, night a storm. Noc a storm mají jasně odlišnou atmosféru; road je čitelná a vizuálně zapadá. Některé automaticky nadepsané biome záběry neukázaly reprezentativní vnitřní forest view, proto je nenazývat kompletním forest screenshot coverage; detailní forest gameplay sweep zůstává součástí pozdější regresní QA.
+- Po legacy safeguard změně: `npm test` **225/225 PASS (33 souborů)**; `npm run build` PASS; `git diff --check` PASS. Build warning o ~3.18 MB JS chunk přetrvává.
+- Gameplay browser regression po scavenger změně: `test:scavenger`, `test:combat` a `test:ranged` PASS; žádné console/WebGL chyby. Scavengers jsou Generation 5-only a Generation 4 unit test neumožňuje jejich přidání do legacy worlds.
+- Aktuální poslední commit před zápisem této části: `98bf74f Keep scavengers out of legacy worlds`; předchozí `24d9f10 Add deterministic hostile scavengers`. Pracovní strom byl čistý. Následující krok: commitnout aktualizovaný QA checkpoint a pokračovat dalšími nedokončenými cíli. Bez push, PR, release nebo bump verze.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
