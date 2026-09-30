@@ -103,11 +103,11 @@ export function bushGeometry():THREE.BufferGeometry {
   const colors=new Float32Array(geo.getAttribute('position').count*3);colors.fill(1);geo.setAttribute('color',new THREE.BufferAttribute(colors,3));return geo;
 }
 /** Small bent blades use real silhouettes, so distant alpha cards cannot turn
- * into dark quads. One shared 21-triangle tuft is instanced across the island. */
+ * into dark quads. One shared 36-triangle tuft is instanced across the island. */
 export function grassGeometry():THREE.BufferGeometry {
   const r=randomSource(615),positions:number[]=[],colors:number[]=[],indices:number[]=[];
-  for(let blade=0;blade<9;blade++){
-    const angle=blade/9*Math.PI*2+r()*.42,radius=blade<3?.08+r()*.09:.16+r()*.12,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
+  for(let blade=0;blade<12;blade++){
+    const angle=blade/12*Math.PI*2+r()*.42,radius=blade<4?.08+r()*.09:.16+r()*.12,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
     const height=.34+Math.pow(r(),.78)*.58,width=.018+r()*.027,lean=.08+r()*.20;
     const dx=Math.cos(angle),dz=Math.sin(angle),base=positions.length/3;
     const points=[[-width,0,0],[width,0,0],[-width*.55,height*.53,lean*.35],[width*.55,height*.53,lean*.35],[0,height,lean]];

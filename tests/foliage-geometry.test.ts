@@ -25,7 +25,7 @@ describe('foliage geometry stability',()=>{
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));
       a.computeBoundingBox();expect(a.boundingBox!.min.y).toBe(0);expect(a.boundingBox!.max.y).toBeLessThan(1);
       expect(a.boundingBox!.getSize(new THREE.Vector3()).x).toBeLessThan(1);
-      expect(a.index!.count/3).toBe(27);
+      expect(a.index!.count/3).toBe(36);
     }finally{a.dispose();b.dispose();}
   });
 });
