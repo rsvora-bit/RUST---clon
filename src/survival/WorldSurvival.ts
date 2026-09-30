@@ -29,7 +29,8 @@ export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:C
 
 export class WorldSurvival {
   readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
-  private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  private readonly relayMast=new T.CylinderGeometry(.08,.2,8.4,6,5);private readonly relayDish=new T.SphereGeometry(.48,9,6,0,Math.PI*2,0,Math.PI*.58);
   constructor(private env:Environment,scene:T.Scene,private seed:number){
     scene.add(this.group);const layout=env.layout??generateWorldLayout(env.terrain,env.spawn,env.colliders,seed,env.worldRevision);this.pois.push(...layout.pois);this.trails.push(...layout.trails);for(const poi of this.pois)this.make(poi);if(env.terrain.generation===5&&env.worldRevision>=2){this.road.color.set(0xffffff);this.road.map=groundTexture('dirt',713);this.road.transparent=true;this.road.depthWrite=false;this.road.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat edge=min(vMapUv.x,1.-vMapUv.x);diffuseColor.a*=smoothstep(0.,.17,edge);diffuseColor.rgb*=.88+.12*sin(vMapUv.x*18.);');};}for(const points of this.trails)this.makeRoad(points);
   }
@@ -38,10 +39,12 @@ export class WorldSurvival {
   private make(p:Landmark){
     const g=new T.Group();g.position.set(p.position.x,p.position.y,p.position.z);this.group.add(g);
     if(p.kind===1){
-      // The former multi-storey relay scaffold was visually dominant and looked accidental.
-      // Keep only a low collapsed relay wreck so the POI still has identity without a tower.
+      // A narrow, damaged antenna restores a useful skyline cue without rebuilding the old bulky scaffold.
       for(let i=0;i<6;i++){const beam=this.box(g,-1.7+i*.65,.12+(i%2)*.08,(i%3-1)*.58,1.05,.11,.13,this.metal);beam.rotation.y=(i*.71)%Math.PI;beam.rotation.z=(i%2?.08:-.06);}
       this.box(g,.8,.23,-.7,1.55,.32,.85,this.metal);this.box(g,-.75,.16,.7,1.2,.2,.65,this.wood);
+      const mast=new T.Mesh(this.relayMast,this.metal);mast.name='Weathered relay mast';mast.position.set(-2.15,4.2,.35);mast.rotation.z=-.035;mast.castShadow=true;g.add(mast);
+      const brace=this.box(g,-2.12,5.9,.38,2.25,.075,.075,this.rust);brace.rotation.z=-.04;
+      const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Relay reflector';dish.position.set(-2.4,6.4,.43);dish.rotation.set(.38,.22,.72);dish.scale.set(1,.72,.20);dish.castShadow=true;g.add(dish);
     }else if(p.kind===3){const tent=new T.Mesh(new T.ConeGeometry(1.8,2.3,4,1,true),this.cloth);tent.position.y=1.15;tent.rotation.y=Math.PI/4;g.add(tent);this.box(g,-2,.18,0,.3,.3,2,this.wood);
     }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);}
   }
@@ -61,7 +64,7 @@ export class WorldSurvival {
     this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
-  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh)o.geometry.dispose();});this.group.removeFromParent();this.road.map?.dispose();[this.wood,this.metal,this.cloth,this.road].forEach(m=>m.dispose());}
+  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.cloth,this.road].forEach(m=>m.dispose());}
 }
 
 export class IslandMap {

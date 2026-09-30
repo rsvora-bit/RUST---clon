@@ -1,6 +1,8 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
+vi.mock('../src/rendering/materials',()=>({woodMaterial:()=>({dispose(){}})}));
 import {IslandTerrain} from '../src/terrain/island';
-import {generateWorldLayout} from '../src/survival/WorldSurvival';
+import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
+import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
 import {treeSpeciesForBiome} from '../src/rendering/environment';
@@ -10,6 +12,13 @@ import {validateGameState} from '../src/save/storage';
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
+  it('adds a distant relay landmark without adding colliders',()=>{
+    const terrain=new IslandTerrain(731942,5),poi={id:'poi-1',name:'Collapsed relay site',kind:1,position:{x:120,y:12,z:80}};
+    const env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:1,layout:{pois:[poi],trails:[]},heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment;
+    const world=new WorldSurvival(env,new THREE.Scene(),731942);
+    try{const mast=world.group.getObjectByName('Weathered relay mast') as THREE.Mesh,reflector=world.group.getObjectByName('Relay reflector') as THREE.Mesh;expect(mast).toBeTruthy();expect(reflector).toBeTruthy();expect(mast.position.y).toBeCloseTo(4.2);expect(world.collisionBoxes()).toHaveLength(1);}
+    finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   for(const seed of [731942,447701,61417])it(`routes deterministic dry roads away from steep hills (${seed})`,()=>{
     const terrain=new IslandTerrain(seed,5);
     try {
