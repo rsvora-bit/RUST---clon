@@ -39,6 +39,7 @@ import {MELEE_WEAPONS,resolveMeleeHit} from '../combat/melee';
 import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
 import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
+import {toxicExposureAt} from '../survival/hazards';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
 interface LiveArrow {flight:ArrowFlight;mesh:THREE.Group;strength:number}
 export class GameApp {
@@ -55,7 +56,7 @@ export class GameApp {
   private worldSurvival!:WorldSurvival;private weather!:Weather;private islandMap!:IslandMap;private wildlife!:WildlifeSystem;private uiContainer:HTMLElement;
   private hammerMenu:HammerMenu;private terminalReturn:Screen='menu';
   private stationRenderer!:StationRenderer;private stationUI:StationUI;private techTreeUI:TechTreeUI;private terminal:DevTerminal;private openStation:string|null=null;private stationIds=new Set<string>();private stationPlacement:{kind:StationKind;position:THREE.Vector3;valid:boolean}|null=null;
-  private lastSafeGrounded:Vec3|null=null;
+  private lastSafeGrounded:Vec3|null=null;private toxicExposureSeconds=0;private insideToxicZone=false;
 
   private last=0;private accumulator=0;private uiTimer=0;private elapsed=0;private autoSave=0;private cooldown=0;private fps=60;private frameMs=16.7;private timeMultiplier=1;private loading=false;private leftDown=false;private loopStarted=false;private loopMode:'vsync'|'uncapped'|null=null;private frameChannel:MessageChannel|null=null;private knownStructures=new Map<string,string>();private rainBarrels:THREE.Group[]=[];private flyMode=false;private godMode=false;
   constructor(private canvas:HTMLCanvasElement,uiRoot:HTMLElement){
@@ -364,6 +365,7 @@ export class GameApp {
       this.accumulator+=this.capturePaused?0:dt;let steps=0;while(this.accumulator>=1/60&&steps<6){if(this.flyMode)this.tickFly(1/60,playing);else this.player.tick(1/60,this.simulation.state,playing);this.simulation.tick(1/60,this.flyMode?false:this.player.sprinting);if(this.godMode){const stats=this.simulation.state.player.stats;stats.health=stats.hunger=stats.thirst=stats.stamina=100;}this.accumulator-=1/60;steps++;}
       if(playing&&!this.capturePaused)this.wildlife.update(dt,this.simulation.state.player.position,(x,z)=>this.environment.heightAt(x,z),(amount,sourceId)=>{const result=this.applyPlayerDamage({amount,type:'melee',sourceId});if(result.ok&&!result.killed)this.audio.play('error');});
       if(playing&&!this.capturePaused&&this.arrows.length)this.updateArrows(dt);
+      if(playing&&!this.capturePaused){const state=this.simulation.state,p=state.player.position,exposure=toxicExposureAt(p,this.worldSurvival.pois,state.worldGeneration??1,state.worldRevision??1);if(exposure>0){if(!this.insideToxicZone)this.ui.notify('Contaminated battery runoff · protective hood recommended');this.insideToxicZone=true;this.toxicExposureSeconds+=dt;if(this.toxicExposureSeconds>=1){this.toxicExposureSeconds-=1;this.damagePlayer(1.6*exposure,'toxic relay contamination');}}else{if(this.insideToxicZone)this.ui.notify('Clear air · contamination exposure ended');this.insideToxicZone=false;this.toxicExposureSeconds=0;}}
       if(this.timeMultiplier!==1)this.simulation.state.timeOfDay=(this.simulation.state.timeOfDay+dt*(this.timeMultiplier-1)*24/1800)%24;
       if(this.player.grounded&&this.environment.heightAt(this.simulation.state.player.position.x,this.simulation.state.player.position.z)>.12)this.lastSafeGrounded={...this.simulation.state.player.position};
       if(this.simulation.state.player.position.y<-.5)this.simulation.damagePlayer(dt*3,'deep-water');

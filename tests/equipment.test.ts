@@ -27,6 +27,8 @@ describe('field clothing and equipment',()=>{
     expect(equipmentMitigation(sim.state.player.equipment,'melee')).toBeCloseTo(.17);
     expect(equipmentMitigation({...sim.state.player.equipment,body:'shirt'},'melee')).toBeLessThan(.55);
     expect(sim.takeDamage({amount:50,type:'cold'}).applied).toBeCloseTo(27);
+    expect(equipmentMitigation(sim.state.player.equipment,'toxic')).toBeCloseTo(.35);
+    expect(sim.takeDamage({amount:10,type:'toxic'}).applied).toBeCloseTo(6.5);
     const oldSave=structuredClone(sim.state);delete oldSave.player.equipment;
     expect(validateGameState(oldSave)).toBe(true);
     const loaded=new GameSimulation(12,spawn,oldSave);expect(loaded.state.player.equipment).toEqual({});

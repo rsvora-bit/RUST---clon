@@ -89,6 +89,16 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Aktuálně rozpracováno pouze QA rozšíření, které je třeba commitnout po úspěšné plné sadě: `src/core/types.ts`, `src/items/definitions.ts`, `src/combat/durability.ts`, `src/combat/melee.ts`, `src/crafting/recipes.ts`, `src/crafting/techTree.ts`, `src/rendering/HeldItem.ts`, `public/assets/icons/spear.svg`, `tests/melee-combat.test.ts`, `tests/tech-tree.test.ts`, `scripts/combat-qa.mjs`.
 - Aktuální potvrzené předchozí HEAD `3f0286f`; nová feature zatím necommitnutá. Zůstat na `codex/world-quality-next`, nepushovat/releasovat; origin divergence dál blokuje integraci.
 
+## Toxic relay hazard checkpoint — 2026-10-01
+
+- Added `src/survival/hazards.ts`: continuous horizontal-distance exposure derived only from deterministic Generation 5 revision 3 relay POI. Legacy generations and revisions 1–2 stay unchanged. The hazard is runtime-derived and adds nothing to saved layout/state.
+- Added 19 m exposure band with weaker edge dose, one toxic damage tick per game second, one entry/exit notification, plus increased protective-hood toxic mitigation to 35%. Added three small irregular dark runoff pools and corroded battery drums at the existing relay POI; the main pool was reduced after screenshot inspection because the first version read as an oversized bright-green disc.
+- Added `scripts/hazard-qa.mjs` / `npm run test:hazard`, unit coverage for deterministic range/revision gates and height independence, and toxic gear mitigation assertions.
+- Browser test passed real New Game → relay teleport/aim → entry notice → actual health loss, screenshot visual inspection, no browser/WebGL console errors. SwiftShader simulates slowly (about 0.18 game seconds per 2.2 wall seconds in an observed run); harness waits on game health instead of relying on wall-time assumptions.
+- `npm test`: **216/216 PASS (32 files)**. `npm run build` PASS; existing large JS chunk warning (~3.18 MB). `git diff --check` PASS.
+- Current uncommitted files before checkpoint: `package.json`, `src/app/GameApp.ts`, `src/combat/equipment.ts`, `src/survival/WorldSurvival.ts`, `tests/equipment.test.ts`, new `scripts/hazard-qa.mjs`, `src/survival/hazards.ts`, `tests/hazards.test.ts`.
+- Latest committed HEAD is `404ddb5`; hazard commit remains to be created. Continue without push/release; upstream divergence remains unresolved.
+
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
