@@ -85,15 +85,16 @@ export class WildlifeSystem {
     const add=(geometry:THREE.BufferGeometry,color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,rotationZ=0)=>{const matrix=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(sx,sy,sz));geometry.applyMatrix4(matrix);const base=new THREE.Color(color),position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);for(let i=0;i<position.count;i++){colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);};
     const ellipsoid=(color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>add(new THREE.SphereGeometry(1,16,12),color,x,y,z,sx,sy,sz);
     if(species==='islandScavenger'){
-      add(new THREE.BoxGeometry(.58,.70,.30),coat,0,1.03,0,1,1,1);
-      add(new THREE.BoxGeometry(.30,.32,.28),0x887c60,0,1.57,0,1,1,1);
-      add(new THREE.BoxGeometry(.34,.38,.22),0x393a34,0,.98,.24,1,1,1);
-      add(new THREE.BoxGeometry(.19,.68,.20),0x51483a,-.20,.38,0,1,1,1);
-      add(new THREE.BoxGeometry(.19,.68,.20),0x51483a,.20,.38,0,1,1,1);
-      add(new THREE.BoxGeometry(.16,.66,.19),coat,-.39,1.02,0,1,1,1);
-      add(new THREE.BoxGeometry(.16,.66,.19),coat,.39,1.02,0,1,1,1);
-      add(new THREE.BoxGeometry(.08,.12,.06),dark,-.075,1.59,-.145,1,1,1);
-      add(new THREE.BoxGeometry(.08,.12,.06),dark,.075,1.59,-.145,1,1,1);
+      add(new THREE.CapsuleGeometry(.235,.34,5,10),coat,0,1.03,0,1,1,1);
+      add(new THREE.SphereGeometry(.16,12,10),0x887c60,0,1.56,0,1,1,1);
+      add(new THREE.BoxGeometry(.30,.29,.075),0x393a34,0,1.02,-.14,1,1,1);
+      add(new THREE.BoxGeometry(.29,.34,.15),0x51483a,0,1.05,.19,1,1,1);
+      for(const side of [-1,1]){
+        add(new THREE.CapsuleGeometry(.074,.40,4,8),coat,side*.34,1.00,0,1,1,1,side*-.08);
+        add(new THREE.CapsuleGeometry(.09,.48,4,8),0x51483a,side*.13,.40,.015,1,1,1,side*-.025);
+        add(new THREE.BoxGeometry(.18,.11,.24),dark,side*.13,.085,-.015,1,1,1);
+        add(new THREE.SphereGeometry(.032,8,6),0xc3a274,side*.066,1.58,-.137,1,1,1);
+      }
     } else {
       ellipsoid(coat,0,.68,0,.36,.37,.64);ellipsoid(coat,0,.78,-.49,.30,.31,.34);ellipsoid(coat,0,.66,-.72,.23,.16,.22);
       for(const x of [-.20,.20]){ellipsoid(coat,x,1.02,-.5,.10,.19,.075);ellipsoid(dark,x*.72,.81,-.73,.034,.035,.025);if(species==='coastalBoar')ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);}

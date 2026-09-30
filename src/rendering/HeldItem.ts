@@ -5,7 +5,7 @@ import type {ItemId} from '../core/types';
 import {woodMaterial,stoneMaterial} from './materials';
 
 const smoothPalm=(y:number)=>Math.max(0,1-Math.abs(y-.25));
-const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
+const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
 export class HeldItem {
   readonly scene=new THREE.Scene();
@@ -109,6 +109,16 @@ export class HeldItem {
       const socket=this.mesh(new THREE.CylinderGeometry(.038,.034,.10,8),this.wrap,.27,.51,-.665);socket.rotation.z=-.16;
       for(let i=0;i<4;i++){const band=this.mesh(new THREE.TorusGeometry(.029,.003,5,12),this.wrap,.283,.03+i*.018,-.655);band.rotation.x=Math.PI/2;}
       this.addArm(-1,-.08,-.17,-.61,.18,true);
+    }else if(item==='salvageRevolver'){
+      const weapon=new THREE.Group();weapon.scale.setScalar(.64);weapon.position.set(.10,.02,-.12);this.hand.add(weapon);
+      const grip=this.mesh(new THREE.BoxGeometry(.105,.27,.13),this.wrap,.28,-.12,-.63,weapon);grip.rotation.x=-.18;
+      const frame=this.mesh(new THREE.BoxGeometry(.16,.12,.29),this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;
+      const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;
+      const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;
+      const hammer=this.mesh(new THREE.BoxGeometry(.065,.085,.075),this.metal,.27,.15,-.59,weapon);hammer.rotation.x=-.25;
+      this.mesh(new THREE.BoxGeometry(.03,.038,.04),this.metal,.27,.13,-.98,weapon);
+      const trigger=this.mesh(new THREE.TorusGeometry(.046,.007,6,14,Math.PI),this.wrap,.27,-.01,-.72,weapon);trigger.rotation.x=Math.PI/2;
+      this.addArm(-1,-.13,-.13,-.59,.18,true);
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);

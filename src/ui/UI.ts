@@ -4,6 +4,7 @@ import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
 import { ITEMS } from '../items/definitions';
+import {FIREARMS,isFirearm,loadedRounds} from '../combat/firearms';
 import { RECIPES } from '../crafting/recipes';
 import {ensureTech,TECH_NODES} from '../crafting/techTree';
 import { PIECES } from '../building/rules';
@@ -327,7 +328,9 @@ export class UI {
     this.hotbarHash = hash;
     this.find('.hotbar').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(hud.inventory[index] ?? null,index,index === hud.activeSlot,true)).join('');
     const active = hud.inventory[hud.activeSlot];
-    this.find('.active-item-name').textContent = active ? ITEMS[active.itemId].displayName : this.tx('emptyHands');
+    const name=active?ITEMS[active.itemId].displayName:this.tx('emptyHands');
+    if(active&&isFirearm(active.itemId)){const weapon=FIREARMS[active.itemId],reserve=hud.inventory.reduce((n,s)=>n+(s?.itemId===weapon.ammoItemId?s.count:0),0);this.find('.active-item-name').textContent=`${name} · ${loadedRounds(active)}/${weapon.magazineSize} · ${reserve} RESERVE · R RELOAD`;}
+    else this.find('.active-item-name').textContent=name;
   }
 
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {

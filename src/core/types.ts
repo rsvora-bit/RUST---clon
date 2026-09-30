@@ -2,7 +2,7 @@ import type {Station} from '../survival/stations';
 import type {TechNodeId,TechState} from '../crafting/techTree';
 export type Vec3 = {x:number; y:number; z:number};
 export type WorldGeneration=1|2|3|4|5;
-export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'rawMeat'|'hide'|'shirt'|'pants'|'boots'|'warmJacket'|'protectiveHood'|'bow'|'arrow'|'spear'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll'|'generator'|'powerSwitch'|'lamp';
+export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'rawMeat'|'hide'|'shirt'|'pants'|'boots'|'warmJacket'|'protectiveHood'|'bow'|'arrow'|'spear'|'salvageRevolver'|'pistolAmmo'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll'|'generator'|'powerSwitch'|'lamp';
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';
@@ -10,7 +10,7 @@ export type ShadowQuality = 'low'|'medium'|'high';
 export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|'crouch'|'interact'|'inventory'|'build'|'rotate'|'cycleBuild'|'use'|'map'|'maintenance'|'autoRun'|'inspect';
 export type Keybinds = Record<KeybindAction,string>;
 export interface ItemDefinition {id:ItemId; displayName:string; description:string; category:ItemCategory; icon:string; maxStack:number; placeable?:boolean; consumable?:boolean; tags:string[]}
-export interface ItemStack {itemId:ItemId; count:number;condition?:number}
+export interface ItemStack {itemId:ItemId; count:number;condition?:number;loadedAmmo?:number}
 export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number; requiredTech?:TechNodeId}
 export type PieceType = 'foundation'|'wall'|'doorway'|'floor'|'roof'|'door';
 export type StructureGrade = 'wood'|'stone'|'metal';

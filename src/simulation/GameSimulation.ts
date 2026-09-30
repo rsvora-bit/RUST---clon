@@ -130,7 +130,7 @@ export class GameSimulation implements Damageable {
     if(!validSlot(slot))return {ok:false,reason:'invalid'};const stack=this.state.inventory[slot];if(!stack||maxDurability(stack.itemId)===0)return {ok:false,reason:'invalid'};
     const max=maxDurability(stack.itemId),current=itemCondition(stack);if(current>=max)return {ok:false,reason:'full'};
     if(nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position)<1)return {ok:false,reason:'workbench'};
-    const cost:Partial<Record<ItemId,number>>=stack.itemId==='bow'?{wood:12,fiber:8}:stack.itemId==='hammer'?{metal:10,wood:8}:stack.itemId==='rock'?{stone:8}:{stone:12,wood:6};
+    const cost:Partial<Record<ItemId,number>>=stack.itemId==='bow'?{wood:12,fiber:8}:stack.itemId==='salvageRevolver'?{metal:16,machineParts:1}:stack.itemId==='hammer'?{metal:10,wood:8}:stack.itemId==='rock'?{stone:8}:{stone:12,wood:6};
     if(!deductCosts(this.state.inventory,cost))return {ok:false,reason:'resources'};stack.condition=Math.min(max,current+45);this.onNotify(`${ITEMS[stack.itemId].displayName} repaired`);return {ok:true,reason:'ok'};
   }
 

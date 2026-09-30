@@ -37,6 +37,8 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   bow: item('bow','Island hunting bow','A simple ash-and-fiber bow. Hold primary fire to draw, then release to loose an arrow.','tool',1,['weapon','ranged']),
   spear: item('spear','Salvage-tipped spear','A long field haft with a hardened salvage point. Its reach is useful against wildlife, but the narrow thrust needs a steady aim.','tool',1,['weapon','melee']),
   arrow: item('arrow','Field arrow','A recoverable wood-shaft arrow with a forged salvage point.','resource',100,['ammunition','crafting']),
+  salvageRevolver:item('salvageRevolver','Salvage revolver','A hand-fitted six-shot sidearm assembled from recovered industrial parts. Press R to reload.','tool',1,['weapon','firearm','ranged']),
+  pistolAmmo:item('pistolAmmo','Pistol cartridges','Low-pressure cartridges assembled from recovered metal and sulfur.','resource',48,['ammunition','crafting']),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),
   hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),
