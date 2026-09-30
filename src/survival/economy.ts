@@ -30,6 +30,20 @@ export function fillSalvageLoot(station:Station,tier:LootTier,rand:()=>number){
   if(!salvage)insertItem(station.inventory,tier==='common'?'wiring':'scrap',tier==='common'?1:tier==='decent'?12:30);if(!added)insertItem(station.inventory,'wood',45);
 }
 
+/** New-world POI caches have a light loot identity; existing saved stations are never rerolled. */
+export function fillPoiLoot(station:Station,kind:number,tier:LootTier,rand:()=>number){
+  const relay:[ItemId,number,number,number][]=[['scrap',8,24,.78],['wiring',1,4,.78],['gears',1,2,.46],['machineParts',1,2,.31],['techParts',1,1,.10],['bandage',1,2,.16]];
+  const quarry:[ItemId,number,number,number][]=[['metal',10,34,.74],['ore',24,86,.84],['sulfurOre',12,54,.42],['gears',1,3,.42],['machineParts',1,2,.22],['scrap',6,20,.52]];
+  const coast:[ItemId,number,number,number][]=[['scrap',5,18,.62],['wiring',1,3,.48],['wood',30,100,.78],['fiber',12,42,.65],['berries',2,8,.38],['canteen',1,2,.34],['bandage',1,2,.20]];
+  const camp:[ItemId,number,number,number][]=[['wood',35,110,.84],['fiber',16,48,.75],['berries',3,10,.58],['bandage',1,3,.43],['canteen',1,2,.40],['scrap',4,14,.34]];
+  const table=kind===1?relay:kind===2?quarry:kind===3?camp:coast;
+  const scale=tier==='lucky'?1.45:tier==='decent'?1.2:1;
+  let total=0;
+  for(const [item,min,max,chance] of table){if(rand()>Math.min(.97,chance*scale))continue;const amount=Math.max(1,Math.round((min+Math.floor(rand()*(max-min+1))*scale)));const inserted=insertItem(station.inventory,item,amount);if(inserted>0&&(['scrap','wiring','gears','machineParts','techParts'] as ItemId[]).includes(item))total+=inserted;}
+  if(!total)insertItem(station.inventory,kind===1?'wiring':'scrap',kind===1?1:tier==='lucky'?24:tier==='decent'?12:5);
+  if(station.inventory.every(slot=>slot===null))insertItem(station.inventory,'wood',40);
+}
+
 interface EconomyLandmark {id:string;position:Vec3;kind:number}
 type StationFactory=(id:string,kind:StationKind,position:Vec3,rotation?:number)=>Station;
 export function initializeWorldEconomy(state:GameState,pois:EconomyLandmark[],heightAt:(x:number,z:number)=>number,seed:number,factory:StationFactory,legacy=ensureProgression(state).lootGenerated&&ensureProgression(state).economyVersion===undefined):Vec3[]{

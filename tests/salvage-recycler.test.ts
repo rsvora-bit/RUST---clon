@@ -4,9 +4,10 @@ import {ITEMS,isItemId} from '../src/items/definitions';
 import {RECIPES} from '../src/crafting/recipes';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {activeLostPacks,consumeEmptyContainer,handlePlayerDeath,respawnPlayerState} from '../src/survival/death';
-import {ECONOMY_VERSION,fillSalvageLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
+import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
 import {accepts,countPlayerStations,createStation,isPlaceableStationKind,MAX_PLAYER_STATIONS,stationStatus,takeAll,tickStation,transfer,validateStations} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
+import {randomSource} from '../src/world/noise';
 import {loadGame,saveGame,validateGameState} from '../src/save/storage';
 
 const pos={x:0,y:5,z:0};
@@ -47,6 +48,14 @@ describe('Recycler persistence and duplication safety',()=>{
 });
 
 describe('economy world bootstrap and loot',()=>{
+  it('gives new POI caches deterministic, location-specific loot identities',()=>{
+    const make=(kind,seed)=>{const station=createStation(`poi-${kind}`,'loot',pos);fillPoiLoot(station,kind,'decent',randomSource(seed));return station.inventory.filter(Boolean).map(x=>x!.itemId);};
+    const relay=make(1,451),quarry=make(2,451),camp=make(3,451);
+    expect(make(1,451)).toEqual(relay);expect(relay.some(id=>['wiring','gears','machineParts','techParts'].includes(id))).toBe(true);
+    expect(quarry.some(id=>['ore','metal','sulfurOre'].includes(id))).toBe(true);
+    expect(camp.some(id=>['berries','fiber','bandage','canteen'].includes(id))).toBe(true);
+    expect(relay).not.toEqual(quarry);expect(camp).not.toEqual(quarry);
+  });
   it('spawns deterministic world Recyclers exactly once',()=>{const state=game().state,make=(id,kind,p,r)=>createStation(id,kind,p,r);const positions=initializeWorldEconomy(state,pois,()=>5,779,make,false),first=ensureProgression(state).stations.filter(s=>s.kind==='recycler').map(s=>({id:s.id,position:s.position}));expect(initializeWorldEconomy(state,pois,()=>5,779,make,false)).toEqual(positions);const second=ensureProgression(state).stations.filter(s=>s.kind==='recycler').map(s=>({id:s.id,position:s.position}));expect(first).toHaveLength(2);expect(second).toEqual(first);expect(first.map(x=>x.id)).toEqual(['world-recycler-0','world-recycler-1']);});
   it('bootstraps a v0.7.8 world once without rewriting existing loot',()=>{const state=game().state,p=ensureProgression(state),old=createStation('old-loot','loot',pos),make=(id,kind,p,r)=>createStation(id,kind,p,r);old.inventory[0]={itemId:'wood',count:17};p.stations=[old];p.lootGenerated=true;delete p.economyVersion;initializeWorldEconomy(state,pois,()=>5,780,make);expect(p.economyVersion).toBe(ECONOMY_VERSION);expect(old.inventory[0]).toEqual({itemId:'wood',count:17});expect(p.stations.filter(s=>s.id.startsWith('salvage-v079-'))).toHaveLength(3);const total=p.stations.length;initializeWorldEconomy(state,pois,()=>5,780,make);expect(p.stations).toHaveLength(total);});
   it.each(['common','decent','lucky'])('guarantees salvage value in a %s cache even on failed rolls',tier=>{const station=createStation(`loot-${tier}`,'loot',pos);fillSalvageLoot(station,tier,()=>.999);expect(station.inventory.some(x=>x&&['scrap',...SALVAGE_COMPONENTS].includes(x.itemId))).toBe(true);});

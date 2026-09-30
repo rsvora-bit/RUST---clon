@@ -6,7 +6,7 @@ import {ensureProgression} from './progression';
 import {createStation,type Station} from './stations';
 import {woodMaterial} from '../rendering/materials';
 import {randomSource} from '../world/noise';
-import {fillSalvageLoot,initializeWorldEconomy,type LootTier} from './economy';
+import {fillPoiLoot,fillSalvageLoot,initializeWorldEconomy,type LootTier} from './economy';
 import type {IslandTerrain} from '../terrain/island';
 import {TerrainRoadRouter,roadGeometry} from '../terrain/roads';
 import {groundTexture} from '../world/materials';
@@ -50,7 +50,7 @@ export class WorldSurvival {
   populate(state:GameState){
     const progress=ensureProgression(state),existing=new Set(progress.stations.map(s=>s.id)),legacyEconomy=progress.lootGenerated&&progress.economyVersion===undefined;
     if(!progress.lootGenerated){
-      for(const poi of this.pois){const id=`loot-${poi.id}`,pos={x:poi.position.x+2.7,y:this.env.heightAt(poi.position.x+2.7,poi.position.z+2.4),z:poi.position.z+2.4},rand=randomSource(this.seed+8000+poi.kind*313);if(!existing.has(id)){const s=createStation(id,'loot',pos,rand()*Math.PI*2);this.fillLoot(s,this.tier(rand),rand);progress.stations.push(s);existing.add(id);}}
+      for(const poi of this.pois){const id=`loot-${poi.id}`,pos={x:poi.position.x+2.7,y:this.env.heightAt(poi.position.x+2.7,poi.position.z+2.4),z:poi.position.z+2.4},rand=randomSource(this.seed+8000+poi.kind*313);if(!existing.has(id)){const s=createStation(id,'loot',pos,rand()*Math.PI*2);fillPoiLoot(s,poi.kind,this.tier(rand),rand);progress.stations.push(s);existing.add(id);}}
       const rand=randomSource(this.seed+12091),placed:Vec3[]=[];
       for(let tries=0,index=0;tries<6500&&index<16;tries++){
         const span=this.env.terrain.generation===5?this.env.terrain.size*.92:this.env.terrain.generation>=4?640:530,x=(rand()-.5)*span,z=(rand()-.5)*span,y=this.env.heightAt(x,z);if(y<2.2||y>42||this.env.terrain.slopeAt(x,z)>.48||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<24)continue;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<24))continue;
