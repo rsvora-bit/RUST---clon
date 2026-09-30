@@ -24,6 +24,8 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   metal: item('metal', 'Metal fragments', 'Processed fragments used for hardware and stronger construction.', 'resource', 1000, ['crafting']),
   fiber: item('fiber', 'Plant fiber', 'Tough fibers from wild flax. Twist into cord or use as a dressing.', 'resource', 1000, ['crafting']),
   berries: item('berries', 'Wild berries', 'A small meal that restores 9 food and 5 hydration. Double-click to eat.', 'food', 20, ['food'], { consumable: true }),
+  rawMeat: item('rawMeat', 'Raw meat', 'Freshly recovered island game. Cook it over a campfire before eating.', 'resource', 20, ['food','cooking']),
+  hide: item('hide', 'Animal hide', 'Weathered hide recovered from hunted wildlife. Useful for field clothing.', 'resource', 50, ['crafting','equipment']),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),
   hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),

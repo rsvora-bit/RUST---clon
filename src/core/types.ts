@@ -2,7 +2,7 @@ import type {Station} from '../survival/stations';
 import type {TechNodeId,TechState} from '../crafting/techTree';
 export type Vec3 = {x:number; y:number; z:number};
 export type WorldGeneration=1|2|3|4|5;
-export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll';
+export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'rawMeat'|'hide'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll';
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';
