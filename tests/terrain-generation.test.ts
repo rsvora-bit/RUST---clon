@@ -1,8 +1,13 @@
 import {describe,it,expect} from 'vitest';
-import {IslandTerrain} from '../src/terrain/island';
+import {IslandTerrain,terrainRockWeight} from '../src/terrain/island';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
 describe('world generation compatibility',()=>{
+  it('blends Gen5 exposed rock later across ordinary hillsides while retaining cliff and altitude coverage',()=>{
+    expect(terrainRockWeight(.5,24,5)).toBeLessThan(terrainRockWeight(.5,24,4));
+    expect(terrainRockWeight(.9,24,5)).toBeGreaterThan(.9);
+    expect(terrainRockWeight(.1,82,5)).toBeGreaterThan(.9);
+  });
  it('preserves legacy saves and records the generator on new worlds',()=>{
   const state=new GameSimulation(731942,{x:28,y:6,z:212}).state;
   expect(state.worldGeneration).toBe(5);expect(validateGameState(state)).toBe(true);expect(validateGameState({...state,worldGeneration:3})).toBe(true);
