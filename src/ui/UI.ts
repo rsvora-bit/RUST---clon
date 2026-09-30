@@ -7,6 +7,7 @@ import { ITEMS } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import {ensureTech,TECH_NODES} from '../crafting/techTree';
 import { PIECES } from '../building/rules';
+import {canEquip,EQUIPMENT} from '../combat/equipment';
 import {keyLabel,t,type TranslationKey} from './i18n';
 import './style.css';
 
@@ -147,6 +148,8 @@ export class UI {
     if (screen === 'inventory' && this.state) { this.inventoryHash = ''; this.renderInventory(this.state); }
   }
 
+  refreshInventory():void{if(this.state&&this.screen==='inventory'){this.inventoryHash='';this.renderInventory(this.state);}}
+
   setDeathContext(context:{atBedroll:boolean;lostPack:boolean;distance?:number}):void{
     const loss=this.find<HTMLElement>('.death-loss'),button=this.find<HTMLElement>('.death-respawn'),cs=this.settings.language==='cs',distance=context.distance!==undefined?` · ${Math.round(context.distance)} M`:'';
     loss.innerHTML=context.lostPack?`<strong>${cs?'ZTRACENÝ BATOH ZŮSTAL NA MÍSTĚ':'LOST PACK LEFT BEHIND'}</strong><span>${cs?'Po znovuzrození se vrať pro své nesené zásoby.':'Recover your carried supplies after respawning.'}${distance}</span>`:`<strong>${cs?'ŽÁDNÉ ZÁSOBY ZTRACENY':'NO SUPPLIES LOST'}</strong><span>${cs?'Příliv ti neměl co vzít.':'You carried nothing into the tide.'}</span>`;
@@ -254,7 +257,7 @@ export class UI {
       if(buildHash !== this.buildHash) { this.buildHash = buildHash; this.renderBuild(hud); }
     }
     if (this.screen === 'inventory') {
-      const hash = JSON.stringify([state.inventory,state.craftQueue.map(job => [job.recipeId,Math.ceil(job.remaining)]),this.selectedSlot,this.selectedRecipe,this.recipeCategory]);
+      const hash = JSON.stringify([state.inventory,state.player.equipment,state.craftQueue.map(job => [job.recipeId,Math.ceil(job.remaining)]),this.selectedSlot,this.selectedRecipe,this.recipeCategory]);
       if (hash !== this.inventoryHash && this.dragSlot < 0) { this.inventoryHash = hash; this.renderInventory(state); }
     }
     if(this.diagnosticVisible)this.renderDiagnostics(hud,state);
@@ -337,12 +340,13 @@ export class UI {
     this.find('.inventory-belt').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(state.inventory[index] ?? null,index,this.selectedSlot === index)).join('');
     this.find('.slot-usage').textContent = `${state.inventory.filter(Boolean).length} / 30 SLOTS`;
     this.find('.survivor-vitals').innerHTML = `<div><span>HEALTH</span><b>${Math.ceil(state.player.stats.health)}</b><i style="--value:${state.player.stats.health}%;--color:var(--health)"></i></div><div><span>HYDRATION</span><b>${Math.ceil(state.player.stats.thirst)}</b><i style="--value:${state.player.stats.thirst}%;--color:var(--water)"></i></div><div><span>NOURISHMENT</span><b>${Math.ceil(state.player.stats.hunger)}</b><i style="--value:${state.player.stats.hunger}%;--color:var(--food)"></i></div>`;
-    this.find('.inventory-world-info').textContent = `ISLAND ${state.seed}  /  ${this.hud?.biome.toUpperCase() ?? 'WESTERN SHORE'}`;
+    const worn=Object.entries(state.player.equipment??{}).map(([slot,id])=>`${slot.toUpperCase()}: ${ITEMS[id].displayName}`).join(' · ');
+    this.find('.inventory-world-info').textContent = `ISLAND ${state.seed}  /  ${this.hud?.biome.toUpperCase() ?? 'WESTERN SHORE'}${worn?`  /  ${worn}`:''}`;
     const selected = state.inventory[this.selectedSlot];
     const detail = this.find('.item-detail');
     if(selected) {
       const definition = ITEMS[selected.itemId];
-      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(definition.displayName)}</h3><p>${esc(definition.description)}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
+      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(definition.displayName)}</h3><p>${esc(definition.description)}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${canEquip(selected.itemId)?`<button data-action="wear">WEAR · ${EQUIPMENT[selected.itemId]!.slot.toUpperCase()}</button>`:this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
     } else detail.innerHTML = '<div class="empty-detail"><span>+</span><h3>ROOM FOR POSSIBILITY</h3><p>Select an item to inspect, use or drop it.</p></div>';
     this.renderRecipes(state);
   }
@@ -440,7 +444,7 @@ export class UI {
       case 'resetCamera':this.settings={...this.settings,sensitivityX:DEFAULT_SETTINGS.sensitivityX,sensitivityY:DEFAULT_SETTINGS.sensitivityY,fov:DEFAULT_SETTINGS.fov,viewmodelFov:DEFAULT_SETTINGS.viewmodelFov,invertY:DEFAULT_SETTINGS.invertY,headBob:DEFAULT_SETTINGS.headBob,cameraShake:DEFAULT_SETTINGS.cameraShake,motionBlur:DEFAULT_SETTINGS.motionBlur,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;
       case 'resetSettings':{const language=this.settings.language;this.settings={...DEFAULT_SETTINGS,language,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;}
       case 'reloadBuild':{const url=new URL(window.location.href);url.searchParams.set('build',`${GAME_VERSION}-${GAME_BUILD}`);window.location.replace(url.toString());break;}
-      case 'drop':this.actions.dropItem(this.selectedSlot);break;case 'consume':this.actions.consume(this.selectedSlot);break;case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;case 'split':this.splitSelected();break;case 'craft':this.actions.craft(this.selectedRecipe);break;
+      case 'drop':this.actions.dropItem(this.selectedSlot);break;case 'consume':this.actions.consume(this.selectedSlot);break;case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;case 'wear':this.actions.equip(this.selectedSlot);this.refreshInventory();break;case 'split':this.splitSelected();break;case 'craft':this.actions.craft(this.selectedRecipe);break;
       case 'history':{const panel=this.find('.history-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.help-panel').hidden=true;break;}case 'help':{const panel=this.find('.help-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.history-panel').hidden=true;break;}
     }
   }

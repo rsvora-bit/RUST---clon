@@ -8,6 +8,7 @@ import { RECIPES } from '../crafting/recipes';
 import { PIECES, validateStructurePlacement } from '../building/rules';
 import {migrateStructure} from '../building/grades';
 import {ensureTech,validTechNode} from '../crafting/techTree';
+import {EQUIPMENT} from '../combat/equipment';
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const finite = (value: unknown, min = -1e6, max = 1e6): value is number => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
@@ -25,6 +26,7 @@ export function validateGameState(value: unknown): value is GameState {
   if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3 && value.worldGeneration !== 4 && value.worldGeneration !== 5) return false;
   if (value.worldRevision !== undefined && value.worldRevision !== 1 && value.worldRevision !== 2 && value.worldRevision !== 3) return false;
   if (!record(value.player) || !position(value.player.position) || !stats(value.player.stats) || !finite(value.player.yaw) || !finite(value.player.pitch, -Math.PI / 2, Math.PI / 2)) return false;
+  if(value.player.equipment!==undefined&&(!record(value.player.equipment)||Object.entries(value.player.equipment).some(([slot,item])=>!['head','body','legs','feet'].includes(slot)||typeof item!=='string'||!EQUIPMENT[item as keyof typeof EQUIPMENT]||EQUIPMENT[item as keyof typeof EQUIPMENT]!.slot!==slot)||new Set(Object.values(value.player.equipment)).size!==Object.values(value.player.equipment).length))return false;
   if (!Array.isArray(value.inventory) || value.inventory.length !== INVENTORY.SLOTS || !value.inventory.every(item => item === null || stack(item)) || !integer(value.activeSlot, 0, INVENTORY.HOTBAR_SLOTS - 1)) return false;
   if (!Array.isArray(value.structures) || value.structures.length > BUILDING_RULES.MAX_STRUCTURES || !Array.isArray(value.drops) || value.drops.length > SAVE.MAX_DROPS) return false;
   const ids = new Set<string>();
@@ -70,7 +72,7 @@ export function validateGameState(value: unknown): value is GameState {
 
 interface SaveEnvelope {savedAt:number; state:GameState}
 const slotKey=(slot:number):string=>`${SAVE.GAME_KEY}:slot:${Math.max(1,Math.min(SAVE.SLOT_COUNT,Math.trunc(slot)))}`;
-function migrateState(state:GameState):GameState {const migrated=structuredClone(state);for(const structure of migrated.structures)migrateStructure(structure);ensureTech(migrated);return migrated;}
+function migrateState(state:GameState):GameState {const migrated=structuredClone(state);migrated.player.equipment??={};for(const structure of migrated.structures)migrateStructure(structure);ensureTech(migrated);return migrated;}
 function decodeSave(raw:string|null):SaveEnvelope|null {
   if(!raw||raw.length>12_000_000)return null;
   try {

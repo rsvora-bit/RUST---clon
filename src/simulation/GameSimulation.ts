@@ -11,6 +11,7 @@ import {damageStructure as applyStructureDamage,demolishStructure,migrateStructu
 import {createStarterInventory} from '../inventory/starter';
 import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
 import {damageTypeForCause,resolveDamage,type Damageable,type DamagePacket,type DamageResult} from '../combat/damage';
+import {canEquip,EQUIPMENT,equipmentMitigation} from '../combat/equipment';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
@@ -29,6 +30,7 @@ export class GameSimulation implements Damageable {
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
     };
     for(const structure of this.state.structures)migrateStructure(structure);
+    this.state.player.equipment??={};
     ensureProgression(this.state);ensureTech(this.state);
   }
 
@@ -164,6 +166,16 @@ export class GameSimulation implements Damageable {
     if (Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.HOTBAR_SLOTS) this.state.activeSlot = slot;
   }
 
+  equip(slot:number):boolean {
+    if(!validSlot(slot))return false;
+    const stack=this.state.inventory[slot];if(!stack||stack.count!==1||!canEquip(stack.itemId))return false;
+    const equipment=this.state.player.equipment??(this.state.player.equipment={});
+    const definition=EQUIPMENT[stack.itemId]!;const previous=equipment[definition.slot];
+    this.state.inventory[slot]=previous?{itemId:previous,count:1}:null;
+    equipment[definition.slot]=stack.itemId;
+    this.onNotify(`Equipped ${ITEMS[stack.itemId].displayName}`);return true;
+  }
+
   craftStatus(recipeId: string):{craftable:boolean;reason:'ok'|'unknown'|'locked'|'workbench'|'resources'|'inventory-space'|'queue-full';requiredTech?:TechNodeId;requiredWorkbench?:number}{
     const recipe=Object.hasOwn(RECIPES,recipeId)?RECIPES[recipeId]:undefined;if(!recipe)return {craftable:false,reason:'unknown'};
     const tech=ensureTech(this.state);if(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech))return {craftable:false,reason:'locked',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
@@ -222,7 +234,7 @@ export class GameSimulation implements Damageable {
   damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}
 
   takeDamage(packet:DamagePacket,mitigation=0):DamageResult{
-    const result=resolveDamage(this.state.player.stats.health,SURVIVAL.STARTING_STATS.health,packet,mitigation);
+    const result=resolveDamage(this.state.player.stats.health,SURVIVAL.STARTING_STATS.health,packet,Math.min(.85,mitigation+equipmentMitigation(this.state.player.equipment,packet.type)));
     if(result.ok)this.state.player.stats.health=result.healthAfter;
     return result;
   }
