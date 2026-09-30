@@ -11,6 +11,24 @@ const boot=async()=>{await page.waitForFunction(()=>window.__TIDELAND,null,{time
 const play=async()=>{await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000})};
 const shot=async(name,p,target)=>{await page.evaluate(({p,target})=>{const a=window.__TIDELAND;a.teleport(p);a.lookAt(target||{x:p.x+45,y:p.y+3,z:p.z-40});},{p,target});await page.waitForTimeout(600);await page.screenshot({path:`${out}/${name}.png`,timeout:60000})};
 try{
+ // Capture a real v0.9.1 revision-2 save from its immutable archive, including
+ // depleted nodes and a placed structure, then load it through current code.
+ const archive=await browser.newPage({viewport:{width:1280,height:720}}),archiveErrors=[];archive.on('pageerror',e=>archiveErrors.push(e.message));
+ await archive.goto('https://rsvora-bit.github.io/RUST---clon/versions/v0.9.1/');await archive.waitForFunction(()=>!!window.__TIDELAND,null,{timeout:180000});await archive.locator('.loading-screen').waitFor({state:'hidden',timeout:180000});
+ await archive.locator('#world-seed').fill('731942');await archive.locator('[data-action="new"]').click();await archive.locator('[data-save-action="new"][data-save-slot="1"]').click();await archive.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000});
+ const revision2=await archive.evaluate(()=>{const a=window.__TIDELAND,g=a.sim(),p=a.world().spawn;a.setCapturePaused(true);a.dev('resources');g.addItem('scrap',37);g.state.nodeChanges['tree-4']=123;g.state.player.position={x:p.x+2,y:a.height(p.x+2,p.z)+.2,z:p.z+2};a.teleport(g.state.player.position);const built=a.placeAt('foundation',{x:p.x+5,y:a.height(p.x+5,p.z+5),z:p.z+5}).structure;const station=a.stationPlace('bedroll',{x:p.x+8,y:a.height(p.x+8,p.z+8),z:p.z+8});g.state.progression.tech.unlocked.push('efficiencyTooling');g.state.progression.waypoint={x:100,z:-100};a.save();const prefix='tideland-archive:v0.9.1:';return {state:a.snapshot(),nodes:a.nodes(),world:a.world(),built,station,storage:Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith(prefix)).map(k=>[k.slice(prefix.length),localStorage.getItem(k.slice(prefix.length))]))};});
+ assert.equal(archiveErrors.length,0,archiveErrors.join('\n'));assert.equal(revision2.state.worldRevision,2);assert.ok(revision2.built&&revision2.station);
+ fs.writeFileSync(`${out}/v091-save.json`,JSON.stringify(revision2));await archive.close();
+ await page.goto(base);await boot();await page.evaluate(storage=>{localStorage.clear();for(const [key,value] of Object.entries(storage))localStorage.setItem(key,value)},revision2.storage);await page.reload();await boot();await play();
+ const restored2=await page.evaluate(()=>({state:window.__TIDELAND.snapshot(),world:window.__TIDELAND.world(),nodes:window.__TIDELAND.nodes()}));
+ pass('Real archived v0.9.1 revision-2 save retains its revision',restored2.state.worldRevision===2&&restored2.world.revision===2);
+ pass('Revision-2 tree and resource identities stay exact',JSON.stringify(restored2.nodes.map(n=>({id:n.id,kind:n.kind,position:n.position})))===JSON.stringify(revision2.nodes.map(n=>({id:n.id,kind:n.kind,position:n.position}))));
+ pass('Revision-2 POIs and routes stay exact',JSON.stringify(restored2.world.pois)===JSON.stringify(revision2.world.pois)&&JSON.stringify(restored2.world.trails)===JSON.stringify(revision2.world.trails));
+ for(const key of ['inventory','structures','nodeChanges','drops','craftQueue'])pass(`Revision-2 ${key} retained`,JSON.stringify(restored2.state[key])===JSON.stringify(revision2.state[key]));
+ pass('Revision-2 stations and research retained',JSON.stringify(restored2.state.progression.stations)===JSON.stringify(revision2.state.progression.stations)&&JSON.stringify(restored2.state.progression.tech)===JSON.stringify(revision2.state.progression.tech));
+ pass('Revision-2 player position retained',Math.hypot(restored2.state.player.position.x-revision2.state.player.position.x,restored2.state.player.position.z-revision2.state.player.position.z)<.05);
+ pass('Revision-2 building collider restored',await page.evaluate(id=>window.__TIDELAND.hasStructureCollider(id),revision2.built.id));
+ await page.close();page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
  await page.goto(base);await boot();
  await page.evaluate(storage=>{localStorage.clear();for(const [key,value] of Object.entries(storage))localStorage.setItem(key.replace('tideland-archive:v0.9.0:',''),value);},fixture.storage);await page.reload();await boot();await play();
  const restored=await page.evaluate(()=>{const a=window.__TIDELAND;a.setCapturePaused(true);return {state:a.snapshot(),world:a.world(),nodes:a.nodes()}});
@@ -25,7 +43,7 @@ try{
  // New revision is explicit, never assigned on loading an old snapshot.
  await page.close();page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await page.goto(base);await boot();await page.locator('#world-seed').fill('731942');await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000});
  const world=await page.evaluate(()=>{const a=window.__TIDELAND;a.setCapturePaused(true);a.dev('god');a.dev('fly');a.dev('time',10);return a.world()});
- pass('New gen5 world explicitly uses revision 2',world.revision===2&&(await page.evaluate(()=>window.__TIDELAND.snapshot().worldRevision))===2);
+ pass('New gen5 world explicitly uses revision 3',world.revision===3&&(await page.evaluate(()=>window.__TIDELAND.snapshot().worldRevision))===3);
  const art=await page.evaluate(()=>window.__TIDELAND.worldArt());pass('Three cheap nonphysical horizon layers exist',art.horizonLayers===3&&art.horizonTriangles===1344);
  const palms=art.trees.filter(t=>t.species===5);pass('Palm canopies have climate-correct placement',palms.length>0&&palms.every(t=>t.climate.temperature>.53&&t.position.y<26));
  const roads=world.trails.flat();pass('No routed road sample is deep underwater',await page.evaluate(points=>points.every(p=>window.__TIDELAND.height(p.x,p.z)>=1.15),roads));
@@ -38,6 +56,6 @@ try{
  // Fast camera sweep uses the actual render loop and covers both sides of foliage.
  for(let i=0;i<16;i++){await page.evaluate(({p,i})=>window.__TIDELAND.lookAt({x:p.x+Math.cos(i/16*Math.PI*2)*80,y:p.y+6,z:p.z+Math.sin(i/16*Math.PI*2)*80}),{p:palms[0].position,i});await page.waitForTimeout(80)}
  pass('Camera sweep produces no WebGL/application errors',errors.length===0);
- await page.evaluate(()=>window.__TIDELAND.save());const stable=await page.evaluate(()=>window.__TIDELAND.world());await page.reload();await boot();await play();const reload=await page.evaluate(()=>window.__TIDELAND.world());pass('Revision 2 save/reload keeps roads, POIs and node count',JSON.stringify(stable)===JSON.stringify(reload));
+ await page.evaluate(()=>window.__TIDELAND.save());const stable=await page.evaluate(()=>window.__TIDELAND.world());await page.reload();await boot();await play();const reload=await page.evaluate(()=>window.__TIDELAND.world());pass('Revision 3 save/reload keeps roads, POIs and node count',JSON.stringify(stable)===JSON.stringify(reload));
  fs.writeFileSync(`${out}/world-art-results.json`,JSON.stringify({passed:true,results,errors,palms:palms.length},null,2));
 }catch(e){fs.writeFileSync(`${out}/world-art-results.json`,JSON.stringify({passed:false,results,errors,error:e.message},null,2));throw e}finally{await browser.close()}

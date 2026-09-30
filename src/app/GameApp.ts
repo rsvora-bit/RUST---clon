@@ -86,7 +86,7 @@ export class GameApp {
     this.worldSurvival?.dispose();this.weather?.dispose();this.islandMap?.dispose();
     this.stationRenderer?.dispose();this.stationIds.clear();this.stationUI?.close();this.openStation=null;this.interactions.clear();this.gatheringFeedback.clear();this.knownStructures.clear();for(const barrel of this.rainBarrels)barrel.removeFromParent();this.rainBarrels=[];this.structures?.dispose();this.worldItems?.dispose();this.physics?.dispose();this.environment?.dispose();
     await this.loadingStage(17,'Shaping terrain heightfield','Generating beaches, valleys, slopes and the player spawn');
-    this.environment=new Environment(this.scene,seed,saved ? saved.worldGeneration ?? 1 : 5,true,saved ? saved.worldRevision ?? 1 : 2);
+    this.environment=new Environment(this.scene,seed,saved ? saved.worldGeneration ?? 1 : 5,true,saved ? saved.worldRevision ?? 1 : 3);
     await this.environment.populateAsync((progress,status,detail)=>this.loadingStage(progress,status,detail));
     this.simulation=new GameSimulation(seed,this.environment.spawn,saved);this.simulation.onNotify=msg=>this.ui.notify(msg);
     await this.loadingStage(68,'Restoring resource state','Applying depleted nodes and saved world mutations');this.environment.syncNodes(this.simulation.state.nodeChanges);

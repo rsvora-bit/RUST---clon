@@ -72,10 +72,10 @@ export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
     branch(new THREE.Vector3(0,2.4,0),fork,.15);branch(fork,tip,.09);
     for(const side of [-1,1])branch(fork,new THREE.Vector3(b.x+side*.7,b.y+.1,b.z-side*.6),.055);
   }
-  for(let i=0;i<(broadleaf?0:28);i++){
-    const y=broadleaf?3+r()*4:2.5+r()*(height-3.4),a=i*2.399+r()*.4;
-    const length=broadleaf?1.8+r()*1.5:(1-y/height)*3.4*(.7+r()*.4);
-    branch(new THREE.Vector3(0,y,0),new THREE.Vector3(Math.cos(a)*length,y+(broadleaf?1.4:-.2),Math.sin(a)*length),broadleaf?.1:.055);
+  for(let i=0;i<(broadleaf?0:18);i++){
+    const y=broadleaf?3+r()*4:height*(.46+r()*.49),a=i*2.399+r()*.4;
+    const length=broadleaf?1.8+r()*1.5:(1-y/height)*1.85*(.72+r()*.35);
+    branch(new THREE.Vector3(0,y,0),new THREE.Vector3(Math.cos(a)*length,y+(broadleaf?1.4:.24),Math.sin(a)*length),broadleaf?.1:.055);
   }
   for(let i=0;i<5;i++){const a=i*1.257;branch(new THREE.Vector3(0,.38,0),new THREE.Vector3(Math.cos(a)*.65,.02,Math.sin(a)*.65),.13);}
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
@@ -106,9 +106,9 @@ export function bushGeometry():THREE.BufferGeometry {
  * into dark quads. One shared 21-triangle tuft is instanced across the island. */
 export function grassGeometry():THREE.BufferGeometry {
   const r=randomSource(615),positions:number[]=[],colors:number[]=[],indices:number[]=[];
-  for(let blade=0;blade<7;blade++){
-    const angle=r()*Math.PI*2,x=(r()-.5)*.48,z=(r()-.5)*.48;
-    const height=.36+r()*.55,width=.018+r()*.024,lean=.09+r()*.18;
+  for(let blade=0;blade<9;blade++){
+    const angle=blade/9*Math.PI*2+r()*.42,radius=blade<3?.08+r()*.09:.16+r()*.12,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
+    const height=.34+Math.pow(r(),.78)*.58,width=.018+r()*.027,lean=.08+r()*.20;
     const dx=Math.cos(angle),dz=Math.sin(angle),base=positions.length/3;
     const points=[[-width,0,0],[width,0,0],[-width*.55,height*.53,lean*.35],[width*.55,height*.53,lean*.35],[0,height,lean]];
     for(const [side,y,bend] of points){positions.push(x+dx*side-dz*bend,y,z+dz*side+dx*bend);const t=y/height;colors.push(.23+t*.22,.29+t*.23,.115+t*.13);}

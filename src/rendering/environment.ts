@@ -65,10 +65,10 @@ export class Environment {
   private quality:'low'|'medium'|'high'|'ultra'='high';
   private foliageDensity=.72;
 
-  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:1|2=2){
+  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:1|2|3=3){
     this.root.name='Tideland — procedural island';scene.add(this.root);
     this.terrain=new IslandTerrain(seed,worldGeneration);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
-    if(worldGeneration===5&&worldRevision===2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,2);
+    if(worldGeneration===5&&worldRevision>=2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,worldRevision);
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
     const terrainMat=terrainMaterial(),ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
@@ -125,14 +125,15 @@ export class Environment {
     const starterTrees=this.terrain.generation>=3?[[this.spawn.x-22,this.spawn.z-11,.86,0],[this.spawn.x+23,this.spawn.z-9,.96,1],[this.spawn.x-18,this.spawn.z+18,1.02,0],[this.spawn.x+20,this.spawn.z+17,.84,0]] as const:[[6,198,.86,0],[55,200,.96,1],[-4,190,1.02,0],[53,181,.84,0]] as const;
     for(const [x,z,scale,species] of starterTrees)if(this.roadClear(x,z,4.4))treeNodes.push({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
     const modern=this.terrain.generation===2,expanded=this.terrain.generation>=4,g5=this.terrain.generation===5;
-    for(let i=0;i<(g5?18000:expanded?9000:modern?12000:7000)&&treeNodes.length<(g5?900:expanded?620:modern?820:560);i++){
+    const treeLimit=g5?(this.worldRevision>=3?1180:900):expanded?620:modern?820:560,treeAttempts=g5?(this.worldRevision>=3?27000:18000):expanded?9000:modern?12000:7000;
+    for(let i=0;i<treeAttempts&&treeNodes.length<treeLimit;i++){
       const span=g5?this.terrain.size*.94:expanded?650:580,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
       if(h<4||h>(g5?58:38)||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<30||!this.roadClear(x,z,4.4))continue;
-      const density=smoothstep(.32,.68,forest),biomeDensity=g5?(this.worldRevision===2?vegetationCover(this.terrain.climateAt(x,z),h,slope):treeDensityForBiome(biome,forest)):.055+density*.79;if(rand()>biomeDensity)continue;
+      const density=smoothstep(.32,.68,forest),climateDensity=g5&&this.worldRevision>=2?vegetationCover(this.terrain.climateAt(x,z),h,slope):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
       if(treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4))continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
-      const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,this.worldRevision===2?this.terrain.climateAt(x,z):undefined,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
+      const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,this.worldRevision>=2?this.terrain.climateAt(x,z):undefined,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
       treeNodes.push({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
     }
     for(let species=0;species<6;species++){
