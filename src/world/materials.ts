@@ -86,7 +86,7 @@ export function terrainMaterial():THREE.MeshStandardMaterial {
       vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;
       float macro=groundNoise(gp.xz*.13+warp*2.)*.62+groundNoise(gp.xz*.034)*.38;float soil=smoothstep(.43,.69,macro)*(1.-vGroundWeights.x)*(1.-vGroundWeights.y*.65);grassCol=mix(grassCol,dirtCol,soil*.68);
       float micro=groundNoise(gp.xz*3.7)*.72+groundNoise(gp.xz*11.3)*.28;grassCol*=.83+.25*micro;dirtCol*=.86+.22*micro;
-      float wet=smoothstep(2.4,.0,gp.y);sandCol=mix(sandCol,sandCol*vec3(.62,.68,.69),wet*.55);
+      float wet=1.-smoothstep(.12,2.4,gp.y);sandCol=mix(sandCol,sandCol*vec3(.62,.68,.69),wet*.48);
       vec3 climateGrass=mix(grassCol,dryCol,vGroundClimate.x);climateGrass=mix(climateGrass,snowCol,vGroundClimate.y*(1.-vGroundWeights.y*.88));climateGrass=mix(climateGrass,climateGrass*vec3(.72,.88,.69),vGroundClimate.z*.24);
       diffuseColor.rgb*=sandCol*vGroundWeights.x+rockCol*vGroundWeights.y+climateGrass*vGroundWeights.z;`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
