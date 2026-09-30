@@ -171,6 +171,14 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Změněné soubory: `src/core/types.ts`, `src/items/definitions.ts`, `src/survival/stations.ts`, `src/survival/WorldSurvival.ts`, `src/survival/StationRenderer.ts`, `src/app/GameApp.ts`, `tests/salvage-recycler.test.ts`, `scripts/scavenger-qa.mjs`, `public/assets/icons/relayAccessCard.svg` a tento checkpoint.
 - Pracovní větev `codex/world-quality-next`; žádný push, PR, tag, release ani version bump. Následující krok: checkpoint commit, pak pokračovat další nedokončenou progresní/world oblastí.
 
+## Alpine cold survival checkpoint — 2026-10-01
+
+- Přidána druhá Generation-5 hazard expozice: alpine cold se počítá z existujícího climate temperature, denního světla a saved weather kind. Je omezena na Generation 5 revision 3; layout ani save schema se nemění.
+- V runtime hazard zobrazuje jedno varování při vstupu, aplikuje časově akumulovaný cold damage přes stávající damage resolver a equipment mitigation a hlásí návrat do bezpečnějších podmínek. Warm jacket/boots/hood tak mají praktickou ochrannou funkci.
+- `test:hazard` v Chrome/Metal PASS: toxický relay i noční alpine storm zobrazí warning a snižují health, bez browser/WebGL errors. Unit subset hazards/equipment/damage 11/11 PASS; celá `npm test` sada **231/231 PASS, 34 souborů**; `npm run build` PASS se stávajícím ~3.19 MB chunk warningem; `git diff --check` PASS.
+- Změněné soubory: `src/survival/hazards.ts`, `src/app/GameApp.ts`, `tests/hazards.test.ts`, `scripts/hazard-qa.mjs` a tento checkpoint.
+- Aktuální pracovní změna je lokální a připravená na checkpoint commit. Žádný push/PR/tag/release/version bump. Pokračovat přes další cíle v aktivním Combat, Danger & Progression goal.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
