@@ -10,6 +10,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
   bedroll:{id:'bedroll',resultItemId:'bedroll',resultCount:1,ingredients:{fiber:80,wood:20},category:'Survival',craftTime:3},
   bow:{id:'bow',resultItemId:'bow',resultCount:1,ingredients:{wood:90,fiber:35,hide:2},category:'Tools',craftTime:5},
   arrow:{id:'arrow',resultItemId:'arrow',resultCount:5,ingredients:{wood:20,stone:12,fiber:4},category:'Tools',craftTime:3},
+  field_spear:{id:'field_spear',resultItemId:'spear',resultCount:1,ingredients:{wood:75,stone:45,fiber:20},requiredWorkbenchLevel:1,requiredTech:'fieldEngineering',category:'Tools',craftTime:5},
   workbench1:{id:'workbench1',resultItemId:'workbench1',resultCount:1,ingredients:{wood:250,metal:40},category:'Building',craftTime:6},
   workbench2:{id:'workbench2',resultItemId:'workbench2',resultCount:1,ingredients:{wood:350,metal:150},requiredWorkbenchLevel:1,requiredTech:'workbench2Research',category:'Building',craftTime:8},
   workbench3:{id:'workbench3',resultItemId:'workbench3',resultCount:1,ingredients:{wood:500,metal:350},requiredWorkbenchLevel:2,requiredTech:'workbench3Research',category:'Building',craftTime:10},

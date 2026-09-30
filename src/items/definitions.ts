@@ -32,6 +32,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   warmJacket: item('warmJacket','Insulated jacket','A thick salvage-lined jacket that meaningfully slows cold exposure.','utility',1,['equipment','warmth']),
   protectiveHood: item('protectiveHood','Filter hood','A sealed field hood that offers limited protection from contaminated air.','utility',1,['equipment','hazard']),
   bow: item('bow','Island hunting bow','A simple ash-and-fiber bow. Hold primary fire to draw, then release to loose an arrow.','tool',1,['weapon','ranged']),
+  spear: item('spear','Salvage-tipped spear','A long field haft with a hardened salvage point. Its reach is useful against wildlife, but the narrow thrust needs a steady aim.','tool',1,['weapon','melee']),
   arrow: item('arrow','Field arrow','A recoverable wood-shaft arrow with a forged salvage point.','resource',100,['ammunition','crafting']),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),

@@ -103,6 +103,12 @@ export class HeldItem {
         this.flameOuter=this.mesh(new THREE.PlaneGeometry(.19,.29),flameMaterial(),.34,.525,-.65);this.flameOuter.renderOrder=102;
         this.flameInner=this.mesh(new THREE.PlaneGeometry(.11,.22),flameMaterial(),.345,.48,-.635);this.flameInner.renderOrder=103;
       }
+    }else if(item==='spear'){
+      const haft=this.mesh(new THREE.CylinderGeometry(.018,.027,.92,9),this.wood,.27,.10,-.66);haft.rotation.z=-.16;
+      const point=this.mesh(new THREE.ConeGeometry(.062,.24,6),this.metal,.27,.66,-.68);point.rotation.z=-.16;
+      const socket=this.mesh(new THREE.CylinderGeometry(.038,.034,.10,8),this.wrap,.27,.51,-.665);socket.rotation.z=-.16;
+      for(let i=0;i<4;i++){const band=this.mesh(new THREE.TorusGeometry(.029,.003,5,12),this.wrap,.283,.03+i*.018,-.655);band.rotation.x=Math.PI/2;}
+      this.addArm(-1,-.08,-.17,-.61,.18,true);
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);

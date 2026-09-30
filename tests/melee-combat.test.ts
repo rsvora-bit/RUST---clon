@@ -10,6 +10,12 @@ describe('melee reach and swing rules',()=>{
     expect(MELEE_WEAPONS.rock.range).toBeLessThan(MELEE_WEAPONS.pickaxe.range);
     expect(MELEE_WEAPONS.hatchet.staminaCost).toBeGreaterThan(0);
   });
+  it('gives the research-gated field spear longer reach, higher damage and a narrower thrust arc',()=>{
+    expect(MELEE_WEAPONS.spear.damage).toBeGreaterThan(MELEE_WEAPONS.hatchet.damage);
+    expect(MELEE_WEAPONS.spear.range).toBeGreaterThan(MELEE_WEAPONS.pickaxe.range);
+    expect(MELEE_WEAPONS.spear.arcCosine).toBeGreaterThan(MELEE_WEAPONS.hatchet.arcCosine);
+    expect(resolveMeleeHit(MELEE_WEAPONS.spear,origin,forward,target('boar',0,1,-2.4,.25)).hit).toBe(true);
+  });
   it('hits a target in front inside reach',()=>{
     expect(resolveMeleeHit(MELEE_WEAPONS.rock,origin,forward,target('wolf'))).toMatchObject({hit:true,reason:'hit',targetId:'wolf'});
   });

@@ -18,7 +18,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 4. Luk/projektily a střelné zbraně/náboje — **IN PROGRESS** (luk, draw strength, balistický šíp, swept hit, wildlife damage, recoverable/persistent arrows runtime PASS; firearm/reload/ammunition tiers NOT STARTED).
 5. Damage/death integration — **IN PROGRESS** (typed player hits, wildlife melee/projectile and death flow wired; projectile lethal browser regression and human AI integration remain).
 6. Armor/equipment — **IN PROGRESS** (pět craftitelných kusů, čtyři persistentní sloty, damage-category mitigation, UI equip/save/load; durability a teplotní survival efekt zbývají).
-7. Durability/repair — **IN PROGRESS** (volitelné `ItemStack.condition`, trvanlivost rock/hatchet/pickaxe/hammer/bow, gathering yield/melee/ranged degradation, rozbití, condition UI a materiálově podmíněná oprava u Workbench 1; targeted tests PASS, browser QA a samostatný commit zbývají).
+7. Durability/repair — **COMPLETE** (volitelné `ItemStack.condition`, trvanlivost rock/hatchet/pickaxe/hammer/bow/spear, gathering/combat degradation, break, condition UI a materiálová oprava u Workbench 1; unit a browser UI/save-reload QA PASS, commit `e72b57c` plus QA `3f0286f`).
 8. Wildlife — **COMPLETE for first hostile fauna slice** (seeded wolf/boar population, close-range AI LOD, melee interaction, persistent health/death, meat/hide rewards). Passive species/advanced behavior NOT STARTED.
 9. Hostile human AI — NOT STARTED.
 10. Loot tiers — částečně existují; rozšíření NOT STARTED.
@@ -78,6 +78,16 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - `scripts/ranged-qa.mjs` nyní obsahuje skutečnou UI/reload regresi pro opravu; QA fixture používá správnou nulovou kapacitu Workbench inventáře.
 - Aktuální změněné soubory: `src/app/GameApp.ts`, `src/core/types.ts`, `src/inventory/inventory.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `src/survival/stations.ts`, `src/ui/UI.ts`, `src/ui/style.css`, `src/combat/durability.ts` (nový), `tests/durability.test.ts` (nový).
 - Při obnovení nejdřív `git status` a `git diff`; zachovat celý tento rozpracovaný stav. Poslední potvrzený HEAD `8aaa1d8`. Neprovádět push/release; divergence origin/main není vyřešena.
+
+## Tech Tree / spear checkpoint — 2026-10-01
+
+- Přidán originální spear jako první samostatně profilovaná melee zbraň v delším dosahu. Je craftitelný až po výzkumu `fieldEngineering` na Workbench 1 a využívá současnou stamina/damage/condition/save pipeline wildlife combat.
+- Přidána vlastní procedural first-person geometrie (haft, kovová špička a návlek) a vlastní SVG ikona; durability 90, landed hit opotřebuje o 1. Jeho profil: damage 36, reach 2.7 m, cooldown 0.76 s, stamina 9 a užší arc 0.72.
+- `fieldEngineering` nyní odemyká `field_spear`; recept stojí wood 75, stone 45, fiber 20. Všechny staré ItemId/save validace zůstávají řízeny katalogem `ITEMS`; žádné save schema ani verze se nemění.
+- Testy rozšířeny o spear reach/damage/arc a kompletní research→craft→save-valid flow.
+- Targeted tests **22/22 PASS**; následná plná sada **214/214 PASS (31 souborů)**, TypeScript/build PASS (existující velký JS chunk warning). Browser `test:combat` PASS: spear zasáhl z větší vzdálenosti a condition 90→89, běžný melee kill + meat/hide persistence, hostile wildlife typed damage, save/reload, clothing equip/cold mitigation/persistence; žádné console/WebGL chyby.
+- Aktuálně rozpracováno pouze QA rozšíření, které je třeba commitnout po úspěšné plné sadě: `src/core/types.ts`, `src/items/definitions.ts`, `src/combat/durability.ts`, `src/combat/melee.ts`, `src/crafting/recipes.ts`, `src/crafting/techTree.ts`, `src/rendering/HeldItem.ts`, `public/assets/icons/spear.svg`, `tests/melee-combat.test.ts`, `tests/tech-tree.test.ts`, `scripts/combat-qa.mjs`.
+- Aktuální potvrzené předchozí HEAD `3f0286f`; nová feature zatím necommitnutá. Zůstat na `codex/world-quality-next`, nepushovat/releasovat; origin divergence dál blokuje integraci.
 
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 
