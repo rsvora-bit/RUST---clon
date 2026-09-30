@@ -31,7 +31,8 @@ export class Environment {
   private readonly instances=new Map<string,InstanceRef[]>();
   private readonly resources:THREE.Object3D[]=[];
   private readonly grassChunks:GrassChunk[]=[];
-  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;visible:boolean}[]}[]=[];
+  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
+  private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
   private readonly detailMeshes:{mesh:THREE.InstancedMesh;fullCount:number;minimum:'low'|'medium'|'high'}[]=[];
   private readonly decalMeshes:THREE.InstancedMesh[]=[];
@@ -65,6 +66,9 @@ export class Environment {
   private quality:'low'|'medium'|'high'|'ultra'='high';
   private foliageDensity=.72;
   get renderedTreeCount():number{return this.treeBatches.reduce((n,b)=>n+b.instances.filter(t=>t.visible).length,0);}
+  get renderedTreeInstanceCount():number{return this.treeBatches.reduce((n,b)=>n+b.trunks.count,0);}
+  get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
+  get fallingTreeCount():number{return this.fallingTrees.size;}
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:1|2|3=3){
     this.root.name='Tideland — procedural island';scene.add(this.root);
@@ -83,6 +87,20 @@ export class Environment {
   private populateNow():void {
     if(this.populated)return;
     this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
+  }
+  private removeTreeInstance(id:string):void {
+    const tree=this.treeInstancesById.get(id);if(!tree)return;tree.active=false;
+    for(const batch of this.treeBatches){
+      const removed=batch.instances.find(instance=>instance.id===id);if(!removed||!removed.visible)continue;
+      const index=removed.renderIndex,last=batch.trunks.count-1;
+      if(index<last){
+        const matrix=new THREE.Matrix4(),color=new THREE.Color();batch.trunks.getMatrixAt(last,matrix);batch.trunks.setMatrixAt(index,matrix);batch.crowns.getMatrixAt(last,matrix);batch.crowns.setMatrixAt(index,matrix);
+        if(batch.trunks.instanceColor){batch.trunks.getColorAt(last,color);batch.trunks.setColorAt(index,color);}if(batch.crowns.instanceColor){batch.crowns.getColorAt(last,color);batch.crowns.setColorAt(index,color);}
+        const moved=batch.instances.find(instance=>instance.visible&&instance.renderIndex===last);if(moved){moved.renderIndex=index;const refs=this.instances.get(moved.id);if(refs)for(const ref of refs)ref.index=index;}
+        batch.trunks.instanceMatrix.needsUpdate=batch.crowns.instanceMatrix.needsUpdate=true;if(batch.trunks.instanceColor)batch.trunks.instanceColor.needsUpdate=true;if(batch.crowns.instanceColor)batch.crowns.instanceColor.needsUpdate=true;
+      }
+      removed.visible=false;batch.trunks.count=batch.crowns.count=last;
+    }
   }
   async populateAsync(stage:(progress:number,status:string,detail?:string)=>Promise<void>):Promise<void> {
     if(this.populated)return;
@@ -148,13 +166,14 @@ export class Environment {
       const trunks=new THREE.InstancedMesh(trunk,this.bark,entries.length),crowns=new THREE.InstancedMesh(crown,palm?this.palm:species===1||species===4?this.leaves:this.pine,entries.length);
       trunks.name=palm?'Palm trunks':broad?'Oak trunks':'Pine trunks';crowns.name=palm?'Palm canopy':broad?'Oak canopy':'Pine canopy';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=true;crowns.receiveShadow=false;this.root.add(trunks,crowns);
       const hitGeometry=this.own(new THREE.CylinderGeometry(.37,.45,broad?7.7:12.8,6));hitGeometry.translate(0,broad?3.85:6.4,0);
-      const batchInstances:{id:string;x:number;z:number;matrix:THREE.Matrix4;visible:boolean}[]=[];entries.forEach(({node},index)=>{
-        this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);crowns.setMatrixAt(index,m);trunks.setColorAt(index,new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12));
-        const col=palm?new THREE.Color().setHSL(.24+(rand()-.5)*.04,.14,.84+rand()*.12):species===1||species===4?new THREE.Color().setHSL(.27+(rand()-.5)*.05,.10,.84+rand()*.12):new THREE.Color().setHSL(.25+(rand()-.5)*.04,.12,.82+rand()*.13);crowns.setColorAt(index,col);
-        this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:m}]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,visible:true});
+      const batchInstances:{id:string;x:number;z:number;matrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]=[];entries.forEach(({node},index)=>{
+        this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);crowns.setMatrixAt(index,m);
+        const trunkColor=new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12),crownColor=palm?new THREE.Color().setHSL(.24+(rand()-.5)*.04,.14,.84+rand()*.12):species===1||species===4?new THREE.Color().setHSL(.27+(rand()-.5)*.05,.10,.84+rand()*.12):new THREE.Color().setHSL(.25+(rand()-.5)*.04,.12,.82+rand()*.13);
+        trunks.setColorAt(index,trunkColor);crowns.setColorAt(index,crownColor);
+        this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:m}]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,active:true,visible:true,renderIndex:index,trunkColor,crownColor});
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
         this.colliders.push({nodeId:node.id,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
-      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();this.treeBatches.push({trunks,crowns,fullCount:entries.length,instances:batchInstances});
+      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();this.treeBatches.push({trunks,crowns,fullCount:entries.length,instances:batchInstances});for(const tree of batchInstances)this.treeInstancesById.set(tree.id,tree);
     }
   }
   private populateRocks():void {
@@ -294,11 +313,11 @@ export class Environment {
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
     this.windUniform.value+=dt*this.windStrength;this.cameraUniform.value.copy(cameraPosition);this.atmosphere.update(dt,timeOfDay,cameraPosition);this.cullClock-=dt;
-    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:this.quality==='high'?118:136;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const treeDistance=this.quality==='low'?250:this.quality==='medium'?360:this.quality==='high'?520:720,treeDistanceSq=treeDistance*treeDistance;for(const batch of this.treeBatches){let changedTrunks=false,changedCrowns=false;for(let i=0;i<batch.instances.length;i++){const tree=batch.instances[i]!,dx=tree.x-cameraPosition.x,dz=tree.z-cameraPosition.z,show=dx*dx+dz*dz<treeDistanceSq&&this.nodeObjects.get(tree.id)?.visible!==false;if(show===tree.visible)continue;tree.visible=show;const matrix=show?tree.matrix:this.hiddenMatrix;batch.trunks.setMatrixAt(i,matrix);batch.crowns.setMatrixAt(i,matrix);changedTrunks=changedCrowns=true;}if(changedTrunks)batch.trunks.instanceMatrix.needsUpdate=true;if(changedCrowns)batch.crowns.instanceMatrix.needsUpdate=true;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
+    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:this.quality==='high'?118:136;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const treeDistance=this.quality==='low'?250:this.quality==='medium'?360:this.quality==='high'?520:720,treeDistanceSq=treeDistance*treeDistance;for(const batch of this.treeBatches){let visibleCount=0,changedTrunks=false,changedCrowns=false,changedTrunkColors=false,changedCrownColors=false;for(const tree of batch.instances){const dx=tree.x-cameraPosition.x,dz=tree.z-cameraPosition.z,show=dx*dx+dz*dz<treeDistanceSq&&(tree.active||this.fallingTrees.has(tree.id)),wasVisible=tree.visible;tree.visible=show;if(!show)continue;const index=visibleCount++;if(!wasVisible||tree.renderIndex!==index){batch.trunks.setMatrixAt(index,tree.matrix);batch.crowns.setMatrixAt(index,tree.matrix);batch.trunks.setColorAt(index,tree.trunkColor);batch.crowns.setColorAt(index,tree.crownColor);const refs=this.instances.get(tree.id);if(refs)for(const ref of refs)ref.index=index;tree.renderIndex=index;changedTrunks=changedCrowns=changedTrunkColors=changedCrownColors=true;}}batch.trunks.count=batch.crowns.count=visibleCount;if(changedTrunks)batch.trunks.instanceMatrix.needsUpdate=true;if(changedCrowns)batch.crowns.instanceMatrix.needsUpdate=true;if(changedTrunkColors&&batch.trunks.instanceColor)batch.trunks.instanceColor.needsUpdate=true;if(changedCrownColors&&batch.crowns.instanceColor)batch.crowns.instanceColor.needsUpdate=true;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
     for(const [id,hit] of this.hits){const elapsed=hit.elapsed+dt,obj=this.nodeObjects.get(id),refs=this.instances.get(id);if(elapsed>.4){this.hits.delete(id);if(obj)obj.rotation.z=0;if(refs)for(const ref of refs){ref.mesh.setMatrixAt(ref.index,ref.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}else{hit.elapsed=elapsed;const amount=Math.sin(elapsed*34)*(1-elapsed/.4)*.022*hit.intensity;if(obj)obj.rotation.z=amount;if(refs){this.hitRotation.makeRotationZ(amount);for(const ref of refs){this.matrixDummy.matrix.copy(ref.matrix).multiply(this.hitRotation);ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}}}
     for(const [id,fall] of this.fallingTrees){
       fall.elapsed+=dt;const fallT=Math.min(1,fall.elapsed/fall.duration),eased=1-Math.pow(1-fallT,3),fadeStart=fall.duration+fall.hold,total=fadeStart+fall.fade;
-      if(fall.elapsed>=total){for(const ref of fall.refs){ref.mesh.setMatrixAt(ref.index,this.hiddenMatrix);ref.mesh.instanceMatrix.needsUpdate=true;}this.fallingTrees.delete(id);continue;}
+      if(fall.elapsed>=total){for(const ref of fall.refs){ref.mesh.setMatrixAt(ref.index,this.hiddenMatrix);ref.mesh.instanceMatrix.needsUpdate=true;}this.removeTreeInstance(id);this.fallingTrees.delete(id);this.cullClock=0;continue;}
       const fadeT=fall.elapsed>fadeStart?Math.min(1,(fall.elapsed-fadeStart)/fall.fade):0,scale=1-fadeT*.92,sink=fadeT*1.15*fall.node.scale;
       const fallRotation=new THREE.Quaternion().setFromAxisAngle(fall.axis,eased*Math.PI*.49);
       for(const ref of fall.refs){this.matrixDummy.matrix.copy(ref.matrix);this.matrixDummy.matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.quaternion.premultiply(fallRotation);this.matrixDummy.position.y-=sink;this.matrixDummy.scale.multiplyScalar(scale);this.matrixDummy.updateMatrix();ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}
@@ -308,7 +327,6 @@ export class Environment {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=quality==='low'?62:quality==='medium'?86:quality==='high'?112:128;
     const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
-    for(const batch of this.treeBatches){batch.trunks.count=batch.fullCount;batch.crowns.count=batch.fullCount;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'))o.castShadow=quality==='high'||quality==='ultra';});this.cullClock=0;
   }
   setFoliageDensity(value:number):void {this.foliageDensity=Math.max(.25,Math.min(1,value));this.setQuality(this.quality);}
@@ -317,7 +335,7 @@ export class Environment {
       const remaining=nodeChanges[node.id]??node.remaining;node.remaining=remaining;
       if(remaining>0)continue;
       const obj=this.nodeObjects.get(node.id);if(obj)obj.visible=false;
-      const refs=this.instances.get(node.id),falling=this.fallingTrees.has(node.id);
+      const refs=this.instances.get(node.id),falling=this.fallingTrees.has(node.id),tree=this.treeInstancesById.get(node.id);if(tree)tree.active=remaining>0;
       if(refs&&!falling)for(const ref of refs){ref.mesh.setMatrixAt(ref.index,this.hiddenMatrix);ref.mesh.instanceMatrix.needsUpdate=true;}
       this.hits.delete(node.id);
     }
@@ -325,7 +343,7 @@ export class Environment {
   hitNode(id:string,intensity=1):void {this.hits.set(id,{elapsed:0,intensity:Math.max(.7,Math.min(1.6,intensity))});}
   fallTree(id:string,source:Vec3):void {
     const node=this.nodes.find(n=>n.id===id),refs=this.instances.get(id);if(!node||node.kind!=='tree'||!refs||this.fallingTrees.has(id))return;
-    this.hits.delete(id);const dx=node.position.x-source.x,dz=node.position.z-source.z,len=Math.hypot(dx,dz)||1;
+    this.hits.delete(id);const tree=this.treeInstancesById.get(id);if(tree)tree.active=false;const dx=node.position.x-source.x,dz=node.position.z,len=Math.hypot(dx,dz)||1;
     const awayX=dx/len,awayZ=dz/len,axis=new THREE.Vector3(-awayZ,0,awayX).normalize();
     this.fallingTrees.set(id,{elapsed:0,duration:1.18,hold:1.35,fade:.72,axis,refs,node});
   }

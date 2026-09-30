@@ -7,7 +7,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 let page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],results=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
 const pass=(name,ok)=>{assert.ok(ok,name);results.push(name);console.log('PASS',name)};
-const boot=async()=>{await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:180000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:180000})};
+const boot=async()=>{await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:180000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:180000});await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='menu'&&document.querySelector('.loading-screen')?.hidden===true,null,{timeout:180000})};
 const play=async()=>{await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000})};
 const shot=async(name,p,target)=>{await page.evaluate(({p,target})=>{const a=window.__TIDELAND;a.teleport(p);a.lookAt(target||{x:p.x+45,y:p.y+3,z:p.z-40});},{p,target});await page.waitForTimeout(600);await page.screenshot({path:`${out}/${name}.png`,timeout:60000})};
 try{
@@ -41,10 +41,10 @@ try{
  pass('Archived building has collider after load',await page.evaluate(id=>window.__TIDELAND.hasStructureCollider(id),fixture.built.id));
  await shot('legacy-v090-save',restored.world.spawn);
  // New revision is explicit, never assigned on loading an old snapshot.
- await page.close();page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await page.goto(base);await boot();await page.locator('#world-seed').fill('731942');await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000});
+ await page.close();page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await page.goto(base);await boot();await page.locator('#world-seed').fill('731942');await page.locator('[data-action="new"]').click();await page.locator('.save-browser:not([hidden])').waitFor({state:'visible',timeout:30000});await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000});
  const world=await page.evaluate(()=>{const a=window.__TIDELAND;a.setCapturePaused(true);a.dev('god');a.dev('fly');a.dev('time',10);return a.world()});
  pass('New gen5 world explicitly uses revision 3',world.revision===3&&(await page.evaluate(()=>window.__TIDELAND.snapshot().worldRevision))===3);
- const art=await page.evaluate(()=>window.__TIDELAND.worldArt());pass('Three cheap nonphysical horizon layers exist',art.horizonLayers===3&&art.horizonTriangles===2160);pass('Distance culling trims only remote tree visuals',art.renderedTrees>0&&art.renderedTrees<art.trees.length&&art.trees.length===1180);
+ const art=await page.evaluate(()=>window.__TIDELAND.worldArt());pass('Three cheap nonphysical horizon layers exist',art.horizonLayers===3&&art.horizonTriangles===2160);pass('Distance culling compacts only nearby tree instances',art.renderedTrees>0&&art.renderedTrees<art.trees.length&&art.renderedTrees===art.renderedTreeInstances&&art.trees.length===1180);
  const palms=art.trees.filter(t=>t.species===5);pass('Palm canopies have climate-correct placement',palms.length>0&&palms.every(t=>t.climate.temperature>.53&&t.position.y<26));
  const roads=world.trails.flat();pass('No routed road sample is deep underwater',await page.evaluate(points=>points.every(p=>window.__TIDELAND.height(p.x,p.z)>=1.15),roads));
  pass('Trees leave road corridor clear',art.trees.every(t=>roads.every(p=>Math.hypot(t.position.x-p.x,t.position.z-p.z)>4.4)));
