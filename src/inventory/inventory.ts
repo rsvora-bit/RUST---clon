@@ -13,7 +13,7 @@ export function itemCount(inventory: InventorySlots, itemId: ItemId): number {
 }
 
 /** Merge into existing stacks before occupying an empty slot. Returns uninserted units. */
-export function insertItem(inventory: InventorySlots, itemId: ItemId, count: number): number {
+export function insertItem(inventory: InventorySlots, itemId: ItemId, count: number,condition?:number): number {
   if (!Number.isSafeInteger(count) || count <= 0) return Math.max(0, count);
   const max = ITEMS[itemId].maxStack;
   let remaining = count;
@@ -27,7 +27,7 @@ export function insertItem(inventory: InventorySlots, itemId: ItemId, count: num
   for (let i = 0; i < inventory.length && remaining; i++) {
     if (inventory[i]) continue;
     const inserted = Math.min(max, remaining);
-    inventory[i] = { itemId, count: inserted };
+    inventory[i] = { itemId, count: inserted,...(condition!==undefined&&max===1?{condition}:{}) };
     remaining -= inserted;
   }
   return remaining;
@@ -64,7 +64,7 @@ export function moveStack(inventory: InventorySlots, from: number, to: number, s
   if (target?.itemId === source.itemId || !target) {
     const amount = Math.min(split ? Math.ceil(source.count / 2) : source.count, ITEMS[source.itemId].maxStack - (target?.count ?? 0));
     if (!amount) return false;
-    inventory[to] = { itemId: source.itemId, count: (target?.count ?? 0) + amount };
+    inventory[to] = { ...(!target&&amount===source.count?source:{itemId:source.itemId,count:(target?.count??0)+amount}) };
     source.count -= amount;
     if (!source.count) inventory[from] = null;
   } else {

@@ -9,6 +9,7 @@ import { PIECES, validateStructurePlacement } from '../building/rules';
 import {migrateStructure} from '../building/grades';
 import {ensureTech,validTechNode} from '../crafting/techTree';
 import {EQUIPMENT} from '../combat/equipment';
+import {maxDurability} from '../combat/durability';
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const finite = (value: unknown, min = -1e6, max = 1e6): value is number => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
@@ -16,7 +17,7 @@ const integer = (value: unknown, min = 0, max = Number.MAX_SAFE_INTEGER): value 
 const identifier = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 128 && value !== '__proto__' && value !== 'constructor' && value !== 'prototype';
 const position = (value: unknown): value is Vec3 => record(value) && finite(value.x) && finite(value.y) && finite(value.z);
 const stats = (value: unknown): value is PlayerStats => record(value) && ['health', 'hunger', 'thirst', 'stamina'].every(key => finite(value[key], 0, 100));
-const stack = (value: unknown): value is ItemStack => record(value) && isItemId(value.itemId) && integer(value.count, 1, ITEMS[value.itemId].maxStack);
+const stack = (value: unknown): value is ItemStack => record(value) && isItemId(value.itemId) && integer(value.count, 1, ITEMS[value.itemId].maxStack) && (value.condition===undefined||(maxDurability(value.itemId)>0&&finite(value.condition,1,maxDurability(value.itemId))));
 
 /** Reject the whole snapshot, rather than silently discarding the player's saved items. */
 export function validateGameState(value: unknown): value is GameState {

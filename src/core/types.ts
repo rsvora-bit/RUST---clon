@@ -10,7 +10,7 @@ export type ShadowQuality = 'low'|'medium'|'high';
 export type KeybindAction = 'forward'|'backward'|'left'|'right'|'sprint'|'jump'|'crouch'|'interact'|'inventory'|'build'|'rotate'|'cycleBuild'|'use'|'map'|'maintenance'|'autoRun'|'inspect';
 export type Keybinds = Record<KeybindAction,string>;
 export interface ItemDefinition {id:ItemId; displayName:string; description:string; category:ItemCategory; icon:string; maxStack:number; placeable?:boolean; consumable?:boolean; tags:string[]}
-export interface ItemStack {itemId:ItemId; count:number}
+export interface ItemStack {itemId:ItemId; count:number;condition?:number}
 export interface RecipeDefinition {id:string; resultItemId:ItemId; resultCount:number; ingredients:Partial<Record<ItemId,number>>; category:string; craftTime:number; requiredWorkbenchLevel?:number; requiredTech?:TechNodeId}
 export type PieceType = 'foundation'|'wall'|'doorway'|'floor'|'roof'|'door';
 export type StructureGrade = 'wood'|'stone'|'metal';
@@ -29,4 +29,4 @@ export interface BuildCandidate {pieceType:PieceType; position:Vec3; rotation:nu
 export type Screen = 'menu'|'playing'|'inventory'|'pause'|'settings'|'dead'|'station';
 export interface InteractionInfo {title:string; action:string; key:string; detail?:string; progress?:number; structure?:{grade:StructureGrade;currentHealth:number;maxHealth:number}}
 export interface HUDData {stats:PlayerStats; inventory:(ItemStack|null)[]; activeSlot:number; compass:number; biome:string; timeOfDay:number; interaction:InteractionInfo|null; build:{piece:PieceType;valid:boolean;reason:string;cost:string}|null; fps:number; diagnostics:string; tutorial:string}
-export interface UIActions {respawn:()=>void;newGame:(seed?:number,slot?:number)=>void;continueGame:(slot?:number)=>void;resume:()=>void;save:()=>void;mainMenu:()=>void;resetSave:()=>void;deleteSave:(slot:number)=>void;settings:(settings:Settings)=>void;setScreen:(screen:Screen)=>void;moveItem:(from:number,to:number,split:boolean)=>void;dropItem:(slot:number)=>void;consume:(slot:number)=>void;equip:(slot:number)=>void;craft:(id:string)=>void;canCraft:(id:string)=>boolean;selectSlot:(slot:number)=>void;selectPiece:(piece:PieceType)=>void;dev:(action:string,value?:number)=>void}
+export interface UIActions {respawn:()=>void;newGame:(seed?:number,slot?:number)=>void;continueGame:(slot?:number)=>void;resume:()=>void;save:()=>void;mainMenu:()=>void;resetSave:()=>void;deleteSave:(slot:number)=>void;settings:(settings:Settings)=>void;setScreen:(screen:Screen)=>void;moveItem:(from:number,to:number,split:boolean)=>void;dropItem:(slot:number)=>void;consume:(slot:number)=>void;equip:(slot:number)=>void;repairTool:(slot:number)=>void;craft:(id:string)=>void;canCraft:(id:string)=>boolean;selectSlot:(slot:number)=>void;selectPiece:(piece:PieceType)=>void;dev:(action:string,value?:number)=>void}

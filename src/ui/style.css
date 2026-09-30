@@ -169,3 +169,5 @@
 @media(max-width:640px){.dead-screen .modal-content{width:80%;top:15%}.death-loss{margin-top:16px}.dead-screen .death-respawn{font-size:14px}}
 
 .inventory-footer{pointer-events:none}
+
+.slot-condition{background:linear-gradient(90deg,#79a65d 0 var(--condition),#773f32 var(--condition) 100%)}

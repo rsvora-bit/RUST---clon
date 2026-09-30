@@ -5,7 +5,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 ## Git
 
 - Repository: `/Users/romansvora/Documents/Tideland`; canonical origin `https://github.com/rsvora-bit/RUST---clon.git`.
-- Pracovní branch: `codex/world-quality-next`; poslední commit `e794411` (`Add persistent craftable field clothing`). Ranged slice je ověřen a ukládá se jako další lokální checkpoint.
+- Pracovní branch: `codex/world-quality-next`; poslední commit `8aaa1d8` (`Add recoverable hunting bow projectiles`). Navazující durability/repair slice je právě rozpracovaný v working tree.
 - Při povinném `git fetch origin` se `origin/main` nečekaně posunul z `19cd35b2a52f6d7929afc1e0bf64b8db322766b4` na `7c5748eca1949379304316347cff0c1d9208a64e` (`Merge branch 'main' ...`). Mění mimo jiné world revision 3 zpět na 2 a upravuje foliage, atmosféru i QA. Větev je 15 commitů napřed a 2 pozadu; merge-base je `19cd35b`. Změnu jsem neslučoval, neresetoval ani nepřepisoval, protože jde o odlišný world layout s důsledky pro save compatibility. Před integrací či pushnutím je nutná samostatná kontrola tohoto upstream rozdílu.
 - Nepracoval jsem na lokální `main`; neproběhl push, PR, tag ani release.
 - Každá další validovaná gameplay vrstva se ukládá do samostatného lokálního checkpointu; QA artefakty zůstávají v ignorované `test-results/`.
@@ -18,7 +18,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 4. Luk/projektily a střelné zbraně/náboje — **IN PROGRESS** (luk, draw strength, balistický šíp, swept hit, wildlife damage, recoverable/persistent arrows runtime PASS; firearm/reload/ammunition tiers NOT STARTED).
 5. Damage/death integration — **IN PROGRESS** (typed player hits, wildlife melee/projectile and death flow wired; projectile lethal browser regression and human AI integration remain).
 6. Armor/equipment — **IN PROGRESS** (pět craftitelných kusů, čtyři persistentní sloty, damage-category mitigation, UI equip/save/load; durability a teplotní survival efekt zbývají).
-7. Durability/repair — NOT STARTED (trvanlivost staveb existuje, předmětů zatím neověřena).
+7. Durability/repair — **IN PROGRESS** (volitelné `ItemStack.condition`, trvanlivost rock/hatchet/pickaxe/hammer/bow, gathering yield/melee/ranged degradation, rozbití, condition UI a materiálově podmíněná oprava u Workbench 1; targeted tests PASS, browser QA a samostatný commit zbývají).
 8. Wildlife — **COMPLETE for first hostile fauna slice** (seeded wolf/boar population, close-range AI LOD, melee interaction, persistent health/death, meat/hide rewards). Passive species/advanced behavior NOT STARTED.
 9. Hostile human AI — NOT STARTED.
 10. Loot tiers — částečně existují; rozšíření NOT STARTED.
@@ -65,6 +65,18 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Poslední plný `npm test`: **209/209 PASS**, 30 souborů; `npm run build` PASS s existujícím ~3.17 MB bundle warningem. Chrome headless `test:ranged` PASS: výstřel odebere jeden šíp, balistický zásah poškodí wildlife, uloží poškození i sbíratelný šíp; browser console/WebGL errors none.
 - Přesný další krok: checkpoint ranged slice, implementovat persistentní tool/item durability a repair bench, poté pokračovat ostatními Goal systémy a regression QA.
 - Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge/push. `origin/main` má výše zaznamenanou neintegrovanou změnu, proto před budoucím publish nutné výslovně zkontrolovat divergenci.
+
+## Durability/repair checkpoint — 2026-09-30
+
+- Nový `src/combat/durability.ts` definuje maximální condition durable tools a legacy-safe default condition.
+- `ItemStack.condition` je volitelné, takže starší save data bez tohoto pole zůstávají kompatibilní. Save a station validators odmítají neplatné condition nebo condition na nedurable itemech.
+- Gathering snižuje condition aktivního nástroje a yield se s opotřebením mírně zhoršuje; melee/ranged poškození wildlife také škáluje s condition. Po úplném opotřebení se nástroj odstraní. Při move/drop/pickup a station take-all se condition přenáší.
+- Inventory ukazuje condition bar/detail a nabízí `REPAIR AT WORKBENCH`; oprava spotřebuje item-specific materiály a obnoví 45 condition. Workbench musí být do 5 m.
+- Přidán `tests/durability.test.ts` (3 testy: přesun/drop/pickup/break, oprava/cena/save validity, legacy stack/validace).
+- Validace po aktuálních změnách: cílené **74/74 PASS**, plné `npm test` **212/212 PASS (31 souborů)**, `npm run build` PASS; existující upozornění na velký JS chunk cca 3.17 MB.
+- `git diff --check` PASS. Samostatný browser průchod UI opravou ještě neproběhl; před dalším větším systémem ho doplnit, případně rozšířit combat QA.
+- Aktuální změněné soubory: `src/app/GameApp.ts`, `src/core/types.ts`, `src/inventory/inventory.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `src/survival/stations.ts`, `src/ui/UI.ts`, `src/ui/style.css`, `src/combat/durability.ts` (nový), `tests/durability.test.ts` (nový).
+- Při obnovení nejdřív `git status` a `git diff`; zachovat celý tento rozpracovaný stav. Poslední potvrzený HEAD `8aaa1d8`. Neprovádět push/release; divergence origin/main není vyřešena.
 
 **INCOMPLETE.** World-art QA, melee/wildlife, persistent equipment a první bow/projectile loop jsou ověřené. Firearms/reload, durability/repair, hostile human AI, loot-tier/access progression, base ownership/locks, electricity, balancing a plná regression QA zbývají.
 

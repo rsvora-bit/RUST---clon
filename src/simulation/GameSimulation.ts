@@ -12,6 +12,7 @@ import {createStarterInventory} from '../inventory/starter';
 import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
 import {damageTypeForCause,resolveDamage,type Damageable,type DamagePacket,type DamageResult} from '../combat/damage';
 import {canEquip,EQUIPMENT,equipmentMitigation} from '../combat/equipment';
+import {itemCondition,maxDurability} from '../combat/durability';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
@@ -89,7 +90,8 @@ export class GameSimulation implements Damageable {
       return { amount: 0, depleted: false };
     }
     const toolYield=rule.toolYield?.[active as 'rock'|'hatchet'|'pickaxe'];
-    const base=toolYield ?? rule.amount * (active === rule.preferredTool ? rule.toolMultiplier : 1);
+    const slot=this.state.inventory[this.state.activeSlot],conditionFactor=slot&&maxDurability(slot.itemId)? .55+.45*itemCondition(slot)/maxDurability(slot.itemId):1;
+    const base=(toolYield ?? rule.amount * (active === rule.preferredTool ? rule.toolMultiplier : 1))*conditionFactor;
     const bonus=weakSpot ? (rule.weakSpotMultiplier ?? 1) : 1;
     const requested = Math.min(remaining, Math.max(1,Math.round(base*bonus)));
     const amount = requested - this.addItem(rule.itemId, requested);
@@ -97,6 +99,7 @@ export class GameSimulation implements Damageable {
       this.onNotify('Inventory full');
       return { amount: 0, depleted: false };
     }
+    if(['tree','stone','metal','sulfur','hqmetal'].includes(node.kind)&&active&&maxDurability(active))this.wearItem(this.state.activeSlot,active==='rock'?1:2);
     node.remaining = remaining - amount;
     this.state.nodeChanges[node.id] = node.remaining;
     if (node.remaining === 0) node.depletedAt = this.state.elapsed;
@@ -105,7 +108,7 @@ export class GameSimulation implements Damageable {
   }
 
   /** Outputs in the craft queue reserve capacity, so gathering cannot lose a crafted item. */
-  addItem(itemId: ItemId, count: number): number {
+  addItem(itemId: ItemId, count: number,condition?:number): number {
     if (!isItemId(itemId) || !Number.isSafeInteger(count) || count <= 0) return Math.max(0, count);
     const preview = copyInventory(this.state.inventory);
     for (const job of this.state.craftQueue) {
@@ -113,12 +116,23 @@ export class GameSimulation implements Damageable {
       if (insertItem(preview, recipe.resultItemId, recipe.resultCount) !== 0) return count;
     }
     const leftover = insertItem(preview, itemId, count);
-    insertItem(this.state.inventory, itemId, count - leftover);
+    insertItem(this.state.inventory, itemId, count - leftover,condition);
     return leftover;
   }
 
   count(itemId: ItemId): number { return itemCount(this.state.inventory, itemId); }
   removeItem(itemId:ItemId,count:number):boolean{return Number.isInteger(count)&&count>0&&deductCosts(this.state.inventory,{[itemId]:count});}
+  wearItem(slot:number,amount:number):boolean{
+    if(!validSlot(slot)||!Number.isFinite(amount)||amount<=0)return false;const stack=this.state.inventory[slot];if(!stack)return false;const max=maxDurability(stack.itemId);if(!max)return false;
+    stack.condition=itemCondition(stack)-amount;if(stack.condition<=0){this.state.inventory[slot]=null;this.onNotify(`${ITEMS[stack.itemId].displayName} broke`);return true;}return false;
+  }
+  repairTool(slot:number):{ok:boolean;reason:'ok'|'invalid'|'full'|'workbench'|'resources'}{
+    if(!validSlot(slot))return {ok:false,reason:'invalid'};const stack=this.state.inventory[slot];if(!stack||maxDurability(stack.itemId)===0)return {ok:false,reason:'invalid'};
+    const max=maxDurability(stack.itemId),current=itemCondition(stack);if(current>=max)return {ok:false,reason:'full'};
+    if(nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position)<1)return {ok:false,reason:'workbench'};
+    const cost:Partial<Record<ItemId,number>>=stack.itemId==='bow'?{wood:12,fiber:8}:stack.itemId==='hammer'?{metal:10,wood:8}:stack.itemId==='rock'?{stone:8}:{stone:12,wood:6};
+    if(!deductCosts(this.state.inventory,cost))return {ok:false,reason:'resources'};stack.condition=Math.min(max,current+45);this.onNotify(`${ITEMS[stack.itemId].displayName} repaired`);return {ok:true,reason:'ok'};
+  }
 
   moveItem(from: number, to: number, split = false): void {
     const preview = copyInventory(this.state.inventory);
@@ -140,7 +154,7 @@ export class GameSimulation implements Damageable {
   pickup(dropId: string): boolean {
     const drop = this.state.drops.find(item => item.id === dropId);
     if (!drop) return false;
-    const leftover = this.addItem(drop.stack.itemId, drop.stack.count);
+    const leftover = this.addItem(drop.stack.itemId, drop.stack.count,drop.stack.condition);
     const pickedUp = drop.stack.count - leftover;
     if (!pickedUp) { this.onNotify('Inventory full'); return false; }
     this.onNotify(`+ ${pickedUp} ${ITEMS[drop.stack.itemId].displayName}`);

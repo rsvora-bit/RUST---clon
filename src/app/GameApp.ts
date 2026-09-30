@@ -36,6 +36,7 @@ import {PLAYER,WORLD,BUILD} from '../config/balance';
 import {fallDamageForSpeed} from '../player/fallDamage';
 import {damageTypeForCause,type DamagePacket,type DamageResult} from '../combat/damage';
 import {MELEE_WEAPONS,resolveMeleeHit} from '../combat/melee';
+import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
 import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
@@ -64,7 +65,7 @@ export class GameApp {
     this.ui=new UI(uiRoot,{
       respawn:()=>this.respawn(),
       newGame:(seed,slot)=>{const target=slot??this.firstFreeSaveSlot();deleteSave(target);this.refreshSaveSlots();void this.start(seed??this.randomWorldSeed(),undefined,target);},continueGame:slot=>{const target=slot??latestSaveSlot();const saved=target!==null?loadGame(target):null;if(saved&&target!==null)void this.start(saved.seed,saved,target);else this.ui.notify('No valid save was found. Start a new island.');},resume:()=>this.setScreen('playing'),save:()=>this.save(),mainMenu:()=>{if(this.activeWorld&&this.activeSaveSlot!==null)this.save(false,false);this.setScreen('menu');},resetSave:()=>{resetSave();this.activeSaveSlot=null;this.refreshSaveSlots();this.ui.notify('All saved worlds removed');},deleteSave:slot=>this.deleteSaveSlot(slot),settings:s=>this.applySettings(s),setScreen:s=>this.setScreen(s),
-      moveItem:(from,to,split)=>{this.simulation.moveItem(from,to,split);this.syncHeld();},dropItem:slot=>{const p=this.dropPosition();this.simulation.dropItem(slot,p);this.syncWorldItems();this.syncHeld();},consume:slot=>{if(this.simulation.consume(slot))this.audio.play('eat');this.syncHeld();},equip:slot=>{if(this.simulation.equip(slot)){this.save(false,false);this.ui.refreshInventory();}else{this.simulation.selectSlot(slot);this.syncHeld();}},craft:id=>{this.simulation.craft(id);},canCraft:id=>this.simulation?.canCraft(id)??false,selectSlot:slot=>{this.simulation.selectSlot(slot);this.syncHeld();},selectPiece:piece=>{this.buildPiece=piece;this.building=true;},dev:(a,v)=>this.dev(a,v)
+      moveItem:(from,to,split)=>{this.simulation.moveItem(from,to,split);this.syncHeld();},dropItem:slot=>{const p=this.dropPosition();this.simulation.dropItem(slot,p);this.syncWorldItems();this.syncHeld();},consume:slot=>{if(this.simulation.consume(slot))this.audio.play('eat');this.syncHeld();},equip:slot=>{if(this.simulation.equip(slot)){this.save(false,false);this.ui.refreshInventory();}else{this.simulation.selectSlot(slot);this.syncHeld();}},repairTool:slot=>{const result=this.simulation.repairTool(slot);if(result.ok)this.save(false,false);else this.ui.notify(result.reason==='workbench'?'Repair requires a workbench':result.reason==='resources'?'Not enough repair materials':result.reason==='full'?'Tool is already in good condition':'This item cannot be repaired');this.ui.refreshInventory();},craft:id=>{this.simulation.craft(id);},canCraft:id=>this.simulation?.canCraft(id)??false,selectSlot:slot=>{this.simulation.selectSlot(slot);this.syncHeld();},selectPiece:piece=>{this.buildPiece=piece;this.building=true;},dev:(a,v)=>this.dev(a,v)
     });
     this.stationUI=new StationUI(uiRoot,{move:(id,a,b,split)=>{const station=this.station(id);if(!station)return;const moved=transfer(this.simulation.state.inventory,station,a,b,split,p=>this.simulation.fitsQueue(p));if(!moved){this.ui.notify('Transfer blocked: slot type, capacity or reserved crafting space');return;}this.consumeDisposable(station);},takeAll:id=>{const s=this.station(id);if(!s)return;const hadLoot=s.inventory.some(Boolean),moved=takeAll(this.simulation.state.inventory,s,p=>this.simulation.fitsQueue(p));if(hadLoot&&moved>0)this.consumeDisposable(s);},toggle:id=>{const s=this.station(id);if(s)s.active=!s.active;},spawn:id=>{ensureProgression(this.simulation.state).spawnId=id;this.ui.notify('Respawn point set');},openTechTree:id=>this.openTechTree(id),close:()=>{this.stationUI.close();this.openStation=null;this.setScreen('playing');}});
     this.techTreeUI=new TechTreeUI(uiRoot,{research:id=>{const result=this.simulation.researchTech(id);if(result.ok){this.ui.notify(`Research complete · ${result.node?.displayName} unlocked`);this.save(false,false);}return result;},close:()=>this.closeTechTree()});
@@ -197,19 +198,21 @@ export class GameApp {
     this.camera.getWorldDirection(this.direction);const target={id:actor.id,position:{x:actor.position.x,y:actor.position.y+.68,z:actor.position.z},radius:wildlifeDefinition(actor.species).radius};
     const hit=resolveMeleeHit(weapon,{x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z},{x:this.direction.x,y:this.direction.y,z:this.direction.z},target);
     this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.play('error');return;}
-    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const damage=actor.takeDamage({amount:weapon.damage,type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;this.held.impact();this.audio.play('stone');this.impactFx.burst(actor.position,'fiber',.7);
+    const condition=this.simulation.state.inventory[this.simulation.state.activeSlot],maxCondition=condition?maxDurability(condition.itemId):0,conditionScale=condition&&maxCondition>0 ? .55+.45*itemCondition(condition)/maxCondition : 1;
+    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.play('stone');this.impactFx.burst(actor.position,'fiber',.7);
     if(damage.killed)this.defeatWildlife(actor);this.save(false,false);
   }
   private defeatWildlife(actor:WildlifeActor){this.simulation.state.nodeChanges[actor.id]=0;const meat=this.simulation.addItem('rawMeat',3),hide=this.simulation.addItem('hide',2);for(const [itemId,count,offset] of [['rawMeat',meat,0],['hide',hide,.3]] as const)if(count)this.simulation.state.drops.push({id:`drop-${this.simulation.state.nextId++}`,stack:{itemId,count},position:{x:actor.position.x+offset,y:actor.position.y,z:actor.position.z+offset*.6}});const object=this.wildlife.object(actor.id);if(object)object.visible=false;this.syncWorldItems();this.ui.notify('Wildlife down · recovered meat and hide');}
   private releaseBow(){
     if(this.bowDrawStarted===null)return;const started=this.bowDrawStarted;this.bowDrawStarted=null;
     if(this.screen!=='playing'||this.activeItem()!=='bow')return;
+    const bow=this.simulation.state.inventory[this.simulation.state.activeSlot],maxCondition=bow?maxDurability(bow.itemId):0,conditionScale=bow&&maxCondition>0?.55+.45*itemCondition(bow)/maxCondition:1;
     if(!this.simulation.removeItem('arrow',1)){this.ui.notify('No arrows left');this.audio.play('error');return;}
     const strength=bowStrength((performance.now()-started)/1000);this.camera.getWorldDirection(this.direction);
     const origin={x:this.camera.position.x+this.direction.x*.42,y:this.camera.position.y+this.direction.y*.42,z:this.camera.position.z+this.direction.z*.42};
     const velocity=arrowLaunchVelocity({x:this.direction.x,y:this.direction.y,z:this.direction.z},strength),mesh=new THREE.Group();
     const shaft=new THREE.Mesh(this.arrowShaftGeometry,this.arrowShaftMaterial),head=new THREE.Mesh(this.arrowHeadGeometry,this.arrowHeadMaterial);shaft.rotation.z=-Math.PI/2;head.rotation.z=-Math.PI/2;head.position.x=.39;mesh.add(shaft,head);mesh.position.set(origin.x,origin.y,origin.z);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(velocity.x,velocity.y,velocity.z).normalize());this.scene.add(mesh);
-    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength});this.held.hit();this.audio.play('stone');this.cooldown=.25;this.syncHeld();
+    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength:strength*conditionScale});const bowBroken=this.simulation.wearItem(this.simulation.state.activeSlot,1);if(bowBroken)this.syncHeld();this.held.hit();this.audio.play('stone');this.cooldown=.25;this.syncHeld();
   }
   private dropArrow(position:Vec3){this.simulation.state.drops.push({id:`drop-${this.simulation.state.nextId++}`,stack:{itemId:'arrow',count:1},position:{x:position.x,y:Math.max(this.environment.heightAt(position.x,position.z),position.y),z:position.z}});this.syncWorldItems();this.save(false,false);}
   private updateArrows(dt:number){
@@ -230,7 +233,7 @@ export class GameApp {
   }
   private gather(node:ResourceNode,animate=true,strike?:GatherStrike){
     if(this.cooldown>0)return;const actual=strike??this.resourceStrike(node,this.environment.nodeObjects.get(node.id));const active=this.simulation.state.inventory[this.simulation.state.activeSlot]?.itemId;
-    const result=this.simulation.gather(node,actual.weakSpot);if(result.amount<=0)return;
+    const result=this.simulation.gather(node,actual.weakSpot);if(result.amount<=0)return;this.syncHeld();
     this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();if(['tree','stone','metal','wood'].includes(node.kind))this.held.impact();
     const kind=node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'||node.kind==='sulfur'||node.kind==='hqmetal'?'metal':node.kind as 'fiber'|'berries';
     this.impactFx.burst(actual.point,kind,actual.weakSpot?1.55:1);this.gatheringFeedback.onHit(node,actual.point,actual.weakSpot,result.depleted);this.ui.resourceHit(node.kind,result.amount,result.depleted,actual.weakSpot);

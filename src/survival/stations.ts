@@ -3,6 +3,7 @@ import {ITEMS,isItemId} from '../items/definitions';
 import {copyInventory,insertItem,moveStack} from '../inventory/inventory';
 import {DEATH} from '../config/gameplay';
 import {isSalvageComponent,RECYCLE_RECIPES,type RecycleRecipe} from './economy';
+import {maxDurability} from '../combat/durability';
 
 export const MAX_PLAYER_STATIONS=500;
 export const MAX_WORLD_STATIONS=64;
@@ -40,7 +41,7 @@ export function transfer(player:(ItemStack|null)[],s:Station,from:SlotRef,to:Slo
   }
   const p=joined.slice(0,offset);if(!fits(p))return false;player.splice(0,player.length,...p);s.inventory=next;return true;
 }
-export function takeAll(player:(ItemStack|null)[],s:Station,fits:(p:(ItemStack|null)[])=>boolean){let moved=0;for(let i=0;i<s.inventory.length;i++){const item=s.inventory[i];if(!item)continue;const p=copyInventory(player),remaining=insertItem(p,item.itemId,item.count);if(!fits(p))continue;moved+=item.count-remaining;player.splice(0,player.length,...p);s.inventory[i]=remaining?{...item,count:remaining}:null;}return moved;}
+export function takeAll(player:(ItemStack|null)[],s:Station,fits:(p:(ItemStack|null)[])=>boolean){let moved=0;for(let i=0;i<s.inventory.length;i++){const item=s.inventory[i];if(!item)continue;const p=copyInventory(player),remaining=insertItem(p,item.itemId,item.count,item.condition);if(!fits(p))continue;moved+=item.count-remaining;player.splice(0,player.length,...p);s.inventory[i]=remaining?{...item,count:remaining}:null;}return moved;}
 
 export function currentRecyclerRecipe(s:Station):RecycleRecipe|undefined{
   if(s.kind!=='recycler')return undefined;
@@ -95,7 +96,7 @@ export function validateStations(value:unknown):value is Station[]{
   const ids=new Set();return stations.every(s=>{
     if(!s||typeof s.id!=='string'||s.id.length>100||ids.has(s.id)||!STATION_KINDS.includes(s.kind)||!s.position||![s.position.x,s.position.y,s.position.z,s.rotation].every(Number.isFinite)||!Array.isArray(s.inventory)||s.inventory.length!==STATIONS[s.kind].slots||typeof s.active!=='boolean'||s.createdAt!==undefined&&(!Number.isFinite(s.createdAt)||s.createdAt<0))return false;
     ids.add(s.id);if(s.kind==='deathbag'&&(s.active||s.job!==null||s.createdAt===undefined))return false;
-    if(!s.inventory.every(x=>x===null||(x&&isItemId(x.itemId)&&Number.isSafeInteger(x.count)&&x.count>0&&x.count<=ITEMS[x.itemId].maxStack)))return false;
+    if(!s.inventory.every(x=>x===null||(x&&isItemId(x.itemId)&&Number.isSafeInteger(x.count)&&x.count>0&&x.count<=ITEMS[x.itemId].maxStack&&(x.condition===undefined||(maxDurability(x.itemId)>0&&Number.isFinite(x.condition)&&x.condition>=1&&x.condition<=maxDurability(x.itemId))))))return false;
     if(s.kind==='furnace'&&!s.inventory.every((x,i)=>!x||(i<2?x.itemId==='ore':i===2?x.itemId==='wood':x.itemId==='metal')))return false;
     if(s.kind==='campfire'&&s.inventory[0]&&s.inventory[0].itemId!=='wood')return false;
     if(s.kind==='recycler'&&!s.inventory.every((x,i)=>!x||(i<3?isSalvageComponent(x.itemId):x.itemId==='scrap'||x.itemId==='metal')))return false;

@@ -8,6 +8,7 @@ import { RECIPES } from '../crafting/recipes';
 import {ensureTech,TECH_NODES} from '../crafting/techTree';
 import { PIECES } from '../building/rules';
 import {canEquip,EQUIPMENT} from '../combat/equipment';
+import {itemCondition,maxDurability} from '../combat/durability';
 import {keyLabel,t,type TranslationKey} from './i18n';
 import './style.css';
 
@@ -331,8 +332,8 @@ export class UI {
 
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {
     const item = stack && ITEMS[stack.itemId];
-    const tool=Boolean(item?.category==='tool');
-    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${tool?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${tool?'<i class="slot-condition" title="Tool condition"></i>':''}`:''}</button>`;
+    const max=stack?maxDurability(stack.itemId):0,condition=stack&&max?itemCondition(stack):0,tool=max>0;
+    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${tool?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}${tool?` · ${condition}/${max} condition`:''}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${tool?`<i class="slot-condition" style="--condition:${condition/max*100}%" title="Condition ${condition} / ${max}"></i>`:''}`:''}</button>`;
   }
 
   private renderInventory(state: GameState): void {
@@ -346,7 +347,8 @@ export class UI {
     const detail = this.find('.item-detail');
     if(selected) {
       const definition = ITEMS[selected.itemId];
-      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(definition.displayName)}</h3><p>${esc(definition.description)}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${canEquip(selected.itemId)?`<button data-action="wear">WEAR · ${EQUIPMENT[selected.itemId]!.slot.toUpperCase()}</button>`:this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
+      const max=maxDurability(selected.itemId),condition=max?itemCondition(selected):0,canRepair=max>0&&condition<max;
+      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(definition.displayName)}</h3><p>${esc(definition.description)}${max?` <b>CONDITION ${condition} / ${max}</b>`:''}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${canEquip(selected.itemId)?`<button data-action="wear">WEAR · ${EQUIPMENT[selected.itemId]!.slot.toUpperCase()}</button>`:this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${canRepair?'<button data-action="repairTool">REPAIR AT WORKBENCH</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
     } else detail.innerHTML = '<div class="empty-detail"><span>+</span><h3>ROOM FOR POSSIBILITY</h3><p>Select an item to inspect, use or drop it.</p></div>';
     this.renderRecipes(state);
   }
@@ -444,7 +446,7 @@ export class UI {
       case 'resetCamera':this.settings={...this.settings,sensitivityX:DEFAULT_SETTINGS.sensitivityX,sensitivityY:DEFAULT_SETTINGS.sensitivityY,fov:DEFAULT_SETTINGS.fov,viewmodelFov:DEFAULT_SETTINGS.viewmodelFov,invertY:DEFAULT_SETTINGS.invertY,headBob:DEFAULT_SETTINGS.headBob,cameraShake:DEFAULT_SETTINGS.cameraShake,motionBlur:DEFAULT_SETTINGS.motionBlur,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;
       case 'resetSettings':{const language=this.settings.language;this.settings={...DEFAULT_SETTINGS,language,keybinds:{...DEFAULT_SETTINGS.keybinds}};this.actions.settings({...this.settings,keybinds:{...this.settings.keybinds}});this.setSettings(this.settings);break;}
       case 'reloadBuild':{const url=new URL(window.location.href);url.searchParams.set('build',`${GAME_VERSION}-${GAME_BUILD}`);window.location.replace(url.toString());break;}
-      case 'drop':this.actions.dropItem(this.selectedSlot);break;case 'consume':this.actions.consume(this.selectedSlot);break;case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;case 'wear':this.actions.equip(this.selectedSlot);this.refreshInventory();break;case 'split':this.splitSelected();break;case 'craft':this.actions.craft(this.selectedRecipe);break;
+      case 'drop':this.actions.dropItem(this.selectedSlot);break;case 'consume':this.actions.consume(this.selectedSlot);break;case 'equip':this.actions.selectSlot(this.selectedSlot);this.actions.resume();break;case 'wear':this.actions.equip(this.selectedSlot);this.refreshInventory();break;case 'repairTool':this.actions.repairTool(this.selectedSlot);this.refreshInventory();break;case 'split':this.splitSelected();break;case 'craft':this.actions.craft(this.selectedRecipe);break;
       case 'history':{const panel=this.find('.history-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.help-panel').hidden=true;break;}case 'help':{const panel=this.find('.help-panel');panel.hidden=!panel.hidden;if(!panel.hidden)this.find('.history-panel').hidden=true;break;}
     }
   }
