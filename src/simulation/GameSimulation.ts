@@ -10,11 +10,12 @@ import { PIECES, validateStructurePlacement } from '../building/rules';
 import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,upgradeStructure} from '../building/grades';
 import {createStarterInventory} from '../inventory/starter';
 import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
+import {damageTypeForCause,resolveDamage,type Damageable,type DamagePacket,type DamageResult} from '../combat/damage';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
 const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0 && slot < INVENTORY.SLOTS;
 
-export class GameSimulation {
+export class GameSimulation implements Damageable {
   state: GameState;
   onNotify: (message: string) => void = () => {};
   private queueBlocked = false;
@@ -220,11 +221,17 @@ export class GameSimulation {
   rotateStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?rotateStructure(structure):{ok:false,reason:'not-found' as const};}
   damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}
 
+  takeDamage(packet:DamagePacket,mitigation=0):DamageResult{
+    const result=resolveDamage(this.state.player.stats.health,SURVIVAL.STARTING_STATS.health,packet,mitigation);
+    if(result.ok)this.state.player.stats.health=result.healthAfter;
+    return result;
+  }
+
+  /** Legacy call shape remains stable for survival, fall-damage and QA callers. */
   damagePlayer(amount:number,cause='environment'):{ok:boolean;health:number;killed:boolean;cause:string}{
-    const health=this.state.player.stats.health,safeCause=typeof cause==='string'?cause.slice(0,80):'environment';
-    if(!Number.isFinite(amount)||amount<=0)return {ok:false,health,killed:health<=0,cause:safeCause};
-    this.state.player.stats.health=Math.max(0,health-amount);
-    return {ok:true,health:this.state.player.stats.health,killed:this.state.player.stats.health===0,cause:safeCause};
+    const safeCause=typeof cause==='string'?cause.slice(0,80):'environment';
+    const result=this.takeDamage({amount,type:damageTypeForCause(safeCause),sourceId:safeCause});
+    return {ok:result.ok,health:this.state.player.stats.health,killed:result.killed||this.state.player.stats.health<=0,cause:safeCause};
   }
 
   resetStats(): void { this.state.player.stats = { ...SURVIVAL.STARTING_STATS }; }

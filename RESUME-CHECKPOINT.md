@@ -5,18 +5,18 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 ## Git
 
 - Repository: `/Users/romansvora/Documents/Tideland`; canonical origin `https://github.com/rsvora-bit/RUST---clon.git`.
-- Pracovní branch: `codex/world-quality-next`; před tímto checkpointem HEAD `de23d6b06f9d450005251262cb1a50bbcda292be`.
+- Pracovní branch: `codex/world-quality-next`; poslední checkpoint commit před combat prací `8d20e9b99b019fc8b6c6f9aaec393e1a4765af75`.
 - Při povinném `git fetch origin` se `origin/main` nečekaně posunul z `19cd35b2a52f6d7929afc1e0bf64b8db322766b4` na `7c5748eca1949379304316347cff0c1d9208a64e` (`Merge branch 'main' ...`). Mění mimo jiné world revision 3 zpět na 2 a upravuje foliage, atmosféru i QA. Větev je 15 commitů napřed a 2 pozadu; merge-base je `19cd35b`. Změnu jsem neslučoval, neresetoval ani nepřepisoval, protože jde o odlišný world layout s důsledky pro save compatibility. Před integrací či pushnutím je nutná samostatná kontrola tohoto upstream rozdílu.
 - Nepracoval jsem na lokální `main`; neproběhl push, PR, tag ani release.
-- Pracovní strom byl před touto aktualizací čistý; QA artefakty zůstávají v ignorované `test-results/`.
+- Po ověřené combat foundation změně bude vznikat samostatný lokální commit; zkontrolovat `git status` a log po commitu. QA artefakty zůstávají v ignorované `test-results/`.
 
 ## Goal a stav úkolů
 
-1. Dokončit world-art/performance QA — **COMPLETE**.
-2. Combat foundation — **IN PROGRESS** (audit architektury; implementace začíná jako další krok).
+1. Dokončit world-art/performance QA — **COMPLETE** (native Metal GPU verified; podklady níže).
+2. Combat foundation — **COMPLETE** po `npm test`, buildu a reálném typed-damage/death/Lost Pack browser průchodu.
 3. Melee — NOT STARTED.
 4. Luk/projektily a střelné zbraně/náboje — NOT STARTED.
-5. Damage/death integration — částečně existuje; nové typed combat napojení NOT STARTED.
+5. Damage/death integration — foundation COMPLETE; napojení zbraní a nepřátel NOT STARTED.
 6. Armor/equipment — NOT STARTED.
 7. Durability/repair — NOT STARTED (trvanlivost staveb existuje, předmětů zatím neověřena).
 8. Wildlife — NOT STARTED.
@@ -26,7 +26,7 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 12. Base ownership/locks — NOT STARTED.
 13. Electricity — NOT STARTED.
 14. Balancing — NOT STARTED.
-15. Plná regression/runtime QA — NOT STARTED.
+15. Plná regression/runtime QA — IN PROGRESS (smrt/respawn/Lost Pack browser flow prošel; plná QA zbývá).
 16. Dokumentace/checkpoint/release decision — IN PROGRESS; nevydávat release, dokud neprojdou mandatory runtime kontroly.
 
 ## Fáze 0 — dokončené ověření světa
@@ -45,16 +45,20 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
   | Startup | 7 716 ms | 6 937 ms, opakované teplé spuštění 2 762 ms |
 
 - FPS bylo synchronizované přibližně na 60 Hz; nejde o maximální propustnost GPU. Významnější stabilní signály jsou stejné FPS bez viditelné regrese, o 6 méně draw calls a přibližně o 15,8 % méně trojúhelníků; nárůst world nodes odpovídá hustší vegetaci. Startup závisí na studeném/teplém cache a nelze z těchto dvou běhů dělat přímé tvrzení o zrychlení.
-- Poslední doložený `npm test`: **189/189 PASS**, 25 souborů. `npm run build`: PASS s existujícím upozorněním Vite na JS chunk >500 kB. Kód se od těchto běhů nezměnil; tests/build zopakovat po prvním combat checkpointu.
+- Původní baseline před combat prací: `npm test` **189/189 PASS**, 25 souborů; build PASS s existujícím Vite chunk >500 kB upozorněním.
 
-## Combat audit a další přesný krok
+## Combat foundation — aktuální checkpoint
 
-- Existuje `GameSimulation.damagePlayer(amount, cause)`, `GameApp.damagePlayer()` s god-mode/death lifecycle, Lost Pack, respawn, save persistence a `PlayerStats.health`. Není důvod přepisovat smrt hráče.
-- Následující krok: přidat malé typed combat kontrakty (`DamageType`, `DamagePacket`, výsledek, rozhraní damageable a čisté výpočty mitigace), zachovat staré volání `damagePlayer(number, cause)` jako kompatibilní wrapper, napojit hráče na stávající death handler a pokrýt testy. Poté ověřit skutečný browser damage/death/Lost Pack flow a vytvořit logický lokální commit.
-- Zatím nebyl změněn žádný herní kód v rámci nového combat Goal. Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge.
-- Po dokončení combat foundation pokračovat bez čekání další zprávy: melee a cílový damageable actor, pak ranged/equipment/hazards/AI/loot/access/base/electricity v pořadí podle bezpečných integračních závislostí. Goal není COMPLETE.
+- Přidán `src/combat/damage.ts`: `DamageType`, `DamagePacket`, `DamageResult`, `Damageable`, deterministické řešení zásahu a mitigace s 85% stropem, mapování legacy cause stringů. Absorbed hlásí mitigovanou část; overkill se nevydává za armor absorb.
+- `GameSimulation` implementuje `Damageable` a drží starý `damagePlayer(amount, cause)` kontrakt kompatibilní. `GameApp.applyPlayerDamage(packet)` zachovává god mode a napojuje lethal zásah na stávající smrt/Lost Pack lifecycle; starý API zůstává wrapperem. Typed bridge je dostupný přes lokální QA/debug API.
+- `tests/combat-damage.test.ts`: 5 testů kontraktů, mitigation, invalid/fatal zásahů a compatibility.
+- `scripts/death-respawn-qa.mjs`: skutečný typed toxic lethal hit s ověřením cause/source, zachování dead save, Lost Pack/map marker/loot transfer, respawn kitu/statistik/collision-safe spawn, movement input, build/door a reload. Movement kontrola po respawnu bere v úvahu překážky kolem bedrollu: zkouší čtyři směry a požaduje ≥0,3 m; poslední běh naměřil 0.15/0.07/0.49/0.04 m, PASS při 0.49 m. Žádné browser console chyby.
+- Poslední úplný `npm test`: **194/194 PASS**, 26 souborů. `npm run build`: PASS (existující >500 kB bundle warning). Po drobné opravě semantics `absorbed` proběhlo cílených **5/5** combat testů a build znovu PASS.
+- Poslední runtime: `CHROME_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:death` PASS včetně typed damage/death/reload/respawn/Lost Pack/building. QA běžela přes nainstalovaný Chrome; Playwright bundled Chromium na tomto hostu chybí.
+- Přesný další krok: lokálně checkpointnout ověřenou foundation, poté začít melee vertical slice se starter rock/hatchet/spear-like weapon, deterministickou swing window/raycast ochranou proti zásahům přes stěny a jedním damageable target. Nejprve zmapovat inventory/use, resource gathering a UI feedback, pak testovat v browseru.
+- Goal zůstává aktivní. Verze zůstává v0.9.1 / EA-09.1. Žádný tag/release/merge/push. `origin/main` má výše zaznamenanou neintegrovanou změnu, proto před budoucím publish nutné výslovně zkontrolovat divergenci.
 
-**INCOMPLETE.** Světová QA je dokončena; celý Combat, Danger & Progression Goal zůstává otevřený.
+**INCOMPLETE.** World-art QA a combat foundation jsou dokončené; melee, ranged, armor, AI, POI progression, ownership, electricity a plná regression QA zbývají.
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
