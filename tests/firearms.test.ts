@@ -32,4 +32,18 @@ describe('salvage revolver',()=>{
     expect(g.canCraft('field_revolver')).toBe(true);expect(g.canCraft('pistol_cartridges')).toBe(false);g.addItem('scrap',3);g.addItem('sulfurOre',1);expect(g.craft('field_revolver')).toBe(true);expect(g.craft('pistol_cartridges')).toBe(true);g.tick(9,false);g.tick(4,false);
     expect(g.count('salvageRevolver')).toBe(1);expect(g.count('pistolAmmo')).toBe(8);expect(validateGameState(g.state)).toBe(true);expect(FIREARMS.salvageRevolver.magazineSize).toBe(6);
   });
+  it('models the research-gated Tidal shotgun as eight deterministic pellets per shell',()=>{
+    const weapon=FIREARMS.fieldShotgun,stack={itemId:'fieldShotgun' as const,count:1,loadedAmmo:4,condition:141};
+    expect(weapon.pellets).toBe(8);expect(weapon.ammoItemId).toBe('shotgunShells');expect(weapon.range).toBeLessThan(FIREARMS.salvageRevolver.range);
+    expect(firearmShotDirection({x:0,y:0,z:-1},11,weapon)).toEqual(firearmShotDirection({x:0,y:0,z:-1},11,weapon));
+    expect(firearmShotDirection({x:0,y:0,z:-1},1,weapon).x).not.toBeCloseTo(firearmShotDirection({x:0,y:0,z:-1},2,weapon).x,4);
+    expect(consumeLoadedRound(stack,weapon)).toBe(true);expect(stack.loadedAmmo).toBe(3);expect(roundsToLoad(stack,12,weapon)).toBe(1);
+  });
+  it('validates shotgun loaded shells and preserves them through save/reload and repair',()=>{
+    const g=new GameSimulation(94,{x:0,y:5,z:0});ensureProgression(g.state).stations.push(createStation('bench-shotgun','workbench1',{x:0,y:5,z:0}));g.state.inventory[2]={itemId:'fieldShotgun',count:1,condition:80,loadedAmmo:3};g.addItem('metal',24);g.addItem('machineParts',2);g.addItem('shotgunShells',10);
+    expect(validateGameState(g.state)).toBe(true);expect(saveGame(g.state,1)).toBe(true);expect(loadGame(1)?.inventory[2]).toMatchObject({itemId:'fieldShotgun',loadedAmmo:3,condition:80});
+    expect(g.repairTool(2)).toEqual({ok:true,reason:'ok'});expect(g.state.inventory[2]).toMatchObject({itemId:'fieldShotgun',loadedAmmo:3,condition:125});
+    const invalid=structuredClone(g.state);invalid.inventory[2]!.loadedAmmo=5;expect(validateGameState(invalid)).toBe(false);
+    const wrong=structuredClone(g.state);wrong.inventory[3]={itemId:'shotgunShells',count:2,loadedAmmo:1};expect(validateGameState(wrong)).toBe(false);
+  });
 });

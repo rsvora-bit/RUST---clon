@@ -17,6 +17,7 @@
     "test:power": "node scripts/power-network-qa.mjs",
     "test:scavenger": "node scripts/scavenger-qa.mjs",
     "test:firearm": "node scripts/firearm-qa.mjs",
+    "test:shotgun": "node scripts/shotgun-qa.mjs",
     "test:ranged": "node scripts/ranged-qa.mjs",
     "test:salvage": "node scripts/salvage-recycler-qa.mjs",
     "test:world": "node scripts/world-overhaul-qa.mjs",

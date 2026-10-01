@@ -52,10 +52,10 @@ export class AudioMixer {
     const thump=ctx.createOscillator(),tg=ctx.createGain();thump.type='sine';thump.frequency.setValueAtTime(72,crashAt);thump.frequency.exponentialRampToValueAtTime(34,crashAt+.32);tg.gain.setValueAtTime(.22,crashAt);tg.gain.exponentialRampToValueAtTime(.001,crashAt+.38);thump.connect(tg);tg.connect(this.sfx);thump.start(crashAt);thump.stop(crashAt+.4);
   }
 
-  firearm(){
+  firearm(weight=1){
     if(!this.ctx||!this.sfx||!this.buffer)return;const ctx=this.ctx,t=ctx.currentTime;
-    const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();noise.buffer=this.buffer;filter.type='bandpass';filter.frequency.setValueAtTime(1250,t);filter.frequency.exponentialRampToValueAtTime(260,t+.11);filter.Q.value=.72;noise.connect(filter);filter.connect(gain);gain.connect(this.sfx);gain.gain.setValueAtTime(.34,t);gain.gain.exponentialRampToValueAtTime(.001,t+.16);noise.start(t);noise.stop(t+.18);
-    const tone=ctx.createOscillator(),toneGain=ctx.createGain();tone.type='triangle';tone.frequency.setValueAtTime(118,t);tone.frequency.exponentialRampToValueAtTime(48,t+.11);toneGain.gain.setValueAtTime(.16,t);toneGain.gain.exponentialRampToValueAtTime(.001,t+.13);tone.connect(toneGain);toneGain.connect(this.sfx);tone.start(t);tone.stop(t+.14);
+    const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();noise.buffer=this.buffer;filter.type='bandpass';filter.frequency.setValueAtTime(1250/weight,t);filter.frequency.exponentialRampToValueAtTime(260/weight,t+.11);filter.Q.value=.72;noise.connect(filter);filter.connect(gain);gain.connect(this.sfx);gain.gain.setValueAtTime(.34*Math.min(1.25,weight),t);gain.gain.exponentialRampToValueAtTime(.001,t+.16);noise.start(t);noise.stop(t+.18);
+    const tone=ctx.createOscillator(),toneGain=ctx.createGain();tone.type='triangle';tone.frequency.setValueAtTime(118/weight,t);tone.frequency.exponentialRampToValueAtTime(48/weight,t+.11);toneGain.gain.setValueAtTime(.16*Math.min(1.25,weight),t);toneGain.gain.exponentialRampToValueAtTime(.001,t+.13);tone.connect(toneGain);toneGain.connect(this.sfx);tone.start(t);tone.stop(t+.14);
   }
 
   combat(kind:'swing'|'flesh'|'wood'|'stone'|'reload'|'bow',strength=1){

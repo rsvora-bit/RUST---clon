@@ -5,7 +5,7 @@ import type {ItemId} from '../core/types';
 import {woodMaterial,stoneMaterial} from './materials';
 
 const smoothPalm=(y:number)=>Math.max(0,1-Math.abs(y-.25));
-const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
+const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','shotgunShells','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
 export class HeldItem {
   readonly scene=new THREE.Scene();
@@ -113,16 +113,11 @@ export class HeldItem {
       const socket=this.mesh(new THREE.CylinderGeometry(.038,.034,.10,8),this.wrap,.27,.51,-.665);socket.rotation.z=-.16;
       for(let i=0;i<4;i++){const band=this.mesh(new THREE.TorusGeometry(.029,.003,5,12),this.wrap,.283,.03+i*.018,-.655);band.rotation.x=Math.PI/2;}
       this.addArm(-1,-.08,-.17,-.61,.18,true);
-    }else if(item==='salvageRevolver'){
+    }else if(item==='salvageRevolver'||item==='fieldShotgun'){
       const weapon=new THREE.Group();weapon.scale.setScalar(.64);weapon.position.set(.10,.02,-.12);this.hand.add(weapon);
-      const grip=this.mesh(new THREE.BoxGeometry(.105,.27,.13),this.wrap,.28,-.12,-.63,weapon);grip.rotation.x=-.18;
-      const frame=this.mesh(new THREE.BoxGeometry(.16,.12,.29),this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;
-      const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;
-      const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;
-      const hammer=this.mesh(new THREE.BoxGeometry(.065,.085,.075),this.metal,.27,.15,-.59,weapon);hammer.rotation.x=-.25;
-      this.mesh(new THREE.BoxGeometry(.03,.038,.04),this.metal,.27,.13,-.98,weapon);
-      const trigger=this.mesh(new THREE.TorusGeometry(.046,.007,6,14,Math.PI),this.wrap,.27,-.01,-.72,weapon);trigger.rotation.x=Math.PI/2;
-      this.addArm(-1,-.13,-.13,-.59,.18,true);
+      const shotgun=item==='fieldShotgun';if(shotgun){weapon.scale.setScalar(.76);weapon.position.y=.11;}const grip=this.mesh(new THREE.BoxGeometry(shotgun?.13:.105,shotgun?.32:.27,shotgun?.15:.13),this.wrap,.28,shotgun?-.17:-.12,-.63,weapon);grip.rotation.x=-.18;
+      if(shotgun){const stock=this.mesh(new THREE.BoxGeometry(.13,.19,.31),this.wood,.28,.01,-.54,weapon);stock.rotation.x=-.12;const receiver=this.mesh(new THREE.BoxGeometry(.18,.13,.28),this.metal,.27,.07,-.79,weapon);receiver.rotation.x=-.04;for(let i=0;i<2;i++){const barrel=this.mesh(new THREE.CylinderGeometry(.032,.036,.47,10),this.metal,.245+i*.05,.08,-1.04,weapon);barrel.rotation.x=Math.PI/2;}const foregrip=this.mesh(new THREE.BoxGeometry(.19,.095,.23),this.wood,.27,.055,-1.05,weapon);foregrip.rotation.x=-.08;this.addArm(-1,-.13,-.10,-.63,.18,true);
+      }else{const frame=this.mesh(new THREE.BoxGeometry(.16,.12,.29),this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;const hammer=this.mesh(new THREE.BoxGeometry(.065,.085,.075),this.metal,.27,.15,-.59,weapon);hammer.rotation.x=-.25;this.mesh(new THREE.BoxGeometry(.03,.038,.04),this.metal,.27,.13,-.98,weapon);const trigger=this.mesh(new THREE.TorusGeometry(.046,.007,6,14,Math.PI),this.wrap,.27,-.01,-.72,weapon);trigger.rotation.x=Math.PI/2;this.addArm(-1,-.13,-.13,-.59,.18,true);}
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);
@@ -211,7 +206,7 @@ export class HeldItem {
     );
     if(this.bowString){this.bowString.position.x=.05-this.bowDraw*.21;this.bowString.scale.y=1-this.bowDraw*.12;}
     if(this.bowArrow){this.bowArrow.visible=this.bowDraw>.08;this.bowArrow.position.x=.14-this.bowDraw*.18;}
-    if(this.active==='salvageRevolver'&&this.reloadProgress>0){this.hand.rotation.x-=Math.sin(this.reloadProgress*Math.PI)*.20;this.hand.rotation.z+=this.reloadProgress*.11;this.hand.position.y-=Math.sin(this.reloadProgress*Math.PI)*.035;}
+    if((this.active==='salvageRevolver'||this.active==='fieldShotgun')&&this.reloadProgress>0){this.hand.rotation.x-=Math.sin(this.reloadProgress*Math.PI)*.20;this.hand.rotation.z+=this.reloadProgress*.11;this.hand.position.y-=Math.sin(this.reloadProgress*Math.PI)*.035;}
 
     if(this.flameOuter)(this.flameOuter.material as THREE.ShaderMaterial).uniforms.time.value=this.t;
     if(this.flameInner)(this.flameInner.material as THREE.ShaderMaterial).uniforms.time.value=this.t*1.23+19.;

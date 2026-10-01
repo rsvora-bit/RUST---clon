@@ -329,7 +329,7 @@ export class UI {
     this.find('.hotbar').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(hud.inventory[index] ?? null,index,index === hud.activeSlot,true)).join('');
     const active = hud.inventory[hud.activeSlot];
     const name=active?ITEMS[active.itemId].displayName:this.tx('emptyHands');
-    if(active&&isFirearm(active.itemId)){const weapon=FIREARMS[active.itemId],reserve=hud.inventory.reduce((n,s)=>n+(s?.itemId===weapon.ammoItemId?s.count:0),0);this.find('.active-item-name').textContent=`${name} · ${loadedRounds(active)}/${weapon.magazineSize} · ${reserve} RESERVE · R RELOAD`;}
+    if(active&&isFirearm(active.itemId)){const weapon=FIREARMS[active.itemId],reserve=hud.inventory.reduce((n,s)=>n+(s?.itemId===weapon.ammoItemId?s.count:0),0);this.find('.active-item-name').textContent=`${name} · ${loadedRounds(active,weapon)}/${weapon.magazineSize} · ${reserve} ${weapon.ammoItemId==='shotgunShells'?'SHELLS':'RESERVE'} · R RELOAD`;}
     else this.find('.active-item-name').textContent=name;
   }
 
