@@ -78,7 +78,9 @@ export function validateGameState(value: unknown): value is GameState {
     const worldHalf=value.worldGeneration===5?640:360;
     if(p.waypoint!==undefined&&(!record(p.waypoint)||!finite(p.waypoint.x,-worldHalf,worldHalf)||!finite(p.waypoint.z,-worldHalf,worldHalf)))return false;
     if(p.death!==undefined){const death=p.death;if(!record(death)||!integer(death.sequence,1)||!['dead','respawned'].includes(death.phase as string)||!position(death.position)||!finite(death.occurredAt,0,value.elapsed as number)||death.cause!==undefined&&(typeof death.cause!=='string'||death.cause.length>80)||death.packId!==undefined&&(typeof death.packId!=='string'||!p.stations.some(s=>s.id===death.packId&&s.kind==='deathbag')))return false;}
+    if(p.washedAshore!==undefined){const event=p.washedAshore;if(!record(event)||typeof event.stormSeen!=='boolean'||typeof event.resolved!=='boolean'||event.position!==undefined&&(!position(event.position)||!finite(event.position.x,-worldHalf,worldHalf)||!finite(event.position.z,-worldHalf,worldHalf))||event.appearedAt!==undefined&&!finite(event.appearedAt,0,value.elapsed as number)||((event.position===undefined)!==(event.appearedAt===undefined))||event.position!==undefined&&(value.worldGeneration!==5||!event.stormSeen))return false;}
     for(const s of p.stations){if(ids.has(s.id))return false;ids.add(s.id);const generated=/^(?:station|deathbag)-(\d+)$/.exec(s.id);if(generated&&Number(generated[1])>=value.nextId)return false;}
+    const washedAshore=p.washedAshore;if(record(washedAshore)&&washedAshore.position!==undefined){const cache=p.stations.some(s=>s.id==='event-washed-ashore'&&s.kind==='loot');if(cache===washedAshore.resolved)return false;}
   }
   return true;
 }

@@ -11,6 +11,7 @@ import type {IslandTerrain} from '../terrain/island';
 import {TerrainRoadRouter,roadGeometry} from '../terrain/roads';
 import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
+import {updateWashedAshoreEvent} from './events';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp'];
@@ -29,6 +30,7 @@ export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:C
 
 export class WorldSurvival {
   readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
+  private eventSiteCache:Vec3|null|undefined;
   private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private sludge=new T.MeshStandardMaterial({color:0x4d5941,roughness:.38,metalness:.04,transparent:true,opacity:.73,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0x0d1209,emissiveIntensity:.12,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   private readonly relayMast=new T.CylinderGeometry(.08,.2,8.4,6,5);private readonly relayDish=new T.SphereGeometry(.48,9,6,0,Math.PI*2,0,Math.PI*.58);
   constructor(private env:Environment,scene:T.Scene,private seed:number){
@@ -67,6 +69,21 @@ export class WorldSurvival {
     }
     this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
+  advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,()=>this.findEventCoast(state));}
+  private findEventCoast(state:GameState):Vec3|null{
+    if(this.eventSiteCache!==undefined)return this.eventSiteCache;
+    const terrain=this.env.terrain;if(terrain.generation!==5)return null;
+    const rand=randomSource(this.seed+0x5a16);let best:Vec3|null=null,bestScore=Infinity;
+    for(let i=0;i<1800;i++){
+      const angle=rand()*Math.PI*2,radius=350+rand()*245,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,y=this.env.heightAt(x,z);
+      if(y<.55||y>4.8||terrain.biomeAt(x,z)!=='COAST'||terrain.slopeAt(x,z)>.2||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<105)continue;
+      if(this.pois.some(p=>Math.hypot(p.position.x-x,p.position.z-z)<48)||this.env.colliders.some(c=>Math.abs(c.position.x-x)<c.halfExtents.x+4&&Math.abs(c.position.z-z)<c.halfExtents.z+4))continue;
+      if(state.progression?.stations.some(s=>Math.hypot(s.position.x-x,s.position.z-z)<8)||state.structures.some(s=>Math.hypot(s.position.x-x,s.position.z-z)<8))continue;
+      const score=Math.abs(y-1.8)*.35+terrain.slopeAt(x,z)*3+rand()*.24;
+      if(score<bestScore){bestScore=score;best={x,y:y+.04,z};}
+    }
+    this.eventSiteCache=best;return best;
+  }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.cloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
@@ -86,6 +103,6 @@ export class IslandMap {
     const labels:{x:number;y:number;w:number;h:number}[]=[],drawLabel=(text:string,x:number,y:number,color:string)=>{const w=c.measureText(text).width+5,h=13,options=[[x+9,y-9],[x+9,y+20],[x-w-9,y-9],[x-w-9,y+20],[x+9,y-25],[x-w-9,y+35]];const chosen=options.find(([lx,ly])=>lx>3&&lx+w<this.pixels-3&&ly-h>3&&ly<this.pixels-3&&!labels.some(b=>lx<b.x+b.w&&lx+w>b.x&&ly-h<b.y&&ly>b.y-b.h))??options[0]!;labels.push({x:chosen[0],y:chosen[1],w,h});c.fillStyle=color;c.fillText(text,chosen[0],chosen[1]);};
     c.font='bold 12px sans-serif';this.world.pois.forEach(p=>{const q=worldToMap(p.position,size,this.pixels);c.fillStyle='#e5d5a9';c.beginPath();c.arc(q.x,q.y,5,0,Math.PI*2);c.fill();drawLabel(p.name.toUpperCase(),q.x,q.y,'#e5d5a9');});for(const r of this.world.recyclers){const q=worldToMap(r,size,this.pixels);c.fillStyle='#b6cf79';c.fillRect(q.x-4,q.y-4,8,8);drawLabel('RECYCLER',q.x,q.y,'#b6cf79');}}
   get isOpen(){return !this.root.hidden;}show(){this.root.hidden=false;}close(){this.root.hidden=true;this.dragging=false;}
-  update(p:Vec3,yaw:number,waypoint?:{x:number;z:number},packs:Vec3[]=[]){if(!this.isOpen)return;const c=this.ctx,size=this.env.terrain.size;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,this.pixels,this.pixels);c.setTransform(this.zoom,0,0,this.zoom,this.pan.x,this.pan.y);c.drawImage(this.base,0,0);if(waypoint){const q=worldToMap(waypoint,size,this.pixels);c.strokeStyle='#f0ad63';c.lineWidth=3/this.zoom;c.strokeRect(q.x-8,q.y-8,16,16);}for(const pack of packs){const q=worldToMap(pack,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(Math.PI/4);c.fillStyle='#d88955';c.strokeStyle='#f1d0a0';c.lineWidth=2/this.zoom;c.fillRect(-6,-6,12,12);c.strokeRect(-6,-6,12,12);c.restore();}const q=worldToMap(p,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(-yaw);c.fillStyle='#f0f4e4';c.strokeStyle='#1a2728';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(0,-10);c.lineTo(-6,7);c.lineTo(6,7);c.closePath();c.fill();c.stroke();c.restore();c.setTransform(1,0,0,1,0,0);}
+  update(p:Vec3,yaw:number,waypoint?:{x:number;z:number},packs:Vec3[]=[],event?:Vec3){if(!this.isOpen)return;const c=this.ctx,size=this.env.terrain.size;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,this.pixels,this.pixels);c.setTransform(this.zoom,0,0,this.zoom,this.pan.x,this.pan.y);c.drawImage(this.base,0,0);if(waypoint){const q=worldToMap(waypoint,size,this.pixels);c.strokeStyle='#f0ad63';c.lineWidth=3/this.zoom;c.strokeRect(q.x-8,q.y-8,16,16);}if(event){const e=worldToMap(event,size,this.pixels);c.fillStyle='#e8a45a';c.strokeStyle='#fff0c2';c.lineWidth=2/this.zoom;c.beginPath();c.arc(e.x,e.y,7/this.zoom,0,Math.PI*2);c.fill();c.stroke();}for(const pack of packs){const q=worldToMap(pack,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(Math.PI/4);c.fillStyle='#d88955';c.strokeStyle='#f1d0a0';c.lineWidth=2/this.zoom;c.fillRect(-6,-6,12,12);c.strokeRect(-6,-6,12,12);c.restore();}const q=worldToMap(p,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(-yaw);c.fillStyle='#f0f4e4';c.strokeStyle='#1a2728';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(0,-10);c.lineTo(-6,7);c.lineTo(6,7);c.closePath();c.fill();c.stroke();c.restore();c.setTransform(1,0,0,1,0,0);}
   dispose(){this.root.remove();}
 }
