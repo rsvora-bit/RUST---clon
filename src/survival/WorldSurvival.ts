@@ -11,7 +11,7 @@ import type {IslandTerrain} from '../terrain/island';
 import {TerrainRoadRouter,roadGeometry} from '../terrain/roads';
 import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
-import {updateWashedAshoreEvent} from './events';
+import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp'];
@@ -70,6 +70,18 @@ export class WorldSurvival {
     this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
   advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,sequence=>this.findEventCoast(state,sequence));}
+  triggerRadioSignal(state:GameState,source:Vec3){
+    if(this.env.terrain.generation!==5||state.progression?.radioSignal)return false;
+    const terrain=this.env.terrain,originSeed=(state.seed^Math.imul(Math.round(source.x),0x45d9f3b)^Math.imul(Math.round(source.z),0x119de1f3)^0x72616469)>>>0,rand=randomSource(originSeed);let best:Vec3|null=null,bestScore=Infinity;
+    for(let i=0;i<1100;i++){
+      const angle=rand()*Math.PI*2,radius=150+rand()*175,x=source.x+Math.cos(angle)*radius,z=source.z+Math.sin(angle)*radius,y=this.env.heightAt(x,z);
+      if(y<3||y>45||terrain.slopeAt(x,z)>.28||terrain.biomeAt(x,z)==='WATER'||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<100)continue;
+      if(this.pois.some(p=>Math.hypot(p.position.x-x,p.position.z-z)<38)||this.env.colliders.some(c=>Math.abs(c.position.x-x)<c.halfExtents.x+5&&Math.abs(c.position.z-z)<c.halfExtents.z+5))continue;
+      if(state.progression?.stations.some(s=>Math.hypot(s.position.x-x,s.position.z-z)<16)||state.structures.some(s=>Math.hypot(s.position.x-x,s.position.z-z)<14))continue;
+      const score=Math.abs(y-12)*.025+terrain.slopeAt(x,z)*2+rand()*.12;if(score<bestScore){bestScore=score;best={x,y:y+.04,z};}
+    }
+    return best?createRadioSignalEvent(state,best):false;
+  }
   private findEventCoast(state:GameState,sequence:number):Vec3|null{
     if(this.eventSiteCache.has(sequence))return this.eventSiteCache.get(sequence)??null;
     const terrain=this.env.terrain;if(terrain.generation!==5)return null;
@@ -103,6 +115,6 @@ export class IslandMap {
     const labels:{x:number;y:number;w:number;h:number}[]=[],drawLabel=(text:string,x:number,y:number,color:string)=>{const w=c.measureText(text).width+5,h=13,options=[[x+9,y-9],[x+9,y+20],[x-w-9,y-9],[x-w-9,y+20],[x+9,y-25],[x-w-9,y+35]];const chosen=options.find(([lx,ly])=>lx>3&&lx+w<this.pixels-3&&ly-h>3&&ly<this.pixels-3&&!labels.some(b=>lx<b.x+b.w&&lx+w>b.x&&ly-h<b.y&&ly>b.y-b.h))??options[0]!;labels.push({x:chosen[0],y:chosen[1],w,h});c.fillStyle=color;c.fillText(text,chosen[0],chosen[1]);};
     c.font='bold 12px sans-serif';this.world.pois.forEach(p=>{const q=worldToMap(p.position,size,this.pixels);c.fillStyle='#e5d5a9';c.beginPath();c.arc(q.x,q.y,5,0,Math.PI*2);c.fill();drawLabel(p.name.toUpperCase(),q.x,q.y,'#e5d5a9');});for(const r of this.world.recyclers){const q=worldToMap(r,size,this.pixels);c.fillStyle='#b6cf79';c.fillRect(q.x-4,q.y-4,8,8);drawLabel('RECYCLER',q.x,q.y,'#b6cf79');}}
   get isOpen(){return !this.root.hidden;}show(){this.root.hidden=false;}close(){this.root.hidden=true;this.dragging=false;}
-  update(p:Vec3,yaw:number,waypoint?:{x:number;z:number},packs:Vec3[]=[],event?:Vec3){if(!this.isOpen)return;const c=this.ctx,size=this.env.terrain.size;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,this.pixels,this.pixels);c.setTransform(this.zoom,0,0,this.zoom,this.pan.x,this.pan.y);c.drawImage(this.base,0,0);if(waypoint){const q=worldToMap(waypoint,size,this.pixels);c.strokeStyle='#f0ad63';c.lineWidth=3/this.zoom;c.strokeRect(q.x-8,q.y-8,16,16);}if(event){const e=worldToMap(event,size,this.pixels);c.fillStyle='#e8a45a';c.strokeStyle='#fff0c2';c.lineWidth=2/this.zoom;c.beginPath();c.arc(e.x,e.y,7/this.zoom,0,Math.PI*2);c.fill();c.stroke();}for(const pack of packs){const q=worldToMap(pack,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(Math.PI/4);c.fillStyle='#d88955';c.strokeStyle='#f1d0a0';c.lineWidth=2/this.zoom;c.fillRect(-6,-6,12,12);c.strokeRect(-6,-6,12,12);c.restore();}const q=worldToMap(p,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(-yaw);c.fillStyle='#f0f4e4';c.strokeStyle='#1a2728';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(0,-10);c.lineTo(-6,7);c.lineTo(6,7);c.closePath();c.fill();c.stroke();c.restore();c.setTransform(1,0,0,1,0,0);}
+  update(p:Vec3,yaw:number,waypoint?:{x:number;z:number},packs:Vec3[]=[],event?:Vec3,signal?:Vec3){if(!this.isOpen)return;const c=this.ctx,size=this.env.terrain.size;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,this.pixels,this.pixels);c.setTransform(this.zoom,0,0,this.zoom,this.pan.x,this.pan.y);c.drawImage(this.base,0,0);if(waypoint){const q=worldToMap(waypoint,size,this.pixels);c.strokeStyle='#f0ad63';c.lineWidth=3/this.zoom;c.strokeRect(q.x-8,q.y-8,16,16);}if(event){const e=worldToMap(event,size,this.pixels);c.fillStyle='#e8a45a';c.strokeStyle='#fff0c2';c.lineWidth=2/this.zoom;c.beginPath();c.arc(e.x,e.y,7/this.zoom,0,Math.PI*2);c.fill();c.stroke();}if(signal){const q=worldToMap(signal,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(Math.PI/4);c.fillStyle='#67d7ae';c.strokeStyle='#e7ffed';c.lineWidth=2/this.zoom;c.fillRect(-6/this.zoom,-6/this.zoom,12/this.zoom,12/this.zoom);c.strokeRect(-6/this.zoom,-6/this.zoom,12/this.zoom,12/this.zoom);c.restore();}for(const pack of packs){const q=worldToMap(pack,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(Math.PI/4);c.fillStyle='#d88955';c.strokeStyle='#f1d0a0';c.lineWidth=2/this.zoom;c.fillRect(-6,-6,12,12);c.strokeRect(-6,-6,12,12);c.restore();}const q=worldToMap(p,size,this.pixels);c.save();c.translate(q.x,q.y);c.rotate(-yaw);c.fillStyle='#f0f4e4';c.strokeStyle='#1a2728';c.lineWidth=2/this.zoom;c.beginPath();c.moveTo(0,-10);c.lineTo(-6,7);c.lineTo(6,7);c.closePath();c.fill();c.stroke();c.restore();c.setTransform(1,0,0,1,0,0);}
   dispose(){this.root.remove();}
 }

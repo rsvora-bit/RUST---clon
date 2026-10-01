@@ -1,7 +1,7 @@
 import {describe,it,expect,vi} from 'vitest';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {ensureProgression} from '../src/survival/progression';
-import {resolveWashedAshoreEvent,updateWashedAshoreEvent,WASHED_ASHORE_COOLDOWN,washedAshoreStationId} from '../src/survival/events';
+import {createRadioSignalEvent,isRadioSignalStationId,resolveRadioSignalEvent,resolveWashedAshoreEvent,updateWashedAshoreEvent,WASHED_ASHORE_COOLDOWN,washedAshoreStationId} from '../src/survival/events';
 import {createStation} from '../src/survival/stations';
 import {validateGameState} from '../src/save/storage';
 
@@ -54,5 +54,26 @@ describe('Generation 5 washed-ashore salvage event',()=>{
   it('rejects an active event whose saved cache is missing',()=>{
     const state=stormState(),progress=ensureProgression(state);progress.weather.kind='storm';updateWashedAshoreEvent(state,5,()=>coast);progress.weather.kind='clear';updateWashedAshoreEvent(state,5,()=>coast);progress.stations=[];
     expect(validateGameState(structuredClone(state))).toBe(false);
+  });
+
+  it('unlocks one deterministic late-tier relay cache for Gen5 and preserves it through save/reload',()=>{
+    const first=stormState(812),second=stormState(812),site={x:212,y:18,z:-176};
+    expect(createRadioSignalEvent(first,site)).toBe(true);expect(createRadioSignalEvent(first,site)).toBe(false);
+    expect(createRadioSignalEvent(second,site)).toBe(true);
+    const progress=ensureProgression(first),cache=progress.stations.find(s=>isRadioSignalStationId(s.id))!;
+    expect(cache.position).toEqual(site);expect(cache.inventory.some(item=>item?.itemId==='techParts'&&item.count>=1)).toBe(true);
+    expect(cache.inventory).toEqual(ensureProgression(second).stations.find(s=>isRadioSignalStationId(s.id))?.inventory);
+    expect(validateGameState(structuredClone(first))).toBe(true);
+    progress.stations=progress.stations.filter(s=>!isRadioSignalStationId(s.id));
+    expect(resolveRadioSignalEvent(first,'unrelated-cache')).toBe(false);expect(resolveRadioSignalEvent(first,'event-radio-signal')).toBe(true);
+    expect(validateGameState(structuredClone(first))).toBe(true);
+    const invalid=structuredClone(first);invalid.progression!.radioSignal!.resolved=false;
+    expect(validateGameState(invalid)).toBe(false);
+  });
+
+  it('does not create radio signal progression in legacy generations or old saves',()=>{
+    const legacy=stormState();legacy.worldGeneration=4;
+    expect(createRadioSignalEvent(legacy,coast)).toBe(false);expect(legacy.progression?.radioSignal).toBeUndefined();
+    const old=stormState();expect(validateGameState(structuredClone(old))).toBe(true);expect(old.progression?.radioSignal).toBeUndefined();
   });
 });
