@@ -12,7 +12,7 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 ## Git a validace
 
 - Repo: `/Users/romansvora/Documents/Tideland`; `origin` je canonical `https://github.com/rsvora-bit/RUST---clon.git`.
-- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Vývojová větev zůstává oddělená od `main`.
+- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Combat checkpoint `893c925` je pushnutý na odpovídající origin branch. Vývojová větev zůstává oddělená od `main`; PR/tag/release nebyly vytvořeny.
 - `npm test`: **233/233 PASS**, 34 test souborů.
 - `npm run build`: **PASS**; přetrvává původní Vite upozornění na přibližně 3.2 MB JavaScript chunk.
 - Browser QA v nainstalovaném Chrome s ANGLE Metal: `test:combat`, `test:ranged`, `test:firearm` a nový alias `test:tech-tree` — **PASS**, bez browser/WebGL console chyb. Bow i revolver reload animace mají konkrétní diagnostický assertion; melee wildlife hit a save/reload prošly. Screenshoty jsou ignorované artefakty v `test-results/`; napnutý luk vizuálně kontrolován, nepřekrývá zaměřovací střed.
@@ -22,7 +22,8 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 
 - Pokračovat Goal 1 od konzistentního, ověřeného checkpointu: zlepšit impact/cooldown feel, melee wall-occlusion browser regression a pak zvolit malou integrovanou zbraňovou progresi (shotgun-like až po jeho ammo, crafting/tech unlock, viewmodel, recoil, durability a QA). Nepřidávat povrchní zbraně bez celé herní smyčky.
 - Následují Goals 2–5: armor/AI; raiding/electricity; minimálně dva integrované POI a dvě save-safe události; balancing, performance a plná regression QA.
-- Nepublikovat release ani nezapisovat `main` automaticky. Uživatel žádá Git zpřístupnění pro testování; pracovní branch lze pushnout po čistém checkpoint commitu. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. `gh` CLI není v tomto prostředí instalované.
+- `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort` právě běží pro lokální test: `http://127.0.0.1:5173/`. Po ukončení této relace server přestane běžet; na jiném zařízení tato localhost adresa dostupná nebude.
+- Nepublikovat release ani nezapisovat `main` automaticky. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. Aktuální veřejná Pages adresa zůstává vydaná v0.9.2. `gh` CLI není v tomto prostředí instalované.
 
 ---
 
