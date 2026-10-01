@@ -1,10 +1,17 @@
 import type {ItemId,ItemStack,Vec3} from '../core/types';
 
 export interface FirearmDefinition {itemId:'salvageRevolver'|'fieldShotgun';ammoItemId:'pistolAmmo'|'shotgunShells';magazineSize:number;damage:number;fireInterval:number;reloadSeconds:number;range:number;spreadRadians:number;recoil:number;durabilityPerShot:number;pellets:number}
+export type StructuralGrade='wood'|'stone'|'metal';
 export const FIREARMS:Record<FirearmDefinition['itemId'],FirearmDefinition>={
   salvageRevolver:{itemId:'salvageRevolver',ammoItemId:'pistolAmmo',magazineSize:6,damage:34,fireInterval:.42,reloadSeconds:1.55,range:58,spreadRadians:.006,recoil:.012,durabilityPerShot:1,pellets:1},
   fieldShotgun:{itemId:'fieldShotgun',ammoItemId:'shotgunShells',magazineSize:4,damage:9,fireInterval:.92,reloadSeconds:2.35,range:32,spreadRadians:.075,recoil:.038,durabilityPerShot:2,pellets:8},
 };
+/** Firearms can breach doors, with higher building grades resisting the impact. */
+export function firearmDoorDamage(weapon:FirearmDefinition,distance:number,grade:StructuralGrade):number{
+  const resistance:Record<StructuralGrade,number>={wood:1,stone:.42,metal:.18};
+  const falloff=Math.max(.5,1-Math.max(0,distance)/weapon.range*.5);
+  return weapon.damage*falloff*resistance[grade];
+}
 export const isFirearm=(itemId:ItemId|undefined|null):itemId is FirearmDefinition['itemId']=>!!itemId&&Object.hasOwn(FIREARMS,itemId);
 export function loadedRounds(stack:ItemStack,weapon=FIREARMS.salvageRevolver):number{return Math.max(0,Math.min(weapon.magazineSize,Math.floor(stack.loadedAmmo??0)));}
 export function firearmShotDirection(forward:Vec3,shotIndex:number,weapon=FIREARMS.salvageRevolver):Vec3{

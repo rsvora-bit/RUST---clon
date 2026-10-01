@@ -36,7 +36,7 @@ import {PLAYER,WORLD,BUILD} from '../config/balance';
 import {fallDamageForSpeed} from '../player/fallDamage';
 import {damageTypeForCause,type DamagePacket,type DamageResult} from '../combat/damage';
 import {MELEE_WEAPONS,resolveMeleeHit} from '../combat/melee';
-import {FIREARMS,consumeLoadedRound,firearmShotDirection,isFirearm,loadedRounds,roundsToLoad} from '../combat/firearms';
+import {FIREARMS,consumeLoadedRound,firearmDoorDamage,firearmShotDirection,isFirearm,loadedRounds,roundsToLoad} from '../combat/firearms';
 import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
 import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
@@ -225,15 +225,16 @@ export class GameApp {
   private fireFirearm(){
     if(this.cooldown>0||this.reloadRemaining>0)return;const slot=this.simulation.state.activeSlot,stack=this.simulation.state.inventory[slot];if(!stack||!isFirearm(stack.itemId))return;
     const weapon=FIREARMS[stack.itemId];if(!consumeLoadedRound(stack,weapon)){this.ui.notify('Empty magazine · press R to reload');this.audio.play('error');this.cooldown=.2;return;}
-    const origin={x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z};this.camera.getWorldDirection(this.direction);const forward={x:this.direction.x,y:this.direction.y,z:this.direction.z},obstructionObjects=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values()],hits=new Map<WildlifeActor,{damage:number;point:Vec3}>();let obstaclePoint:Vec3|null=null;
+    const origin={x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z};this.camera.getWorldDirection(this.direction);const forward={x:this.direction.x,y:this.direction.y,z:this.direction.z},obstructionObjects=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values()],hits=new Map<WildlifeActor,{damage:number;point:Vec3}>(),doorHits=new Map<string,number>();let obstaclePoint:Vec3|null=null;
     for(let pellet=0;pellet<weapon.pellets;pellet++){
       const direction=firearmShotDirection(forward,this.firearmShotSequence++,weapon),to={x:origin.x+direction.x*weapon.range,y:origin.y+direction.y*weapon.range,z:origin.z+direction.z*weapon.range};this.ray.set(this.camera.position,new THREE.Vector3(direction.x,direction.y,direction.z));this.ray.far=weapon.range;const blocker=this.ray.intersectObjects(obstructionObjects,true)[0];
       let target:{actor:WildlifeActor;fraction:number;point:Vec3}|null=null;for(const actor of this.wildlife.actors){if(actor.state==='dead')continue;const center={x:actor.position.x,y:actor.position.y+(actor.species==='islandScavenger'?.95:.68),z:actor.position.z},hit=segmentSphereHit(origin,to,center,actor.species==='islandScavenger'?.62:.55);if(hit.hit&&(!target||hit.fraction<target.fraction))target={actor,fraction:hit.fraction,point:hit.point};}
       if(target&&(!blocker||target.fraction*weapon.range<blocker.distance)){const distance=target.fraction*weapon.range,falloff=Math.max(.5,1-distance/weapon.range*.5),entry=hits.get(target.actor);if(entry)entry.damage+=weapon.damage*falloff;else hits.set(target.actor,{damage:weapon.damage*falloff,point:target.point});}
-      else if(blocker&&!obstaclePoint)obstaclePoint={x:blocker.point.x,y:blocker.point.y,z:blocker.point.z};
+      else if(blocker){const structureId=blocker.object.userData.structureId,structure=typeof structureId==='string'?this.simulation.state.structures.find(entry=>entry.id===structureId):undefined;if(structure?.pieceType==='door')doorHits.set(structure.id,(doorHits.get(structure.id)??0)+firearmDoorDamage(weapon,blocker.distance,structureGrade(structure)));if(!obstaclePoint)obstaclePoint={x:blocker.point.x,y:blocker.point.y,z:blocker.point.z};}
     }
     for(const [actor,hit] of hits){const result=actor.takeDamage({amount:Math.round(hit.damage),type:'projectile',sourceId:`player-${weapon.itemId}`});this.simulation.state.nodeChanges[actor.id]=result.healthAfter;this.impactFx.burst(hit.point,'stone',1.05);if(result.killed)this.defeatWildlife(actor);}
-    if(!hits.size&&obstaclePoint)this.impactFx.burst(obstaclePoint,'stone',.7);
+    for(const [id,damage] of doorHits){const result=this.damageStructure(id,Math.max(1,Math.round(damage)));if(result.ok&&result.removedIds?.includes(id))this.ui.notify('Door breached · passage open');}
+    if(!hits.size&&!doorHits.size&&obstaclePoint)this.impactFx.burst(obstaclePoint,'stone',.7);
     const broken=this.simulation.wearItem(slot,weapon.durabilityPerShot);if(broken)this.syncHeld();this.held.hit();this.held.impact();this.player.pitch=Math.min(1.45,this.player.pitch+weapon.recoil);this.audio.firearm(weapon.itemId==='fieldShotgun'?1.42:1);this.emitCombatNoise(weapon.itemId==='fieldShotgun'?48:36,5);this.cooldown=weapon.fireInterval;this.save(false,false);
   }
   private defeatWildlife(actor:WildlifeActor){

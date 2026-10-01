@@ -1,5 +1,5 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-import {FIREARMS,consumeLoadedRound,firearmShotDirection,loadedRounds,roundsToLoad} from '../src/combat/firearms';
+import {FIREARMS,consumeLoadedRound,firearmDoorDamage,firearmShotDirection,loadedRounds,roundsToLoad} from '../src/combat/firearms';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {createStation} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
@@ -38,6 +38,11 @@ describe('salvage revolver',()=>{
     expect(firearmShotDirection({x:0,y:0,z:-1},11,weapon)).toEqual(firearmShotDirection({x:0,y:0,z:-1},11,weapon));
     expect(firearmShotDirection({x:0,y:0,z:-1},1,weapon).x).not.toBeCloseTo(firearmShotDirection({x:0,y:0,z:-1},2,weapon).x,4);
     expect(consumeLoadedRound(stack,weapon)).toBe(true);expect(stack.loadedAmmo).toBe(3);expect(roundsToLoad(stack,12,weapon)).toBe(1);
+  });
+  it('lets scarce firearm rounds breach wooden doors while upgraded grades resist more',()=>{
+    const revolver=FIREARMS.salvageRevolver,shotgun=FIREARMS.fieldShotgun;
+    expect(firearmDoorDamage(revolver,0,'wood')).toBe(34);expect(firearmDoorDamage(revolver,0,'stone')).toBeCloseTo(14.28);expect(firearmDoorDamage(revolver,0,'metal')).toBeCloseTo(6.12);
+    expect(firearmDoorDamage(revolver,29,'wood')).toBeCloseTo(25.5);expect(firearmDoorDamage(shotgun,0,'wood')).toBe(9);
   });
   it('validates shotgun loaded shells and preserves them through save/reload and repair',()=>{
     const g=new GameSimulation(94,{x:0,y:5,z:0});ensureProgression(g.state).stations.push(createStation('bench-shotgun','workbench1',{x:0,y:5,z:0}));g.state.inventory[2]={itemId:'fieldShotgun',count:1,condition:80,loadedAmmo:3};g.addItem('metal',24);g.addItem('machineParts',2);g.addItem('shotgunShells',10);
