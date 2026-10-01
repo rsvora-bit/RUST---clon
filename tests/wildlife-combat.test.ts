@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createWildlifePopulation,lookoutHitChance,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
+import {createWildlifePopulation,guardHitChance,lookoutHitChance,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
 import * as THREE from 'three';
 import {WildlifeSystem} from '../src/combat/wildlife';
 import {hasLineOfSight} from '../src/combat/visibility';
@@ -25,10 +25,10 @@ describe('seeded island wildlife',()=>{
   });
   it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');
-    expect(scavengers).toHaveLength(2);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
-    expect(scavengers.map(a=>a.archetype)).toEqual(['scavenger','lookout']);expect(scavengers.map(a=>a.archetype)).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>a.archetype));
-    const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
-    expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id)).toBe(false);
+    expect(scavengers).toHaveLength(3);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
+    expect(scavengers.map(a=>a.archetype)).toEqual(['scavenger','lookout','guard']);expect(scavengers.map(a=>a.archetype)).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>a.archetype));
+    const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0,[scavengers[2]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
+    expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id||a.id===scavengers[2]!.id)).toBe(false);
   });
   it('keeps legacy generation wildlife layouts free of scavengers',()=>{
     const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
@@ -56,6 +56,7 @@ describe('seeded island wildlife',()=>{
     expect(lookout.state).toBe('reposition');expect(lookout.position.z).toBeLessThan(before);
     const overlap={...lookout.position};tickWildlife(lookout,.1,overlap,()=>3,attacks,true);expect(Object.values(lookout.position).every(Number.isFinite)).toBe(true);
     const calls=attacks.mock.calls.length;lookout.memorySeconds=1;tickWildlife(lookout,.1,player,()=>3,attacks,false);expect(attacks).toHaveBeenCalledTimes(calls);
+    const gunner=system.actors.find(a=>a.archetype==='guard')!;expect(gunner.maxHealth).toBeGreaterThan(lookout.maxHealth);expect(system.object(gunner.id)!.geometry).not.toBe(system.object(lookout.id)!.geometry);gunner.alerted=true;gunner.awareness=1;gunner.attackCooldown=0;const target={x:gunner.position.x,y:gunner.position.y,z:gunner.position.z+18},gunfire=vi.fn();expect(guardHitChance(gunner,20)).toBeLessThan(guardHitChance(gunner,10));for(let i=0;i<600;i++)tickWildlife(gunner,.1,target,()=>3,gunfire,true);expect(gunner.state).toBe('attack');expect(gunfire).toHaveBeenCalled();expect(gunfire.mock.calls.length).toBeLessThan(gunner.shotSequence??0);expect(gunfire.mock.calls.every(call=>call[2]==='projectile'&&call[0]===14)).toBe(true);const guardClose={x:gunner.position.x,y:gunner.position.y,z:gunner.position.z+5},guardZ=gunner.position.z;tickWildlife(gunner,.1,guardClose,()=>3,gunfire,true);expect(gunner.state).toBe('reposition');expect(gunner.position.z).toBeLessThan(guardZ);
     system.dispose();
   });
   it('throttles scavenger perception instead of ray testing every frame',()=>{

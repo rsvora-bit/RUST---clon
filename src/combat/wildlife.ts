@@ -7,7 +7,7 @@ import {randomSource} from '../world/noise';
 
 export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
 export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'attack'|'dead';
-export type ScavengerArchetype='scavenger'|'lookout';
+export type ScavengerArchetype='scavenger'|'lookout'|'guard';
 export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
@@ -22,6 +22,14 @@ export function wildlifeSpeciesForBiome(biome:string,temperature:number):Wildlif
   if(biome.includes('FOREST'))return 'islandWolf';
   if((biome.includes('GRASS')||biome.includes('COAST'))&&temperature>.3)return 'coastalBoar';
   return null;
+}
+
+function createScavenger(id:string,archetype:ScavengerArchetype,position:Vec3,yaw:number,seed:number,attackCooldown:number,savedHealth:number|undefined):WildlifeActor|null {
+  if(savedHealth===0)return null;
+  const maxHealth=archetype==='guard'?146:SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
+  const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+    takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
+  return actor;
 }
 
 /** Seeded placements are stable across reloads; only defeated ids are stored in the save. */
@@ -44,16 +52,14 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
   for(let index=0;index<Math.min(3,sites.length);index++){
     const site=sites[index]!,angle=(context.seed%997)*.013+index*2.399963,radius=5.5+index*.8,x=site.x+Math.cos(angle)*radius,z=site.z+Math.sin(angle)*radius;
     if(Math.abs(x)>margin||Math.abs(z)>margin)continue;const y=context.heightAt(x,z);if(!Number.isFinite(y)||y<.5)continue;
-    const id=`scavenger-${context.seed}-${index}`,savedHealth=context.nodeChanges?.[id];if(savedHealth===0)continue;
-    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
-    const actor:WildlifeActor={id,species:'islandScavenger',archetype:index===1?'lookout':'scavenger',state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:random()*.8,shotSequence:0,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
-      takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
-    actors.push(actor);
+    const id=`scavenger-${context.seed}-${index}`,seed=Math.floor(random()*0x7fffffff),position={x,y,z},archetype:ScavengerArchetype=index===1?'lookout':'scavenger',actor=createScavenger(id,archetype,position,angle+Math.PI,seed,random()*.8,context.nodeChanges?.[id]);if(actor)actors.push(actor);
+    if(index===1){const guardAngle=angle+Math.PI,guardX=site.x+Math.cos(guardAngle)*8,guardZ=site.z+Math.sin(guardAngle)*8,guardY=context.heightAt(guardX,guardZ),guardId=`${id}-guard`,guardSeed=(context.seed^Math.imul(index+1,0x45d9f3b))>>>0;if(Number.isFinite(guardY)&&guardY>.5&&Math.abs(guardX)<=margin&&Math.abs(guardZ)<=margin){const guard=createScavenger(guardId,'guard',{x:guardX,y:guardY,z:guardZ},angle,guardSeed,guardSeed%80/100,context.nodeChanges?.[guardId]);if(guard)actors.push(guard);}}
   }
   return actors;
 }
 
 export function lookoutHitChance(actor:WildlifeActor,distance:number):number{return Math.max(.3,Math.min(.76,.7-Math.max(0,distance-8)*.014+actor.awareness*.04));}
+export function guardHitChance(actor:WildlifeActor,distance:number):number{return Math.max(.2,Math.min(.58,.52-Math.max(0,distance-8)*.012+actor.awareness*.025));}
 function deterministicShotRoll(actor:WildlifeActor):number{const sequence=actor.shotSequence??1;let value=(actor.seed^Math.imul(sequence,0x9e3779b1))>>>0;value=Math.imul(value^(value>>>16),0x85ebca6b);value=Math.imul(value^(value>>>13),0xc2b2ae35);value^=value>>>16;return (value>>>0)/0x1_0000_0000;}
 
 export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string,type?:DamageType)=>void,canSeePlayer=true):void {
@@ -67,6 +73,13 @@ export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:
     const lx=actor.lastKnownPlayer.x-actor.position.x,lz=actor.lastKnownPlayer.z-actor.position.z,knownDistance=Math.hypot(lx,lz);
     if(knownDistance>1.45&&knownDistance<38){actor.state='investigate';actor.yaw=Math.atan2(lx,lz);const step=Math.min(knownDistance-1.2,spec.speed*dt);actor.position.x+=lx/knownDistance*step;actor.position.z+=lz/knownDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;}
     else actor.state='investigate';
+    return;
+  }
+  if(actor.species==='islandScavenger'&&actor.archetype==='guard'&&hostile&&distance<34&&canSeePlayer){
+    actor.yaw=Math.atan2(dx,dz);
+    if(distance<10){actor.state='reposition';const step=Math.min(11-distance,spec.speed*.75*dt),inverseDistance=distance>.001?1/distance:0;actor.position.x-=dx*inverseDistance*step;actor.position.z-=dz*inverseDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
+    if(distance>25){actor.state='chase';const step=Math.min(distance-22,spec.speed*.65*dt);actor.position.x+=dx/distance*step;actor.position.z+=dz/distance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
+    actor.state='attack';if(actor.attackCooldown<=0){const sequence=actor.shotSequence??0;actor.shotSequence=sequence+1;if(deterministicShotRoll(actor)<guardHitChance(actor,distance))onAttack(14,actor.id,'projectile');actor.attackCooldown=2.55+(actor.seed%76)/100;}
     return;
   }
   if(actor.species==='islandScavenger'&&actor.archetype==='lookout'&&hostile&&distance<38&&canSeePlayer){
@@ -101,7 +114,7 @@ export class WildlifeSystem {
   private geometryKey(actor:WildlifeActor){return `${actor.species}:${actor.archetype??'default'}`;}
   private geometryFor(actor:WildlifeActor){
     const key=this.geometryKey(actor),species=actor.species,cached=this.geometries.get(key);if(cached)return cached;
-    const parts:THREE.BufferGeometry[]=[],coat=actor.archetype==='lookout'?0x635d4c:SPECIES[species].color,bone=0xd0c2a2,dark=0x272a27;
+    const parts:THREE.BufferGeometry[]=[],coat=actor.archetype==='lookout'?0x635d4c:actor.archetype==='guard'?0x505650:SPECIES[species].color,bone=0xd0c2a2,dark=0x272a27;
     const add=(geometry:THREE.BufferGeometry,color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,rotationZ=0)=>{const matrix=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(sx,sy,sz));geometry.applyMatrix4(matrix);const base=new THREE.Color(color),position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);for(let i=0;i<position.count;i++){colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);};
     const ellipsoid=(color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>add(new THREE.SphereGeometry(1,16,12),color,x,y,z,sx,sy,sz);
     if(species==='islandScavenger'){
@@ -119,6 +132,14 @@ export class WildlifeSystem {
         add(new THREE.TorusGeometry(.42,.034,7,20,Math.PI*1.42),0xa77a40,.39,1.08,-.24,1,1,1);
         add(new THREE.CylinderGeometry(.012,.012,.82,5),0x30332f,.39,1.08,-.24,1,1,1);
         add(new THREE.BoxGeometry(.11,.20,.12),0x4a5149,.23,1.02,-.24,1,1,1);
+      }else if(actor.archetype==='guard'){
+        add(new THREE.BoxGeometry(.34,.26,.075),0x73796d,0,1.04,-.185,1,1,1);
+        add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,-.12,1.05,-.23,1,1,1);
+        add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,.12,1.05,-.23,1,1,1);
+        add(new THREE.BoxGeometry(.10,.09,.34),0x292d2c,.40,1.08,-.30,1,1,1);
+        add(new THREE.BoxGeometry(.045,.05,.62),0x363a37,.40,1.08,-.66,1,1,1);
+        add(new THREE.BoxGeometry(.11,.12,.18),0x454b47,.40,1.08,.02,1,1,1);
+        add(new THREE.BoxGeometry(.13,.19,.17),0x514d42,.22,1.01,-.30,1,1,1);
       }
     } else {
       ellipsoid(coat,0,.68,0,.36,.37,.64);ellipsoid(coat,0,.78,-.49,.30,.31,.34);ellipsoid(coat,0,.66,-.72,.23,.16,.22);
