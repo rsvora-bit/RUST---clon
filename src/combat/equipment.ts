@@ -1,5 +1,6 @@
 import type {DamageType} from './damage';
-import type {EquipmentSlot,ItemId,PlayerEquipment} from '../core/types';
+import type {EquipmentCondition,EquipmentSlot,ItemId,PlayerEquipment} from '../core/types';
+import {maxDurability} from './durability';
 
 export interface EquipmentDefinition {slot:EquipmentSlot; mitigation:Partial<Record<DamageType,number>>}
 
@@ -12,9 +13,17 @@ export const EQUIPMENT:Partial<Record<ItemId,EquipmentDefinition>>={
   protectiveHood:{slot:'head',mitigation:{melee:.04,cold:.12,toxic:.35}},
 };
 
-export function equipmentMitigation(equipment:PlayerEquipment|undefined,type:DamageType):number {
-  const total=Object.values(equipment??{}).reduce((sum,itemId)=>sum+(EQUIPMENT[itemId]?.mitigation[type]??0),0);
+export function equipmentMitigation(equipment:PlayerEquipment|undefined,type:DamageType,condition?:EquipmentCondition):number {
+  const total=(Object.entries(equipment??{}) as [EquipmentSlot,ItemId][]).reduce((sum,[slot,itemId])=>{
+    const durability=maxDurability(itemId),remaining=Math.max(0,Math.min(durability,condition?.[slot]??durability));
+    return sum+(EQUIPMENT[itemId]?.mitigation[type]??0)*(durability?remaining/durability:1);
+  },0);
   return Math.min(.55,total);
 }
 
 export function canEquip(itemId:ItemId):boolean{return EQUIPMENT[itemId]!==undefined;}
+
+export function equipmentWear(amount:number,type:DamageType):number{
+  if(!Number.isFinite(amount)||amount<=0)return 0;
+  return type==='melee'||type==='projectile'?1+Math.min(60,amount)*.08:Math.min(20,amount)*.025;
+}

@@ -1,6 +1,6 @@
 import {validateStations} from '../survival/stations';
 import {normalizeFov} from '../camera/FirstPersonProjection';
-import type { GameState, ItemStack, PlayerStats, SaveSlotSummary, Settings, Structure, Vec3 } from '../core/types';
+import type { EquipmentSlot, GameState, ItemId, ItemStack, PlayerStats, SaveSlotSummary, Settings, Structure, Vec3 } from '../core/types';
 import { DEFAULT_KEYBINDS, DEFAULT_SETTINGS } from '../config/balance';
 import { BUILDING_RULES, INVENTORY, SAVE } from '../config/gameplay';
 import { ITEMS, isItemId } from '../items/definitions';
@@ -19,6 +19,16 @@ const identifier = (value: unknown): value is string => typeof value === 'string
 const position = (value: unknown): value is Vec3 => record(value) && finite(value.x) && finite(value.y) && finite(value.z);
 const stats = (value: unknown): value is PlayerStats => record(value) && ['health', 'hunger', 'thirst', 'stamina'].every(key => finite(value[key], 0, 100));
 const stack = (value: unknown): value is ItemStack => record(value) && isItemId(value.itemId) && integer(value.count, 1, ITEMS[value.itemId].maxStack) && (value.condition===undefined||(maxDurability(value.itemId)>0&&finite(value.condition,1,maxDurability(value.itemId)))) && (value.loadedAmmo===undefined||(Object.hasOwn(FIREARMS,value.itemId)&&value.count===1&&integer(value.loadedAmmo,0,FIREARMS[value.itemId as keyof typeof FIREARMS]!.magazineSize)));
+const equipmentConditionValid = (player:Record<string,unknown>):boolean => {
+  if(player.equipmentCondition===undefined)return true;
+  if(!record(player.equipmentCondition))return false;
+  const equipment=record(player.equipment)?player.equipment:{};
+  return Object.entries(player.equipmentCondition).every(([rawSlot,condition])=>{
+    if(!['head','body','legs','feet'].includes(rawSlot))return false;
+    const itemId=equipment[rawSlot as EquipmentSlot];if(typeof itemId!=='string'||!isItemId(itemId))return false;
+    const max=maxDurability(itemId);return max>0&&finite(condition,0,max);
+  });
+};
 
 /** Reject the whole snapshot, rather than silently discarding the player's saved items. */
 export function validateGameState(value: unknown): value is GameState {
@@ -29,6 +39,7 @@ export function validateGameState(value: unknown): value is GameState {
   if (value.worldRevision !== undefined && value.worldRevision !== 1 && value.worldRevision !== 2 && value.worldRevision !== 3) return false;
   if (!record(value.player) || !position(value.player.position) || !stats(value.player.stats) || !finite(value.player.yaw) || !finite(value.player.pitch, -Math.PI / 2, Math.PI / 2)) return false;
   if(value.player.equipment!==undefined&&(!record(value.player.equipment)||Object.entries(value.player.equipment).some(([slot,item])=>!['head','body','legs','feet'].includes(slot)||typeof item!=='string'||!EQUIPMENT[item as keyof typeof EQUIPMENT]||EQUIPMENT[item as keyof typeof EQUIPMENT]!.slot!==slot)||new Set(Object.values(value.player.equipment)).size!==Object.values(value.player.equipment).length))return false;
+  if(!equipmentConditionValid(value.player))return false;
   if (!Array.isArray(value.inventory) || value.inventory.length !== INVENTORY.SLOTS || !value.inventory.every(item => item === null || stack(item)) || !integer(value.activeSlot, 0, INVENTORY.HOTBAR_SLOTS - 1)) return false;
   if (!Array.isArray(value.structures) || value.structures.length > BUILDING_RULES.MAX_STRUCTURES || !Array.isArray(value.drops) || value.drops.length > SAVE.MAX_DROPS) return false;
   const ids = new Set<string>();

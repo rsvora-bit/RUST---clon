@@ -11,7 +11,7 @@ import {damageStructure as applyStructureDamage,demolishStructure,migrateStructu
 import {createStarterInventory} from '../inventory/starter';
 import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
 import {damageTypeForCause,resolveDamage,type Damageable,type DamagePacket,type DamageResult} from '../combat/damage';
-import {canEquip,EQUIPMENT,equipmentMitigation} from '../combat/equipment';
+import {canEquip,EQUIPMENT,equipmentMitigation,equipmentWear} from '../combat/equipment';
 import {itemCondition,maxDurability} from '../combat/durability';
 
 const clamp = (value: number): number => Math.max(0, Math.min(100, value));
@@ -130,8 +130,8 @@ export class GameSimulation implements Damageable {
     if(!validSlot(slot))return {ok:false,reason:'invalid'};const stack=this.state.inventory[slot];if(!stack||maxDurability(stack.itemId)===0)return {ok:false,reason:'invalid'};
     const max=maxDurability(stack.itemId),current=itemCondition(stack);if(current>=max)return {ok:false,reason:'full'};
     if(nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position)<1)return {ok:false,reason:'workbench'};
-    const cost:Partial<Record<ItemId,number>>=stack.itemId==='bow'?{wood:12,fiber:8}:stack.itemId==='salvageRevolver'?{metal:16,machineParts:1}:stack.itemId==='fieldShotgun'?{metal:24,machineParts:2}:stack.itemId==='hammer'?{metal:10,wood:8}:stack.itemId==='rock'?{stone:8}:{stone:12,wood:6};
-    if(!deductCosts(this.state.inventory,cost))return {ok:false,reason:'resources'};stack.condition=Math.min(max,current+45);this.onNotify(`${ITEMS[stack.itemId].displayName} repaired`);return {ok:true,reason:'ok'};
+    const clothing=canEquip(stack.itemId),cost:Partial<Record<ItemId,number>>=stack.itemId==='warmJacket'?{fiber:12,hide:8}:stack.itemId==='protectiveHood'?{fiber:6,hide:3,metal:2}:['shirt','pants','boots'].includes(stack.itemId)?{fiber:8,hide:4}:stack.itemId==='bow'?{wood:12,fiber:8}:stack.itemId==='salvageRevolver'?{metal:16,machineParts:1}:stack.itemId==='fieldShotgun'?{metal:24,machineParts:2}:stack.itemId==='hammer'?{metal:10,wood:8}:stack.itemId==='rock'?{stone:8}:{stone:12,wood:6};
+    if(!deductCosts(this.state.inventory,cost))return {ok:false,reason:'resources'};stack.condition=Math.min(max,current+45);this.onNotify(`${ITEMS[stack.itemId].displayName} ${clothing?'patched':'repaired'}`);return {ok:true,reason:'ok'};
   }
 
   moveItem(from: number, to: number, split = false): void {
@@ -184,10 +184,11 @@ export class GameSimulation implements Damageable {
   equip(slot:number):boolean {
     if(!validSlot(slot))return false;
     const stack=this.state.inventory[slot];if(!stack||stack.count!==1||!canEquip(stack.itemId))return false;
-    const equipment=this.state.player.equipment??(this.state.player.equipment={});
-    const definition=EQUIPMENT[stack.itemId]!;const previous=equipment[definition.slot];
-    this.state.inventory[slot]=previous?{itemId:previous,count:1}:null;
+    const equipment=this.state.player.equipment??(this.state.player.equipment={}),conditions=this.state.player.equipmentCondition??(this.state.player.equipmentCondition={});
+    const definition=EQUIPMENT[stack.itemId]!,gearSlot=definition.slot,previous=equipment[gearSlot],previousCondition=previous?(conditions[gearSlot]??maxDurability(previous)):0;
+    this.state.inventory[slot]=previous?{itemId:previous,count:1,...(previousCondition<maxDurability(previous)?{condition:previousCondition}:{})}:null;
     equipment[definition.slot]=stack.itemId;
+    conditions[gearSlot]=itemCondition(stack);
     this.onNotify(`Equipped ${ITEMS[stack.itemId].displayName}`);return true;
   }
 
@@ -253,9 +254,17 @@ export class GameSimulation implements Damageable {
   rotateStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?rotateStructure(structure):{ok:false,reason:'not-found' as const};}
   damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}
 
+  private wearEquipment(packet:DamagePacket){
+    const equipment=this.state.player.equipment??{},definitions=Object.entries(equipment) as [keyof typeof equipment,ItemId][];
+    for(const [slot,itemId] of definitions){if(!(EQUIPMENT[itemId]?.mitigation[packet.type]??0))continue;const maximum=maxDurability(itemId);if(!maximum)continue;
+      const conditions=this.state.player.equipmentCondition??(this.state.player.equipmentCondition={}),before=Math.max(0,Math.min(maximum,conditions[slot]??maximum));if(before<=0)continue;
+      const after=Math.max(0,before-equipmentWear(packet.amount,packet.type));if(after===0){delete equipment[slot];delete conditions[slot];this.onNotify(`${ITEMS[itemId].displayName} wore through`);}else conditions[slot]=after;
+    }
+  }
+
   takeDamage(packet:DamagePacket,mitigation=0):DamageResult{
-    const result=resolveDamage(this.state.player.stats.health,SURVIVAL.STARTING_STATS.health,packet,Math.min(.85,mitigation+equipmentMitigation(this.state.player.equipment,packet.type)));
-    if(result.ok)this.state.player.stats.health=result.healthAfter;
+    const result=resolveDamage(this.state.player.stats.health,SURVIVAL.STARTING_STATS.health,packet,Math.min(.85,mitigation+equipmentMitigation(this.state.player.equipment,packet.type,this.state.player.equipmentCondition)));
+    if(result.ok){this.state.player.stats.health=result.healthAfter;if(result.applied>0)this.wearEquipment(packet);}
     return result;
   }
 

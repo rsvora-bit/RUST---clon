@@ -1,5 +1,5 @@
 import {nearbyWorkbench} from '../survival/stations';
-import type { GameState, HUDData, ItemId, ItemStack, KeybindAction, PieceType, ResourceNode, SaveSlotSummary, Screen, Settings, UIActions } from '../core/types';
+import type { EquipmentSlot, GameState, HUDData, ItemId, ItemStack, KeybindAction, PieceType, ResourceNode, SaveSlotSummary, Screen, Settings, UIActions } from '../core/types';
 import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
@@ -259,7 +259,7 @@ export class UI {
       if(buildHash !== this.buildHash) { this.buildHash = buildHash; this.renderBuild(hud); }
     }
     if (this.screen === 'inventory') {
-      const hash = JSON.stringify([state.inventory,state.player.equipment,state.craftQueue.map(job => [job.recipeId,Math.ceil(job.remaining)]),this.selectedSlot,this.selectedRecipe,this.recipeCategory]);
+      const hash = JSON.stringify([state.inventory,state.player.equipment,state.player.equipmentCondition,state.craftQueue.map(job => [job.recipeId,Math.ceil(job.remaining)]),this.selectedSlot,this.selectedRecipe,this.recipeCategory]);
       if (hash !== this.inventoryHash && this.dragSlot < 0) { this.inventoryHash = hash; this.renderInventory(state); }
     }
     if(this.diagnosticVisible)this.renderDiagnostics(hud,state);
@@ -335,8 +335,8 @@ export class UI {
 
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {
     const item = stack && ITEMS[stack.itemId];
-    const max=stack?maxDurability(stack.itemId):0,condition=stack&&max?itemCondition(stack):0,tool=max>0;
-    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${tool?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}${tool?` · ${condition}/${max} condition`:''}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${tool?`<i class="slot-condition" style="--condition:${condition/max*100}%" title="Condition ${condition} / ${max}"></i>`:''}`:''}</button>`;
+    const max=stack?maxDurability(stack.itemId):0,condition=stack&&max?itemCondition(stack):0,durable=max>0;
+    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${durable?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}${durable?` · ${condition}/${max} condition`:''}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${durable?`<i class="slot-condition" style="--condition:${condition/max*100}%" title="Condition ${condition} / ${max}"></i>`:''}`:''}</button>`;
   }
 
   private renderInventory(state: GameState): void {
@@ -344,8 +344,9 @@ export class UI {
     this.find('.inventory-belt').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(state.inventory[index] ?? null,index,this.selectedSlot === index)).join('');
     this.find('.slot-usage').textContent = `${state.inventory.filter(Boolean).length} / 30 SLOTS`;
     this.find('.survivor-vitals').innerHTML = `<div><span>HEALTH</span><b>${Math.ceil(state.player.stats.health)}</b><i style="--value:${state.player.stats.health}%;--color:var(--health)"></i></div><div><span>HYDRATION</span><b>${Math.ceil(state.player.stats.thirst)}</b><i style="--value:${state.player.stats.thirst}%;--color:var(--water)"></i></div><div><span>NOURISHMENT</span><b>${Math.ceil(state.player.stats.hunger)}</b><i style="--value:${state.player.stats.hunger}%;--color:var(--food)"></i></div>`;
-    const worn=Object.entries(state.player.equipment??{}).map(([slot,id])=>`${slot.toUpperCase()}: ${ITEMS[id].displayName}`).join(' · ');
-    this.find('.inventory-world-info').textContent = `ISLAND ${state.seed}  /  ${this.hud?.biome.toUpperCase() ?? 'WESTERN SHORE'}${worn?`  /  ${worn}`:''}`;
+    const gearName:Partial<Record<ItemId,string>>={shirt:'Shirt',pants:'Pants',boots:'Boots',warmJacket:'Jacket',protectiveHood:'Hood'};
+    const worn=Object.entries(state.player.equipment??{}).map(([slot,id])=>{const max=maxDurability(id),condition=Math.max(0,Math.min(max,state.player.equipmentCondition?.[slot as EquipmentSlot]??max));return `${slot[0]!.toUpperCase()}:${gearName[id]??ITEMS[id].displayName}${max?` ${Math.floor(condition)}/${max}`:''}`;}).join(' · ');
+    this.find('.inventory-world-info').textContent = `SEED ${state.seed} · ${this.hud?.biome.toUpperCase() ?? 'WESTERN SHORE'}${worn?` · ${worn}`:''}`;
     const selected = state.inventory[this.selectedSlot];
     const detail = this.find('.item-detail');
     if(selected) {
