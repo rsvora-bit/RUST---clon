@@ -64,6 +64,12 @@ describe('seeded island wildlife',()=>{
     actor.yaw=Math.atan2(player.x-actor.position.x,player.z-actor.position.z);actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);
     expect(canSee).toHaveBeenCalledOnce();expect(actor.canSeePlayer).toBe(true);system.dispose();
   });
+  it('shares a confirmed POI sighting with a nearby ally without granting wall-penetrating attacks',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),guard=system.actors.find(a=>a.archetype==='guard')!,lookout=system.actors.find(a=>a.archetype==='lookout')!,player={x:guard.position.x+14,y:3,z:guard.position.z};
+    guard.yaw=Math.atan2(player.x-guard.position.x,player.z-guard.position.z);guard.awareness=.99;guard.perceptionCooldown=0;lookout.perceptionCooldown=10;lookout.canSeePlayer=false;
+    const attacks=vi.fn();system.update(.1,player,()=>3,attacks,actor=>actor.id===guard.id);system.update(.1,player,()=>3,attacks,actor=>actor.id===guard.id);
+    expect(guard.alerted).toBe(true);expect(lookout.alerted).toBe(true);expect(lookout.awareness).toBeGreaterThan(0);expect(lookout.memorySeconds).toBeGreaterThan(2);expect(lookout.lastKnownPlayer).toEqual(player);expect(lookout.canSeePlayer).toBe(false);expect(lookout.state).toBe('investigate');expect(attacks.mock.calls.every(call=>call[1]===guard.id)).toBe(true);system.dispose();
+  });
   it('requires time in the scavenger view cone before raising an alarm',()=>{
     const site={x:10,y:3,z:10},scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,player={x:actor.position.x+2,y:3,z:actor.position.z};
     actor.perceptionCooldown=0;actor.yaw=Math.atan2(actor.position.x-player.x,actor.position.z-player.z);system.update(.1,player,()=>3,()=>{});
