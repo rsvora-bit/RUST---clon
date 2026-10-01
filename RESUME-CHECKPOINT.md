@@ -32,7 +32,7 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 ## Git a validace
 
 - Repo: `/Users/romansvora/Documents/Tideland`; `origin` je canonical `https://github.com/rsvora-bit/RUST---clon.git`.
-- Branch: `codex/combat-endgame-next`, z `origin/main` v0.9.2 (`ecc3197e7ac4eaa02bd37b3b4b341a776a296e93`); `main` ani vydaný release nebyly změněny. Poslední pushnutý checkpoint `810db6e Add powered Homestead security alarm` je na `origin/codex/combat-endgame-next`; navazující regresní fix a rozšíření persistence QA jsou právě připraveny pro samostatný commit.
+- Branch: `codex/combat-endgame-next`, z `origin/main` v0.9.2 (`ecc3197e7ac4eaa02bd37b3b4b341a776a296e93`); `main` ani vydaný release nebyly změněny. Poslední pushnutý commit `ab62a9e Fix initial Gen5 save validation` je na `origin/codex/combat-endgame-next`; navázal na `810db6e Add powered Homestead security alarm`.
 - Předchozí lokální/pushnuté checkpointy zahrnují `1906803 Add persistent storm salvage event` a `1e7cf99 Coordinate nearby POI scavenger alerts`; ověř aktuální `origin/codex/combat-endgame-next` před případným pushnutím, žádný force push.
 - Nejnovější `npm test`: **264/264 PASS**, 37 test souborů; `git diff --check`: PASS.
 - Nejnovější `npm run build`: **PASS**; známé Vite upozornění na přibližně 3.22 MB JavaScript chunk. `test:world-events` v Chrome/SwiftShader — **PASS**: bouře → cache na pobřeží → mapa/marker → recover → 15min cooldown uložený v save → reload → druhá bouře → nová pobřežní cache → druhý save/reload bez duplikace. Headless QA potřebovalo reload po programatickém vyzvednutí před druhou bouří; následný druhý cyklus a persistence prošly. Žádné browser/WebGL konzolové chyby. Screenshot `test-results/world-events/washed-ashore-map.png` je ignorovaný.
@@ -40,8 +40,8 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 
 ## Další krok
 
-- Další krok: commitnout a normálně pushnout ověřený base-security slice pouze na pracovní branch (bez PR/release), potom pokračovat v plném cíli — hlubší combat feel/balanc (Goal 1), víceútočníková AI a nebezpečí (Goal 2), raid/base security/electricity (Goal 3), další originální POI/endgame progression (Goal 4), a nakonec performance a úplná regression QA (Goal 5). Žádný Goal není kompletní.
-- Předchozí lokální dev servery byly korektně ukončeny; poslední browser QA použilo izolovaný server na portu 5176. V dalším běhu spusť nový Vite server podle potřeby.
+- Další krok: pokračovat v plném cíli — hlubší combat feel/balanc (Goal 1), víceútočníková AI a nebezpečí (Goal 2), raiding/base security/electricity (Goal 3), další originální POI/endgame progression (Goal 4), a nakonec performance a úplná regression QA (Goal 5). Žádný Goal není kompletní.
+- Předchozí lokální dev servery byly korektně ukončeny; poslední browser QA použilo izolovaný server na portu 5177. V dalším běhu spusť nový Vite server podle potřeby.
 - Nepublikovat release ani nezapisovat `main` automaticky. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. Aktuální veřejná Pages adresa zůstává vydaná v0.9.2. `gh` CLI není v tomto prostředí instalované.
 
 ---
