@@ -26,6 +26,10 @@ export class HeldItem {
   private aspectOffset=0;
   private flameOuter:THREE.Mesh|null=null;
   private flameInner:THREE.Mesh|null=null;
+  private bowString:THREE.Mesh|null=null;
+  private bowArrow:THREE.Group|null=null;
+  private bowDraw=0;
+  private reloadProgress=0;
 
   private skin=new THREE.MeshStandardMaterial({color:'#d0c4b3',roughness:.86});
   private sleeve=new THREE.MeshStandardMaterial({color:'#555b4c',roughness:1});
@@ -51,7 +55,7 @@ export class HeldItem {
   private clearHand(){
     const shared=[this.skin,this.sleeve,this.wood,this.stone,this.metal,this.wrap];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
-    this.hand.clear();this.flameOuter=null;this.flameInner=null;
+    this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;
   }
 
   private addArm(side:1|-1,x:number,y:number,z:number,rotationZ:number,compact=false){
@@ -122,8 +126,11 @@ export class HeldItem {
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);
-      const string=this.mesh(new THREE.CylinderGeometry(.003,.003,.65,5),this.wrap,.05,.02,-.68);string.rotation.z=.12;
+      this.bowString=this.mesh(new THREE.CylinderGeometry(.003,.003,.65,5),this.wrap,.05,.02,-.68);this.bowString.rotation.z=.12;
       const grip=this.mesh(new THREE.CylinderGeometry(.027,.03,.13,8),this.wrap,.17,.02,-.68);grip.rotation.z=-.18;
+      this.bowArrow=new THREE.Group();this.bowArrow.position.set(.14,.02,-.71);this.bowArrow.visible=false;this.hand.add(this.bowArrow);
+      const shaft=this.mesh(new THREE.CylinderGeometry(.008,.009,.48,5),this.wood,0,0,0,this.bowArrow);shaft.rotation.z=-Math.PI/2;
+      const tip=this.mesh(new THREE.ConeGeometry(.018,.07,5),this.metal,.26,0,0,this.bowArrow);tip.rotation.z=-Math.PI/2;
       this.addArm(-1,-.16,-.10,-.61,.21,true);
     }else if(item==='plan'){
       const paper=new THREE.MeshStandardMaterial({color:'#638b97',roughness:1,side:THREE.DoubleSide});const plane=this.mesh(new THREE.BoxGeometry(.37,.28,.009),paper,.05,-.055,-.66);plane.rotation.set(-.4,0,-.04);
@@ -152,7 +159,7 @@ export class HeldItem {
     this.lookTarget.y=THREE.MathUtils.clamp(this.lookTarget.y-dy*.00006,-.035,.035);
   }
 
-  update(dt:number,speed:number,sprinting=false,crouching=false){
+  update(dt:number,speed:number,sprinting=false,crouching=false,bowDraw=0,reloadProgress=0){
     this.t+=dt;
     if(this.unequip>0){this.unequip=Math.max(0,this.unequip-dt*5.8);if(this.unequip===0&&this.pending!==undefined)this.build(this.pending);}
     this.equip=Math.max(0,this.equip-dt*5.2);
@@ -162,6 +169,8 @@ export class HeldItem {
     this.inspectTime=Math.max(0,this.inspectTime-dt);
     this.sprintBlend=THREE.MathUtils.damp(this.sprintBlend,sprinting?1:0,9,dt);
     this.crouchBlend=THREE.MathUtils.damp(this.crouchBlend,crouching?1:0,8,dt);
+    this.bowDraw=THREE.MathUtils.damp(this.bowDraw,this.active==='bow'?THREE.MathUtils.clamp(bowDraw,0,1):0,16,dt);
+    this.reloadProgress=THREE.MathUtils.damp(this.reloadProgress,reloadProgress,11,dt);
     this.lookSway.lerp(this.lookTarget,1-Math.exp(-dt*18));
     this.lookTarget.multiplyScalar(Math.exp(-dt*13));
 
@@ -200,6 +209,9 @@ export class HeldItem {
       -.24+walkY+swingY+idleTorch-transitionDrop-this.sprintBlend*.075-this.crouchBlend*.025+inspectEnvelope*.06,
       -.38+swingZ+this.lookSway.y*.48+this.sprintBlend*.025+recoilCurve*.075+inspectEnvelope*.035
     );
+    if(this.bowString){this.bowString.position.x=.05-this.bowDraw*.21;this.bowString.scale.y=1-this.bowDraw*.12;}
+    if(this.bowArrow){this.bowArrow.visible=this.bowDraw>.08;this.bowArrow.position.x=.14-this.bowDraw*.18;}
+    if(this.active==='salvageRevolver'&&this.reloadProgress>0){this.hand.rotation.x-=Math.sin(this.reloadProgress*Math.PI)*.20;this.hand.rotation.z+=this.reloadProgress*.11;this.hand.position.y-=Math.sin(this.reloadProgress*Math.PI)*.035;}
 
     if(this.flameOuter)(this.flameOuter.material as THREE.ShaderMaterial).uniforms.time.value=this.t;
     if(this.flameInner)(this.flameInner.material as THREE.ShaderMaterial).uniforms.time.value=this.t*1.23+19.;
@@ -211,7 +223,7 @@ export class HeldItem {
     const anchor=new THREE.Vector3(.29,-.07,-.597).applyMatrix4(this.hand.matrixWorld).project(this.camera);
     const bounds=new THREE.Box3().setFromObject(this.hand);let transparentDepthWrites=0;
     this.hand.traverse(o=>{if(o instanceof THREE.Mesh){for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.transparent&&m.depthWrite)transparentDepthWrites++;}});
-    return {active:this.active,handMatrix:this.hand.matrixWorld.toArray(),anchor:anchor.toArray(),nearestDepth:-bounds.max.z,transparentDepthWrites,swing:this.swing,recoil:this.recoil,inspect:this.inspectTime,sprintPose:this.sprintBlend};
+    return {active:this.active,handMatrix:this.hand.matrixWorld.toArray(),anchor:anchor.toArray(),nearestDepth:-bounds.max.z,transparentDepthWrites,swing:this.swing,recoil:this.recoil,inspect:this.inspectTime,sprintPose:this.sprintBlend,bowDraw:this.bowDraw,reloadProgress:this.reloadProgress};
   }
   render(renderer:THREE.WebGLRenderer){
     if(!this.hand.children.length)return;

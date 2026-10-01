@@ -199,17 +199,20 @@ export class GameApp {
     if(!weapon){this.cooldown=.28;this.audio.play('error');this.ui.notify('Equip the rock, hatchet or pickaxe to defend yourself');return;}
     const stats=this.simulation.state.player.stats;if(stats.stamina<weapon.staminaCost){this.cooldown=.35;this.audio.play('error');this.ui.notify('Too exhausted to swing');return;}
     this.camera.getWorldDirection(this.direction);const target={id:actor.id,position:{x:actor.position.x,y:actor.position.y+.68,z:actor.position.z},radius:wildlifeDefinition(actor.species).radius};
-    const hit=resolveMeleeHit(weapon,{x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z},{x:this.direction.x,y:this.direction.y,z:this.direction.z},target);
-    this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.play('error');return;}
+    const origin={x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z};
+    const obstructionObjects=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values(),this.worldSurvival.group];
+    this.ray.set(this.camera.position,this.direction);this.ray.far=weapon.range;const blocker=this.ray.intersectObjects(obstructionObjects,true)[0];
+    const hit=resolveMeleeHit(weapon,origin,{x:this.direction.x,y:this.direction.y,z:this.direction.z},target,blocker?.distance??Infinity);
+    this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.combat('swing');if(hit.reason==='occluded')this.impactFx.burst({x:blocker!.point.x,y:blocker!.point.y,z:blocker!.point.z},'stone',.24);return;}
     const condition=this.simulation.state.inventory[this.simulation.state.activeSlot],maxCondition=condition?maxDurability(condition.itemId):0,conditionScale=condition&&maxCondition>0 ? .55+.45*itemCondition(condition)/maxCondition : 1;
-    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.play('stone');this.impactFx.burst(actor.position,'fiber',.7);
+    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.combat('flesh',weapon.damage/36);this.impactFx.burst(actor.position,'fiber',.7);
     if(damage.killed)this.defeatWildlife(actor);this.save(false,false);
   }
   private beginReload(){
     const slot=this.simulation.state.activeSlot,stack=this.simulation.state.inventory[slot],item=stack?.itemId;if(!stack||!isFirearm(item))return;
     const weapon=FIREARMS[item],missing=weapon.magazineSize-loadedRounds(stack,weapon),available=this.simulation.count(weapon.ammoItemId);
     if(this.reloadRemaining>0)return;if(missing<=0){this.ui.notify('Magazine is already full');return;}if(available<=0){this.ui.notify(`No ${ITEMS[weapon.ammoItemId].displayName.toLowerCase()} in reserve`);this.audio.play('error');return;}
-    this.reloadSlot=slot;this.reloadRemaining=weapon.reloadSeconds;this.ui.notify('Reloading salvage revolver · press Escape to pause');
+    this.reloadSlot=slot;this.reloadRemaining=weapon.reloadSeconds;this.audio.combat('reload');this.ui.notify('Reloading salvage revolver · press Escape to pause');
   }
   private fireFirearm(){
     if(this.cooldown>0||this.reloadRemaining>0)return;const slot=this.simulation.state.activeSlot,stack=this.simulation.state.inventory[slot];if(!stack||!isFirearm(stack.itemId))return;
@@ -231,7 +234,7 @@ export class GameApp {
     const origin={x:this.camera.position.x+this.direction.x*.42,y:this.camera.position.y+this.direction.y*.42,z:this.camera.position.z+this.direction.z*.42};
     const velocity=arrowLaunchVelocity({x:this.direction.x,y:this.direction.y,z:this.direction.z},strength),mesh=new THREE.Group();
     const shaft=new THREE.Mesh(this.arrowShaftGeometry,this.arrowShaftMaterial),head=new THREE.Mesh(this.arrowHeadGeometry,this.arrowHeadMaterial);shaft.rotation.z=-Math.PI/2;head.rotation.z=-Math.PI/2;head.position.x=.39;mesh.add(shaft,head);mesh.position.set(origin.x,origin.y,origin.z);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(velocity.x,velocity.y,velocity.z).normalize());this.scene.add(mesh);
-    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength:strength*conditionScale});const bowBroken=this.simulation.wearItem(this.simulation.state.activeSlot,1);if(bowBroken)this.syncHeld();this.held.hit();this.audio.play('stone');this.cooldown=.25;this.syncHeld();
+    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength:strength*conditionScale});const bowBroken=this.simulation.wearItem(this.simulation.state.activeSlot,1);if(bowBroken)this.syncHeld();this.held.hit();this.audio.combat('bow',strength);this.cooldown=.25;this.syncHeld();
   }
   private dropArrow(position:Vec3){this.simulation.state.drops.push({id:`drop-${this.simulation.state.nextId++}`,stack:{itemId:'arrow',count:1},position:{x:position.x,y:Math.max(this.environment.heightAt(position.x,position.z),position.y),z:position.z}});this.syncWorldItems();this.save(false,false);}
   private updateArrows(dt:number){
@@ -239,7 +242,7 @@ export class GameApp {
       let actorHit:{actor:WildlifeActor;fraction:number;point:Vec3}|null=null;
       for(const actor of this.wildlife.actors){if(actor.state==='dead')continue;const hit=segmentSphereHit(segment.from,segment.to,{x:actor.position.x,y:actor.position.y+.62,z:actor.position.z},wildlifeDefinition(actor.species).radius*.88);if(hit.hit&&(!actorHit||hit.fraction<actorHit.fraction))actorHit={actor,fraction:hit.fraction,point:hit.point};}
       const blocker=length>1e-6?this.ray.intersectObjects([this.groundMesh,...this.structures.objects.values()],true)[0]:undefined;
-      if(actorHit&&(!blocker||actorHit.fraction*length<blocker.distance)){const {actor,point}=actorHit;const damage=actor.takeDamage({amount:28+Math.round(44*arrow.strength),type:'projectile',sourceId:'player-arrow'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;this.impactFx.burst(point,'fiber',.9);this.audio.play('stone');if(damage.killed)this.defeatWildlife(actor);else this.save(false,false);arrow.flight.position=point;this.dropArrow(point);this.removeArrow(i);continue;}
+      if(actorHit&&(!blocker||actorHit.fraction*length<blocker.distance)){const {actor,point}=actorHit;const damage=actor.takeDamage({amount:28+Math.round(44*arrow.strength),type:'projectile',sourceId:'player-arrow'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;this.impactFx.burst(point,'fiber',.9);this.audio.combat('flesh',arrow.strength);if(damage.killed)this.defeatWildlife(actor);else this.save(false,false);arrow.flight.position=point;this.dropArrow(point);this.removeArrow(i);continue;}
       if(blocker||arrow.flight.age>7||to.y<=this.environment.heightAt(to.x,to.z)){const point=blocker?{x:blocker.point.x,y:blocker.point.y,z:blocker.point.z}:segment.to;this.impactFx.burst(point,'fiber',.45);this.dropArrow(point);this.removeArrow(i);}
     }
   }
@@ -396,7 +399,8 @@ export class GameApp {
       this.autoSave+=dt;if(this.autoSave>60){if(this.activeSaveSlot!==null)this.save(false,false);this.autoSave=0;}
       if(this.screen==='playing'){this.updateBuild();this.interactions.update(this.camera,PLAYER.INTERACT_DISTANCE,[this.groundMesh,...this.structures.objects.values()].filter(o=>o!==this.interactions.current?.object));if(this.leftDown&&!this.building&&this.interactions.current?.kind==='resource'&&this.cooldown<=0)this.use();}
       else this.structures.preview(null);
-      this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching);
+      const bowDraw=this.bowDrawStarted===null?0:Math.min(1,(performance.now()-this.bowDrawStarted)/1150),reloadProgress=this.reloadRemaining>0?1-this.reloadRemaining/(FIREARMS[this.activeItem() as keyof typeof FIREARMS]?.reloadSeconds??1):0;
+      this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching,bowDraw,reloadProgress);
     } else if(this.screen==='menu'||(this.screen==='settings'&&!this.activeWorld)){
       const p=this.environment.spawn;this.camera.position.set(p.x+29,this.environment.heightAt(p.x+29,p.z+25)+9,p.z+25);this.camera.lookAt(p.x-25,10,p.z-60);
     }

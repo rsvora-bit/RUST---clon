@@ -11,6 +11,7 @@
     "test:browser": "node scripts/polish-qa.mjs",
     "test:death": "node scripts/death-respawn-qa.mjs",
     "test:combat": "node scripts/combat-qa.mjs",
+    "test:tech-tree": "node scripts/tech-tree-qa.mjs",
     "test:hazard": "node scripts/hazard-qa.mjs",
     "test:door-lock": "node scripts/door-lock-qa.mjs",
     "test:power": "node scripts/power-network-qa.mjs",

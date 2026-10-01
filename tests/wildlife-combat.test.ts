@@ -54,6 +54,12 @@ describe('seeded island wildlife',()=>{
     expect(actor.state).toBe('dead');
     expect(actor.takeDamage({amount:10,type:'melee'}).applied).toBe(0);
   });
+  it('raises a brief runtime hit reaction without persisting animation state',()=>{
+    const scene=new THREE.Scene(),system=new WildlifeSystem(scene,context),actor=system.actors[0]!,object=system.object(actor.id)!;
+    expect(actor.hitReaction).toBe(0);actor.takeDamage({amount:8,type:'melee'});expect(actor.hitReaction).toBe(1);
+    const before=object.position.y;system.update(.1,actor.position,()=>3,()=>{});expect(actor.hitReaction).toBeCloseTo(.58);expect(object.position.y).toBeGreaterThan(before);
+    system.dispose();
+  });
   it('shares one low-poly model geometry per species and disposes its scene objects',()=>{
     const scene=new THREE.Scene(),system=new WildlifeSystem(scene,context),wolves=system.actors.filter(actor=>actor.species==='islandWolf'),models=wolves.map(actor=>system.object(actor.id));
     expect(models.length).toBeGreaterThan(1);expect(models.every(model=>model instanceof THREE.Mesh)).toBe(true);expect(new Set(models.map(model=>model!.geometry)).size).toBe(1);

@@ -58,6 +58,14 @@ export class AudioMixer {
     const tone=ctx.createOscillator(),toneGain=ctx.createGain();tone.type='triangle';tone.frequency.setValueAtTime(118,t);tone.frequency.exponentialRampToValueAtTime(48,t+.11);toneGain.gain.setValueAtTime(.16,t);toneGain.gain.exponentialRampToValueAtTime(.001,t+.13);tone.connect(toneGain);toneGain.connect(this.sfx);tone.start(t);tone.stop(t+.14);
   }
 
+  combat(kind:'swing'|'flesh'|'wood'|'stone'|'reload'|'bow',strength=1){
+    if(!this.ctx||!this.sfx||!this.buffer)return;const ctx=this.ctx,t=ctx.currentTime,scale=Math.max(.35,Math.min(1.25,strength));
+    const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();noise.buffer=this.buffer;
+    filter.type='bandpass';filter.frequency.value=kind==='flesh'?520:kind==='wood'?760:kind==='stone'?1700:kind==='reload'?1250:kind==='bow'?980:1050;filter.Q.value=kind==='stone'?1.2:.6;noise.connect(filter);filter.connect(gain);gain.connect(this.sfx);
+    const duration=kind==='swing'?.11:kind==='reload'?.17:kind==='bow'?.15:.13;gain.gain.setValueAtTime(kind==='swing'?.085*scale:kind==='reload'?.14:kind==='bow'?.20*scale:.21*scale,t);gain.gain.exponentialRampToValueAtTime(.001,t+duration);noise.start(t);noise.stop(t+duration+.02);
+    if(kind!=='swing'&&kind!=='reload'){const tone=ctx.createOscillator(),tg=ctx.createGain();tone.type=kind==='stone'?'triangle':'sine';const start=kind==='stone'?190:kind==='wood'?115:kind==='bow'?240:82;tone.frequency.setValueAtTime(start*scale,t);tone.frequency.exponentialRampToValueAtTime(start*.52,t+.10);tg.gain.setValueAtTime(.07*scale,t);tg.gain.exponentialRampToValueAtTime(.001,t+.12);tone.connect(tg);tg.connect(this.sfx);tone.start(t);tone.stop(t+.13);}
+  }
+
   play(kind:'step'|'wood'|'stone'|'pickup'|'build'|'ui'|'door'|'eat'|'error'){
     if(kind==='step'){this.footstep('grass',4.4);return;}
     if(!this.ctx||!this.sfx||!this.buffer)return;const ctx=this.ctx,t=ctx.currentTime;

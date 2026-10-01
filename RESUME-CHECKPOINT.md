@@ -1,4 +1,32 @@
-# AKTUÁLNÍ CHECKPOINT — 2026-09-30
+# AKTUÁLNÍ CHECKPOINT — 2026-10-01
+
+Toto je živý checkpoint po obnovení práce. Níže je ponechána historie předchozí relace v0.9.1; její Git stav už nepopisuje současnou větev.
+
+## Cíl a postup
+
+- Aktivní Codex Goal: **Tideland — Combat & Endgame Expansion**.
+- Navázáno na vydaný v0.9.2. Rozsah dlouhého úkolu je rozdělen do pěti sledovaných Goalů. Dosavadní procenta vycházejí jen z dokončené a ověřené práce: Goal 1 — **12%**, Goal 2 — **0%**, Goal 3 — **0%**, Goal 4 — **0%**, Goal 5 — **5%**; celkem **3% hotovo / 97% zbývá** (stejná váha Goalů).
+- Goal 1 ověřený slice: animace napnutí luku a šípu v ruce, revolverová reload póza, odlišné procedurální zvuky pro švih/zásah/přebití/výstřel šípu, krátká runtime reakce wildlife po zásahu a skutečná raycast blokace melee překážkami.
+- Opraven `scripts/ranged-qa.mjs`, aby vybavil předmět přes aplikační cestu a ověřil/snímal napnutý luk. `scripts/firearm-qa.mjs` ověřuje reload pózu. Doplněn chybějící alias `npm run test:tech-tree`.
+
+## Git a validace
+
+- Repo: `/Users/romansvora/Documents/Tideland`; `origin` je canonical `https://github.com/rsvora-bit/RUST---clon.git`.
+- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Vývojová větev zůstává oddělená od `main`.
+- `npm test`: **233/233 PASS**, 34 test souborů.
+- `npm run build`: **PASS**; přetrvává původní Vite upozornění na přibližně 3.2 MB JavaScript chunk.
+- Browser QA v nainstalovaném Chrome s ANGLE Metal: `test:combat`, `test:ranged`, `test:firearm` a nový alias `test:tech-tree` — **PASS**, bez browser/WebGL console chyb. Bow i revolver reload animace mají konkrétní diagnostický assertion; melee wildlife hit a save/reload prošly. Screenshoty jsou ignorované artefakty v `test-results/`; napnutý luk vizuálně kontrolován, nepřekrývá zaměřovací střed.
+- `git diff --check`: PASS před dalším checkpointem. Práce na dalších cílech není dokončena.
+
+## Další krok
+
+- Pokračovat Goal 1 od konzistentního, ověřeného checkpointu: zlepšit impact/cooldown feel, melee wall-occlusion browser regression a pak zvolit malou integrovanou zbraňovou progresi (shotgun-like až po jeho ammo, crafting/tech unlock, viewmodel, recoil, durability a QA). Nepřidávat povrchní zbraně bez celé herní smyčky.
+- Následují Goals 2–5: armor/AI; raiding/electricity; minimálně dva integrované POI a dvě save-safe události; balancing, performance a plná regression QA.
+- Nepublikovat release ani nezapisovat `main` automaticky. Uživatel žádá Git zpřístupnění pro testování; pracovní branch lze pushnout po čistém checkpoint commitu. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. `gh` CLI není v tomto prostředí instalované.
+
+---
+
+# Historický checkpoint — 2026-09-30
 
 Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je historie předchozího grafického úkolu. Cílem této relace je Goal **Tideland — Combat, Danger & Progression Expansion**. Goal je aktivní. V tomto rozhraní nelze vytvářet samostatné podúkoly pod Goal, proto se jejich stav vede níže a zde.
 
