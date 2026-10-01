@@ -30,7 +30,7 @@ export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:C
 
 export class WorldSurvival {
   readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
-  private eventSiteCache:Vec3|null|undefined;
+  private readonly eventSiteCache=new Map<number,Vec3|null>();
   private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private sludge=new T.MeshStandardMaterial({color:0x4d5941,roughness:.38,metalness:.04,transparent:true,opacity:.73,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0x0d1209,emissiveIntensity:.12,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   private readonly relayMast=new T.CylinderGeometry(.08,.2,8.4,6,5);private readonly relayDish=new T.SphereGeometry(.48,9,6,0,Math.PI*2,0,Math.PI*.58);
   constructor(private env:Environment,scene:T.Scene,private seed:number){
@@ -69,11 +69,11 @@ export class WorldSurvival {
     }
     this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
-  advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,()=>this.findEventCoast(state));}
-  private findEventCoast(state:GameState):Vec3|null{
-    if(this.eventSiteCache!==undefined)return this.eventSiteCache;
+  advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,sequence=>this.findEventCoast(state,sequence));}
+  private findEventCoast(state:GameState,sequence:number):Vec3|null{
+    if(this.eventSiteCache.has(sequence))return this.eventSiteCache.get(sequence)??null;
     const terrain=this.env.terrain;if(terrain.generation!==5)return null;
-    const rand=randomSource(this.seed+0x5a16);let best:Vec3|null=null,bestScore=Infinity;
+    const eventSeed=(this.seed^Math.imul(sequence,0x45d9f3b)^0x5a16)>>>0,rand=randomSource(eventSeed);let best:Vec3|null=null,bestScore=Infinity;
     for(let i=0;i<1800;i++){
       const angle=rand()*Math.PI*2,radius=350+rand()*245,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,y=this.env.heightAt(x,z);
       if(y<.55||y>4.8||terrain.biomeAt(x,z)!=='COAST'||terrain.slopeAt(x,z)>.2||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<105)continue;
@@ -82,7 +82,7 @@ export class WorldSurvival {
       const score=Math.abs(y-1.8)*.35+terrain.slopeAt(x,z)*3+rand()*.24;
       if(score<bestScore){bestScore=score;best={x,y:y+.04,z};}
     }
-    this.eventSiteCache=best;return best;
+    this.eventSiteCache.set(sequence,best);return best;
   }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.cloth,this.sludge,this.road].forEach(m=>m.dispose());}

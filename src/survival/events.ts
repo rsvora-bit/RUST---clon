@@ -5,24 +5,30 @@ import {randomSource} from '../world/noise';
 import {ensureProgression} from './progression';
 
 export const WASHED_ASHORE_ID='event-washed-ashore';
+export const WASHED_ASHORE_COOLDOWN=900;
+export const washedAshoreStationId=(sequence:number)=>`${WASHED_ASHORE_ID}-${sequence}`;
+export const isWashedAshoreStationId=(id:string)=>id===WASHED_ASHORE_ID||id.startsWith(`${WASHED_ASHORE_ID}-`);
 
-/** A single deterministic Gen5 event. It is gated by a storm ending and persisted with its cache. */
-export function updateWashedAshoreEvent(state:GameState,generation:number,findCoast:()=>Vec3|null):boolean{
+/** Storm salvage repeats only after its cache is recovered and a quiet period has elapsed. */
+export function updateWashedAshoreEvent(state:GameState,generation:number,findCoast:(sequence:number)=>Vec3|null):boolean{
   if(generation!==5)return false;
-  const progress=ensureProgression(state),event=progress.washedAshore??={stormSeen:false,resolved:false};
-  if(event.resolved||event.position)return false;
+  const progress=ensureProgression(state),event=progress.washedAshore??={stormSeen:false,resolved:false,sequence:0};
+  if(event.position&&!event.resolved)return false;
+  if(event.resolved&&event.nextSpawnAt===undefined){event.stormSeen=false;event.nextSpawnAt=state.elapsed+WASHED_ASHORE_COOLDOWN;return false;}
+  if(event.resolved&&state.elapsed<(event.nextSpawnAt??Infinity)){event.stormSeen=false;return false;}
   if(progress.weather.kind==='storm'){event.stormSeen=true;return false;}
   if(!event.stormSeen)return false;
-  const position=findCoast();if(!position)return false;
-  event.position={...position};event.appearedAt=state.elapsed;
-  const station=createStation(WASHED_ASHORE_ID,'loot',position,randomSource(state.seed+0x5a17)()*Math.PI*2);
-  fillSalvageLoot(station,'lucky',randomSource(state.seed+0x5a18));progress.stations.push(station);
+  const sequence=(event.sequence??(event.position?1:0))+1,position=findCoast(sequence);if(!position)return false;
+  event.sequence=sequence;event.position={...position};event.appearedAt=state.elapsed;event.resolved=false;delete event.nextSpawnAt;
+  const eventSeed=(state.seed^Math.imul(sequence,0x45d9f3b))>>>0,station=createStation(washedAshoreStationId(sequence),'loot',position,randomSource(eventSeed^0x5a17)()*Math.PI*2);
+  fillSalvageLoot(station,sequence===1?'lucky':'decent',randomSource(eventSeed^0x5a18));progress.stations.push(station);
   return true;
 }
 
 export function resolveWashedAshoreEvent(state:GameState,stationId:string):boolean{
-  if(stationId!==WASHED_ASHORE_ID)return false;
+  if(!isWashedAshoreStationId(stationId))return false;
   const event=state.progression?.washedAshore;
   if(!event?.position||event.resolved)return false;
-  event.resolved=true;return true;
+  const expected=event.sequence?washedAshoreStationId(event.sequence):WASHED_ASHORE_ID;if(stationId!==expected)return false;
+  event.resolved=true;event.stormSeen=false;event.nextSpawnAt=state.elapsed+WASHED_ASHORE_COOLDOWN;return true;
 }
