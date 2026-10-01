@@ -15,6 +15,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
   field_switch:{id:'field_switch',resultItemId:'powerSwitch',resultCount:1,ingredients:{wood:20,metal:18,wiring:4},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Utilities',craftTime:4},
   field_lamp:{id:'field_lamp',resultItemId:'lamp',resultCount:1,ingredients:{metal:15,wiring:5},requiredWorkbenchLevel:3,requiredTech:'workshopLighting',category:'Utilities',craftTime:4},
   field_revolver:{id:'field_revolver',resultItemId:'salvageRevolver',resultCount:1,ingredients:{metal:90,machineParts:3,gears:2,wood:20},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Weapons',craftTime:9},
+  homestead_core:{id:'homestead_core',resultItemId:'homesteadCore',resultCount:1,ingredients:{metal:55,wiring:4,gears:2,scrap:30},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Building',craftTime:8},
   pistol_cartridges:{id:'pistol_cartridges',resultItemId:'pistolAmmo',resultCount:8,ingredients:{metal:18,sulfurOre:8,scrap:3},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Ammunition',craftTime:4},
   workbench1:{id:'workbench1',resultItemId:'workbench1',resultCount:1,ingredients:{wood:250,metal:40},category:'Building',craftTime:6},
   workbench2:{id:'workbench2',resultItemId:'workbench2',resultCount:1,ingredients:{wood:350,metal:150},requiredWorkbenchLevel:1,requiredTech:'workbench2Research',category:'Building',craftTime:8},

@@ -5,7 +5,7 @@ import {RECIPES} from '../src/crafting/recipes';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {activeLostPacks,consumeEmptyContainer,handlePlayerDeath,respawnPlayerState} from '../src/survival/death';
 import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
-import {accepts,countPlayerStations,createStation,isPlaceableStationKind,MAX_PLAYER_STATIONS,stationStatus,takeAll,tickStation,transfer,validateStations} from '../src/survival/stations';
+import {accepts,countPlayerStations,createStation,HOMESTEAD_RADIUS,homesteadOwner,isPlaceableStationKind,MAX_PLAYER_STATIONS,stationStatus,takeAll,tickStation,transfer,validateStations} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
 import {randomSource} from '../src/world/noise';
 import {loadGame,saveGame,validateGameState} from '../src/save/storage';
@@ -26,6 +26,7 @@ describe('v0.7.9 salvage item definitions and persistence',()=>{
   it('keeps salvage out of crafting recipes',()=>{const results=Object.values(RECIPES).map(r=>r.resultItemId);expect(results).not.toContain('scrap');for(const id of SALVAGE_COMPONENTS)expect(results).not.toContain(id);expect(results).not.toContain('recycler');});
   it('round-trips salvage inventory and world drops',()=>{vi.stubGlobal('localStorage',new MemoryStorage());const sim=game();sim.state.inventory[4]={itemId:'scrap',count:777};sim.state.drops.push({id:'drop-70',stack:{itemId:'techParts',count:2},position:pos});sim.state.nextId=71;expect(saveGame(sim.state,1)).toBe(true);const loaded=loadGame(1)!;expect(loaded.inventory[4]).toEqual({itemId:'scrap',count:777});expect(loaded.drops[0].stack).toEqual({itemId:'techParts',count:2});});
   it('persists secure-cache locks while keeping existing cache station saves valid',()=>{const old=createStation('loot-old','loot',pos),secure=createStation('secure-cache-poi-1','secureCache',pos);secure.locked=true;expect(validateStations([old,secure])).toBe(true);secure.locked=false;expect(validateStations([old,secure])).toBe(true);(old as any).locked=true;expect(validateStations([old])).toBe(false);});
+  it('derives a deterministic claimed area from the persistent homestead beacon',()=>{const home=createStation('home','homesteadCore',pos);expect(isPlaceableStationKind('homesteadCore')).toBe(true);expect(homesteadOwner([home],{x:HOMESTEAD_RADIUS,y:100,z:0})).toBe(home);expect(homesteadOwner([home],{x:HOMESTEAD_RADIUS+.1,y:5,z:0})).toBeUndefined();expect(validateStations([home])).toBe(true);});
 });
 
 describe('Recycler slot rules and recipes',()=>{

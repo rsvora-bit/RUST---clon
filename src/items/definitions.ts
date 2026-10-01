@@ -40,6 +40,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   salvageRevolver:item('salvageRevolver','Salvage revolver','A hand-fitted six-shot sidearm assembled from recovered industrial parts. Press R to reload.','tool',1,['weapon','firearm','ranged']),
   pistolAmmo:item('pistolAmmo','Pistol cartridges','Low-pressure cartridges assembled from recovered metal and sulfur.','resource',48,['ammunition','crafting']),
   relayAccessCard:item('relayAccessCard','Relay access card','A recovered industrial access card for sealed high-value island caches.','utility',2,['key','salvage']),
+  homesteadCore:item('homesteadCore','Homestead beacon','A salvaged property marker that claims a modest shelter area and secures its doors.','building',1,['building','ownership'],{placeable:true}),
   hatchet: item('hatchet', 'Stone hatchet', 'A hafted cutting edge. Gathers wood two and a half times as quickly.', 'tool', 1, ['gather', 'wood']),
   pickaxe: item('pickaxe', 'Stone pickaxe', 'A rugged mining tool. Gathers stone and metal two and a half times as quickly.', 'tool', 1, ['gather', 'mining']),
   hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),

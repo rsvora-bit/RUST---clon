@@ -179,6 +179,15 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Změněné soubory: `src/survival/hazards.ts`, `src/app/GameApp.ts`, `tests/hazards.test.ts`, `scripts/hazard-qa.mjs` a tento checkpoint.
 - Aktuální pracovní změna je lokální a připravená na checkpoint commit. Žádný push/PR/tag/release/version bump. Pokračovat přes další cíle v aktivním Combat, Danger & Progression goal.
 
+## Homestead ownership checkpoint — 2026-10-01
+
+- Přidán craftitelný `homesteadCore` / Homestead Beacon (Workbench II + Advanced Fabrication), originální ikona a vlastní low-cost world model. Na jednom světě lze postavit jeden beacon.
+- Beacon definuje deterministický radius 42 m. Panel uvádí počet struktur a zajištěných dveří; při umístění se zavřou/uzamknou stávající dveře v zóně a nové dveře uvnitř zóny se automaticky zamknou. Stávající hammer UI dál dovoluje dveře odemknout.
+- Claim je odvozený z persistentní stanice a souřadnic; nepřibyl world generator ani save schema. Unit coverage ověřuje hranici zóny a validitu starého station modelu. Browser `test:door-lock` PASS: lock/unlock, beacon claim, uzamčení existující dveře, oba stavy po save/reload, bez console/WebGL chyb.
+- Unit test `npm test`: **232/232 PASS, 34 souborů**. `npm run build` PASS se stávajícím ~3.20 MB chunk warningem; `git diff --check` PASS.
+- Změněné soubory: `src/core/types.ts`, `src/items/definitions.ts`, `src/crafting/recipes.ts`, `src/survival/stations.ts`, `src/survival/StationRenderer.ts`, `src/survival/StationUI.ts`, `src/app/GameApp.ts`, `tests/salvage-recycler.test.ts`, `scripts/door-lock-qa.mjs`, `public/assets/icons/homesteadCore.svg` a tento checkpoint.
+- Stále bez push/PR/tag/release/version bump. Další cíle z dlouhé relace a kompletní regression/browser pass zbývají.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.

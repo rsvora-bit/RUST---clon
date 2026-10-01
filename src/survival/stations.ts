@@ -8,7 +8,7 @@ import {maxDurability} from '../combat/durability';
 export const MAX_PLAYER_STATIONS=500;
 export const MAX_WORLD_STATIONS=64;
 const MAX_PERSISTED_STATIONS=MAX_PLAYER_STATIONS+MAX_WORLD_STATIONS+DEATH.MAX_LOST_PACKS;
-export const STATION_KINDS=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','loot','secureCache','deathbag','recycler','generator','powerSwitch','lamp'] as const;
+export const STATION_KINDS=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','loot','secureCache','deathbag','recycler','generator','powerSwitch','lamp','homesteadCore'] as const;
 export type StationKind=typeof STATION_KINDS[number];
 export interface Station {id:string;kind:StationKind;position:Vec3;rotation:number;inventory:(ItemStack|null)[];active:boolean;job:{recipe:string;remaining:number}|null;createdAt?:number;locked?:boolean}
 export const STATIONS:Record<StationKind,{name:string;slots:number;size:[number,number,number]}>= {
@@ -16,8 +16,9 @@ export const STATIONS:Record<StationKind,{name:string;slots:number;size:[number,
   workbench1:{name:'Workbench level 1',slots:0,size:[1.8,1,.8]},workbench2:{name:'Workbench level 2',slots:0,size:[1.8,1,.8]},workbench3:{name:'Workbench level 3',slots:0,size:[1.8,1,.8]},
   campfire:{name:'Campfire',slots:1,size:[1,.3,1]},bedroll:{name:'Sleeping roll',slots:0,size:[.85,.2,1.9]},loot:{name:'Salvage cache',slots:12,size:[1,.8,.8]},secureCache:{name:'Sealed salvage case',slots:12,size:[1.15,.86,.9]},
   deathbag:{name:'Lost Pack',slots:30,size:[1.15,.58,.82]},recycler:{name:'SALVAGE RECYCLER',slots:6,size:[2.05,1.45,1.35]},
-  generator:{name:'FIELD GENERATOR',slots:1,size:[.9,.82,.62]},powerSwitch:{name:'FIELD SWITCH',slots:0,size:[.35,.75,.25]},lamp:{name:'CAGED UTILITY LAMP',slots:0,size:[.28,1.8,.28]},
+  generator:{name:'FIELD GENERATOR',slots:1,size:[.9,.82,.62]},powerSwitch:{name:'FIELD SWITCH',slots:0,size:[.35,.75,.25]},lamp:{name:'CAGED UTILITY LAMP',slots:0,size:[.28,1.8,.28]},homesteadCore:{name:'HOMESTEAD BEACON',slots:0,size:[.8,1.8,.8]},
 };
+export const HOMESTEAD_RADIUS=42;
 export const PROCESSING={metal:{input:'ore' as ItemId,count:10,fuel:5,output:'metal' as ItemId,amount:10,seconds:8},fire:{input:'wood' as ItemId,count:0,fuel:1,output:null,amount:0,seconds:30},power:{input:'wood' as ItemId,count:1,fuel:0,output:null,amount:0,seconds:120}};
 export const POWER_RANGE=11;
 
@@ -96,6 +97,7 @@ export const isWorldStation=(s:Station)=>s.kind==='loot'||s.kind==='secureCache'
 export const isPlayerPlaceableStationKind=(kind:StationKind)=>kind!=='loot'&&kind!=='secureCache'&&kind!=='deathbag'&&kind!=='recycler';
 export const isPlaceableStationKind=isPlayerPlaceableStationKind;
 export const countPlayerStations=(stations:Station[])=>stations.filter(s=>isPlayerPlaceableStationKind(s.kind)).length;
+export function homesteadOwner(stations:Station[],position:Vec3):Station|undefined{return stations.find(s=>s.kind==='homesteadCore'&&Math.hypot(position.x-s.position.x,position.z-s.position.z)<=HOMESTEAD_RADIUS);}
 
 export function poweredLampIds(stations:Station[]):Set<string>{
   const cellSize=POWER_RANGE,buckets=new Map<string,Station[]>(),key=(x:number,z:number)=>`${Math.floor(x/cellSize)},${Math.floor(z/cellSize)}`;
