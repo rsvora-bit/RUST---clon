@@ -7,7 +7,7 @@ import {randomSource} from '../world/noise';
 
 export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
 export type WildlifeState='wander'|'chase'|'attack'|'dead';
-export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;attackCooldown:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;readonly home:Vec3;readonly seed:number}
+export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;attackCooldown:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
 const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;speed:number;damage:number;aggro:number;name:string;color:number}>={
@@ -35,7 +35,7 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     const biome=context.biomeAt(x,z),temperature=biome.includes('SNOW')?.18:biome.includes('COAST')?.62:biome.includes('ARID')?.72:.55,species=wildlifeSpeciesForBiome(biome,temperature);
     if(!species)continue;
     const id=`fauna-${context.seed}-${candidateId++}`,savedHealth=context.nodeChanges?.[id];if(savedHealth===0)continue;
-    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,attackCooldown:random()*1.2,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,seed,
+    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,attackCooldown:random()*1.2,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,seed,
       takeDamage(packet:DamagePacket,mitigation=0):DamageResult {const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
     actors.push(actor);
   }
@@ -45,20 +45,21 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     if(Math.abs(x)>margin||Math.abs(z)>margin)continue;const y=context.heightAt(x,z);if(!Number.isFinite(y)||y<.5)continue;
     const id=`scavenger-${context.seed}-${index}`,savedHealth=context.nodeChanges?.[id];if(savedHealth===0)continue;
     const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
-    const actor:WildlifeActor={id,species:'islandScavenger',state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,attackCooldown:random()*.8,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,seed,
+    const actor:WildlifeActor={id,species:'islandScavenger',state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,attackCooldown:random()*.8,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,seed,
       takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
     actors.push(actor);
   }
   return actors;
 }
 
-export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string)=>void):void {
+export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string)=>void,canSeePlayer=true):void {
   if(actor.state==='dead')return;
   const spec=SPECIES[actor.species],dx=player.x-actor.position.x,dz=player.z-actor.position.z,distance=Math.hypot(dx,dz);
   actor.attackCooldown=Math.max(0,actor.attackCooldown-dt);
   if(distance>92){actor.state='wander';return;}
   const hostile=actor.angered||(spec.aggro>0&&distance<spec.aggro);
-  if(hostile&&distance<38){
+  const perceptionAllowsPursuit=actor.species!=='islandScavenger'||canSeePlayer;
+  if(hostile&&perceptionAllowsPursuit&&distance<38){
     actor.yaw=Math.atan2(dx,dz);
     if(distance<1.55){actor.state='attack';if(actor.attackCooldown<=0){onAttack(spec.damage,actor.id);actor.attackCooldown=1.35;}}
     else {actor.state='chase';const step=Math.min(distance-1.25,spec.speed*dt);actor.position.x+=dx/distance*step;actor.position.z+=dz/distance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;}
@@ -106,8 +107,8 @@ export class WildlifeSystem {
   }
   private createModel(actor:WildlifeActor){const mesh=new THREE.Mesh(this.geometryFor(actor.species),this.materials.get(actor.species)!);mesh.scale.setScalar(SPECIES[actor.species].scale);mesh.position.set(actor.position.x,actor.position.y,actor.position.z);mesh.rotation.y=actor.yaw;mesh.castShadow=false;mesh.receiveShadow=false;mesh.frustumCulled=true;return mesh;}
   object(id:string){return this.objects.get(id)??null;}
-  update(dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string)=>void){
-    for(const actor of this.actors){const object=this.objects.get(actor.id);if(actor.state==='dead'){if(object)object.visible=false;continue;}const distance=Math.hypot(player.x-actor.position.x,player.z-actor.position.z);if(distance>100){if(object)object.visible=false;continue;}tickWildlife(actor,dt,player,heightAt,onAttack);actor.hitReaction=Math.max(0,actor.hitReaction-dt*4.2);if(object){object.visible=true;object.position.set(actor.position.x,actor.position.y+(actor.state==='attack'?Math.sin(actor.attackCooldown*7)*.018:0)+actor.hitReaction*.055,actor.position.z);object.rotation.y=actor.yaw;object.rotation.x=-actor.hitReaction*.13;}}
+  update(dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string)=>void,lineOfSight?:(actor:WildlifeActor,player:Vec3)=>boolean){
+    for(const actor of this.actors){const object=this.objects.get(actor.id);if(actor.state==='dead'){if(object)object.visible=false;continue;}const distance=Math.hypot(player.x-actor.position.x,player.z-actor.position.z);if(distance>100){if(object)object.visible=false;continue;}let canSeePlayer=true;if(actor.species==='islandScavenger'){actor.perceptionCooldown-=dt;if(actor.perceptionCooldown<=0){actor.canSeePlayer=distance<SPECIES.islandScavenger.aggro+5&&(lineOfSight?.(actor,player)??true);actor.perceptionCooldown=.20+(actor.seed%51)/1000;}canSeePlayer=actor.canSeePlayer;}tickWildlife(actor,dt,player,heightAt,onAttack,canSeePlayer);actor.hitReaction=Math.max(0,actor.hitReaction-dt*4.2);if(object){object.visible=true;object.position.set(actor.position.x,actor.position.y+(actor.state==='attack'?Math.sin(actor.attackCooldown*7)*.018:0)+actor.hitReaction*.055,actor.position.z);object.rotation.y=actor.yaw;object.rotation.x=-actor.hitReaction*.13;}}
   }
   dispose(){for(const object of this.objects.values())object.removeFromParent();for(const geometry of this.geometries.values())geometry.dispose();for(const material of this.materials.values())material.dispose();this.materials.clear();this.geometries.clear();this.objects.clear();}
 }

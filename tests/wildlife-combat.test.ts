@@ -2,6 +2,7 @@ import {describe,expect,it,vi} from 'vitest';
 import {createWildlifePopulation,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
 import * as THREE from 'three';
 import {WildlifeSystem} from '../src/combat/wildlife';
+import {hasLineOfSight} from '../src/combat/visibility';
 
 const context={seed:731942,generation:5 as const,spawn:{x:0,y:3,z:0},halfSize:640,heightAt:()=>3,biomeAt:()=>'TEMPERATE FOREST'};
 
@@ -37,6 +38,21 @@ describe('seeded island wildlife',()=>{
     expect(attacks).toHaveBeenCalledOnce();expect(attacks).toHaveBeenCalledWith(12,actor.id);
     const sameSpecies=system.actors.filter(a=>a.species==='islandScavenger');expect(sameSpecies).toHaveLength(1);expect(system.object(actor.id)).toBeInstanceOf(THREE.Mesh);
     system.dispose();
+  });
+  it('requires clear line of sight for an alerted scavenger to pursue and attack',()=>{
+    const actor=createWildlifePopulation({...context,scavengerSites:[{x:180,y:3,z:40}]}).find(a=>a.species==='islandScavenger')!;
+    actor.angered=true;actor.attackCooldown=0;const player={x:actor.position.x,y:actor.position.y,z:actor.position.z+1},attacks=vi.fn();
+    tickWildlife(actor,1/60,player,()=>3,attacks,false);expect(actor.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();
+    tickWildlife(actor,1/60,player,()=>3,attacks,true);expect(actor.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
+  });
+  it('throttles scavenger perception instead of ray testing every frame',()=>{
+    const scene=new THREE.Scene(),site={x:5,y:3,z:5},system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,canSee=vi.fn(()=>true),player={x:site.x,y:3,z:site.z};
+    actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);
+    expect(canSee).toHaveBeenCalledOnce();expect(actor.canSeePlayer).toBe(true);system.dispose();
+  });
+  it('blocks scavenger perception behind solid geometry',()=>{
+    const ray=new THREE.Raycaster(),origin=new THREE.Vector3(0,1.5,0),target=new THREE.Vector3(0,1.5,-5),scratch=new THREE.Vector3(),wall=new THREE.Mesh(new THREE.BoxGeometry(3,3,.3),new THREE.MeshBasicMaterial());wall.position.set(0,1.5,-2);wall.updateMatrixWorld(true);
+    expect(hasLineOfSight(ray,origin,target,[wall],scratch)).toBe(false);expect(hasLineOfSight(ray,origin,target,[],scratch)).toBe(true);wall.geometry.dispose();(wall.material as THREE.Material).dispose();
   });
   it('keeps boars calm until hit, then lets nearby wolves and boars attack on a cooldown',()=>{
     const boar=createWildlifePopulation({...context,biomeAt:()=>'GRASSLAND'})[0]!,wolf=createWildlifePopulation(context)[0]!;

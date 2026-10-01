@@ -40,6 +40,7 @@ import {FIREARMS,consumeLoadedRound,firearmShotDirection,isFirearm,loadedRounds,
 import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
 import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
+import {hasLineOfSight} from '../combat/visibility';
 import {coldExposureAt,toxicExposureAt} from '../survival/hazards';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
 interface LiveArrow {flight:ArrowFlight;mesh:THREE.Group;strength:number}
@@ -48,7 +49,7 @@ export class GameApp {
   readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly gatheringFeedback:GatheringFeedback;readonly postFX:WorldPostFX;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
   environment!:Environment;physics!:PhysicsWorld;player!:PlayerController;simulation!:GameSimulation;structures!:StructureRenderer;worldItems!:WorldItems;debug:DebugView;
   private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private activeSaveSlot:number|null=null;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
-  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();
+  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();private wildlifeSightOrigin=new THREE.Vector3();private wildlifeSightDirection=new THREE.Vector3();
   private pendingHit:{node:ResourceNode;remaining:number;strike:GatherStrike}|null=null;
   private bowDrawStarted:number|null=null;private arrows:LiveArrow[]=[];
   private readonly arrowShaftGeometry=new THREE.CylinderGeometry(.012,.018,.72,6);private readonly arrowHeadGeometry=new THREE.ConeGeometry(.045,.14,6);
@@ -192,6 +193,11 @@ export class GameApp {
     }
   }
   private registerWildlife(){for(const actor of this.wildlife.actors){const object=this.wildlife.object(actor.id);if(!object)continue;const definition=wildlifeDefinition(actor.species);this.interactions.register({id:actor.id,kind:'wildlife',object,position:()=>actor.position,enabled:()=>actor.state!=='dead',info:()=>({title:definition.name,action:isFirearm(this.activeItem())||this.activeItem()==='bow'?'SHOOT':'STRIKE',key:'LMB',detail:`${Math.ceil(actor.health)} / ${actor.maxHealth} HEALTH`,progress:actor.health/actor.maxHealth}),interact:()=>this.attackWildlife(actor)});}}
+  private scavengerHasLineOfSight(actor:WildlifeActor){
+    this.wildlifeSightOrigin.set(actor.position.x,actor.position.y+1.25,actor.position.z);
+    const blockers=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values(),this.worldSurvival.group];
+    return hasLineOfSight(this.ray,this.wildlifeSightOrigin,this.camera.position,blockers,this.wildlifeSightDirection);
+  }
   private attackWildlife(actor:WildlifeActor){
     if(this.cooldown>0||actor.state==='dead')return;
     const item=this.activeItem(),weapon=item&&Object.hasOwn(MELEE_WEAPONS,item)?MELEE_WEAPONS[item as keyof typeof MELEE_WEAPONS]:null;
@@ -391,7 +397,7 @@ export class GameApp {
     if(running&&this.activeWorld){
       if(this.reloadRemaining>0&&playing&&!this.capturePaused){const slot=this.reloadSlot,stack=this.simulation.state.inventory[slot];if(slot!==this.simulation.state.activeSlot||!stack||!isFirearm(stack.itemId)){this.reloadRemaining=0;this.reloadSlot=-1;}else{this.reloadRemaining=Math.max(0,this.reloadRemaining-dt);if(this.reloadRemaining===0){const weapon=FIREARMS[stack.itemId],amount=roundsToLoad(stack,this.simulation.count(weapon.ammoItemId),weapon);if(amount>0&&this.simulation.removeItem(weapon.ammoItemId,amount)){stack.loadedAmmo=loadedRounds(stack,weapon)+amount;this.ui.notify(`Reloaded · ${loadedRounds(stack,weapon)} / ${weapon.magazineSize}`);this.save(false,false);}else this.ui.notify('Reload interrupted · no reserve ammunition');this.reloadSlot=-1;}}}
       this.accumulator+=this.capturePaused?0:dt;let steps=0;while(this.accumulator>=1/60&&steps<6){if(this.flyMode)this.tickFly(1/60,playing);else this.player.tick(1/60,this.simulation.state,playing);this.simulation.tick(1/60,this.flyMode?false:this.player.sprinting);if(this.godMode){const stats=this.simulation.state.player.stats;stats.health=stats.hunger=stats.thirst=stats.stamina=100;}this.accumulator-=1/60;steps++;}
-      if(playing&&!this.capturePaused)this.wildlife.update(dt,this.simulation.state.player.position,(x,z)=>this.environment.heightAt(x,z),(amount,sourceId)=>{const result=this.applyPlayerDamage({amount,type:'melee',sourceId});if(result.ok&&!result.killed)this.audio.play('error');});
+      if(playing&&!this.capturePaused)this.wildlife.update(dt,this.simulation.state.player.position,(x,z)=>this.environment.heightAt(x,z),(amount,sourceId)=>{const result=this.applyPlayerDamage({amount,type:'melee',sourceId});if(result.ok&&!result.killed)this.audio.play('error');},actor=>this.scavengerHasLineOfSight(actor));
       if(playing&&!this.capturePaused&&this.arrows.length)this.updateArrows(dt);
       if(playing&&!this.capturePaused){const state=this.simulation.state,p=state.player.position,generation=state.worldGeneration??1,revision=state.worldRevision??1,toxic=toxicExposureAt(p,this.worldSurvival.pois,generation,revision);if(toxic>0){if(!this.insideToxicZone)this.ui.notify('Contaminated battery runoff · protective hood recommended');this.insideToxicZone=true;this.toxicExposureSeconds+=dt;if(this.toxicExposureSeconds>=1){this.toxicExposureSeconds-=1;this.damagePlayer(1.6*toxic,'toxic relay contamination');}}else{if(this.insideToxicZone)this.ui.notify('Clear air · contamination exposure ended');this.insideToxicZone=false;this.toxicExposureSeconds=0;}const weather=ensureProgression(state).weather.kind,cold=coldExposureAt(this.environment.terrain.climateAt(p.x,p.z),state.timeOfDay,weather,generation,revision);if(cold>.18){if(!this.insideColdZone)this.ui.notify('Severe alpine cold · insulated jacket recommended');this.insideColdZone=true;this.coldExposureSeconds+=dt;if(this.coldExposureSeconds>=1){this.coldExposureSeconds-=1;this.damagePlayer(1.25*cold,'cold exposure');}}else{if(this.insideColdZone)this.ui.notify('Shelter from the cold · exposure ended');this.insideColdZone=false;this.coldExposureSeconds=0;}}
       if(this.timeMultiplier!==1)this.simulation.state.timeOfDay=(this.simulation.state.timeOfDay+dt*(this.timeMultiplier-1)*24/1800)%24;
