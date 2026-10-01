@@ -1,5 +1,5 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-import {FIREARMS,consumeLoadedRound,firearmDoorDamage,firearmShotDirection,loadedRounds,roundsToLoad} from '../src/combat/firearms';
+import {FIREARMS,consumeLoadedRound,firearmDoorDamage,firearmShotDirection,firearmSpreadScale,loadedRounds,roundsToLoad} from '../src/combat/firearms';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {createStation} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
@@ -12,6 +12,16 @@ describe('salvage revolver',()=>{
     const stack={itemId:'salvageRevolver' as const,count:1,loadedAmmo:2},a=firearmShotDirection({x:0,y:0,z:-3},7),b=firearmShotDirection({x:0,y:0,z:-3},7);
     expect(a).toEqual(b);expect(Math.hypot(a.x,a.y,a.z)).toBeCloseTo(1);expect(a.x).toBeCloseTo(0,1);expect(loadedRounds(stack)).toBe(2);
     expect(consumeLoadedRound(stack)).toBe(true);expect(consumeLoadedRound(stack)).toBe(true);expect(consumeLoadedRound(stack)).toBe(false);expect(stack.loadedAmmo).toBe(0);
+  });
+  it('keeps repaired firearm spread unchanged and deterministically widens worn shots',()=>{
+    for(const weapon of Object.values(FIREARMS)){
+      const pristine=firearmSpreadScale(100,100),worn=firearmSpreadScale(15,100),forward={x:0,y:0,z:-1};
+      const angle=(direction:{x:number;y:number;z:number})=>Math.acos(Math.max(-1,Math.min(1,direction.x*forward.x+direction.y*forward.y+direction.z*forward.z)));
+      const normal=firearmShotDirection(forward,5,weapon,pristine),damaged=firearmShotDirection(forward,5,weapon,worn);
+      expect(pristine).toBe(1);expect(worn).toBeCloseTo(1.7225);expect(angle(damaged)).toBeGreaterThan(angle(normal));
+      expect(damaged).toEqual(firearmShotDirection(forward,5,weapon,worn));expect(firearmSpreadScale(0,100)).toBeLessThanOrEqual(1.85);
+    }
+    expect(firearmSpreadScale(25,0)).toBe(1);
   });
   it('fills only the missing magazine capacity and persists rounds in compatible saves',()=>{
     const g=new GameSimulation(91,{x:0,y:5,z:0}),stack={itemId:'salvageRevolver' as const,count:1,loadedAmmo:4,condition:82};g.state.inventory[2]=stack;g.addItem('pistolAmmo',10);
