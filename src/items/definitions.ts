@@ -34,6 +34,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   boots: item('boots','Hide boots','Insulated boots for cold ground and rough terrain.','utility',1,['equipment']),
   warmJacket: item('warmJacket','Insulated jacket','A thick salvage-lined jacket that meaningfully slows cold exposure.','utility',1,['equipment','warmth']),
   protectiveHood: item('protectiveHood','Filter hood','A sealed field hood that offers limited protection from contaminated air.','utility',1,['equipment','hazard']),
+  salvageVest: item('salvageVest','Salvage plate vest','A padded torso rig backed with recovered plate sections. It softens gunfire and blows, but offers little insulation.','utility',1,['equipment','armor','salvage']),
   bow: item('bow','Island hunting bow','A simple ash-and-fiber bow. Hold primary fire to draw, then release to loose an arrow.','tool',1,['weapon','ranged']),
   spear: item('spear','Salvage-tipped spear','A long field haft with a hardened salvage point. Its reach is useful against wildlife, but the narrow thrust needs a steady aim.','tool',1,['weapon','melee']),
   arrow: item('arrow','Field arrow','A recoverable wood-shaft arrow with a forged salvage point.','resource',100,['ammunition','crafting']),

@@ -63,4 +63,13 @@ describe('field clothing and equipment',()=>{
     expect(sim.repairTool(7)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[7]).toEqual({itemId:'warmJacket',count:1,condition:75});
     expect(sim.count('fiber')).toBe(0);expect(sim.count('hide')).toBe(0);expect(validateGameState(sim.state)).toBe(true);
   });
+
+  it('repairs salvage armor with industrial materials and gives it a distinct cold-versus-projectile tradeoff',()=>{
+    const sim=new GameSimulation(22,spawn);sim.state.inventory[7]={itemId:'salvageVest',count:1,condition:40};
+    sim.state.progression!.stations.push(createStation('bench-salvage-armor','workbench2',spawn));sim.addItem('metal',14);sim.addItem('machineParts',1);sim.addItem('fiber',8);sim.addItem('hide',4);
+    expect(sim.repairTool(7)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[7]).toEqual({itemId:'salvageVest',count:1,condition:85});
+    expect(equipmentMitigation({body:'salvageVest'},'projectile')).toBeCloseTo(.24);expect(equipmentMitigation({body:'salvageVest'},'cold')).toBe(0);
+    expect(equipmentMitigation({body:'warmJacket'},'cold')).toBeCloseTo(.28);expect(equipmentMitigation({body:'warmJacket'},'projectile')).toBeCloseTo(.03);
+    expect(validateGameState(sim.state)).toBe(true);
+  });
 });
