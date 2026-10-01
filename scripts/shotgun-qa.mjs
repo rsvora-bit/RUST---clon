@@ -15,7 +15,7 @@ try{
   const fired=await page.evaluate(id=>({actor:window.__TIDELAND.wildlife().find(entry=>entry.id===id),state:window.__TIDELAND.snapshot(),weapon:window.__TIDELAND.firearm()}),target.id);
   pass('One shell fires a deterministic multi-pellet close-range spread',fired.actor.health<target.health&&fired.weapon.loaded===3&&fired.weapon.reserve===10);
   pass('Pellet damage is accumulated once and shotgun durability wears per shell',fired.actor.health>=1&&fired.actor.health<=target.health-18&&fired.state.inventory[0].condition===143);
-  await page.evaluate(()=>{window.__TIDELAND.setCapturePaused(false);window.__TIDELAND.reloadFirearm();});await page.waitForTimeout(240);
+  await page.evaluate(()=>{window.__TIDELAND.setCapturePaused(false);window.__TIDELAND.reloadFirearm();});await page.waitForFunction(()=>{const p=window.__TIDELAND.cameraState().viewmodel.reloadProgress;return p>.05&&p<1;},null,{timeout:2000});
   const pose=await page.evaluate(()=>window.__TIDELAND.cameraState().viewmodel.reloadProgress);pass('Break-action reload has a visible viewmodel animation',pose>.05&&pose<1);
   await page.waitForFunction(()=>{const firearm=window.__TIDELAND.firearm();return firearm.loaded===4&&!firearm.reloading;},null,{timeout:12000});
   const reloaded=await page.evaluate(()=>window.__TIDELAND.firearm());pass('Reload consumes one matching shell from the reserve',reloaded.loaded===4&&reloaded.reserve===9);
