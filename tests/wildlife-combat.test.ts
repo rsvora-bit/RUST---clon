@@ -78,6 +78,12 @@ describe('seeded island wildlife',()=>{
     tickWildlife(actor,.1,{x:actor.position.x+10,y:3,z:actor.position.z},()=>3,attacks,false);
     expect(actor.state).toBe('investigate');expect(actor.position.x).toBeGreaterThan(start);expect(attacks).not.toHaveBeenCalled();
   });
+  it('returns a non-angered alerted scavenger home after its last-known search expires',()=>{
+    const actor=createWildlifePopulation({...context,scavengerSites:[{x:180,y:3,z:40}]}).find(a=>a.archetype==='scavenger')!,home={...actor.home};actor.alerted=true;actor.awareness=1;actor.memorySeconds=0;actor.position.x+=6;const farPlayer={x:home.x+60,y:3,z:home.z+60};
+    tickWildlife(actor,.1,farPlayer,()=>3,vi.fn(),false);expect(actor.state).toBe('return');expect(actor.position.x).toBeLessThan(home.x+6);
+    for(let i=0;i<80&&actor.state==='return';i++)tickWildlife(actor,.1,farPlayer,()=>3,vi.fn(),false);
+    expect(actor.state).toBe('wander');expect(Math.hypot(actor.position.x-home.x,actor.position.z-home.z)).toBeLessThan(1.3);expect(actor.alerted).toBe(false);expect(actor.awareness).toBe(0);
+  });
   it('blocks scavenger perception behind solid geometry',()=>{
     const ray=new THREE.Raycaster(),origin=new THREE.Vector3(0,1.5,0),target=new THREE.Vector3(0,1.5,-5),scratch=new THREE.Vector3(),wall=new THREE.Mesh(new THREE.BoxGeometry(3,3,.3),new THREE.MeshBasicMaterial());wall.position.set(0,1.5,-2);wall.updateMatrixWorld(true);
     expect(hasLineOfSight(ray,origin,target,[wall],scratch)).toBe(false);expect(hasLineOfSight(ray,origin,target,[],scratch)).toBe(true);wall.geometry.dispose();(wall.material as THREE.Material).dispose();

@@ -6,7 +6,7 @@ import type {Vec3,WorldGeneration} from '../core/types';
 import {randomSource} from '../world/noise';
 
 export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
-export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'attack'|'dead';
+export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'return'|'attack'|'dead';
 export type ScavengerArchetype='scavenger'|'lookout'|'guard';
 export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
@@ -74,6 +74,11 @@ export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:
     if(knownDistance>1.45&&knownDistance<38){actor.state='investigate';actor.yaw=Math.atan2(lx,lz);const step=Math.min(knownDistance-1.2,spec.speed*dt);actor.position.x+=lx/knownDistance*step;actor.position.z+=lz/knownDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;}
     else actor.state='investigate';
     return;
+  }
+  if(actor.species==='islandScavenger'&&actor.alerted&&!actor.angered&&!canSeePlayer&&actor.memorySeconds<=0){
+    const dx=actor.home.x-actor.position.x,dz=actor.home.z-actor.position.z,distanceHome=Math.hypot(dx,dz);actor.awareness=Math.max(0,actor.awareness-dt*.4);
+    if(distanceHome>1.2){actor.state='return';actor.yaw=Math.atan2(dx,dz);const step=Math.min(distanceHome,spec.speed*.68*dt);actor.position.x+=dx/distanceHome*step;actor.position.z+=dz/distanceHome*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
+    actor.state='wander';actor.alerted=false;actor.awareness=0;return;
   }
   if(actor.species==='islandScavenger'&&actor.archetype==='guard'&&hostile&&distance<34&&canSeePlayer){
     actor.yaw=Math.atan2(dx,dz);
