@@ -41,6 +41,7 @@ import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
 import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
 import {hasLineOfSight} from '../combat/visibility';
+import {alertScavengersToNoise} from '../combat/noise';
 import {coldExposureAt,toxicExposureAt} from '../survival/hazards';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
 interface LiveArrow {flight:ArrowFlight;mesh:THREE.Group;strength:number}
@@ -198,6 +199,7 @@ export class GameApp {
     const blockers=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values(),this.worldSurvival.group];
     return hasLineOfSight(this.ray,this.wildlifeSightOrigin,this.camera.position,blockers,this.wildlifeSightDirection);
   }
+  private emitCombatNoise(radius:number,memorySeconds:number){return alertScavengersToNoise(this.wildlife.actors,this.simulation.state.player.position,radius,memorySeconds);}
   private attackWildlife(actor:WildlifeActor){
     if(this.cooldown>0||actor.state==='dead')return;
     const item=this.activeItem(),weapon=item&&Object.hasOwn(MELEE_WEAPONS,item)?MELEE_WEAPONS[item as keyof typeof MELEE_WEAPONS]:null;
@@ -212,7 +214,7 @@ export class GameApp {
     this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.combat('swing');if(hit.reason==='occluded')this.impactFx.burst({x:blocker!.point.x,y:blocker!.point.y,z:blocker!.point.z},'stone',.24);return;}
     const condition=this.simulation.state.inventory[this.simulation.state.activeSlot],maxCondition=condition?maxDurability(condition.itemId):0,conditionScale=condition&&maxCondition>0 ? .55+.45*itemCondition(condition)/maxCondition : 1;
     stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.combat('flesh',weapon.damage/36);this.impactFx.burst(actor.position,'fiber',.7);
-    if(damage.killed)this.defeatWildlife(actor);this.save(false,false);
+    if(damage.killed)this.defeatWildlife(actor);this.emitCombatNoise(7,2.4);this.save(false,false);
   }
   private beginReload(){
     const slot=this.simulation.state.activeSlot,stack=this.simulation.state.inventory[slot],item=stack?.itemId;if(!stack||!isFirearm(item))return;
@@ -232,7 +234,7 @@ export class GameApp {
     }
     for(const [actor,hit] of hits){const result=actor.takeDamage({amount:Math.round(hit.damage),type:'projectile',sourceId:`player-${weapon.itemId}`});this.simulation.state.nodeChanges[actor.id]=result.healthAfter;this.impactFx.burst(hit.point,'stone',1.05);if(result.killed)this.defeatWildlife(actor);}
     if(!hits.size&&obstaclePoint)this.impactFx.burst(obstaclePoint,'stone',.7);
-    const broken=this.simulation.wearItem(slot,weapon.durabilityPerShot);if(broken)this.syncHeld();this.held.hit();this.held.impact();this.player.pitch=Math.min(1.45,this.player.pitch+weapon.recoil);this.audio.firearm(weapon.itemId==='fieldShotgun'?1.42:1);this.cooldown=weapon.fireInterval;this.save(false,false);
+    const broken=this.simulation.wearItem(slot,weapon.durabilityPerShot);if(broken)this.syncHeld();this.held.hit();this.held.impact();this.player.pitch=Math.min(1.45,this.player.pitch+weapon.recoil);this.audio.firearm(weapon.itemId==='fieldShotgun'?1.42:1);this.emitCombatNoise(weapon.itemId==='fieldShotgun'?48:36,5);this.cooldown=weapon.fireInterval;this.save(false,false);
   }
   private defeatWildlife(actor:WildlifeActor){this.simulation.state.nodeChanges[actor.id]=0;const scavenger=actor.species==='islandScavenger',rewards=scavenger?[['scrap',12],['wiring',2],['relayAccessCard',1]] as const:[['rawMeat',3],['hide',2]] as const;for(const [itemId,count] of rewards){const overflow=this.simulation.addItem(itemId,count);if(overflow)this.simulation.state.drops.push({id:`drop-${this.simulation.state.nextId++}`,stack:{itemId,count:overflow},position:{x:actor.position.x,y:actor.position.y,z:actor.position.z}});}const object=this.wildlife.object(actor.id);if(object)object.visible=false;this.syncWorldItems();this.ui.notify(scavenger?'Scavenger down · recovered salvage and access card':'Wildlife down · recovered meat and hide');}
   private releaseBow(){
@@ -244,7 +246,7 @@ export class GameApp {
     const origin={x:this.camera.position.x+this.direction.x*.42,y:this.camera.position.y+this.direction.y*.42,z:this.camera.position.z+this.direction.z*.42};
     const velocity=arrowLaunchVelocity({x:this.direction.x,y:this.direction.y,z:this.direction.z},strength),mesh=new THREE.Group();
     const shaft=new THREE.Mesh(this.arrowShaftGeometry,this.arrowShaftMaterial),head=new THREE.Mesh(this.arrowHeadGeometry,this.arrowHeadMaterial);shaft.rotation.z=-Math.PI/2;head.rotation.z=-Math.PI/2;head.position.x=.39;mesh.add(shaft,head);mesh.position.set(origin.x,origin.y,origin.z);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(velocity.x,velocity.y,velocity.z).normalize());this.scene.add(mesh);
-    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength:strength*conditionScale});const bowBroken=this.simulation.wearItem(this.simulation.state.activeSlot,1);if(bowBroken)this.syncHeld();this.held.hit();this.audio.combat('bow',strength);this.cooldown=.25;this.syncHeld();
+    this.arrows.push({flight:{position:origin,velocity,age:0},mesh,strength:strength*conditionScale});const bowBroken=this.simulation.wearItem(this.simulation.state.activeSlot,1);if(bowBroken)this.syncHeld();this.held.hit();this.audio.combat('bow',strength);this.emitCombatNoise(10+strength*7,2.8);this.cooldown=.25;this.syncHeld();
   }
   private dropArrow(position:Vec3){this.simulation.state.drops.push({id:`drop-${this.simulation.state.nextId++}`,stack:{itemId:'arrow',count:1},position:{x:position.x,y:Math.max(this.environment.heightAt(position.x,position.z),position.y),z:position.z}});this.syncWorldItems();this.save(false,false);}
   private updateArrows(dt:number){
