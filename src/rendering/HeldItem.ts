@@ -30,6 +30,8 @@ export class HeldItem {
   private bowArrow:THREE.Group|null=null;
   private bowDraw=0;
   private reloadProgress=0;
+  private muzzleFlash:THREE.Mesh|null=null;
+  private muzzleFlashTime=0;
 
   private skin=new THREE.MeshStandardMaterial({color:'#d0c4b3',roughness:.86});
   private sleeve=new THREE.MeshStandardMaterial({color:'#555b4c',roughness:1});
@@ -55,7 +57,7 @@ export class HeldItem {
   private clearHand(){
     const shared=[this.skin,this.sleeve,this.wood,this.stone,this.metal,this.wrap];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
-    this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;
+    this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
 
   private addArm(side:1|-1,x:number,y:number,z:number,rotationZ:number,compact=false){
@@ -118,6 +120,7 @@ export class HeldItem {
       const shotgun=item==='fieldShotgun';if(shotgun){weapon.scale.setScalar(.76);weapon.position.y=.11;}const grip=this.mesh(new THREE.BoxGeometry(shotgun?.13:.105,shotgun?.32:.27,shotgun?.15:.13),this.wrap,.28,shotgun?-.17:-.12,-.63,weapon);grip.rotation.x=-.18;
       if(shotgun){const stock=this.mesh(new THREE.BoxGeometry(.13,.19,.31),this.wood,.28,.01,-.54,weapon);stock.rotation.x=-.12;const receiver=this.mesh(new THREE.BoxGeometry(.18,.13,.28),this.metal,.27,.07,-.79,weapon);receiver.rotation.x=-.04;for(let i=0;i<2;i++){const barrel=this.mesh(new THREE.CylinderGeometry(.032,.036,.47,10),this.metal,.245+i*.05,.08,-1.04,weapon);barrel.rotation.x=Math.PI/2;}const foregrip=this.mesh(new THREE.BoxGeometry(.19,.095,.23),this.wood,.27,.055,-1.05,weapon);foregrip.rotation.x=-.08;this.addArm(-1,-.13,-.10,-.63,.18,true);
       }else{const frame=this.mesh(new THREE.BoxGeometry(.16,.12,.29),this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;const hammer=this.mesh(new THREE.BoxGeometry(.065,.085,.075),this.metal,.27,.15,-.59,weapon);hammer.rotation.x=-.25;this.mesh(new THREE.BoxGeometry(.03,.038,.04),this.metal,.27,.13,-.98,weapon);const trigger=this.mesh(new THREE.TorusGeometry(.046,.007,6,14,Math.PI),this.wrap,.27,-.01,-.72,weapon);trigger.rotation.x=Math.PI/2;this.addArm(-1,-.13,-.13,-.59,.18,true);}
+      const flashMaterial=new THREE.MeshBasicMaterial({color:shotgun?0xffa94c:0xffd17a,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});this.muzzleFlash=this.mesh(new THREE.ConeGeometry(.075,.24,7),flashMaterial,shotgun?.27:.27,.08,shotgun?-1.34:-1.18,weapon);this.muzzleFlash.rotation.x=-Math.PI/2;this.muzzleFlash.renderOrder=104;this.muzzleFlash.visible=false;
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);
@@ -148,6 +151,7 @@ export class HeldItem {
   hit(){if(this.unequip>0)return;this.swing=1;this.inspectTime=0;}
   /** Contact recoil is separate from the pre-contact swing so hits feel physical. */
   impact(){this.recoil=1;}
+  firearmShot(){if(!this.muzzleFlash||this.unequip>0)return;this.muzzleFlashTime=.09;this.muzzleFlash.visible=true;(this.muzzleFlash.material as THREE.MeshBasicMaterial).opacity=.92;}
   inspect(){if(this.hand.children.length&&this.unequip<=0){this.inspectTime=1.35;this.swing=0;}}
   look(dx:number,dy:number){
     this.lookTarget.x=THREE.MathUtils.clamp(this.lookTarget.x-dx*.000075,-.045,.045);
@@ -161,6 +165,7 @@ export class HeldItem {
     const swingRate=this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='rock'?3.55:4.1;
     this.swing=Math.max(0,this.swing-dt*swingRate);
     this.recoil=Math.max(0,this.recoil-dt*7.8);
+    this.muzzleFlashTime=Math.max(0,this.muzzleFlashTime-dt);if(this.muzzleFlash){this.muzzleFlash.visible=this.muzzleFlashTime>0;(this.muzzleFlash.material as THREE.MeshBasicMaterial).opacity=Math.min(.92,this.muzzleFlashTime*14);}
     this.inspectTime=Math.max(0,this.inspectTime-dt);
     this.sprintBlend=THREE.MathUtils.damp(this.sprintBlend,sprinting?1:0,9,dt);
     this.crouchBlend=THREE.MathUtils.damp(this.crouchBlend,crouching?1:0,8,dt);
@@ -216,9 +221,10 @@ export class HeldItem {
   diagnostics(){
     this.hand.updateWorldMatrix(true,true);this.camera.updateMatrixWorld();
     const anchor=new THREE.Vector3(.29,-.07,-.597).applyMatrix4(this.hand.matrixWorld).project(this.camera);
+    const muzzleFlashScreen=this.muzzleFlash?new THREE.Vector3().setFromMatrixPosition(this.muzzleFlash.matrixWorld).project(this.camera):null;
     const bounds=new THREE.Box3().setFromObject(this.hand);let transparentDepthWrites=0;
     this.hand.traverse(o=>{if(o instanceof THREE.Mesh){for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.transparent&&m.depthWrite)transparentDepthWrites++;}});
-    return {active:this.active,handMatrix:this.hand.matrixWorld.toArray(),anchor:anchor.toArray(),nearestDepth:-bounds.max.z,transparentDepthWrites,swing:this.swing,recoil:this.recoil,inspect:this.inspectTime,sprintPose:this.sprintBlend,bowDraw:this.bowDraw,reloadProgress:this.reloadProgress};
+    return {active:this.active,handMatrix:this.hand.matrixWorld.toArray(),anchor:anchor.toArray(),nearestDepth:-bounds.max.z,transparentDepthWrites,swing:this.swing,recoil:this.recoil,inspect:this.inspectTime,sprintPose:this.sprintBlend,bowDraw:this.bowDraw,reloadProgress:this.reloadProgress,muzzleFlash:this.muzzleFlash?.visible??false,muzzleFlashOpacity:this.muzzleFlash?.material instanceof THREE.MeshBasicMaterial?this.muzzleFlash.material.opacity:0,muzzleFlashScreen:muzzleFlashScreen?[muzzleFlashScreen.x,muzzleFlashScreen.y,muzzleFlashScreen.z]:null};
   }
   render(renderer:THREE.WebGLRenderer){
     if(!this.hand.children.length)return;
