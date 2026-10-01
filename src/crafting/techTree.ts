@@ -2,8 +2,8 @@ import type {GameState,ItemStack,Vec3} from '../core/types';
 import {deductCosts,itemCount,type InventorySlots} from '../inventory/inventory';
 import {nearbyWorkbench,type Station} from '../survival/stations';
 
-export type TechNodeId='efficiencyTooling'|'fieldEngineering'|'workbench2Research'|'fieldMedicine'|'advancedFabrication'|'workbench3Research'|'workshopLighting'|'armoryEngineering';
-export const TECH_NODE_IDS:TechNodeId[]=['efficiencyTooling','fieldEngineering','workbench2Research','fieldMedicine','advancedFabrication','workbench3Research','workshopLighting','armoryEngineering'];
+export type TechNodeId='efficiencyTooling'|'fieldEngineering'|'workbench2Research'|'fieldMedicine'|'advancedFabrication'|'workbench3Research'|'workshopLighting'|'armoryEngineering'|'industrialArmor';
+export const TECH_NODE_IDS:TechNodeId[]=['efficiencyTooling','fieldEngineering','workbench2Research','fieldMedicine','advancedFabrication','workbench3Research','workshopLighting','armoryEngineering','industrialArmor'];
 export interface TechNodeDefinition{id:TechNodeId;displayName:string;description:string;tier:1|2|3;scrapCost:number;requiredWorkbenchLevel:1|2|3;prerequisites:TechNodeId[];unlocksRecipes:string[]}
 export interface TechState{version:1;unlocked:TechNodeId[]}
 export const TECH_NODES:Record<TechNodeId,TechNodeDefinition>={
@@ -15,6 +15,7 @@ export const TECH_NODES:Record<TechNodeId,TechNodeDefinition>={
   workbench3Research:{id:'workbench3Research',displayName:'Workbench III Research',description:'Opens the final workshop research tier.',tier:2,scrapCost:150,requiredWorkbenchLevel:2,prerequisites:['workbench2Research'],unlocksRecipes:['workbench3']},
   workshopLighting:{id:'workshopLighting',displayName:'Workshop Lighting',description:'Compact lights and weathered utility lamps keep advanced shelters readable after dusk.',tier:3,scrapCost:100,requiredWorkbenchLevel:3,prerequisites:['workbench3Research'],unlocksRecipes:['workshop_lights','field_lamp']},
   armoryEngineering:{id:'armoryEngineering',displayName:'Armory Engineering',description:'Recover practical field patterns for heavy close-range weapons and compact shells.',tier:3,scrapCost:180,requiredWorkbenchLevel:3,prerequisites:['advancedFabrication','workbench3Research'],unlocksRecipes:['tidal_shotgun','shotgun_shells']},
+  industrialArmor:{id:'industrialArmor',displayName:'Industrial Armor',description:'Reinforce quarry salvage into a heavy plate rig that trades insulation for high projectile and impact protection.',tier:3,scrapCost:160,requiredWorkbenchLevel:3,prerequisites:['advancedFabrication','workbench3Research'],unlocksRecipes:['quarry_plate_rig']},
 };
 export const createTechState=():TechState=>({version:1,unlocked:[]});
 export const validTechNode=(id:unknown):id is TechNodeId=>typeof id==='string'&&TECH_NODE_IDS.includes(id as TechNodeId);

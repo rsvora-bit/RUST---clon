@@ -12,6 +12,7 @@ export const EQUIPMENT:Partial<Record<ItemId,EquipmentDefinition>>={
   boots:{slot:'feet',mitigation:{melee:.03,environmental:.08,cold:.06}},
   protectiveHood:{slot:'head',mitigation:{melee:.04,cold:.12,toxic:.35}},
   salvageVest:{slot:'body',mitigation:{melee:.16,projectile:.24,environmental:.03}},
+  yardPlate:{slot:'body',mitigation:{melee:.28,projectile:.38,environmental:.08}},
 };
 
 export function equipmentMitigation(equipment:PlayerEquipment|undefined,type:DamageType,condition?:EquipmentCondition):number {

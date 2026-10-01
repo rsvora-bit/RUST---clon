@@ -72,4 +72,13 @@ describe('field clothing and equipment',()=>{
     expect(equipmentMitigation({body:'warmJacket'},'cold')).toBeCloseTo(.28);expect(equipmentMitigation({body:'warmJacket'},'projectile')).toBeCloseTo(.03);
     expect(validateGameState(sim.state)).toBe(true);
   });
+
+  it('industrial plate trades weather insulation for stronger protection and persists condition',()=>{
+    const sim=new GameSimulation(23,spawn);sim.state.inventory[7]={itemId:'yardPlate',count:1,condition:40};
+    sim.state.progression!.stations.push(createStation('bench-yard-armor','workbench3',spawn));sim.addItem('metal',24);sim.addItem('machineParts',2);sim.addItem('techParts',1);
+    expect(sim.repairTool(7)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[7]).toEqual({itemId:'yardPlate',count:1,condition:85});
+    expect(equipmentMitigation({body:'yardPlate'},'projectile')).toBeCloseTo(.38);expect(equipmentMitigation({body:'yardPlate'},'melee')).toBeCloseTo(.28);expect(equipmentMitigation({body:'yardPlate'},'cold')).toBe(0);
+    expect(equipmentMitigation({body:'salvageVest'},'projectile')).toBeLessThan(equipmentMitigation({body:'yardPlate'},'projectile'));expect(equipmentMitigation({body:'warmJacket'},'cold')).toBeGreaterThan(equipmentMitigation({body:'yardPlate'},'cold'));
+    const save=structuredClone(sim.state);expect(validateGameState(save)).toBe(true);const loaded=new GameSimulation(23,spawn,save);expect(loaded.state.inventory[7]).toEqual({itemId:'yardPlate',count:1,condition:85});
+  });
 });
