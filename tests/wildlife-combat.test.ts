@@ -80,6 +80,14 @@ describe('seeded island wildlife',()=>{
     const attacks=vi.fn();system.update(.1,player,()=>3,attacks,actor=>actor.id===guard.id);system.update(.1,player,()=>3,attacks,actor=>actor.id===guard.id);
     expect(guard.alerted).toBe(true);expect(lookout.alerted).toBe(true);expect(lookout.awareness).toBeGreaterThan(0);expect(lookout.memorySeconds).toBeGreaterThan(2);expect(lookout.lastKnownPlayer).toEqual(player);expect(lookout.canSeePlayer).toBe(false);expect(lookout.state).toBe('investigate');expect(attacks.mock.calls.every(call=>call[1]===guard.id)).toBe(true);system.dispose();
   });
+  it('shares a secured-door raid alarm so a nearby scavenger joins the same breach',()=>{
+    const scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:[{x:180,y:3,z:40},{x:195,y:3,z:40}]}),source=system.actors.find(actor=>actor.archetype==='scavenger')!,ally=system.actors.find(actor=>actor.archetype==='lookout')!,door={id:'homestead-door',position:{x:0,y:3,z:0}},player={x:0,y:3,z:-4},doorHits=vi.fn();
+    source.position={x:0,y:3,z:3};source.yaw=Math.PI;source.alerted=true;source.angered=true;source.attackCooldown=0;source.perceptionCooldown=0;
+    ally.position={x:2,y:3,z:3};ally.yaw=Math.PI;ally.alerted=false;ally.angered=false;ally.attackCooldown=0;ally.perceptionCooldown=0;
+    for(let i=0;i<32;i++)system.update(.1,player,()=>3,()=>{},()=>false,actor=>actor===source||actor===ally?door:null,(id,damage,actor)=>doorHits(id,damage,actor.id));
+    expect(source.state).toBe('raid');expect(ally.alerted).toBe(true);expect(ally.lastKnownPlayer).toEqual(player);expect(ally.state).toBe('raid');
+    expect(doorHits.mock.calls.some(call=>call[0]===door.id&&call[2]===source.id)).toBe(true);expect(doorHits.mock.calls.some(call=>call[0]===door.id&&call[2]===ally.id)).toBe(true);system.dispose();
+  });
   it('requires time in the scavenger view cone before raising an alarm',()=>{
     const site={x:10,y:3,z:10},scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,player={x:actor.position.x+2,y:3,z:actor.position.z};
     actor.perceptionCooldown=0;actor.yaw=Math.atan2(actor.position.x-player.x,actor.position.z-player.z);system.update(.1,player,()=>3,()=>{});
