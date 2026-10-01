@@ -1,3 +1,11 @@
+## v0.9.2 / EA-09.2 — World Quality & Survival Progression (2026-10-01)
+
+- Refined forests, grass cover, terrain blending, distant mountain silhouettes and moonlit readability without changing Generation 5 terrain heights or layout.
+- Added persistent melee combat, a recoverable hunting bow, a research-gated salvage revolver, ammunition crafting and tool durability with workbench repair.
+- Added craftable field clothing, alpine cold exposure, deterministic hostile scavengers and a dangerous relay salvage cache with access-card progression.
+- Added persistent Homestead ownership, door authorization and an overview of owned structures while keeping historical save generations compatible.
+- Validated through unit tests, browser gameplay probes, world-art QA and a same-device performance comparison.
+
 ## v0.9.1 / EA-09.1 — World Art & Stabilization (2026-09-16)
 
 - Improved deterministic POI roads with a shared low-resolution terrain-cost grid, water/slope/elevation avoidance, conservative smoothing and terrain-following strips with original dirt/gravel detail and soft edges.

@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.9.1';
-export const GAME_BUILD='EA-09.1';
-export const GAME_RELEASE_DATE='2026-09-16';
+export const GAME_VERSION='0.9.2';
+export const GAME_BUILD='EA-09.2';
+export const GAME_RELEASE_DATE='2026-10-01';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.9.2',date:'2026-10-01',title:'World Quality & Survival Progression',changes:[
+    'Refined forest canopies, grass cover, mountain silhouettes, terrain blending and moonlit readability while retaining instancing and the existing Generation 5 world layout.',
+    'Added persistent melee combat, recoverable bow projectiles, a research-gated salvage revolver, ammunition crafting and tool durability with workbench repair.',
+    'Added craftable field clothing, alpine cold exposure, deterministic hostile scavengers and a dangerous relay salvage cache with access-card progression.',
+    'Added persistent homestead ownership, door authorization and a compact overview for owned structures while preserving the existing save format and legacy worlds.',
+    'Validated with unit, browser gameplay, world-art and performance QA; Generation 1–4 worlds remain on their legacy generators and existing Generation 5 saves retain their layout.'
+  ]},
   {version:'0.9.1',date:'2026-09-16',title:'World Art & Stabilization',changes:[
     'Improved deterministic POI roads with lightweight terrain-cost routing, conservative corner smoothing, ground-following strips and original dirt/gravel detail with soft edges.',
     'Added climate-correct palm and conifer selection, dedicated procedural palm fronds/trunks, continuous vegetation cover and road clearance for new generation-5 worlds.',

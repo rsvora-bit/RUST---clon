@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.1%20%7C%20EA--09.1-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.2%20%7C%20EA--09.2-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.9.1 / EA-09.1` · **16 September 2026**
+**Current release:** `v0.9.2 / EA-09.2` · **1 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.9.1](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.1/)
+Latest stable: [▶ PLAY v0.9.2](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.2/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -98,6 +98,10 @@ The main idea is simple:
 - Builder's Hammer with structure HUD, one-second hold demolition and safe door-hinge rotation
 - Workbench progression and crafting requirements
 - Survival stations and station upgrades
+- Persistent Homestead ownership, authorized doors and a structure overview
+- Tool durability and workbench repair, field clothing and alpine cold exposure
+- Melee, recoverable bow projectiles, research-gated salvage revolver and ammunition crafting
+- Hostile scavengers and a dangerous access-card relay cache with location-specific salvage
 
 ### 🎒 Player & UI
 - Inventory and quick belt
@@ -119,7 +123,7 @@ The browser locally persists world generation, settings, inventory, crafting, re
 
 ## 🚀 Current development focus
 
-**v0.9.1 / EA-09.1 — World Art & Stabilization** polishes the Generation 5 foundation with terrain-aware roads, climate-correct palms, continuous biome/vegetation transitions and an original layered mountain panorama.
+**v0.9.2 / EA-09.2 — World Quality & Survival Progression** builds on the Generation 5 world with clearer forests and grass, terrain and night readability, plus integrated combat, equipment, hostile exploration and persistent Homestead ownership.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -270,6 +274,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.9.2` | Forest and terrain polish, combat, equipment, hostile scavengers, relay cache progression and Homestead ownership |
 | `v0.9.1` | Terrain-aware roads, climate-correct vegetation, continuous biome bands, distant massifs and save-safe stabilization |
 | `v0.9.0` | World generation 5, regional biomes, roads, topographic map, atmosphere and fall damage |
 | `v0.8.0` | Persistent Tech Tree research, Scrap progression and Workbench II–III recipe unlocks |
@@ -329,9 +334,15 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.9.1 / EA-09.1`
+`EARLY ACCESS DEVELOPMENT · v0.9.2 / EA-09.2`
 
 </div>
+
+### v0.9.2 validation and save compatibility
+
+Generation 1–4 saves keep their legacy generators. Existing Generation 5 saves retain their saved layout and player/world state. This update adds combat, equipment, hazards, scavengers and Homestead state through the existing persistence path; no generation reset or save-format replacement is required.
+
+Browser gameplay probes covered combat, ranged weapons, firearms, scavengers, hazards, doors, power, salvage, death/respawn and the browser flow. Unit tests: 232 tests in 34 files. Production build passes. Relative performance comparison at 1280×720, High, seed 731942: archived v0.9.0 vs current build measured 59.996 vs 60.002 FPS (display-capped), 16.668 vs 16.666 ms, 612 vs 618 draw calls (+1.0%) and 3,390,261 vs 2,856,582 triangles (-15.7%).
 
 ### v0.9.1 validation and layout compatibility
 
