@@ -33,7 +33,7 @@ describe('combat damage foundation',()=>{
     const simulation=new GameSimulation(77,spawn);
     expect(simulation.takeDamage({amount:18,type:'cold',sourceId:'alpine-exposure'})).toMatchObject({ok:true,type:'cold',applied:18,healthAfter:82,killed:false});
     expect(simulation.state.player.stats.health).toBe(82);
-    expect(simulation.takeDamage({amount:100,type:'melee',sourceId:'boar'})).toMatchObject({ok:true,type:'melee',healthAfter:0,killed:true,sourceId:'boar'});
+    expect(simulation.takeDamage({amount:100,type:'projectile',sourceId:'firearm-guard'})).toMatchObject({ok:true,type:'projectile',healthAfter:0,killed:true,sourceId:'firearm-guard'});
     expect(simulation.state.player.stats.health).toBe(0);
   });
 
