@@ -9,6 +9,13 @@ const spawn={x:0,y:5,z:0},coast={x:300,y:1.5,z:-450};
 function stormState(seed=93){const game=new GameSimulation(seed,spawn);game.state.worldGeneration=5;return game.state;}
 
 describe('Generation 5 washed-ashore salvage event',()=>{
+  it('keeps the initial zero-sequence event state save-valid before the first storm',()=>{
+    const state=stormState(),progress=ensureProgression(state);
+    expect(updateWashedAshoreEvent(state,5,()=>coast)).toBe(false);
+    expect(progress.washedAshore).toMatchObject({stormSeen:false,resolved:false,sequence:0});
+    expect(validateGameState(structuredClone(state))).toBe(true);
+  });
+
   it('waits for a storm to pass and creates one deterministic saved cache',()=>{
     const state=stormState(),findCoast=vi.fn(()=>coast),progress=ensureProgression(state);
     expect(updateWashedAshoreEvent(state,5,findCoast)).toBe(false);expect(findCoast).not.toHaveBeenCalled();
