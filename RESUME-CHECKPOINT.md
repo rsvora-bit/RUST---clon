@@ -188,6 +188,16 @@ Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je histori
 - Změněné soubory: `src/core/types.ts`, `src/items/definitions.ts`, `src/crafting/recipes.ts`, `src/survival/stations.ts`, `src/survival/StationRenderer.ts`, `src/survival/StationUI.ts`, `src/app/GameApp.ts`, `tests/salvage-recycler.test.ts`, `scripts/door-lock-qa.mjs`, `public/assets/icons/homesteadCore.svg` a tento checkpoint.
 - Stále bez push/PR/tag/release/version bump. Další cíle z dlouhé relace a kompletní regression/browser pass zbývají.
 
+## Combat, Danger & Progression — final local validation — 2026-10-01
+
+- Povinné položky Goal byly znovu porovnány se zadáním: final world-art/performance QA, player damage/death/Lost Pack, melee, bow/arrows, salvage revolver/ammo/reload/crafting, durability/repair, equipment/clothing, wildlife + Gen5 scavengers, toxin + alpine cold, tiered salvage/access progression, dvě guarded high-tier POI (relay a quarry), homestead ownership/locks a persistent generator→switch→lamp jsou implementované a runtime ověřené.
+- Rozšířen `test:scavenger` o kontrolu, že oba relay/quarry POI mají zároveň strážce i sealed cache; kompletní přístupová smyčka card→unlock→loot→save/reload PASS. QA pořizuje i UI screenshot otevřené cache.
+- Rozšířen `test:door-lock` o vizuální kontrolu Homestead panelu a save/reload claimu. Vizuální screenshot potvrdil, že přehled `42 m · 3 structures · 1 secured doors` je čitelný přímo pod nadpisem.
+- Kompletní browser/regression pass na nativním Chrome s ANGLE Metal: `test:death`, `test:salvage`, přímé `node scripts/tech-tree-qa.mjs`, `test:power`, `test:combat`, `test:ranged`, `test:browser`, `test:firearm`, `test:scavenger`, `test:hazard`, `test:door-lock`; všechny úspěšné. `test:browser` jednou vrátil chybný exit při plném QA outputu i přes zelené assertiony/čistou konzoli; bez změny kódu opakování skončilo kódem 0.
+- `package.json` nemá `test:tech-tree` alias, ale existující `scripts/tech-tree-qa.mjs` spuštěný přímo prošel. Prostředí nemělo Playwright Chromium shell; všechny relevantní browser testy byly spuštěny proti nainstalovanému Chrome přes `CHROME_BIN`, bez potřeby stahovat browser.
+- Finální `npm test`: **232/232 PASS, 34 souborů**. Finální `npm run build`: PASS; přetrvává Vite upozornění na ~3.20 MB JS chunk. Žádné browser/WebGL/console chyby; world-art/performance Metal porovnání je výše v tomto checkpointu.
+- Po tomto zápisu vytvořit lokální QA checkpoint commit, ověřit čistý working tree a aktualizovat Codex Goal na COMPLETE. Větev `codex/world-quality-next`; záměrně bez push, PR, tag, release a version bump. Verze zůstává `0.9.1 / EA-09.1`, `main` nezměněn.
+
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
