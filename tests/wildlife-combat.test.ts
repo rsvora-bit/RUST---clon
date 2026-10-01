@@ -69,6 +69,18 @@ describe('seeded island wildlife',()=>{
     const gunner=system.actors.find(a=>a.archetype==='guard')!;expect(gunner.maxHealth).toBeGreaterThan(lookout.maxHealth);expect(system.object(gunner.id)!.geometry).not.toBe(system.object(lookout.id)!.geometry);gunner.alerted=true;gunner.awareness=1;gunner.attackCooldown=0;const target={x:gunner.position.x,y:gunner.position.y,z:gunner.position.z+18},gunfire=vi.fn();expect(guardHitChance(gunner,20)).toBeLessThan(guardHitChance(gunner,10));for(let i=0;i<600;i++)tickWildlife(gunner,.1,target,()=>3,gunfire,true);expect(gunner.state).toBe('attack');expect(gunfire).toHaveBeenCalled();expect(gunfire.mock.calls.length).toBeLessThan(gunner.shotSequence??0);expect(gunfire.mock.calls.every(call=>call[2]==='projectile'&&call[0]===14)).toBe(true);const guardClose={x:gunner.position.x,y:gunner.position.y,z:gunner.position.z+5},guardZ=gunner.position.z;tickWildlife(gunner,.1,guardClose,()=>3,gunfire,true);expect(gunner.state).toBe('reposition');expect(gunner.position.z).toBeLessThan(guardZ);
     system.dispose();
   });
+  it('uses restrained deterministic lateral movement while ranged scavengers hold their firing distance',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),second=createWildlifePopulation({...context,scavengerSites:sites});
+    for(const archetype of ['lookout','guard'] as const){
+      const actor=first.find(entry=>entry.archetype===archetype)!,replay=second.find(entry=>entry.id===actor.id)!;actor.alerted=true;actor.awareness=1;actor.attackCooldown=100;replay.alerted=true;replay.awareness=1;replay.attackCooldown=100;
+      const player={x:actor.position.x,y:actor.position.y,z:actor.position.z+16},start={...actor.position},attacks=vi.fn();
+      for(let i=0;i<45;i++){tickWildlife(actor,.1,player,()=>3,attacks,true);tickWildlife(replay,.1,player,()=>3,vi.fn(),true);}
+      expect(actor.state).toBe('attack');expect(Math.hypot(actor.position.x-start.x,actor.position.z-start.z)).toBeGreaterThan(.35);
+      expect(Math.hypot(actor.position.x-player.x,actor.position.z-player.z)).toBeGreaterThan(14);
+      expect(Math.hypot(actor.position.x-replay.position.x,actor.position.z-replay.position.z)).toBeLessThan(1e-8);
+      expect(attacks).not.toHaveBeenCalled();expect(actor.position.y).toBeCloseTo(3.05);
+    }
+  });
   it('throttles scavenger perception instead of ray testing every frame',()=>{
     const scene=new THREE.Scene(),site={x:5,y:3,z:5},system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,canSee=vi.fn(()=>true),player={x:site.x,y:3,z:site.z};
     actor.yaw=Math.atan2(player.x-actor.position.x,player.z-actor.position.z);actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);

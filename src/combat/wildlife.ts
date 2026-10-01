@@ -10,7 +10,7 @@ export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
 export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'return'|'raid'|'attack'|'dead';
 export type ScavengerArchetype='scavenger'|'lookout'|'guard';
 export interface WildlifeRaidTarget {id:string;position:Vec3}
-export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
+export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;combatMoveTime:number;combatMoveDirection:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
 const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;speed:number;damage:number;aggro:number;name:string;color:number}>={
@@ -32,7 +32,7 @@ export function wildlifeSpeciesForBiome(biome:string,temperature:number):Wildlif
 function createScavenger(id:string,archetype:ScavengerArchetype,position:Vec3,yaw:number,seed:number,attackCooldown:number,savedHealth:number|undefined):WildlifeActor|null {
   if(savedHealth===0)return null;
   const maxHealth=archetype==='guard'?146:SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
-  const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+  const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
     takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
   return actor;
 }
@@ -49,7 +49,7 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     const biome=context.biomeAt(x,z),temperature=biome.includes('SNOW')?.18:biome.includes('COAST')?.62:biome.includes('ARID')?.72:.55,species=wildlifeSpeciesForBiome(biome,temperature);
     if(!species)continue;
     const id=`fauna-${context.seed}-${candidateId++}`,savedHealth=context.nodeChanges?.[id];if(savedHealth===0)continue;
-    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:random()*1.2,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:random()*1.2,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
       takeDamage(packet:DamagePacket,mitigation=0):DamageResult {const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
     actors.push(actor);
   }
@@ -66,6 +66,17 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
 export function lookoutHitChance(actor:WildlifeActor,distance:number):number{return Math.max(.3,Math.min(.76,.7-Math.max(0,distance-8)*.014+actor.awareness*.04));}
 export function guardHitChance(actor:WildlifeActor,distance:number):number{return Math.max(.2,Math.min(.58,.52-Math.max(0,distance-8)*.012+actor.awareness*.025));}
 function deterministicShotRoll(actor:WildlifeActor):number{const sequence=actor.shotSequence??1;let value=(actor.seed^Math.imul(sequence,0x9e3779b1))>>>0;value=Math.imul(value^(value>>>16),0x85ebca6b);value=Math.imul(value^(value>>>13),0xc2b2ae35);value^=value>>>16;return (value>>>0)/0x1_0000_0000;}
+
+/** Ranged scavengers make restrained, seed-phased lateral moves while holding their firing lane. */
+function strafeRangedScavenger(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number):void {
+  actor.combatMoveTime-=dt;
+  if(actor.combatMoveTime<=0){actor.combatMoveDirection=actor.combatMoveDirection===0?((actor.seed&1)?1:-1):-actor.combatMoveDirection;actor.combatMoveTime=1.15+((actor.seed>>>3)%37)/100;}
+  const dx=player.x-actor.position.x,dz=player.z-actor.position.z,distance=Math.hypot(dx,dz);if(distance<.01)return;
+  const step=Math.min(.72*dt,actor.combatMoveTime*.72);
+  actor.position.x+=dz/distance*actor.combatMoveDirection*step;
+  actor.position.z-=dx/distance*actor.combatMoveDirection*step;
+  actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;
+}
 
 /** A confirmed Gen5 sighting or first raid alarm alerts nearby human allies with a short-lived last-known position. */
 export function shareScavengerAlarm(source:WildlifeActor,actors:readonly WildlifeActor[],player:Vec3,radius=24):void{
@@ -104,14 +115,14 @@ export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:
     actor.yaw=Math.atan2(dx,dz);
     if(distance<10){actor.state='reposition';const step=Math.min(11-distance,spec.speed*.75*dt),inverseDistance=distance>.001?1/distance:0;actor.position.x-=dx*inverseDistance*step;actor.position.z-=dz*inverseDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
     if(distance>25){actor.state='chase';const step=Math.min(distance-22,spec.speed*.65*dt);actor.position.x+=dx/distance*step;actor.position.z+=dz/distance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
-    actor.state='attack';if(actor.attackCooldown<=0){const sequence=actor.shotSequence??0;actor.shotSequence=sequence+1;if(deterministicShotRoll(actor)<guardHitChance(actor,distance))onAttack(14,actor.id,'projectile');actor.attackCooldown=2.55+(actor.seed%76)/100;}
+    actor.state='attack';strafeRangedScavenger(actor,dt,player,heightAt);if(actor.attackCooldown<=0){const sequence=actor.shotSequence??0;actor.shotSequence=sequence+1;if(deterministicShotRoll(actor)<guardHitChance(actor,distance))onAttack(14,actor.id,'projectile');actor.attackCooldown=2.55+(actor.seed%76)/100;}
     return;
   }
   if(actor.species==='islandScavenger'&&actor.archetype==='lookout'&&hostile&&distance<38&&canSeePlayer){
     actor.yaw=Math.atan2(dx,dz);
     if(distance<9){actor.state='reposition';const step=Math.min(10-distance,spec.speed*.8*dt),inverseDistance=distance>.001?1/distance:0;actor.position.x-=dx*inverseDistance*step;actor.position.z-=dz*inverseDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
     if(distance>21){actor.state='chase';const step=Math.min(distance-16,spec.speed*.8*dt);actor.position.x+=dx/distance*step;actor.position.z+=dz/distance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
-    actor.state='attack';if(actor.attackCooldown<=0){const sequence=actor.shotSequence??0;actor.shotSequence=sequence+1;if(deterministicShotRoll(actor)<lookoutHitChance(actor,distance))onAttack(9,actor.id,'projectile');actor.attackCooldown=2.15+(actor.seed%46)/100;}
+    actor.state='attack';strafeRangedScavenger(actor,dt,player,heightAt);if(actor.attackCooldown<=0){const sequence=actor.shotSequence??0;actor.shotSequence=sequence+1;if(deterministicShotRoll(actor)<lookoutHitChance(actor,distance))onAttack(9,actor.id,'projectile');actor.attackCooldown=2.15+(actor.seed%46)/100;}
     return;
   }
   if(hostile&&distance<38&&(actor.species!=='islandScavenger'||canSeePlayer)){
