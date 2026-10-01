@@ -5,23 +5,24 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 ## Cíl a postup
 
 - Aktivní Codex Goal: **Tideland — Combat & Endgame Expansion**.
-- Navázáno na vydaný v0.9.2. Rozsah dlouhého úkolu je rozdělen do pěti sledovaných Goalů. Dokončená a ověřená práce: Goal 1 — **35%**, Goal 2 — **25%**, Goal 3 — **0%**, Goal 4 — **0%**, Goal 5 — **8%**; celkem **14% hotovo / 86% zbývá** (stejná váha Goalů).
+- Navázáno na vydaný v0.9.2. Rozsah dlouhého úkolu je rozdělen do pěti sledovaných Goalů. Dokončená a ověřená práce: Goal 1 — **35%**, Goal 2 — **30%**, Goal 3 — **0%**, Goal 4 — **0%**, Goal 5 — **8%**; celkem **15% hotovo / 85% zbývá** (stejná váha Goalů).
 - Goal 1 ověřený slice: animace napnutí luku/šípu a revolver/shotgun přebíjení, combat audio, runtime hit reaction a raycast melee occlusion; přidána Tier III Tidal salvage shotgun s osmi pelety na výstřel, shell ammunition, falloff, recoil, durability/repair, first-person model, ammo HUD a Armory Engineering odemčení.
 - `scripts/ranged-qa.mjs` vybavuje předmět přes aplikační cestu a ověřuje/snímá napnutý luk. `scripts/firearm-qa.mjs` ověřuje revolver reload pózu. Přidány `scripts/shotgun-qa.mjs` a `npm run test:shotgun`; doplněn alias `npm run test:tech-tree`.
 - Goal 2 první slice: scavenger potřebuje zorné pole pro chase/attack. LOS raycast testuje terrain, structures, resource nodes a POIs; kontroly jsou seedově rozfázované po přibližně 0.20–0.25 s a omezené na blízké aktory. Runtime stav se neukládá, takže save schema/layout zůstávají beze změny. Unit testy kryjí blokovanou/volnou viditelnost a throttling; browser `test:scavenger` ověřil POI, útok, porážku, salvage/access card a reload.
 - AI rozšíření: scavenger má 60° horizontální vision cone, průběžné suspicion (rychlejší zblízka), alarm po dosažení plné pozornosti a 3.25s paměť poslední známé polohy. Po ztrátě výhledu tuto pozici prohledá a během hledání nestřílí/nebije naslepo. Runtime AI stav zůstává mimo save; Gen1–4 a formát savů se nemění. `test:scavenger` nově opravdu provede stealth za zády → otočení/odhalení → útok, guard/cache persistence.
+- Bojový hluk: zásah zblízka varuje živé scavengery v okruhu 7 m na 2.4 s; luk podle síly v rozsahu 10–17 m na 2.8 s; revolver 36 m a shotgun 48 m na 5 s. Scavenger vyšetřuje pozici hluku, aniž by byl automaticky trvale rozhněván. Pomocná funkce zohledňuje výškový rozdíl, je deterministická a dead/ostatní wildlife ignoruje. Save formát zůstává beze změny.
 
 ## Git a validace
 
 - Repo: `/Users/romansvora/Documents/Tideland`; `origin` je canonical `https://github.com/rsvora-bit/RUST---clon.git`.
-- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). AI commit `1c4a5a8faa29bf4045b747664bb89d378732bbf6` je pushnutý na pracovní branch; `main`/release se nemění.
-- `npm test`: **242/242 PASS**, 34 test souborů; `git diff --check`: PASS.
-- `npm run build`: **PASS**; známé Vite upozornění na přibližně 3.2 MB JavaScript chunk. Chrome/Metal `test:combat` a `test:scavenger` — **PASS**, bez browser/WebGL console chyb. Ověřeny stealth/view cone, suspicion alarm, combat damage, scavenger loot, cache unlock a save/reload.
+- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). AI/hluk checkpoint `4eefdc85c4e3045264e97b79cb33ffe654fd5fe3` je pushnutý na pracovní branch; `main`/release se nemění.
+- `npm test`: **244/244 PASS**, 35 test souborů; `git diff --check`: PASS.
+- `npm run build`: **PASS**; známé Vite upozornění na přibližně 3.2 MB JavaScript chunk. Chrome/Metal `test:combat`, `test:firearm` a `test:scavenger` — **PASS**, bez browser/WebGL console chyb. Ověřeny stealth/view cone, suspicion alarm, combat noise alert, combat damage, scavenger loot, cache unlock a save/reload.
 - `git diff --check`: PASS před dalším checkpointem. Práce na dalších cílech není dokončena.
 
 ## Další krok
 
-- Pracovní strom bude po tomto dokumentačním checkpointu čistý. Další krok: pokračovat Goal 2 (armor/equipment durability, další AI/world danger), pak Goal 3 (raiding/electricity), Goal 4 (POIs/events) a Goal 5 (balancing, performance, kompletní regression QA). Žádný Goal není kompletní.
+- Pracovní strom bude po tomto dokumentační checkpointu čistý. Další krok: pokračovat Goal 2 (armor/equipment durability a world danger), potom Goal 3 (raiding/electricity), Goal 4 (POIs/events) a Goal 5 (balancing, performance, kompletní regression QA). Žádný Goal není kompletní.
 - `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort` právě běží pro lokální test: `http://127.0.0.1:5173/`. Po ukončení této relace server přestane běžet; na jiném zařízení tato localhost adresa dostupná nebude.
 - Nepublikovat release ani nezapisovat `main` automaticky. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. Aktuální veřejná Pages adresa zůstává vydaná v0.9.2. `gh` CLI není v tomto prostředí instalované.
 
