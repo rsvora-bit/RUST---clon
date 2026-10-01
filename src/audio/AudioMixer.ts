@@ -66,9 +66,10 @@ export class AudioMixer {
     if(kind!=='swing'&&kind!=='reload'){const tone=ctx.createOscillator(),tg=ctx.createGain();tone.type=kind==='stone'?'triangle':'sine';const start=kind==='stone'?190:kind==='wood'?115:kind==='bow'?240:82;tone.frequency.setValueAtTime(start*scale,t);tone.frequency.exponentialRampToValueAtTime(start*.52,t+.10);tg.gain.setValueAtTime(.07*scale,t);tg.gain.exponentialRampToValueAtTime(.001,t+.12);tone.connect(tg);tg.connect(this.sfx);tone.start(t);tone.stop(t+.13);}
   }
 
-  play(kind:'step'|'wood'|'stone'|'pickup'|'build'|'ui'|'door'|'eat'|'error'){
+  play(kind:'step'|'wood'|'stone'|'pickup'|'build'|'ui'|'door'|'eat'|'error'|'alarm'){
     if(kind==='step'){this.footstep('grass',4.4);return;}
     if(!this.ctx||!this.sfx||!this.buffer)return;const ctx=this.ctx,t=ctx.currentTime;
+    if(kind==='alarm'){for(const [index,frequency] of [740,554,740].entries()){const tone=ctx.createOscillator(),gain=ctx.createGain(),start=t+index*.16;tone.type='square';tone.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.09,start+.025);gain.gain.exponentialRampToValueAtTime(.0001,start+.14);tone.connect(gain);gain.connect(this.sfx);tone.start(start);tone.stop(start+.15);}return;}
     const noise=ctx.createBufferSource();noise.buffer=this.buffer;const filter=ctx.createBiquadFilter(),gain=ctx.createGain();filter.type='lowpass';filter.frequency.value=kind==='stone'?2400:kind==='wood'?1000:700;
     noise.connect(filter);filter.connect(gain);gain.connect(this.sfx);gain.gain.setValueAtTime(.45,t);gain.gain.exponentialRampToValueAtTime(.001,t+(kind==='build'?.25:.11));noise.start(t);noise.stop(t+.28);
     if(['pickup','build','ui','error','eat'].includes(kind)){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(kind==='error'?100:kind==='build'?180:720,t);o.frequency.exponentialRampToValueAtTime(kind==='error'?75:kind==='build'?80:1120,t+.12);g.gain.setValueAtTime(.075,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);o.connect(g);g.connect(this.sfx);o.start(t);o.stop(t+.16);}

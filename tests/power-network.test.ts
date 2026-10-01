@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {createStation,poweredLampIds,stationStatus,tickStation,validateStations,type Station} from '../src/survival/stations';
+import {createStation,poweredHomesteadIds,poweredLampIds,stationStatus,tickStation,validateStations,type Station} from '../src/survival/stations';
 
 const station=(id:string,kind:Station['kind'],x:number)=>createStation(id,kind,{x,y:2,z:0});
 
@@ -16,6 +16,13 @@ describe('persistent field power network',()=>{
     generator.active=true;generator.job={recipe:'power',remaining:80};control.active=true;
     expect([...poweredLampIds([generator,control,lamp,farLamp])]).toEqual(['lamp']);control.active=false;expect(poweredLampIds([generator,control,lamp]).size).toBe(0);
     control.active=true;generator.active=false;expect(poweredLampIds([generator,control,lamp]).size).toBe(0);
+  });
+
+  it('can power a homestead beacon through the existing generator and switch network',()=>{
+    const generator=station('generator','generator',0),control=station('switch','powerSwitch',8),beacon=station('beacon','homesteadCore',15),farBeacon=station('far-beacon','homesteadCore',40);
+    generator.active=true;generator.job={recipe:'power',remaining:80};control.active=true;
+    expect([...poweredHomesteadIds([generator,control,beacon,farBeacon])]).toEqual(['beacon']);
+    control.active=false;expect(poweredHomesteadIds([generator,control,beacon]).size).toBe(0);
   });
 
   it('accepts old station snapshots and rejects invalid generator fuel or power jobs',()=>{

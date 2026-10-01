@@ -99,14 +99,16 @@ export const isPlaceableStationKind=isPlayerPlaceableStationKind;
 export const countPlayerStations=(stations:Station[])=>stations.filter(s=>isPlayerPlaceableStationKind(s.kind)).length;
 export function homesteadOwner(stations:Station[],position:Vec3):Station|undefined{return stations.find(s=>s.kind==='homesteadCore'&&Math.hypot(position.x-s.position.x,position.z-s.position.z)<=HOMESTEAD_RADIUS);}
 
-export function poweredLampIds(stations:Station[]):Set<string>{
+function poweredEndpointIds(stations:Station[],kinds:readonly StationKind[]):Set<string>{
   const cellSize=POWER_RANGE,buckets=new Map<string,Station[]>(),key=(x:number,z:number)=>`${Math.floor(x/cellSize)},${Math.floor(z/cellSize)}`;
   for(const s of stations){const k=key(s.position.x,s.position.z),bucket=buckets.get(k);if(bucket)bucket.push(s);else buckets.set(k,[s]);}
   const nearby=(p:Vec3)=>{const cx=Math.floor(p.x/cellSize),cz=Math.floor(p.z/cellSize),out:Station[]=[];for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)out.push(...(buckets.get(`${x},${z}`)??[]));return out;};
   const d2=(a:Vec3,b:Vec3)=>(a.x-b.x)**2+(a.z-b.z)**2,generators=stations.filter(s=>s.kind==='generator'&&s.active&&stationStatus(s)==='ON');
   const switches=stations.filter(s=>s.kind==='powerSwitch'&&s.active&&nearby(s.position).some(g=>generators.includes(g)&&d2(g.position,s.position)<=POWER_RANGE**2));
-  return new Set(stations.filter(s=>s.kind==='lamp'&&nearby(s.position).some(sw=>switches.includes(sw)&&d2(sw.position,s.position)<=POWER_RANGE**2)).map(s=>s.id));
+  return new Set(stations.filter(s=>kinds.includes(s.kind)&&nearby(s.position).some(sw=>switches.includes(sw)&&d2(sw.position,s.position)<=POWER_RANGE**2)).map(s=>s.id));
 }
+export function poweredLampIds(stations:Station[]){return poweredEndpointIds(stations,['lamp']);}
+export function poweredHomesteadIds(stations:Station[]){return poweredEndpointIds(stations,['homesteadCore']);}
 
 export function validateStations(value:unknown):value is Station[]{
   if(!Array.isArray(value)||value.length>MAX_PERSISTED_STATIONS)return false;
