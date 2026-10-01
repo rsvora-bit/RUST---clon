@@ -34,7 +34,7 @@ describe('seeded island wildlife',()=>{
   });
   it('lets a scavenger attack nearby and keeps one shared humanoid model per species',()=>{
     const sites=[{x:180,y:3,z:40}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),actor=system.actors.find(a=>a.species==='islandScavenger')!;
-    const attacks=vi.fn();actor.attackCooldown=0;tickWildlife(actor,1/60,{x:actor.position.x,y:actor.position.y,z:actor.position.z+1},()=>3,attacks);
+    const attacks=vi.fn();actor.alerted=true;actor.attackCooldown=0;tickWildlife(actor,1/60,{x:actor.position.x,y:actor.position.y,z:actor.position.z+1},()=>3,attacks);
     expect(attacks).toHaveBeenCalledOnce();expect(attacks).toHaveBeenCalledWith(12,actor.id);
     const sameSpecies=system.actors.filter(a=>a.species==='islandScavenger');expect(sameSpecies).toHaveLength(1);expect(system.object(actor.id)).toBeInstanceOf(THREE.Mesh);
     system.dispose();
@@ -47,8 +47,22 @@ describe('seeded island wildlife',()=>{
   });
   it('throttles scavenger perception instead of ray testing every frame',()=>{
     const scene=new THREE.Scene(),site={x:5,y:3,z:5},system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,canSee=vi.fn(()=>true),player={x:site.x,y:3,z:site.z};
-    actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);
+    actor.yaw=Math.atan2(player.x-actor.position.x,player.z-actor.position.z);actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);
     expect(canSee).toHaveBeenCalledOnce();expect(actor.canSeePlayer).toBe(true);system.dispose();
+  });
+  it('requires time in the scavenger view cone before raising an alarm',()=>{
+    const site={x:10,y:3,z:10},scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,player={x:actor.position.x+2,y:3,z:actor.position.z};
+    actor.perceptionCooldown=0;actor.yaw=Math.atan2(actor.position.x-player.x,actor.position.z-player.z);system.update(.1,player,()=>3,()=>{});
+    expect(actor.canSeePlayer).toBe(false);expect(actor.awareness).toBe(0);expect(actor.alerted).toBe(false);
+    actor.yaw=Math.atan2(player.x-actor.position.x,player.z-actor.position.z);actor.perceptionCooldown=0;
+    for(let i=0;i<16;i++)system.update(.1,player,()=>3,()=>{});
+    expect(actor.awareness).toBe(1);expect(actor.alerted).toBe(true);system.dispose();
+  });
+  it('investigates the last seen position after losing sight without attacking blindly',()=>{
+    const actor=createWildlifePopulation({...context,scavengerSites:[{x:180,y:3,z:40}]}).find(a=>a.species==='islandScavenger')!;
+    actor.alerted=true;actor.memorySeconds=2;actor.lastKnownPlayer={x:actor.position.x+6,y:3,z:actor.position.z};const start=actor.position.x,attacks=vi.fn();
+    tickWildlife(actor,.1,{x:actor.position.x+10,y:3,z:actor.position.z},()=>3,attacks,false);
+    expect(actor.state).toBe('investigate');expect(actor.position.x).toBeGreaterThan(start);expect(attacks).not.toHaveBeenCalled();
   });
   it('blocks scavenger perception behind solid geometry',()=>{
     const ray=new THREE.Raycaster(),origin=new THREE.Vector3(0,1.5,0),target=new THREE.Vector3(0,1.5,-5),scratch=new THREE.Vector3(),wall=new THREE.Mesh(new THREE.BoxGeometry(3,3,.3),new THREE.MeshBasicMaterial());wall.position.set(0,1.5,-2);wall.updateMatrixWorld(true);
