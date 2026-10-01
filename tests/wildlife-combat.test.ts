@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createWildlifePopulation,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
+import {createWildlifePopulation,lookoutHitChance,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
 import * as THREE from 'three';
 import {WildlifeSystem} from '../src/combat/wildlife';
 import {hasLineOfSight} from '../src/combat/visibility';
@@ -26,6 +26,7 @@ describe('seeded island wildlife',()=>{
   it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');
     expect(scavengers).toHaveLength(2);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
+    expect(scavengers.map(a=>a.archetype)).toEqual(['scavenger','lookout']);expect(scavengers.map(a=>a.archetype)).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>a.archetype));
     const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
     expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id)).toBe(false);
   });
@@ -44,6 +45,18 @@ describe('seeded island wildlife',()=>{
     actor.angered=true;actor.attackCooldown=0;const player={x:actor.position.x,y:actor.position.y,z:actor.position.z+1},attacks=vi.fn();
     tickWildlife(actor,1/60,player,()=>3,attacks,false);expect(actor.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();
     tickWildlife(actor,1/60,player,()=>3,attacks,true);expect(actor.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
+  });
+  it('gives deterministic lookouts a shared bow model and imperfect ranged attacks with spacing',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),lookout=system.actors.find(a=>a.archetype==='lookout')!,guard=system.actors.find(a=>a.archetype==='scavenger')!;
+    expect(lookout).toBeTruthy();expect(system.object(lookout.id)!.geometry).not.toBe(system.object(guard.id)!.geometry);expect(system.object(lookout.id)!.rotation.y).toBeCloseTo(lookout.yaw+Math.PI);
+    lookout.alerted=true;lookout.awareness=1;lookout.attackCooldown=0;expect(lookoutHitChance(lookout,20)).toBeLessThan(lookoutHitChance(lookout,10));const player={x:lookout.position.x,y:lookout.position.y,z:lookout.position.z+15},attacks=vi.fn();
+    for(let i=0;i<600;i++)tickWildlife(lookout,.1,player,()=>3,attacks,true);
+    expect(lookout.state).toBe('attack');expect(attacks).toHaveBeenCalled();expect(attacks.mock.calls.length).toBeLessThan(lookout.shotSequence??0);expect(attacks.mock.calls.every(call=>call[2]==='projectile'&&call[0]===9)).toBe(true);
+    const close={x:lookout.position.x,y:lookout.position.y,z:lookout.position.z+3},before=lookout.position.z;tickWildlife(lookout,.1,close,()=>3,attacks,true);
+    expect(lookout.state).toBe('reposition');expect(lookout.position.z).toBeLessThan(before);
+    const overlap={...lookout.position};tickWildlife(lookout,.1,overlap,()=>3,attacks,true);expect(Object.values(lookout.position).every(Number.isFinite)).toBe(true);
+    const calls=attacks.mock.calls.length;lookout.memorySeconds=1;tickWildlife(lookout,.1,player,()=>3,attacks,false);expect(attacks).toHaveBeenCalledTimes(calls);
+    system.dispose();
   });
   it('throttles scavenger perception instead of ray testing every frame',()=>{
     const scene=new THREE.Scene(),site={x:5,y:3,z:5},system=new WildlifeSystem(scene,{...context,scavengerSites:[site]}),actor=system.actors.find(a=>a.species==='islandScavenger')!,canSee=vi.fn(()=>true),player={x:site.x,y:3,z:site.z};
