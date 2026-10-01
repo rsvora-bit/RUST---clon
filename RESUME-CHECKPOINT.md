@@ -5,23 +5,22 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 ## Cíl a postup
 
 - Aktivní Codex Goal: **Tideland — Combat & Endgame Expansion**.
-- Navázáno na vydaný v0.9.2. Rozsah dlouhého úkolu je rozdělen do pěti sledovaných Goalů. Dosavadní procenta vycházejí jen z dokončené a ověřené práce: Goal 1 — **12%**, Goal 2 — **0%**, Goal 3 — **0%**, Goal 4 — **0%**, Goal 5 — **5%**; celkem **3% hotovo / 97% zbývá** (stejná váha Goalů).
-- Goal 1 ověřený slice: animace napnutí luku a šípu v ruce, revolverová reload póza, odlišné procedurální zvuky pro švih/zásah/přebití/výstřel šípu, krátká runtime reakce wildlife po zásahu a skutečná raycast blokace melee překážkami.
-- Opraven `scripts/ranged-qa.mjs`, aby vybavil předmět přes aplikační cestu a ověřil/snímal napnutý luk. `scripts/firearm-qa.mjs` ověřuje reload pózu. Doplněn chybějící alias `npm run test:tech-tree`.
+- Navázáno na vydaný v0.9.2. Rozsah dlouhého úkolu je rozdělen do pěti sledovaných Goalů. Dokončená a ověřená práce: Goal 1 — **35%**, Goal 2 — **0%**, Goal 3 — **0%**, Goal 4 — **0%**, Goal 5 — **8%**; celkem **8% hotovo / 92% zbývá** (stejná váha Goalů).
+- Goal 1 ověřený slice: animace napnutí luku/šípu a revolver/shotgun přebíjení, combat audio, runtime hit reaction a raycast melee occlusion; přidána Tier III Tidal salvage shotgun s osmi pelety na výstřel, shell ammunition, falloff, recoil, durability/repair, first-person model, ammo HUD a Armory Engineering odemčení.
+- `scripts/ranged-qa.mjs` vybavuje předmět přes aplikační cestu a ověřuje/snímá napnutý luk. `scripts/firearm-qa.mjs` ověřuje revolver reload pózu. Přidány `scripts/shotgun-qa.mjs` a `npm run test:shotgun`; doplněn alias `npm run test:tech-tree`.
 
 ## Git a validace
 
 - Repo: `/Users/romansvora/Documents/Tideland`; `origin` je canonical `https://github.com/rsvora-bit/RUST---clon.git`.
-- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Combat checkpoint `893c925` je pushnutý na odpovídající origin branch. Vývojová větev zůstává oddělená od `main`; PR/tag/release nebyly vytvořeny.
-- `npm test`: **233/233 PASS**, 34 test souborů.
+- Branch: `codex/combat-endgame-next`, vytvořená z aktuálního `origin/main`; základní commit a `origin/main` byly `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Brokovnice je commitnutá jako `79b4fc4` a čeká na push. Větev zůstává oddělená od `main`; PR/tag/release nebyly vytvořeny.
+- `npm test`: **237/237 PASS**, 34 test souborů.
 - `npm run build`: **PASS**; přetrvává původní Vite upozornění na přibližně 3.2 MB JavaScript chunk.
-- Browser QA v nainstalovaném Chrome s ANGLE Metal: `test:combat`, `test:ranged`, `test:firearm` a nový alias `test:tech-tree` — **PASS**, bez browser/WebGL console chyb. Bow i revolver reload animace mají konkrétní diagnostický assertion; melee wildlife hit a save/reload prošly. Screenshoty jsou ignorované artefakty v `test-results/`; napnutý luk vizuálně kontrolován, nepřekrývá zaměřovací střed.
+- Browser QA v nainstalovaném Chrome s ANGLE Metal: `test:combat`, `test:ranged`, `test:firearm`, `test:shotgun` a `test:tech-tree` — **PASS**, bez browser/WebGL console chyb. Shotgun výstřel zasáhl wildlife, spotřeboval jeden shell, wear, reload animace a save/reload vyšly správně. Screenshoty jsou ignorované artefakty v `test-results/`; napnutý luk a shotgun póza vizuálně kontrolovány.
 - `git diff --check`: PASS před dalším checkpointem. Práce na dalších cílech není dokončena.
 
 ## Další krok
 
-- Pokračovat Goal 1 od konzistentního, ověřeného checkpointu: zlepšit impact/cooldown feel, melee wall-occlusion browser regression a pak zvolit malou integrovanou zbraňovou progresi (shotgun-like až po jeho ammo, crafting/tech unlock, viewmodel, recoil, durability a QA). Nepřidávat povrchní zbraně bez celé herní smyčky.
-- Následují Goals 2–5: armor/AI; raiding/electricity; minimálně dva integrované POI a dvě save-safe události; balancing, performance a plná regression QA.
+- Další krok: Goal 2 — scavenger perception/line-of-sight s throttled AI a další equipment tier. Goals 2–4 zatím nejsou započaté; Goal 3 vyžaduje raiding/electricity, Goal 4 dva obsahově kompletní POI a dvě save-safe events. Goal 5 musí pokrýt finální balancing, performance a plnou regression QA.
 - `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort` právě běží pro lokální test: `http://127.0.0.1:5173/`. Po ukončení této relace server přestane běžet; na jiném zařízení tato localhost adresa dostupná nebude.
 - Nepublikovat release ani nezapisovat `main` automaticky. GitHub Pages workflow publikuje pouze `main` a version tagy, proto samotný branch push nevytvoří veřejný Playable Pages preview. Aktuální veřejná Pages adresa zůstává vydaná v0.9.2. `gh` CLI není v tomto prostředí instalované.
 
