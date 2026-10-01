@@ -16,6 +16,7 @@
     "test:door-lock": "node scripts/door-lock-qa.mjs",
     "test:power": "node scripts/power-network-qa.mjs",
     "test:base-security": "node scripts/base-security-qa.mjs",
+    "test:raiding": "node scripts/raiding-qa.mjs",
     "test:scavenger": "node scripts/scavenger-qa.mjs",
     "test:world-events": "node scripts/world-events-qa.mjs",
     "test:firearm": "node scripts/firearm-qa.mjs",

@@ -41,8 +41,7 @@ import {MELEE_WEAPONS,resolveMeleeHit} from '../combat/melee';
 import {FIREARMS,consumeLoadedRound,firearmDoorDamage,firearmShotDirection,isFirearm,loadedRounds,roundsToLoad} from '../combat/firearms';
 import {itemCondition,maxDurability} from '../combat/durability';
 import {advanceArrow,arrowLaunchVelocity,bowStrength,segmentSphereHit,type ArrowFlight} from '../combat/projectile';
-import {WildlifeSystem,wildlifeDefinition,type WildlifeActor} from '../combat/wildlife';
-import {hasLineOfSight} from '../combat/visibility';
+import {WildlifeSystem,wildlifeDefinition,type WildlifeActor,type WildlifeRaidTarget} from '../combat/wildlife';
 import {alertScavengersToNoise} from '../combat/noise';
 import {coldExposureAt,toxicExposureAt} from '../survival/hazards';
 import type {BuildCandidate,GameState,HUDData,ItemId,PieceType,ResourceNode,Screen,Settings,Structure,Vec3} from '../core/types';
@@ -60,7 +59,7 @@ export class GameApp {
   private capturePaused=false;
   private worldSurvival!:WorldSurvival;private weather!:Weather;private islandMap!:IslandMap;private wildlife!:WildlifeSystem;private uiContainer:HTMLElement;
   private hammerMenu:HammerMenu;private terminalReturn:Screen='menu';
-  private stationRenderer!:StationRenderer;private stationUI:StationUI;private techTreeUI:TechTreeUI;private terminal:DevTerminal;private openStation:string|null=null;private stationIds=new Set<string>();private stationPlacement:{kind:StationKind;position:THREE.Vector3;valid:boolean}|null=null;private homesteadAlarmKeys=new Set<string>();private poweredHomesteadCores=new Set<string>();private poweredHomesteadStations:Station[]=[];private homesteadAlarmCores=new Set<string>();private lastHomesteadPowerRefresh=-1;
+  private stationRenderer!:StationRenderer;private stationUI:StationUI;private techTreeUI:TechTreeUI;private terminal:DevTerminal;private openStation:string|null=null;private stationIds=new Set<string>();private stationPlacement:{kind:StationKind;position:THREE.Vector3;valid:boolean}|null=null;private homesteadAlarmKeys=new Set<string>();private poweredHomesteadCores=new Set<string>();private poweredHomesteadStations:Station[]=[];private homesteadAlarmCores=new Set<string>();private scavengerRaidTargets=new Map<string,WildlifeRaidTarget|null>();private lastHomesteadPowerRefresh=-1;
   private lastSafeGrounded:Vec3|null=null;private toxicExposureSeconds=0;private insideToxicZone=false;private coldExposureSeconds=0;private insideColdZone=false;
 
   private last=0;private accumulator=0;private uiTimer=0;private elapsed=0;private autoSave=0;private cooldown=0;private reloadRemaining=0;private reloadSlot=-1;private firearmShotSequence=0;private fps=60;private frameMs=16.7;private timeMultiplier=1;private loading=false;private leftDown=false;private loopStarted=false;private loopMode:'vsync'|'uncapped'|null=null;private frameChannel:MessageChannel|null=null;private knownStructures=new Map<string,string>();private rainBarrels:THREE.Group[]=[];private flyMode=false;private godMode=false;
@@ -98,7 +97,7 @@ export class GameApp {
     const channel=new MessageChannel();this.frameChannel=channel;channel.port1.onmessage=()=>{if(this.frameChannel!==channel||this.loopMode!=='uncapped'||this.settings.vsync)return;this.frame(performance.now());channel.port2.postMessage(0);};channel.port2.postMessage(0);
   }
   private async makeWorld(seed:number,saved?:GameState){
-    this.homesteadAlarmKeys.clear();this.poweredHomesteadCores.clear();this.poweredHomesteadStations=[];this.homesteadAlarmCores.clear();this.lastHomesteadPowerRefresh=-1;
+    this.homesteadAlarmKeys.clear();this.poweredHomesteadCores.clear();this.poweredHomesteadStations=[];this.homesteadAlarmCores.clear();this.scavengerRaidTargets.clear();this.lastHomesteadPowerRefresh=-1;
     this.bowDrawStarted=null;for(const arrow of this.arrows)arrow.mesh.removeFromParent();this.arrows=[];
     this.wildlife?.dispose();this.worldSurvival?.dispose();this.weather?.dispose();this.islandMap?.dispose();
     this.stationRenderer?.dispose();this.stationIds.clear();this.stationUI?.close();this.openStation=null;this.interactions.clear();this.gatheringFeedback.clear();this.knownStructures.clear();for(const barrel of this.rainBarrels)barrel.removeFromParent();this.rainBarrels=[];this.structures?.dispose();this.worldItems?.dispose();this.physics?.dispose();this.environment?.dispose();
@@ -200,8 +199,13 @@ export class GameApp {
   private scavengerHasLineOfSight(actor:WildlifeActor){
     this.wildlifeSightOrigin.set(actor.position.x,actor.position.y+1.25,actor.position.z);
     const blockers=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values(),this.worldSurvival.group];
-    return hasLineOfSight(this.ray,this.wildlifeSightOrigin,this.camera.position,blockers,this.wildlifeSightDirection);
+    this.wildlifeSightDirection.subVectors(this.camera.position,this.wildlifeSightOrigin);const distance=this.wildlifeSightDirection.length();if(distance<=.2){this.scavengerRaidTargets.set(actor.id,null);return true;}
+    this.ray.set(this.wildlifeSightOrigin,this.wildlifeSightDirection.multiplyScalar(1/distance));this.ray.near=0;this.ray.far=distance-.2;const first=this.ray.intersectObjects(blockers,true)[0],id=first?.object.userData.structureId;
+    if(typeof id==='string'){const structure=this.simulation.state.structures.find(entry=>entry.id===id);this.scavengerRaidTargets.set(actor.id,structure?.pieceType==='door'&&structure.locked&&!structure.open&&homesteadOwner(ensureProgression(this.simulation.state).stations,structure.position)?{id,position:{...structure.position}}:null);}
+    else this.scavengerRaidTargets.set(actor.id,null);
+    return !first;
   }
+  private scavengerRaidTarget(actor:WildlifeActor){return this.scavengerRaidTargets.get(actor.id)??null;}
   private emitCombatNoise(radius:number,memorySeconds:number){return alertScavengersToNoise(this.wildlife.actors,this.simulation.state.player.position,radius,memorySeconds);}
   private updateHomesteadSecurity(time:number){
     const stations=ensureProgression(this.simulation.state).stations;
@@ -414,7 +418,7 @@ export class GameApp {
     if(running&&this.activeWorld){
       if(this.reloadRemaining>0&&playing&&!this.capturePaused){const slot=this.reloadSlot,stack=this.simulation.state.inventory[slot];if(slot!==this.simulation.state.activeSlot||!stack||!isFirearm(stack.itemId)){this.reloadRemaining=0;this.reloadSlot=-1;}else{this.reloadRemaining=Math.max(0,this.reloadRemaining-dt);if(this.reloadRemaining===0){const weapon=FIREARMS[stack.itemId],amount=roundsToLoad(stack,this.simulation.count(weapon.ammoItemId),weapon);if(amount>0&&this.simulation.removeItem(weapon.ammoItemId,amount)){stack.loadedAmmo=loadedRounds(stack,weapon)+amount;this.ui.notify(`Reloaded · ${loadedRounds(stack,weapon)} / ${weapon.magazineSize}`);this.save(false,false);}else this.ui.notify('Reload interrupted · no reserve ammunition');this.reloadSlot=-1;}}}
       this.accumulator+=this.capturePaused?0:dt;let steps=0;while(this.accumulator>=1/60&&steps<6){if(this.flyMode)this.tickFly(1/60,playing);else this.player.tick(1/60,this.simulation.state,playing);this.simulation.tick(1/60,this.flyMode?false:this.player.sprinting);if(this.godMode){const stats=this.simulation.state.player.stats;stats.health=stats.hunger=stats.thirst=stats.stamina=100;}this.accumulator-=1/60;steps++;}
-      if(playing&&!this.capturePaused)this.wildlife.update(dt,this.simulation.state.player.position,(x,z)=>this.environment.heightAt(x,z),(amount,sourceId,type='melee')=>{const result=this.applyPlayerDamage({amount,type,sourceId});if(result.ok&&!result.killed)this.audio.play('error');},actor=>this.scavengerHasLineOfSight(actor));
+      if(playing&&!this.capturePaused)this.wildlife.update(dt,this.simulation.state.player.position,(x,z)=>this.environment.heightAt(x,z),(amount,sourceId,type='melee')=>{const result=this.applyPlayerDamage({amount,type,sourceId});if(result.ok&&!result.killed)this.audio.play('error');},actor=>this.scavengerHasLineOfSight(actor),actor=>this.scavengerRaidTarget(actor),(id,amount)=>{const result=this.damageStructure(id,amount);if(result.ok&&result.removedIds?.includes(id))this.ui.notify('Homestead door breached · hostile scavenger entered');});
       if(playing&&!this.capturePaused)this.updateHomesteadSecurity(this.elapsed);
       if(playing&&!this.capturePaused&&this.arrows.length)this.updateArrows(dt);
       if(playing&&!this.capturePaused){const state=this.simulation.state,p=state.player.position,generation=state.worldGeneration??1,revision=state.worldRevision??1,toxic=toxicExposureAt(p,this.worldSurvival.pois,generation,revision);if(toxic>0){if(!this.insideToxicZone)this.ui.notify('Contaminated battery runoff · protective hood recommended');this.insideToxicZone=true;this.toxicExposureSeconds+=dt;if(this.toxicExposureSeconds>=1){this.toxicExposureSeconds-=1;this.damagePlayer(1.6*toxic,'toxic relay contamination');}}else{if(this.insideToxicZone)this.ui.notify('Clear air · contamination exposure ended');this.insideToxicZone=false;this.toxicExposureSeconds=0;}const weather=ensureProgression(state).weather.kind,cold=coldExposureAt(this.environment.terrain.climateAt(p.x,p.z),state.timeOfDay,weather,generation,revision);if(cold>.18){if(!this.insideColdZone)this.ui.notify('Severe alpine cold · insulated jacket recommended');this.insideColdZone=true;this.coldExposureSeconds+=dt;if(this.coldExposureSeconds>=1){this.coldExposureSeconds-=1;this.damagePlayer(1.25*cold,'cold exposure');}}else{if(this.insideColdZone)this.ui.notify('Shelter from the cold · exposure ended');this.insideColdZone=false;this.coldExposureSeconds=0;}}

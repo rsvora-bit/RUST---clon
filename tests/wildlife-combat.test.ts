@@ -46,6 +46,13 @@ describe('seeded island wildlife',()=>{
     tickWildlife(actor,1/60,player,()=>3,attacks,false);expect(actor.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();
     tickWildlife(actor,1/60,player,()=>3,attacks,true);expect(actor.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
   });
+  it('lets a hostile scavenger breach a claimed locked door without attacking through it',()=>{
+    const actor=createWildlifePopulation({...context,scavengerSites:[{x:180,y:3,z:40}]}).find(a=>a.species==='islandScavenger')!;
+    actor.position={x:0,y:3,z:3};actor.alerted=true;actor.angered=true;actor.attackCooldown=0;actor.blockedRaidDoor={id:'claimed-door',position:{x:0,y:3,z:0}};
+    const player={x:0,y:3,z:-4},playerAttacks=vi.fn(),doorAttacks=vi.fn();
+    for(let i=0;i<24;i++)tickWildlife(actor,.1,player,()=>3,playerAttacks,false,(id,damage)=>doorAttacks(id,damage));
+    expect(actor.state).toBe('raid');expect(actor.position.z).toBeGreaterThanOrEqual(1.24);expect(doorAttacks).toHaveBeenCalledWith('claimed-door',14);expect(playerAttacks).not.toHaveBeenCalled();
+  });
   it('gives deterministic lookouts a shared bow model and imperfect ranged attacks with spacing',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),lookout=system.actors.find(a=>a.archetype==='lookout')!,guard=system.actors.find(a=>a.archetype==='scavenger')!;
     expect(lookout).toBeTruthy();expect(system.object(lookout.id)!.geometry).not.toBe(system.object(guard.id)!.geometry);expect(system.object(lookout.id)!.rotation.y).toBeCloseTo(lookout.yaw+Math.PI);

@@ -6,9 +6,10 @@ import type {Vec3,WorldGeneration} from '../core/types';
 import {randomSource} from '../world/noise';
 
 export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
-export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'return'|'attack'|'dead';
+export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'return'|'raid'|'attack'|'dead';
 export type ScavengerArchetype='scavenger'|'lookout'|'guard';
-export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;readonly home:Vec3;readonly seed:number}
+export interface WildlifeRaidTarget {id:string;position:Vec3}
+export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
 const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;speed:number;damage:number;aggro:number;name:string;color:number}>={
@@ -70,13 +71,20 @@ export function shareScavengerAlarm(source:WildlifeActor,actors:readonly Wildlif
   }
 }
 
-export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string,type?:DamageType)=>void,canSeePlayer=true):void {
+export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string,type?:DamageType)=>void,canSeePlayer=true,onRaid?:(targetId:string,damage:number)=>void):void {
   if(actor.state==='dead')return;
   const spec=SPECIES[actor.species],dx=player.x-actor.position.x,dz=player.z-actor.position.z,distance=Math.hypot(dx,dz);
   actor.attackCooldown=Math.max(0,actor.attackCooldown-dt);
   if(distance>92){actor.state='wander';return;}
   const animalAggro=actor.species!=='islandScavenger'&&spec.aggro>0&&distance<spec.aggro;
   const hostile=actor.angered||actor.alerted||animalAggro;
+  const raidDoor=actor.species==='islandScavenger'&&hostile&&!canSeePlayer?actor.blockedRaidDoor:undefined;
+  if(raidDoor){
+    const awayX=actor.position.x-raidDoor.position.x,awayZ=actor.position.z-raidDoor.position.z,sideLength=Math.hypot(awayX,awayZ)||1,approachX=raidDoor.position.x+awayX/sideLength*1.25,approachZ=raidDoor.position.z+awayZ/sideLength*1.25,dx=approachX-actor.position.x,dz=approachZ-actor.position.z,approachDistance=Math.hypot(dx,dz);
+    actor.yaw=Math.atan2(raidDoor.position.x-actor.position.x,raidDoor.position.z-actor.position.z);
+    if(approachDistance>.12){actor.state='raid';const step=Math.min(approachDistance,spec.speed*dt);actor.position.x+=dx/approachDistance*step;actor.position.z+=dz/approachDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
+    actor.state='raid';if(actor.attackCooldown<=0){onRaid?.(raidDoor.id,14);actor.attackCooldown=1.8+(actor.seed%41)/100;}return;
+  }
   if(actor.species==='islandScavenger'&&hostile&&!canSeePlayer&&actor.memorySeconds>0){
     const lx=actor.lastKnownPlayer.x-actor.position.x,lz=actor.lastKnownPlayer.z-actor.position.z,knownDistance=Math.hypot(lx,lz);
     if(knownDistance>1.45&&knownDistance<38){actor.state='investigate';actor.yaw=Math.atan2(lx,lz);const step=Math.min(knownDistance-1.2,spec.speed*dt);actor.position.x+=lx/knownDistance*step;actor.position.z+=lz/knownDistance*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;}
@@ -165,8 +173,8 @@ export class WildlifeSystem {
   }
   private createModel(actor:WildlifeActor){const key=this.geometryKey(actor),mesh=new THREE.Mesh(this.geometryFor(actor),this.materials.get(key)!);mesh.scale.setScalar(SPECIES[actor.species].scale);mesh.position.set(actor.position.x,actor.position.y,actor.position.z);mesh.rotation.y=actor.yaw+(actor.species==='islandScavenger'?Math.PI:0);mesh.castShadow=false;mesh.receiveShadow=false;mesh.frustumCulled=true;return mesh;}
   object(id:string){return this.objects.get(id)??null;}
-  update(dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string,type?:DamageType)=>void,lineOfSight?:(actor:WildlifeActor,player:Vec3)=>boolean){
-    for(const actor of this.actors){const object=this.objects.get(actor.id);if(actor.state==='dead'){if(object)object.visible=false;continue;}const distance=Math.hypot(player.x-actor.position.x,player.z-actor.position.z);if(distance>100){if(object)object.visible=false;continue;}let canSeePlayer=true;if(actor.species==='islandScavenger'){actor.perceptionCooldown-=dt;if(actor.perceptionCooldown<=0){const dx=player.x-actor.position.x,dz=player.z-actor.position.z,forwardX=Math.sin(actor.yaw),forwardZ=Math.cos(actor.yaw),inView=distance<.01||(dx*forwardX+dz*forwardZ)/distance>=.5;actor.canSeePlayer=distance<SPECIES.islandScavenger.aggro+5&&inView&&(lineOfSight?.(actor,player)??true);actor.perceptionCooldown=.20+(actor.seed%51)/1000;}canSeePlayer=actor.canSeePlayer;if(canSeePlayer){actor.awareness=Math.min(1,actor.awareness+dt*(distance<8?.85:.42));if(actor.awareness>=1&&!actor.alerted){actor.alerted=true;shareScavengerAlarm(actor,this.actors,player);}actor.lastKnownPlayer.x=player.x;actor.lastKnownPlayer.y=player.y;actor.lastKnownPlayer.z=player.z;actor.memorySeconds=3.25;}else{actor.awareness=Math.max(0,actor.awareness-dt*.16);actor.memorySeconds=Math.max(0,actor.memorySeconds-dt);}}tickWildlife(actor,dt,player,heightAt,onAttack,canSeePlayer);actor.hitReaction=Math.max(0,actor.hitReaction-dt*4.2);if(object){object.visible=true;object.position.set(actor.position.x,actor.position.y+(actor.state==='attack'?Math.sin(actor.attackCooldown*7)*.018:0)+actor.hitReaction*.055,actor.position.z);object.rotation.y=actor.yaw+(actor.species==='islandScavenger'?Math.PI:0);object.rotation.x=-actor.hitReaction*.13;}}
+  update(dt:number,player:Vec3,heightAt:(x:number,z:number)=>number,onAttack:(damage:number,sourceId:string,type?:DamageType)=>void,lineOfSight?:(actor:WildlifeActor,player:Vec3)=>boolean,raidTarget?:(actor:WildlifeActor,player:Vec3)=>WildlifeRaidTarget|null,onRaid?:(targetId:string,damage:number,actor:WildlifeActor)=>void){
+    for(const actor of this.actors){const object=this.objects.get(actor.id);if(actor.state==='dead'){if(object)object.visible=false;continue;}const distance=Math.hypot(player.x-actor.position.x,player.z-actor.position.z);if(distance>100){if(object)object.visible=false;continue;}let canSeePlayer=true;if(actor.species==='islandScavenger'){actor.perceptionCooldown-=dt;if(actor.perceptionCooldown<=0){const dx=player.x-actor.position.x,dz=player.z-actor.position.z,forwardX=Math.sin(actor.yaw),forwardZ=Math.cos(actor.yaw),inView=distance<.01||(dx*forwardX+dz*forwardZ)/distance>=.5;actor.canSeePlayer=distance<SPECIES.islandScavenger.aggro+5&&inView&&(lineOfSight?.(actor,player)??true);actor.blockedRaidDoor=!actor.canSeePlayer&&(actor.alerted||actor.angered)?raidTarget?.(actor,player)??undefined:undefined;actor.perceptionCooldown=.20+(actor.seed%51)/1000;}canSeePlayer=actor.canSeePlayer;if(canSeePlayer){actor.awareness=Math.min(1,actor.awareness+dt*(distance<8?.85:.42));if(actor.awareness>=1&&!actor.alerted){actor.alerted=true;shareScavengerAlarm(actor,this.actors,player);}actor.lastKnownPlayer.x=player.x;actor.lastKnownPlayer.y=player.y;actor.lastKnownPlayer.z=player.z;actor.memorySeconds=3.25;}else{actor.awareness=Math.max(0,actor.awareness-dt*.16);actor.memorySeconds=Math.max(0,actor.memorySeconds-dt);}}tickWildlife(actor,dt,player,heightAt,onAttack,canSeePlayer,(id,damage)=>onRaid?.(id,damage,actor));actor.hitReaction=Math.max(0,actor.hitReaction-dt*4.2);if(object){object.visible=true;object.position.set(actor.position.x,actor.position.y+(actor.state==='attack'?Math.sin(actor.attackCooldown*7)*.018:0)+actor.hitReaction*.055,actor.position.z);object.rotation.y=actor.yaw+(actor.species==='islandScavenger'?Math.PI:0);object.rotation.x=-actor.hitReaction*.13;}}
   }
   dispose(){for(const object of this.objects.values())object.removeFromParent();for(const geometry of this.geometries.values())geometry.dispose();for(const material of this.materials.values())material.dispose();this.materials.clear();this.geometries.clear();this.objects.clear();}
 }
