@@ -3,6 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import type {DamagePacket,DamageResult,Damageable,DamageType} from './damage';
 import {resolveDamage} from './damage';
 import type {Vec3,WorldGeneration} from '../core/types';
+import type {StructureGrade} from '../core/types';
 import {randomSource} from '../world/noise';
 
 export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
@@ -17,6 +18,9 @@ const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;s
   coastalBoar:{health:92,radius:.72,scale:.95,speed:2.8,damage:13,aggro:0,name:'Coastal boar',color:0x735641},
   islandScavenger:{health:112,radius:.58,scale:1,speed:2.55,damage:12,aggro:21,name:'Island scavenger',color:0x71664c},
 };
+
+/** Higher construction grades slow a raid, keeping structure upgrades defensively meaningful. */
+export function scavengerRaidDamage(grade:StructureGrade='wood'):number{return grade==='metal'?4:grade==='stone'?8:14;}
 
 export function wildlifeSpeciesForBiome(biome:string,temperature:number):WildlifeSpecies|null {
   if(biome.includes('SNOW')||biome.includes('ALPINE'))return temperature<.34?'islandWolf':null;

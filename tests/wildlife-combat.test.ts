@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createWildlifePopulation,guardHitChance,lookoutHitChance,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
+import {createWildlifePopulation,guardHitChance,lookoutHitChance,scavengerRaidDamage,tickWildlife,wildlifeSpeciesForBiome} from '../src/combat/wildlife';
 import * as THREE from 'three';
 import {WildlifeSystem} from '../src/combat/wildlife';
 import {hasLineOfSight} from '../src/combat/visibility';
@@ -7,6 +7,9 @@ import {hasLineOfSight} from '../src/combat/visibility';
 const context={seed:731942,generation:5 as const,spawn:{x:0,y:3,z:0},halfSize:640,heightAt:()=>3,biomeAt:()=>'TEMPERATE FOREST'};
 
 describe('seeded island wildlife',()=>{
+  it('makes upgraded structure grades progressively harder for scavenger raids',()=>{
+    expect(scavengerRaidDamage('wood')).toBe(14);expect(scavengerRaidDamage('stone')).toBe(8);expect(scavengerRaidDamage('metal')).toBe(4);
+  });
   it('uses climate and biome to avoid inappropriate fauna',()=>{
     expect(wildlifeSpeciesForBiome('TEMPERATE FOREST',.55)).toBe('islandWolf');
     expect(wildlifeSpeciesForBiome('SNOW / ALPINE',.18)).toBe('islandWolf');
