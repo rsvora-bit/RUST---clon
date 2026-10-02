@@ -827,3 +827,11 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `src/world/atmosphere.ts`: hemisférické fill světlo se nyní mění s denním světlem od 1.42 v noci po 2.0 ve dne (původní konstantní základ 1.8 až 2.2). Noc získává hlubší stíny, ale ambient zůstává hratelný; save, gameplay a geometrie beze změny.
 - `tests/environment-visuals.test.ts` ověřuje, že noční fill je nad 1.35 a denní vyšší. Testy **4/4 PASS**, `npm run build` PASS (známý chunk warning), `test:world-art` PASS se dnem/nocí, bouřkou/zábleskem, shoreline debris a archivními save reloady; konzole/WebGL errors 0. Prohlédnuty noční a denní záběry. Bez nových meshes/draw calls.
 - Změna čeká na checkpoint commit v `codex/world-revision-6`; poslední performance měření před touto samotnou světelnou křivkou bylo Rev6 **60 FPS / 16.666ms / 680 calls / 4,157,050 tris / 2,033 nodes**, bez chyb.
+
+
+## v0.10 pokračování — Climate-aware understory transition — 2026-10-03
+
+- `src/rendering/environment.ts`: Rev6 fern/twig/dry-tuft eligibility nyní vychází z continuous `surfaceClimate` forest/arid/snow/marsh weights; Rev1–5 ponechávají dosavadní biome pravidla. Rev6 fern batch se zvyšuje z 1 850 na 2 400 instancí, se stejnou shared geometry/material/InstancedMesh. `scripts/world-art-qa.mjs` kontroluje nový target; starší save/world identity se nemění.
+- `test:world-art` PASS s přesně 2 400 ferns, shore clusters, canopy variation, lighting/weather screenshoty, archivní save load/reload; browser/WebGL errors 0. Unit `tests/world-art.test.ts` **20/20 PASS**, `npm run build` PASS (známý ~3.27 MB JS chunk warning).
+- Chrome Metal HIGH 1280×720: archive v0.9.0 **60 FPS / 16.666ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,892ms startup**; Rev6 **60.01 FPS / 16.664ms / 680 calls / 4,221,850 tris / 2,033 nodes / 3,220ms startup**, errors 0. +64,800 tris (+1.6 %) proti předchozímu Rev6, bez nových draw calls; 60Hz capped.
+- Změna čeká na checkpoint commit na `codex/world-revision-6`; release/main/tag/Pages nedotčené.
