@@ -44,7 +44,7 @@ export class IslandTerrain {
       const variation=.87+n1*.24;let tr=1,tg=1,tb=1,arid=0,snow=0,forest=0,marsh=0;if(this.generation===5){const c=this.climateAtRaw(x,z,h),wetlandNoise=this.revision>=6?this.noise.at(x*.0071+72,z*.0071-31):0;({snow,arid,forest,marsh}=surfaceClimate(c,h,slope,wetlandNoise));tr=.95+(.78-.95)*forest;tg=1+(.94-1)*forest;tb=.86+(.72-.86)*forest;tr+=(1.08-tr)*arid;tg+=(.93-tg)*arid;tb+=(.70-tb)*arid;tr+=(1.28-tr)*snow;tg+=(1.30-tg)*snow;tb+=(1.34-tb)*snow;tr+=(.91-tr)*rock;tg+=(.94-tg)*rock;tb+=(.96-tb)*rock;tr+=(1.03-tr)*marsh;tg+=(.99-tg)*marsh;tb+=(.87-tb)*marsh;}colors.set([variation*tr,variation*tg,variation*tb],i*3);
       climateWeights.set([arid,snow,forest,marsh],i*4);
     }
-    this.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));this.geometry.setAttribute('surfaceWeights',new THREE.BufferAttribute(weights,3));this.geometry.setAttribute('surfaceClimate',new THREE.BufferAttribute(climateWeights,3));
+    this.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));this.geometry.setAttribute('surfaceWeights',new THREE.BufferAttribute(weights,3));this.geometry.setAttribute('surfaceClimate',new THREE.BufferAttribute(climateWeights,4));
     this.heightTexture=new THREE.DataTexture(texData,n+1,n+1,THREE.RGBAFormat);this.heightTexture.minFilter=THREE.LinearFilter;this.heightTexture.magFilter=THREE.LinearFilter;this.heightTexture.needsUpdate=true;
     this.spawn.y=this.heightAt(this.spawn.x,this.spawn.z)+2;
   }
