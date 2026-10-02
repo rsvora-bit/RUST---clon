@@ -78,9 +78,17 @@ export class WorldSurvival {
     }else if(p.kind===7){
       // A ridge-top triangular relay frame breaks the skyline and helps long-range navigation.
       for(const [x,z] of [[-1.45,-1],[1.45,-1],[0,1.55]] as const){const leg=this.box(g,x,5.2,z,.16,10.4,.16,this.metal);leg.rotation.z=x<0?-.19:x>0?.19:0;leg.name='Highland relay tower leg';}
-      for(let y=2;y<10;y+=2.2){const brace=this.box(g,0,y,0,3.2,.09,.09,this.rust);brace.rotation.z=.4+(y%2)*.35;}
+      for(let y=1.5;y<10;y+=2.1){for(const direction of [-1,1]){const brace=this.box(g,0,y,0,3.2,.075,.075,this.rust);brace.rotation.z=direction*(.35+(y%2)*.24);brace.name='Highland relay lattice crossbrace';}}
+      for(const x of [-.28,.28]){const rail=this.box(g,x,4.55,1.64,.055,8.8,.055,this.metal);rail.name='Highland relay access ladder';}
+      for(let rung=0;rung<18;rung++){const step=this.box(g,0,.45+rung*.48,1.65,.62,.045,.055,this.rust);step.name='Highland relay access ladder rung';}
       this.box(g,0,10.65,0,2.5,.2,.2,this.wood).name='Highland relay crossarm';
       const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Highland relay dish';dish.position.set(-.55,11.6,.1);dish.rotation.set(.3,.1,.75);dish.scale.set(1.35,.95,.23);dish.castShadow=true;g.add(dish);
+      this.box(g,2.45,.74,.15,.88,1.34,.76,this.metal).name='Highland relay control cabinet';
+      this.box(g,2.45,.82,.555,.62,.88,.045,this.paint).name='Highland relay cabinet door';
+      for(let vent=0;vent<6;vent++){const slot=this.box(g,2.45,.68+vent*.095,.586,.36,.027,.018,this.rust);slot.name='Highland relay cabinet vent';}
+      this.box(g,2.45,1.06,.602,.32,.17,.025,this.display).name='Highland relay status display';
+      for(const x of [-.7,.65]){const cable=this.box(g,(x+2.18)*.5,.26,.12,Math.hypot(2.18-x,.12),.035,.035,this.rust);cable.rotation.z=Math.atan2(.12,2.18-x);cable.name='Highland relay ground cable';}
+      const beacon=new T.Mesh(new T.SphereGeometry(.13,8,6),this.display);beacon.name='Highland relay signal beacon';beacon.position.set(0,12.95,0);beacon.castShadow=true;beacon.receiveShadow=true;g.add(beacon);
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===5){
       // A stranded coastal hauler creates a readable silhouette from its broken mast and stacked cargo.
