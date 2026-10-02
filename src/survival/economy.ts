@@ -45,6 +45,17 @@ export function fillPoiLoot(station:Station,kind:number,tier:LootTier,rand:()=>n
   if(station.inventory.every(slot=>slot===null))insertItem(station.inventory,'wood',40);
 }
 
+/** Locked Gen5 cases lead with a guaranteed POI signature; generic salvage fills remaining space. */
+export function fillSecureCacheLoot(station:Station,kind:number,rand:()=>number){
+  const signature:Record<number,[ItemId,number,number][]>= {
+    1:[['wiring',4,6],['pistolAmmo',3,5]],
+    2:[['hqMetalOre',16,28],['shotgunShells',3,5],['machineParts',1,2]],
+    4:[['techParts',1,1],['canteen',1,2],['gears',2,4]],
+  };
+  for(const [item,min,max] of signature[kind]??[])insertItem(station.inventory,item,min+Math.floor(rand()*(max-min+1)));
+  fillSalvageLoot(station,'lucky',rand);
+}
+
 interface EconomyLandmark {id:string;position:Vec3;kind:number}
 type StationFactory=(id:string,kind:StationKind,position:Vec3,rotation?:number)=>Station;
 export function initializeWorldEconomy(state:GameState,pois:EconomyLandmark[],heightAt:(x:number,z:number)=>number,seed:number,factory:StationFactory,legacy=ensureProgression(state).lootGenerated&&ensureProgression(state).economyVersion===undefined):Vec3[]{

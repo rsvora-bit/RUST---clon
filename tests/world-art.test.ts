@@ -27,7 +27,8 @@ describe('v0.9.1 world art stabilization',()=>{
       expect(world.group.getObjectByName('Stormwatch wind mast')).toBeTruthy();expect(world.group.getObjectByName('Stormwatch weather instrument panel')).toBeTruthy();
       const stormwatch=world.group.getObjectByName(poi.id)!;expect(stormwatch.children.filter(child=>child instanceof THREE.Mesh)).toHaveLength(6);
       expect(world.collisionBoxes().some(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<1)).toBe(true);
-      expect(loot?.inventory.some(stack=>stack?.itemId==='wiring'||stack?.itemId==='machineParts')).toBe(true);expect(cache).toMatchObject({kind:'secureCache',locked:true});
+      expect(loot?.inventory.some(stack=>stack?.itemId==='wiring'||stack?.itemId==='machineParts')).toBe(true);expect(cache).toMatchObject({kind:'secureCache',locked:true});expect(cache?.inventory.some(stack=>stack?.itemId==='techParts')).toBe(true);expect(cache?.inventory.some(stack=>stack?.itemId==='canteen')).toBe(true);expect(cache?.inventory.some(stack=>stack?.itemId==='gears')).toBe(true);
+      cache!.inventory[0]={itemId:'scrap',count:9};const savedLoot=structuredClone(cache!.inventory),reloadedWorld=new WorldSurvival(env,new THREE.Scene(),seed);try{reloadedWorld.populate(state);expect(state.progression!.stations.find(station=>station.id==='secure-cache-poi-4')?.inventory).toEqual(savedLoot);}finally{reloadedWorld.dispose();}
       expect(validateGameState(state)).toBe(true);
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });

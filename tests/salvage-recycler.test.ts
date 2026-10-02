@@ -4,7 +4,7 @@ import {ITEMS,isItemId} from '../src/items/definitions';
 import {RECIPES} from '../src/crafting/recipes';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {activeLostPacks,consumeEmptyContainer,handlePlayerDeath,respawnPlayerState} from '../src/survival/death';
-import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
+import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,fillSecureCacheLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
 import {accepts,countPlayerStations,createStation,HOMESTEAD_RADIUS,homesteadOwner,isPlaceableStationKind,MAX_PLAYER_STATIONS,stationStatus,takeAll,tickStation,transfer,validateStations} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
 import {randomSource} from '../src/world/noise';
@@ -61,6 +61,13 @@ describe('economy world bootstrap and loot',()=>{
   it('seeds scarce ammunition in matching new POI caches without changing field loot',()=>{
     const loot=(kind:number)=>{const station=createStation(`ammo-poi-${kind}`,'loot',pos);fillPoiLoot(station,kind,'decent',()=>0);return count(station.inventory,'pistolAmmo')+count(station.inventory,'shotgunShells');};
     expect(loot(1)).toBeGreaterThan(0);expect(loot(2)).toBeGreaterThan(0);expect(loot(4)).toBeGreaterThan(0);expect(loot(0)).toBe(0);expect(loot(3)).toBe(0);
+  });
+  it('gives new locked POI caches deterministic location-specific endgame signatures',()=>{
+    const make=(kind:number,seed:number)=>{const cache=createStation(`secure-${kind}`,'secureCache',pos);cache.locked=true;fillSecureCacheLoot(cache,kind,randomSource(seed));return cache;},relay=make(1,992),quarry=make(2,992),stormwatch=make(4,992),again=make(4,992);
+    expect(count(relay.inventory,'wiring')).toBeGreaterThanOrEqual(4);expect(count(relay.inventory,'pistolAmmo')).toBeGreaterThanOrEqual(3);
+    expect(count(quarry.inventory,'hqMetalOre')).toBeGreaterThanOrEqual(16);expect(count(quarry.inventory,'shotgunShells')).toBeGreaterThanOrEqual(3);expect(count(quarry.inventory,'machineParts')).toBeGreaterThanOrEqual(1);
+    expect(count(stormwatch.inventory,'techParts')).toBeGreaterThanOrEqual(1);expect(count(stormwatch.inventory,'canteen')).toBeGreaterThanOrEqual(1);expect(count(stormwatch.inventory,'gears')).toBeGreaterThanOrEqual(2);
+    expect(stormwatch.inventory).toEqual(again.inventory);expect(stormwatch.locked).toBe(true);expect(relay.inventory).not.toEqual(quarry.inventory);expect(quarry.inventory).not.toEqual(stormwatch.inventory);
   });
   it('spawns deterministic world Recyclers exactly once',()=>{const state=game().state,make=(id,kind,p,r)=>createStation(id,kind,p,r);const positions=initializeWorldEconomy(state,pois,()=>5,779,make,false),first=ensureProgression(state).stations.filter(s=>s.kind==='recycler').map(s=>({id:s.id,position:s.position}));expect(initializeWorldEconomy(state,pois,()=>5,779,make,false)).toEqual(positions);const second=ensureProgression(state).stations.filter(s=>s.kind==='recycler').map(s=>({id:s.id,position:s.position}));expect(first).toHaveLength(2);expect(second).toEqual(first);expect(first.map(x=>x.id)).toEqual(['world-recycler-0','world-recycler-1']);});
   it('bootstraps a v0.7.8 world once without rewriting existing loot',()=>{const state=game().state,p=ensureProgression(state),old=createStation('old-loot','loot',pos),make=(id,kind,p,r)=>createStation(id,kind,p,r);old.inventory[0]={itemId:'wood',count:17};p.stations=[old];p.lootGenerated=true;delete p.economyVersion;initializeWorldEconomy(state,pois,()=>5,780,make);expect(p.economyVersion).toBe(ECONOMY_VERSION);expect(old.inventory[0]).toEqual({itemId:'wood',count:17});expect(p.stations.filter(s=>s.id.startsWith('salvage-v079-'))).toHaveLength(3);const total=p.stations.length;initializeWorldEconomy(state,pois,()=>5,780,make);expect(p.stations).toHaveLength(total);});
