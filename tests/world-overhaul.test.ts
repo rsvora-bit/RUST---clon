@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {IslandTerrain} from '../src/terrain/island';
 import {fallDamageForSpeed} from '../src/player/fallDamage';
-import {FALL_DAMAGE,WORLD,WORLD_GENERATION_5} from '../src/config/balance';
+import {FALL_DAMAGE,WORLD,WORLD_GENERATION_5,WORLD_REVISION_6} from '../src/config/balance';
 import {generateWorldLayout,mapToWorld,worldToMap} from '../src/survival/WorldSurvival';
 import {treeDensityForBiome,treeSpeciesForBiome} from '../src/rendering/environment';
 import {GameSimulation} from '../src/simulation/GameSimulation';
@@ -11,12 +11,19 @@ const dispose=(...terrains:IslandTerrain[])=>terrains.forEach(t=>{t.geometry.dis
 
 describe('generation 5 world overhaul',()=>{
   it('uses the larger dynamic terrain grid for new worlds',()=>{
-    const terrain=new IslandTerrain(731942,5),sim=new GameSimulation(731942,terrain.spawn);
+    const terrain=new IslandTerrain(731942,5,5),sim=new GameSimulation(731942,terrain.spawn);
     expect(terrain.size).toBe(WORLD_GENERATION_5.SIZE);expect(terrain.resolution).toBe(WORLD_GENERATION_5.RESOLUTION);
     expect(terrain.bounds).toEqual({minX:-640,maxX:640,minZ:-640,maxZ:640});expect(sim.state.worldGeneration).toBe(5);expect(validateGameState(sim.state)).toBe(true);dispose(terrain);
   });
+  it('expands only revision 6 geography while retaining revision 5 scale',()=>{
+    const legacy=new IslandTerrain(731942,5,5),next=new IslandTerrain(731942,5,6),replay=new IslandTerrain(731942,5,6);
+    expect(legacy.size).toBe(1280);expect(next.size).toBe(WORLD_REVISION_6.SIZE);expect(next.resolution).toBe(WORLD_REVISION_6.RESOLUTION);expect(next.size/legacy.size).toBeGreaterThan(1.25);
+    expect(next.spawn.x).toBeCloseTo(legacy.spawn.x*WORLD_REVISION_6.HORIZONTAL_SCALE,3);expect(next.spawn.z).toBeCloseTo(legacy.spawn.z*WORLD_REVISION_6.HORIZONTAL_SCALE,3);
+    expect(next.satellites).toEqual(replay.satellites);expect(next.heightAt(next.spawn.x,next.spawn.z)).toBeCloseTo(replay.heightAt(replay.spawn.x,replay.spawn.z),6);expect(next.heightAt(next.spawn.x,next.spawn.z)).toBeGreaterThan(3.5);
+    dispose(legacy,next,replay);
+  });
   it('preserves legacy generator dimensions and accepts generations 1 through 4',()=>{
-    for(const generation of [1,2,3,4] as const){const terrain=new IslandTerrain(81,generation);expect(terrain.size).toBe(WORLD.SIZE);expect(terrain.resolution).toBe(WORLD.RESOLUTION);const state=new GameSimulation(81,terrain.spawn).state;state.worldGeneration=generation;expect(validateGameState(state)).toBe(true);dispose(terrain);}
+    for(const generation of [1,2,3,4] as const){const terrain=new IslandTerrain(81,generation);expect(terrain.size).toBe(WORLD.SIZE);expect(terrain.resolution).toBe(WORLD.RESOLUTION);const state=new GameSimulation(81,terrain.spawn).state;state.worldGeneration=generation;delete state.worldRevision;expect(validateGameState(state)).toBe(true);dispose(terrain);}
   });
   it('is deterministic and creates a bounded deterministic satellite archipelago',()=>{
     const a=new IslandTerrain(447701,5),b=new IslandTerrain(447701,5);
@@ -52,7 +59,7 @@ describe('generation 5 world overhaul',()=>{
     expect(world.x).toBeCloseTo(source.x,8);expect(world.z).toBeCloseTo(source.z,8);expect(worldToMap({x:-640,z:-640},1280,768)).toEqual({x:0,y:0});expect(worldToMap({x:640,z:640},1280,768)).toEqual({x:768,y:768});
   });
   it('validates generation 5 waypoints against its own bounds',()=>{
-    const state=new GameSimulation(17,{x:0,y:4,z:0}).state;state.progression!.waypoint={x:600,z:-610};expect(validateGameState(state)).toBe(true);
+    const state=new GameSimulation(17,{x:0,y:4,z:0}).state;state.worldRevision=5;state.progression!.waypoint={x:600,z:-610};expect(validateGameState(state)).toBe(true);
     state.progression!.waypoint={x:641,z:0};expect(validateGameState(state)).toBe(false);state.worldGeneration=4;state.progression!.waypoint={x:400,z:0};expect(validateGameState(state)).toBe(false);
   });
   it('keeps generation 4 map transforms on the legacy 720m extent',()=>{const source={x:-311,z:287},pixel=worldToMap(source,720,600),roundTrip=mapToWorld(pixel,720,600);expect(roundTrip.x).toBeCloseTo(source.x,8);expect(roundTrip.z).toBeCloseTo(source.z,8);});

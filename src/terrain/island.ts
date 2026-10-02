@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {WORLD,WORLD_GENERATION_5} from '../config/balance';
-import type {WorldGeneration} from '../core/types';
+import {WORLD,WORLD_GENERATION_5,WORLD_REVISION_6} from '../config/balance';
+import type {WorldGeneration,WorldRevision} from '../core/types';
 import {Noise,randomSource,smoothstep} from '../world/noise';
 import {surfaceClimate} from '../world/climate';
 
@@ -22,11 +22,12 @@ export class IslandTerrain {
   readonly spawn:{x:number;y:number;z:number};
   readonly size:number;readonly halfSize:number;readonly resolution:number;readonly bounds:{minX:number;maxX:number;minZ:number;maxZ:number};readonly satellites:SatelliteIsland[]=[];
   private readonly step:number;
-  constructor(seed:number,readonly generation:WorldGeneration=5){
+  constructor(seed:number,readonly generation:WorldGeneration=5,readonly revision:WorldRevision=5){
     this.noise=new Noise(seed);
-    this.size=generation===5?WORLD_GENERATION_5.SIZE:WORLD.SIZE;this.resolution=generation===5?WORLD_GENERATION_5.RESOLUTION:WORLD.RESOLUTION;this.halfSize=this.size/2;this.step=this.size/this.resolution;this.bounds={minX:-this.halfSize,maxX:this.halfSize,minZ:-this.halfSize,maxZ:this.halfSize};
+    const expanded=generation===5&&revision>=6,scale=expanded?WORLD_REVISION_6.HORIZONTAL_SCALE:1;
+    this.size=expanded?WORLD_REVISION_6.SIZE:generation===5?WORLD_GENERATION_5.SIZE:WORLD.SIZE;this.resolution=expanded?WORLD_REVISION_6.RESOLUTION:generation===5?WORLD_GENERATION_5.RESOLUTION:WORLD.RESOLUTION;this.halfSize=this.size/2;this.step=this.size/this.resolution;this.bounds={minX:-this.halfSize,maxX:this.halfSize,minZ:-this.halfSize,maxZ:this.halfSize};
     const rand=randomSource(seed+0x31a7);
-    if(generation===5){const count=3+Math.floor(rand()*5);for(let i=0;i<count;i++){const a=i/count*Math.PI*2+(rand()-.5)*.32,r=525+rand()*62,base=34+rand()*34;this.satellites.push({x:Math.cos(a)*r,z:Math.sin(a)*r,radiusX:base*(.78+rand()*.48),radiusZ:base*(.72+rand()*.5),height:7+rand()*10});}const angle=2.25+rand()*.34,radius=414+rand()*18;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
+    if(generation===5){const count=3+Math.floor(rand()*5);for(let i=0;i<count;i++){const a=i/count*Math.PI*2+(rand()-.5)*.32,r=(525+rand()*62)*scale,base=(34+rand()*34)*scale;this.satellites.push({x:Math.cos(a)*r,z:Math.sin(a)*r,radiusX:base*(.78+rand()*.48),radiusZ:base*(.72+rand()*.5),height:7+rand()*10});}const angle=2.25+rand()*.34,radius=(414+rand()*18)*scale;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
     else if(generation>=3){const angle=rand()*Math.PI*2,radius=generation>=4?238+rand()*28:174+rand()*34;this.spawn={x:Math.cos(angle)*radius,y:6.1,z:Math.sin(angle)*radius};}
     else this.spawn={x:28,y:6.1,z:212};
     const n=this.resolution;
@@ -49,7 +50,7 @@ export class IslandTerrain {
   }
   private rawHeight(x:number,z:number):number {
     if(this.generation===1)return this.legacyHeight(x,z);
-    const base=this.generation===5?this.generation5Height(x,z):this.generation>=4?this.expandedHeight(x,z):this.geologicalHeight(x,z);
+    const base=this.generation===5?(this.revision>=6?this.generation5Height(x/WORLD_REVISION_6.HORIZONTAL_SCALE,z/WORLD_REVISION_6.HORIZONTAL_SCALE):this.generation5Height(x,z)):this.generation>=4?this.expandedHeight(x,z):this.geologicalHeight(x,z);
     if(this.generation===2)return base;
     const starter=1-smoothstep(13,35,Math.hypot(x-this.spawn.x,z-this.spawn.z));
     return base*(1-starter)+4.3*starter;
@@ -123,7 +124,8 @@ export class IslandTerrain {
     // peninsulas without high-frequency coastline noise or isolated slivers.
     edge+=72*coastalLobe(-.22,.23)+54*coastalLobe(2.72,.31)-82*coastalLobe(1.31,.20)-62*coastalLobe(-2.08,.26);
     let satelliteHeight=-20;
-    for(const island of this.satellites){const dx=(x-island.x)/island.radiusX,dz=(z-island.z)/island.radiusZ,d=Math.hypot(dx,dz),islandEdge=(1-d)*Math.min(island.radiusX,island.radiusZ);edge=Math.max(edge,islandEdge);satelliteHeight=Math.max(satelliteHeight,-8+smoothstep(-8,18,islandEdge)*(island.height+3)+(n.fbm(x*.025,z*.025,3)-.5)*2.8);}
+    const worldScale=this.revision>=6?WORLD_REVISION_6.HORIZONTAL_SCALE:1;
+    for(const island of this.satellites){const ix=island.x/worldScale,iz=island.z/worldScale,rx=island.radiusX/worldScale,rz=island.radiusZ/worldScale,dx=(x-ix)/rx,dz=(z-iz)/rz,d=Math.hypot(dx,dz),islandEdge=(1-d)*Math.min(rx,rz);edge=Math.max(edge,islandEdge);satelliteHeight=Math.max(satelliteHeight,-8+smoothstep(-8,18,islandEdge)*(island.height+3)+(n.fbm(x*.025,z*.025,3)-.5)*2.8);}
     const land=smoothstep(12,96,edge);let h=-13+15.2*smoothstep(-42,24,edge)+4.1*smoothstep(12,110,edge);
     const ridge=(cx:number,cz:number,sx:number,sz:number,rotation:number)=>{const c=Math.cos(rotation),s=Math.sin(rotation),dx=wx-cx,dz=wz-cz,u=(dx*c-dz*s)/sx,v=(dx*s+dz*c)/sz;return Math.exp(-(u*u+v*v));};
     const massifNorth=ridge(-70,-245,215,52,-.28),massifCentral=ridge(55,-35,245,60,.64),massifEast=ridge(285,105,150,50,-.75),massifSouth=ridge(-180,245,130,58,.35);
@@ -131,7 +133,7 @@ export class IslandTerrain {
     h+=(massifNorth*(45+fold*31)+massifCentral*(37+fold*27)+massifEast*(34+detail*25)+massifSouth*(24+fold*18)-valley*12-basin*8)*land;
     h+=(fold-.47)*12*land+(detail-.5)*4.2*smoothstep(5,85,edge);
     if(satelliteHeight>-19)h=Math.max(h,satelliteHeight);
-    const starter=1-smoothstep(18,48,Math.hypot(x-this.spawn.x,z-this.spawn.z));return h*(1-starter)+4.6*starter;
+    const scale=this.revision>=6?WORLD_REVISION_6.HORIZONTAL_SCALE:1,starter=1-smoothstep(18,48,Math.hypot(x-this.spawn.x/scale,z-this.spawn.z/scale));return h*(1-starter)+4.6*starter;
   }
 
   /** Triangle interpolation is identical to the indexed Rapier ground mesh. */

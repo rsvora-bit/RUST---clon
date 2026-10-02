@@ -14,7 +14,7 @@ describe('environment visual building blocks',()=>{
     try {
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));
       expect(Array.from(a.getAttribute('position').array)).not.toEqual(Array.from(c.getAttribute('position').array));
-      expect(a.index!.count/3).toBe(720);expect(a.boundingBox).toBeNull();a.computeBoundingBox();
+      expect(a.index!.count/3).toBe(1728);expect(a.boundingBox).toBeNull();a.computeBoundingBox();
       expect(a.boundingBox!.max.y).toBeGreaterThan(260);expect(a.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(260);
     }finally{a.dispose();b.dispose();c.dispose();}
   });

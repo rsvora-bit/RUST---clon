@@ -18,6 +18,6 @@ describe('v0.7.4 seeded world variety',()=>{
     expect(ITEMS.sulfurOre.displayName).toBe('Sulfur ore');expect(ITEMS.hqMetalOre.displayName).toContain('High quality');
   });
   it('accepts generation 3 save snapshots while new worlds use generation 5',()=>{
-    const sim=new GameSimulation(99,{x:0,y:5,z:0});expect(sim.state.worldGeneration).toBe(5);expect(validateGameState(sim.state)).toBe(true);expect(validateGameState({...sim.state,worldGeneration:3})).toBe(true);
+    const sim=new GameSimulation(99,{x:0,y:5,z:0}),legacy={...sim.state,worldGeneration:3};delete legacy.worldRevision;expect(sim.state.worldGeneration).toBe(5);expect(validateGameState(sim.state)).toBe(true);expect(validateGameState(legacy)).toBe(true);
   });
 });

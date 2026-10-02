@@ -6,7 +6,7 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {treeSpeciesForBiome} from '../src/rendering/environment';
+import {revisionTreeCover,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
@@ -44,6 +44,18 @@ describe('v0.9.1 world art stabilization',()=>{
       try{oldWorld.populate(legacy);expect(oldWorld.pois).toHaveLength(5);expect(oldWorld.pois.some(poi=>poi.kind===5)).toBe(false);expect(legacy.progression!.stations.some(station=>station.id.includes('poi-5'))).toBe(false);expect(legacy.worldRevision).toBe(4);expect(validateGameState(legacy)).toBe(true);}finally{oldWorld.dispose();}
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('adds deterministic revision-6 scale and two specialized landmarks without changing rev-5 layout',()=>{
+    const seed=731942,oldTerrain=new IslandTerrain(seed,5,5),terrain=new IslandTerrain(seed,5,6),legacy=generateWorldLayout(oldTerrain,oldTerrain.spawn,[],seed,5),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),replayTerrain=new IslandTerrain(seed,5,6),replay=generateWorldLayout(replayTerrain,replayTerrain.spawn,[],seed,6);
+    try{
+      expect(terrain.size).toBeGreaterThan(oldTerrain.size*1.25);expect(legacy.pois).toHaveLength(6);expect(layout.pois).toHaveLength(8);expect(layout).toEqual(replay);
+      expect(layout.pois.slice(0,6).map(p=>p.name)).toEqual(legacy.pois.map(p=>p.name));expect(layout.pois[6]).toMatchObject({name:'Tidal Survey Pier',kind:6});expect(layout.pois[7]).toMatchObject({name:'Highland Relay',kind:7});
+      expect(terrain.biomeAt(layout.pois[6]!.position.x,layout.pois[6]!.position.z)).toBe('COAST');expect(layout.pois[7]!.position.y).toBeGreaterThan(24);
+      expect(layout.trails).toHaveLength(8);expect(layout.trails.flat().every(p=>terrain.heightAt(p.x,p.z)>=1.15)).toBe(true);
+      const env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state;
+      try{world.populate(state);expect(world.group.getObjectByName('Tidal survey mast')).toBeTruthy();expect(world.group.getObjectByName('Highland relay dish')).toBeTruthy();expect(world.group.getObjectByName('Breakwater exposed hull rib')).toBeTruthy();expect(world.group.getObjectByName('Breakwater slack mooring cable')).toBeTruthy();expect(world.collisionBoxes().length).toBeGreaterThan(6);expect(validateGameState(state)).toBe(true);}finally{world.dispose();}
+      const rev5Env={...env,terrain:oldTerrain,spawn:oldTerrain.spawn,worldRevision:5,layout:legacy,heightAt:(x:number,z:number)=>oldTerrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,oldWorld=new WorldSurvival(rev5Env,new THREE.Scene(),seed);try{expect(oldWorld.group.getObjectByName('Breakwater exposed hull rib')).toBeFalsy();}finally{oldWorld.dispose();}
+    }finally{oldTerrain.geometry.dispose();oldTerrain.heightTexture.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();replayTerrain.geometry.dispose();replayTerrain.heightTexture.dispose();}
+  });
   for(const seed of [731942,447701,61417])it(`routes deterministic dry roads away from steep hills (${seed})`,()=>{
     const terrain=new IslandTerrain(seed,5);
     try {
@@ -52,7 +64,7 @@ describe('v0.9.1 world art stabilization',()=>{
       const samples=a.trails.flat(),oldSamples=old.trails.flat(),steep=(p:{x:number;z:number})=>terrain.slopeAt(p.x,p.z)>.45;
       const fraction=samples.filter(steep).length/samples.length,oldFraction=oldSamples.filter(steep).length/oldSamples.length;
       expect(samples.every(p=>terrain.heightAt(p.x,p.z)>=1.15)).toBe(true);expect(fraction).toBeLessThan(.06);expect(fraction).toBeLessThanOrEqual(oldFraction*.65+.004);
-      for(const road of a.trails){for(let i=1;i<road.length;i++){const a=road[i-1]!,b=road[i]!;expect(Math.hypot(a.x-b.x,a.z-b.z)).toBeLessThanOrEqual(2.51);expect(b.y).toBeCloseTo(terrain.heightAt(b.x,b.z)+.08,6);}const geometry=roadGeometry(road,terrain);const p=geometry.getAttribute('position');for(let i=0;i<p.count;i++)expect(p.getY(i)).toBeCloseTo(terrain.heightAt(p.getX(i),p.getZ(i))+.075,3);geometry.dispose();}
+      for(const road of a.trails){for(let i=1;i<road.length;i++){const a=road[i-1]!,b=road[i]!;expect(Math.hypot(a.x-b.x,a.z-b.z)).toBeLessThanOrEqual(2.51);expect(b.y).toBeCloseTo(terrain.heightAt(b.x,b.z)+.08,6);}const geometry=roadGeometry(road,terrain),p=geometry.getAttribute('position'),colors=geometry.getAttribute('color');for(let i=0;i<p.count;i++)expect(p.getY(i)).toBeCloseTo(terrain.heightAt(p.getX(i),p.getZ(i))+.075,3);expect(colors.count).toBe(p.count);expect(new Set(Array.from(colors.array)).size).toBeGreaterThan(3);geometry.dispose();}
     }finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it.each([-81,0,1,17,81,9999999999])('connects POIs for custom seed %s',seed=>{const terrain=new IslandTerrain(seed,5);try{const layout=generateWorldLayout(terrain,terrain.spawn,[],seed,2);expect(layout.trails.length).toBe(layout.pois.length);expect(layout.trails.flat().every(p=>terrain.heightAt(p.x,p.z)>=1.15)).toBe(true);}finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}});
@@ -68,17 +80,23 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(treeSpeciesForBiome('ROCKY MOUNTAIN',.3,0,.8,false,climate(.8),65)).toBe(2);
     expect(palmSuitability(climate(.8,.9),3,'COAST')).toBe(0);
   });
+  it('concentrates the revision-6 tree budget in forests while preserving legacy placement weights',()=>{
+    expect(revisionTreeCover(.7,.8,6)).toBeCloseTo(.91);
+    expect(revisionTreeCover(.7,.2,6)).toBeCloseTo(.294);
+    expect(revisionTreeCover(.7,.8,5)).toBe(.7);
+    expect(revisionTreeCover(.7,.2,4)).toBe(.7);
+  });
   it('has gradual bounded arid, snow and forest transition bands',()=>{
     for(let t=.2;t<.8;t+=.005){const a=surfaceClimate(climate(t,.42),28,.1),b=surfaceClimate(climate(t+.005,.42),28,.1);for(const key of ['arid','snow','forest'] as const){expect(a[key]).toBeGreaterThanOrEqual(0);expect(a[key]).toBeLessThanOrEqual(1);expect(Math.abs(a[key]-b[key])).toBeLessThan(.055);}}
     expect(vegetationCover(climate(.65,.70),12,.1)).toBeGreaterThan(vegetationCover(climate(.75,.25),12,.1)*3);
     expect(vegetationCover(climate(.6),30,.85)).toBe(0);expect(vegetationCover(climate(.2),68,.1)).toBe(0);
   });
   it('keeps horizon deterministic, bounded, disconnected and cheap',()=>{
-    for(let layer=0;layer<3;layer++){const a=mountainLayer(731942,layer,true),b=mountainLayer(731942,layer,true);expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));expect(a.index!.count/3).toBe(720);expect(Array.from(a.getAttribute('normal').array).every(Number.isFinite)).toBe(true);expect(a.boundingSphere!.radius).toBeLessThan(1600);a.dispose();b.dispose();}
+    for(let layer=0;layer<3;layer++){const a=mountainLayer(731942,layer,true),b=mountainLayer(731942,layer,true);expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));expect(a.index!.count/3).toBe(1728);expect(Array.from(a.getAttribute('normal').array).every(Number.isFinite)).toBe(true);expect(a.boundingSphere!.radius).toBeLessThan(1600);a.dispose();b.dispose();}
   });
   it('preserves old gen5 snapshots without inventing a layout revision',()=>{
     const old=new GameSimulation(731942,{x:12,y:6,z:17}).state;delete old.worldRevision;old.inventory[8]={itemId:'scrap',count:70};old.nodeChanges={'tree-4':120};old.progression!.tech!.unlocked.push('efficiencyTooling');
-    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(5);
-    old.worldRevision=3;expect(validateGameState(old)).toBe(true);old.worldRevision=4;expect(validateGameState(old)).toBe(true);old.worldRevision=5;expect(validateGameState(old)).toBe(true);old.worldRevision=6 as 1;expect(validateGameState(old)).toBe(false);
+    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(6);
+    old.worldRevision=3;expect(validateGameState(old)).toBe(true);old.worldRevision=4;expect(validateGameState(old)).toBe(true);old.worldRevision=5;expect(validateGameState(old)).toBe(true);old.worldRevision=6;expect(validateGameState(old)).toBe(true);old.worldGeneration=4;expect(validateGameState(old)).toBe(false);
   });
 });

@@ -16,12 +16,20 @@ type GrassChunk={mesh:THREE.InstancedMesh;center:THREE.Vector3;fullCount:number}
 type TreeFall={elapsed:number;duration:number;hold:number;fade:number;axis:THREE.Vector3;refs:InstanceRef[];node:ResourceNode};
 
 export function treeDensityForBiome(biome:string,forest:number):number{return biome==='TEMPERATE FOREST'?.88:biome==='TEMPERATE GRASSLAND'?.28:biome==='ARID'?.12:biome==='SNOW / ALPINE'?.20:biome==='COAST'?.08:.05+smoothstep(.32,.68,forest)*.79;}
+export function revisionTreeCover(cover:number,forest:number,revision:number):number{
+  // Rev 6 gives its fixed tree budget to actual groves. Older saved worlds keep
+  // their exact distribution, while open biomes become readable and forests
+  // gain enough clustered canopy to feel intentional.
+  if(revision<6)return cover;
+  return Math.min(.98,cover*(forest>.52?1.3:.42));
+}
 export function treeSpeciesForBiome(biome:string,forest:number,palmRoll:number,broadRoll:number,variant:boolean,climate?:ClimateSample,elevation=0):number{if(climate){const suitability=palmSuitability(climate,elevation,biome);if(palmRoll<suitability*.68)return 5;if(climate.temperature<.42||elevation>40||biome==='SNOW / ALPINE')return variant?0:2;return broadRoll<(.20+smoothstep(.45,.68,climate.moisture)*.48)?(variant?1:4):(forest>.5?(variant?0:2):3);}const palm=(biome==='ARID'||biome==='COAST')&&palmRoll<.68,broad=!palm&&broadRoll<(.27+(biome==='COAST'?.18:0));return palm?5:broad?(variant?1:4):(biome==='SNOW / ALPINE'||forest>.5?(variant?0:2):3);}
 
 /** The render adapter for deterministic island data; gameplay mutations arrive through syncNodes. */
 export class Environment {
   readonly root=new THREE.Group();
   readonly nodes:ResourceNode[]=[];
+  private readonly nodesById=new Map<string,ResourceNode>();
   readonly nodeObjects=new Map<string,THREE.Object3D>();
   readonly colliders:NaturalCollider[]=[];
   readonly terrainGeometry:THREE.BufferGeometry;
@@ -34,6 +42,7 @@ export class Environment {
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
+  private readonly surfaceWetness:{value:number};
   private readonly detailMeshes:{mesh:THREE.InstancedMesh;fullCount:number;minimum:'low'|'medium'|'high'}[]=[];
   private readonly decalMeshes:THREE.InstancedMesh[]=[];
   private readonly materials=new Set<THREE.Material>();
@@ -70,13 +79,14 @@ export class Environment {
   get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
+  get grassChunkCount():number{return this.grassChunks.length;}
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=5){
     this.root.name='Tideland — procedural island';scene.add(this.root);
-    this.terrain=new IslandTerrain(seed,worldGeneration);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
+    this.terrain=new IslandTerrain(seed,worldGeneration,worldRevision);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
     if(worldGeneration===5&&worldRevision>=2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,worldRevision);
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
-    const terrainMat=terrainMaterial(),ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
+    const terrainMat=terrainMaterial();this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(),color:0xb6b4a4,roughness:.97});
     this.leaves=this.foliageMaterial(leavesTexture(),0xffffff);this.pine=this.foliageMaterial(pineTexture(),0xffffff,.085);this.palm=this.foliageMaterial(palmTexture(),0xffffff);
@@ -127,7 +137,7 @@ export class Environment {
 
   private own<T extends THREE.BufferGeometry>(g:T):T {this.geometries.add(g);return g;}
   private addNode(kind:ResourceNode['kind'],x:number,z:number,scale:number,rotation:number,capacity:number):ResourceNode {
-    const node:ResourceNode={id:`${kind}-${this.nodes.length}`,kind,position:{x,y:this.heightAt(x,z),z},scale,rotation,capacity,remaining:capacity};this.nodes.push(node);return node;
+    const node:ResourceNode={id:`${kind}-${this.nodes.length}`,kind,position:{x,y:this.heightAt(x,z),z},scale,rotation,capacity,remaining:capacity};this.nodes.push(node);this.nodesById.set(node.id,node);return node;
   }
   private place(object:THREE.Object3D,node:ResourceNode):void {
     object.position.set(node.position.x,node.position.y,node.position.z);object.rotation.y=node.rotation;object.scale.setScalar(node.scale);object.userData.nodeId=node.id;object.traverse(o=>{o.userData.nodeId=node.id;});this.nodeObjects.set(node.id,object);this.resources.push(object);this.root.add(object);
@@ -147,11 +157,11 @@ export class Environment {
     const starterTrees=this.terrain.generation>=3?[[this.spawn.x-22,this.spawn.z-11,.86,0],[this.spawn.x+23,this.spawn.z-9,.96,1],[this.spawn.x-18,this.spawn.z+18,1.02,0],[this.spawn.x+20,this.spawn.z+17,.84,0]] as const:[[6,198,.86,0],[55,200,.96,1],[-4,190,1.02,0],[53,181,.84,0]] as const;
     for(const [x,z,scale,species] of starterTrees)if(this.roadClear(x,z,4.4))rememberTree({node:this.addNode('tree',x,z,scale,rand()*6.28,300),species});
     const modern=this.terrain.generation===2,expanded=this.terrain.generation>=4,g5=this.terrain.generation===5;
-    const treeLimit=g5?(this.worldRevision>=3?1180:900):expanded?620:modern?820:560,treeAttempts=g5?(this.worldRevision>=3?27000:18000):expanded?9000:modern?12000:7000;
+    const treeLimit=g5?(this.worldRevision>=6?1500:this.worldRevision>=3?1180:900):expanded?620:modern?820:560,treeAttempts=g5?(this.worldRevision>=6?43000:this.worldRevision>=3?27000:18000):expanded?9000:modern?12000:7000;
     for(let i=0;i<treeAttempts&&treeNodes.length<treeLimit;i++){
       const span=g5?this.terrain.size*.94:expanded?650:580,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
       if(h<4||h>(g5?58:38)||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<30||!this.roadClear(x,z,4.4))continue;
-      const density=smoothstep(.32,.68,forest),climateDensity=g5&&this.worldRevision>=2?vegetationCover(this.terrain.climateAt(x,z),h,slope):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
+      const density=smoothstep(.32,.68,forest),climateDensity=g5&&this.worldRevision>=2?revisionTreeCover(vegetationCover(this.terrain.climateAt(x,z),h,slope),forest,this.worldRevision):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
       let overlaps=false;if(useTreeGrid){for(let dz=-1;dz<=1&&!overlaps;dz++)for(let dx=-1;dx<=1&&!overlaps;dx++)for(const t of treeGrid.get(`${Math.floor(x/4)+dx},${Math.floor(z/4)+dz}`)??[])if(Math.hypot(t.x-x,t.z-z)<4){overlaps=true;break;}}else overlaps=treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4);if(overlaps)continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
@@ -160,6 +170,7 @@ export class Environment {
     }
     for(let species=0;species<6;species++){
       const palm=species===5,broad=species===1||species===4||palm,entries=treeNodes.filter(t=>t.species===species),trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():species===1||species===4?broadleafGeometry(species===4?1:0):pineGeometry(species===2?1:species===3?2:0));
+      if(this.worldRevision>=6){const lateral=palm?1.08:broad?1.22:1.14,position=crown.getAttribute('position');for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)*lateral,position.getY(i),position.getZ(i)*lateral);position.needsUpdate=true;crown.computeVertexNormals();}
       // Instanced canopy tinting needs a neutral per-vertex color channel;
       // without it Three.js multiplies the foliage texture by an undefined
       // attribute and the entire canopy falls to black.
@@ -188,7 +199,7 @@ export class Environment {
     for(const [x,z,sx,sy,sz] of anchors)boulders.push({x,y:this.heightAt(x,z)-.1,z,sx,sy,sz,rot:rand()*6.28,variant:Math.floor(rand()*3)});
     if(this.terrain.generation>=4){
       const g5=this.terrain.generation===5,span=g5?this.terrain.size*.96:650;
-      for(let i=0;i<(g5?3800:1800)&&boulders.length<(g5?240:150);i++){
+      for(let i=0;i<(g5?(this.worldRevision>=6?5600:3800):1800)&&boulders.length<(g5?(this.worldRevision>=6?320:240):150);i++){
         const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
         if(h<.7||(this.layout&&slope>1.15)||Math.hypot(x-this.spawn.x,z-this.spawn.z)<22||!this.roadClear(x,z,6))continue;
         if(this.nodes.some(n=>n.kind==='tree'&&Math.hypot(n.position.x-x,n.position.z-z)<4.8))continue;
@@ -221,7 +232,7 @@ export class Environment {
     else {make('stone',24,206,.95);make('stone',35,199,1.1);make('metal',60,175,1.1);}
     if(this.terrain.generation>=4){
       const g5=this.terrain.generation===5,span=g5?this.terrain.size*.94:640;
-      for(let i=0,count=0;i<(g5?9200:4400)&&count<(g5?150:92);i++){
+      for(let i=0,count=0;i<(g5?(this.worldRevision>=6?13800:9200):4400)&&count<(g5?(this.worldRevision>=6?195:150):92);i++){
         const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(!this.roadClear(x,z,4)||h<2.1||Math.hypot(x-this.spawn.x,z-this.spawn.z)<18||this.terrain.slopeAt(x,z)>.82)continue;
         if(this.nodes.some(n=>n.kind==='tree'&&Math.hypot(n.position.x-x,n.position.z-z)<4.6))continue;
         if(boulders.some(b=>Math.hypot(b.x-x,b.z-z)<3.5))continue;
@@ -235,7 +246,7 @@ export class Environment {
   private populatePlants():void {
     const rand=randomSource(this.seed+590),bush=this.own(bushGeometry()),fiberGeo=this.own(fiberGeometry()),berryGeo=this.own(berryGeometry()),twigGeo=this.own(new THREE.CylinderGeometry(.07,.12,1.5,7));
     twigGeo.rotateZ(Math.PI/2);const bushPositions:{x:number;y:number;z:number;s:number;r:number}[]=[];
-    for(let i=0;i<2800&&bushPositions.length<490;i++){
+    for(let i=0;i<(this.worldRevision>=6?3800:2800)&&bushPositions.length<(this.worldRevision>=6?620:490);i++){
       const span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:570,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(!this.roadClear(x,z,3.5)||h<3||h>32||this.terrain.slopeAt(x,z)>.64||Math.hypot(x-this.spawn.x,z-this.spawn.z)<9)continue;
       if(this.terrain.forestAt(x,z)<.3||rand()>.42)continue;bushPositions.push({x,y:h,z,s:.55+rand()*.8,r:rand()*6.28});
     }
@@ -253,7 +264,7 @@ export class Environment {
     };
     if(this.terrain.generation>=3){create('wood',this.spawn.x+8,this.spawn.z-7,1);create('fiber',this.spawn.x-7,this.spawn.z-8,1.2);create('berries',this.spawn.x+10,this.spawn.z+8,1.3);create('fiber',this.spawn.x-10,this.spawn.z+9,1.15);create('wood',this.spawn.x+4,this.spawn.z+13,1.1);}
     else {create('wood',29.5,209,1);create('fiber',31,207.5,1.2);create('berries',35,208,1.3);create('fiber',22,210,1.15);create('wood',19,202,1.1);}
-    for(let i=0,count=0;i<3400&&count<260;i++){
+    for(let i=0,count=0;i<(this.worldRevision>=6?4600:3400)&&count<(this.worldRevision>=6?330:260);i++){
       const span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?640:520,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(!this.roadClear(x,z,3.5)||h<2.3||h>34||this.terrain.slopeAt(x,z)>.6||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;
       if(rand()>.62)continue;const roll=rand();create(roll<.40?'wood':roll<.70?'berries':'fiber',x,z,.75+rand()*.45);count++;
     }
@@ -263,7 +274,7 @@ export class Environment {
     const fernM=new THREE.MeshLambertMaterial({color:0x526d40,side:THREE.DoubleSide});
     const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
     const fernPos:{x:number;y:number;z:number;s:number;r:number}[]=[],twigPos:{x:number;y:number;z:number;s:number;r:number}[]=[],tuftPos:{x:number;y:number;z:number;s:number;r:number}[]=[];
-    for(let i=0;i<9000&&(fernPos.length<720||twigPos.length<620||tuftPos.length<680);i++){
+    for(let i=0;i<(this.worldRevision>=6?12500:9000)&&(fernPos.length<(this.worldRevision>=6?900:720)||twigPos.length<(this.worldRevision>=6?780:620)||tuftPos.length<(this.worldRevision>=6?850:680));i++){
       const span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?640:550,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<2||h>42||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;const forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
       if(fernPos.length<720&&(biome==='TEMPERATE FOREST'||biome==='FOREST')&&forest>.45&&rand()<.23)fernPos.push({x,y:h,z,s:.35+rand()*.52,r:rand()*6.28});
       if(twigPos.length<620&&biome!=='ARID'&&forest>.34&&rand()<.18)twigPos.push({x,y:h+.025,z,s:.42+rand()*.85,r:rand()*6.28});
@@ -275,7 +286,7 @@ export class Environment {
 
   private populateGroundDecals():void {
     const rand=randomSource(this.seed+7719),geometry=this.own(new THREE.CircleGeometry(1,14));geometry.rotateX(-Math.PI/2);
-    const configs=[['soil',groundDecalTexture(251,'soil'),240],['leaves',groundDecalTexture(617,'leaves'),220],['stone',groundDecalTexture(877,'stone'),150]] as const;
+    const multiplier=this.worldRevision>=6?1.3:1,configs=[['soil',groundDecalTexture(251,'soil'),Math.round(240*multiplier)],['leaves',groundDecalTexture(617,'leaves'),Math.round(220*multiplier)],['stone',groundDecalTexture(877,'stone'),Math.round(150*multiplier)]] as const;
     for(const [kind,tex,count] of configs){const mat=new THREE.MeshStandardMaterial({map:tex,transparent:true,opacity:kind==='stone'?.30:.36,depthWrite:false,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});this.materials.add(mat);const matrices:THREE.Matrix4[]=[];
       for(let i=0,tries=0;i<count&&tries<count*12;tries++){const span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?640:540,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z);if(h<1.4||h>46||slope>.45)continue;if(kind==='leaves'&&forest<.42)continue;if(kind==='stone'&&h<18&&slope<.28)continue;if(kind==='soil'&&forest>.68)continue;this.matrixDummy.position.set(x,h+.028,z);this.matrixDummy.rotation.set(0,rand()*6.28,0);this.matrixDummy.scale.set(.75+rand()*2.1,1,.45+rand()*1.5);this.matrixDummy.updateMatrix();matrices.push(this.matrixDummy.matrix.clone());i++;}
       const mesh=new THREE.InstancedMesh(geometry,mat,matrices.length);mesh.name=`${kind} ground decals`;matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.renderOrder=1;mesh.computeBoundingSphere();this.root.add(mesh);this.decalMeshes.push(mesh);this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'high'});
@@ -284,7 +295,7 @@ export class Environment {
 
   private populateShore():void {
     const rand=randomSource(this.seed+29119),stones:THREE.Matrix4[]=[],wood:THREE.Matrix4[]=[],weed:THREE.Matrix4[]=[];
-    for(let i=0;i<4200;i++){
+    for(let i=0;i<(this.worldRevision>=6?5600:4200);i++){
       const span=this.terrain.generation===5?this.terrain.size*.98:this.terrain.generation>=4?670:590,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(h<.15||h>2.35||this.terrain.noise.at(x*.06,z*.06)<.54)continue;
       const choice=rand();if(choice<.075){const s=.55+rand()*.8;this.matrixDummy.position.set(x,h,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();wood.push(this.matrixDummy.matrix.clone());}
       else if(choice<.19){const s=.28+rand()*.55;this.matrixDummy.position.set(x,h-.03,z);this.matrixDummy.rotation.set(0,rand()*6.28,0);this.matrixDummy.scale.set(s,s*(.65+rand()*.6),s);this.matrixDummy.updateMatrix();weed.push(this.matrixDummy.matrix.clone());}
@@ -294,27 +305,28 @@ export class Environment {
     for(const [matrices,geometry,material,name] of [[stones,this.own(rockGeometry(811)),this.stone,'Tide-washed pebbles'],[wood,log,this.bark,'Stranded branches'],[weed,weedG,weedM,'Tidal seaweed']] as const){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=name;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);if(name==='Tidal seaweed')this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});}
   }
   private populateGrass():void {
-    const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number}[];x:number;z:number;type:number}>();
-    for(const color of [0xffffff,0xd5c39a]){
+    const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),revision6=this.worldRevision>=6,chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number;dry:boolean}[];x:number;z:number;type:number}>();
+    const chunkSize=this.worldRevision>=6?52:40;
+    for(const color of (revision6?[0xffffff]:[0xffffff,0xd5c39a])){
       const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
       this.grassMaterials.push(mat);this.materials.add(mat);
     }
-    const total=this.terrain.generation===5?68000:16000;
+    const total=this.terrain.generation===5?(this.worldRevision>=6?84000:68000):16000;
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
-      const near=count<(this.terrain.generation===5?15000:2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*72:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*72:(rand()-.5)*span;
+      const near=count<(this.terrain.generation===5?(this.worldRevision>=6?18000:15000):2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*82:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*82:(rand()-.5)*span;
       const h=this.heightAt(x,z);if(h<2||h>48||this.terrain.slopeAt(x,z)>.55||!this.roadClear(x,z,3.1))continue;
       const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3);const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAt(x,z),h,this.terrain.slopeAt(x,z)):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
-      const cx=Math.floor(x/40),cz=Math.floor(z/40),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){chunk={positions:[],x:cx*40+20,z:cz*40+20,type};chunks.set(key,chunk);}
-      chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2});count++;
+      const cx=Math.floor(x/chunkSize),cz=Math.floor(z/chunkSize),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=revision6?`${cx},${cz}`:`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){chunk={positions:[],x:cx*chunkSize+chunkSize/2,z:cz*chunkSize+chunkSize/2,type:revision6?0:type};chunks.set(key,chunk);}
+      chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2,dry:revision6&&type===1});count++;
     }
     for(const chunk of chunks.values()){
       const mesh=new THREE.InstancedMesh(geometry,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=true;
-      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.20+rand()*.035,.10,.84+rand()*.12));});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
+      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tint=new THREE.Color().setHSL(.20+rand()*.035,.10,.84+rand()*.12);if(p.dry)tint.offsetHSL(.035,.07,-.12);mesh.setColorAt(i,tint);});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
     }
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
     this.windUniform.value+=dt*this.windStrength;this.cameraUniform.value.copy(cameraPosition);this.atmosphere.update(dt,timeOfDay,cameraPosition);this.cullClock-=dt;
-    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:this.quality==='high'?118:136;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const treeDistance=this.quality==='low'?250:this.quality==='medium'?360:this.quality==='high'?520:720,treeDistanceSq=treeDistance*treeDistance;for(const batch of this.treeBatches){let visibleCount=0,changedTrunks=false,changedCrowns=false,changedTrunkColors=false,changedCrownColors=false;for(const tree of batch.instances){const dx=tree.x-cameraPosition.x,dz=tree.z-cameraPosition.z,show=dx*dx+dz*dz<treeDistanceSq&&(tree.active||this.fallingTrees.has(tree.id)),wasVisible=tree.visible;tree.visible=show;if(!show)continue;const index=visibleCount++;if(!wasVisible||tree.renderIndex!==index){batch.trunks.setMatrixAt(index,tree.matrix);batch.crowns.setMatrixAt(index,tree.matrix);batch.trunks.setColorAt(index,tree.trunkColor);batch.crowns.setColorAt(index,tree.crownColor);const refs=this.instances.get(tree.id);if(refs)for(const ref of refs)ref.index=index;tree.renderIndex=index;changedTrunks=changedCrowns=changedTrunkColors=changedCrownColors=true;}}batch.trunks.count=batch.crowns.count=visibleCount;if(changedTrunks)batch.trunks.instanceMatrix.needsUpdate=true;if(changedCrowns)batch.crowns.instanceMatrix.needsUpdate=true;if(changedTrunkColors&&batch.trunks.instanceColor)batch.trunks.instanceColor.needsUpdate=true;if(changedCrownColors&&batch.crowns.instanceColor)batch.crowns.instanceColor.needsUpdate=true;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const id=obj.userData.nodeId as string;const node=this.nodes.find(n=>n.id===id);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
+    if(this.cullClock<=0){this.cullClock=.28;const d=this.quality==='low'?68:this.quality==='medium'?92:this.quality==='high'?118:136;for(const c of this.grassChunks){const distance=c.center.distanceTo(cameraPosition);const fade=1-smoothstep(d*.35,d+28,distance);const fraction=(this.quality==='low'?.30:this.quality==='medium'?.58:this.quality==='high'?.82:1)*this.foliageDensity;c.mesh.count=Math.floor(c.fullCount*fraction*fade);c.mesh.visible=c.mesh.count>0;}const treeDistance=this.quality==='low'?250:this.quality==='medium'?360:this.quality==='high'?520:720,treeDistanceSq=treeDistance*treeDistance;for(const batch of this.treeBatches){let visibleCount=0,changedTrunks=false,changedCrowns=false,changedTrunkColors=false,changedCrownColors=false;for(const tree of batch.instances){const dx=tree.x-cameraPosition.x,dz=tree.z-cameraPosition.z,show=dx*dx+dz*dz<treeDistanceSq&&(tree.active||this.fallingTrees.has(tree.id)),wasVisible=tree.visible;tree.visible=show;if(!show)continue;const index=visibleCount++;if(!wasVisible||tree.renderIndex!==index){batch.trunks.setMatrixAt(index,tree.matrix);batch.crowns.setMatrixAt(index,tree.matrix);batch.trunks.setColorAt(index,tree.trunkColor);batch.crowns.setColorAt(index,tree.crownColor);const refs=this.instances.get(tree.id);if(refs)for(const ref of refs)ref.index=index;tree.renderIndex=index;changedTrunks=changedCrowns=changedTrunkColors=changedCrownColors=true;}}batch.trunks.count=batch.crowns.count=visibleCount;if(changedTrunks)batch.trunks.instanceMatrix.needsUpdate=true;if(changedCrowns)batch.crowns.instanceMatrix.needsUpdate=true;if(changedTrunkColors&&batch.trunks.instanceColor)batch.trunks.instanceColor.needsUpdate=true;if(changedCrownColors&&batch.crowns.instanceColor)batch.crowns.instanceColor.needsUpdate=true;}const resourceDistance=this.quality==='low'?115:this.quality==='medium'?165:215;for(const obj of this.resources){const node=this.nodesById.get(obj.userData.nodeId as string);obj.visible=!!node&&node.remaining>0&&obj.position.distanceToSquared(cameraPosition)<resourceDistance*resourceDistance;}}
     for(const [id,hit] of this.hits){const elapsed=hit.elapsed+dt,obj=this.nodeObjects.get(id),refs=this.instances.get(id);if(elapsed>.4){this.hits.delete(id);if(obj)obj.rotation.z=0;if(refs)for(const ref of refs){ref.mesh.setMatrixAt(ref.index,ref.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}else{hit.elapsed=elapsed;const amount=Math.sin(elapsed*34)*(1-elapsed/.4)*.022*hit.intensity;if(obj)obj.rotation.z=amount;if(refs){this.hitRotation.makeRotationZ(amount);for(const ref of refs){this.matrixDummy.matrix.copy(ref.matrix).multiply(this.hitRotation);ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}}}}
     for(const [id,fall] of this.fallingTrees){
       fall.elapsed+=dt;const fallT=Math.min(1,fall.elapsed/fall.duration),eased=1-Math.pow(1-fallT,3),fadeStart=fall.duration+fall.hold,total=fadeStart+fall.fade;
@@ -331,6 +343,7 @@ export class Environment {
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'))o.castShadow=quality==='high'||quality==='ultra';});this.cullClock=0;
   }
   setFoliageDensity(value:number):void {this.foliageDensity=Math.max(.25,Math.min(1,value));this.setQuality(this.quality);}
+  setWeatherWetness(rain:number,storm=0):void {this.surfaceWetness.value=THREE.MathUtils.clamp(rain*.58+storm*.42,0,1);}
   syncNodes(nodeChanges:Record<string,number>):void {
     for(const node of this.nodes){
       const remaining=nodeChanges[node.id]??node.remaining;node.remaining=remaining;
