@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Pracovní větev `codex/combat-endgame-next` obsahuje lokální checkpoint `42c19a711eb806d6cf606e3757ffa30b8508344c`; poslední pokus o push selhal po 75 s na připojení k GitHubu `:443`, takže `origin/codex/combat-endgame-next` je zatím `43497a07a0544db953b6461b47b5ebba9efcd534` a větev je o 1 commit napřed. Source/test změny jsou commitnuté; probíhá aktualizace checkpointu.
+- Pracovní větev `codex/combat-endgame-next` je čistá. `HEAD == origin/codex/combat-endgame-next == ad27064d23d8df0d55316973ce18413018fa5591` po `git fetch origin`. Push po předchozím 75s HTTPS timeoutu při retry prošel.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev je 95 commitů napřed a 0 pozadu, merge-base odpovídá `origin/main`. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — deterministická pasivní fauna (jelen)
@@ -14,7 +14,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Přiblížení hráče a zásah spustí runtime-only únik bez útoku; po odeznění hrozby se jelen vrací k deterministickému wander chování. Jelení model se slučuje do sdílené geometrie/materialu na druh a death loot dává 2 raw meat + 3 hide. Oznámení je EN/CZ.
 - Nový `npm run test:deer` ověřil v Chrome/Metal skutečné Gen5 vytvoření, útěk o 4.15 m za sekundu při testu, nezměněné health, lov, odměny, persistované odstranění po save/reload a nula console/WebGL chyb. Výsledky v ignorovaném `test-results/deer/results.json`; snímky vizuálně zkontrolovány, žádné QA výstupy nejsou commitnuté.
 - `tests/wildlife-combat.test.ts`: 26/26 PASS. Plný `npm test`: **294/294 PASS (39 souborů)**. `npm run build`: PASS (stávající velký JS chunk warning); `git diff --check`: PASS. Plný browser průchod `test:deer`: 5/5 kontrol PASS.
-- Změněno: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs`, `package.json`, tento checkpoint. Deer commit `ec32e40`, loot commit `d4fe16e` i checkpoint `65c5271` jsou pushnuté; deer gait commit `42c19a7` je zatím lokální po jednom HTTPS timeoutu. Bez releasu/main/PR.
+- Změněno: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs`, `package.json`, tento checkpoint. Deer commit `ec32e40`, loot commit `d4fe16e`, gait commit `42c19a7` i aktuální checkpoint `ad27064` jsou pushnuté na `origin/codex/combat-endgame-next`. Bez releasu/main/PR.
 - Orientační celkový postup je přibližně **65%**; subgoal odhady: Combat/weapon progression **57%**, Armor/AI/world danger **88%**, Raiding/security/electricity **48%**, POI/events/endgame **52%**, polish/performance/regression **78%**. Další prioritní práce: širší balance a zbývající regression QA. Odhady jsou hrubé, nikoli měřené počty úkolů.
 - Vite na portu 5174 byl po browser QA korektně ukončen.
 
@@ -23,7 +23,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Útěk jelena nyní dostává levný deterministický gallop pose: krátký body lift a pitch řízené runtime fází, bez skeletu, nových geometrií, materiálů nebo RNG. Po skončení strachu se model vrátí přesně na terénní idle pozici.
 - `tests/wildlife-combat.test.ts` teď ověřuje posun, gallop lift/pitch, žádné útočné poškození a návrat na ground pose. Browser QA nyní používá explicitní seed `391808898`, protože náhodný New Game seed někdy nevytvoří vhodný teplý grassland a způsobil falešný fail ještě před gameplay assertion. Chrome/Metal `test:deer`: **5/5 PASS**, screenshot `test-results/deer/deer-flee.png` ručně zkontrolován, browser/app/WebGL errors: **0**.
 - Plná unit sada po změně: **294/294 PASS (39 souborů)**; `npm run build` PASS se stávajícím warningem o ~3.24 MB JS; `git diff --check` PASS. Vite server vypnutý.
-- Změněno `src/combat/wildlife.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs` a checkpoint. Save schema, animal placement/IDs, RNG a výpočet světa beze změny. Validovaný commit `42c19a7` je vytvořen na `codex/combat-endgame-next`; push čeká na obnovení GitHub HTTPS spojení. Progress celku zůstává pracovně **65%**; jde o polish pod Goal 2, nikoli samostatné dokončení subgoal.
+- Změněno `src/combat/wildlife.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs` a checkpoint. Save schema, animal placement/IDs, RNG a výpočet světa beze změny. Validovaný commit `42c19a7` a checkpoint `ad27064` jsou pushnuté na `codex/combat-endgame-next`. Progress celku zůstává pracovně **65%**; jde o polish pod Goal 2, nikoli samostatné dokončení subgoal.
 
 ## Pokračování — POI-specific endgame cache loot
 
