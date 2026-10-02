@@ -48,8 +48,8 @@ export function pineTexture():THREE.CanvasTexture {
       const t=.15+j*.11,cx=126+(ex-126)*t,cy=y+12+(ey-y-12)*t;
       for(let k=0;k<14;k++){
         const angle=-Math.PI*.5+side*.5+(rand()-.5)*2.9,length=5+rand()*11;
-        ctx.strokeStyle=['#4b6248','#617958','#7b8e69','#94a17d'][Math.floor(rand()*4)]!;
-        ctx.lineWidth=.8+rand()*.85;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*length,cy+Math.sin(angle)*length);ctx.stroke();
+        ctx.strokeStyle=['#344d38','#45613f','#5a714a','#718258'][Math.floor(rand()*4)]!;
+        ctx.lineWidth=1+rand()*1.05;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*(length+1),cy+Math.sin(angle)*(length+1));ctx.stroke();
       }
     }
   }
