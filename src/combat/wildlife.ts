@@ -6,17 +6,18 @@ import type {Vec3,WorldGeneration} from '../core/types';
 import type {StructureGrade} from '../core/types';
 import {randomSource} from '../world/noise';
 
-export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
-export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'stagger'|'return'|'raid'|'attack'|'dead';
+export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger'|'islandDeer';
+export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'stagger'|'return'|'raid'|'attack'|'flee'|'dead';
 export type ScavengerArchetype='scavenger'|'lookout'|'guard';
 export interface WildlifeRaidTarget {id:string;position:Vec3}
 export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;combatMoveTime:number;combatMoveDirection:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;staggerSeconds:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
-export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
+export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;temperatureAt?:(x:number,z:number)=>number;moistureAt?:(x:number,z:number)=>number;slopeAt?:(x:number,z:number)=>number;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
 const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;speed:number;damage:number;aggro:number;name:string;color:number}>={
   islandWolf:{health:78,radius:.64,scale:1.05,speed:3.25,damage:17,aggro:24,name:'Island wolf',color:0x696d69},
   coastalBoar:{health:92,radius:.72,scale:.95,speed:2.8,damage:13,aggro:0,name:'Coastal boar',color:0x735641},
   islandScavenger:{health:112,radius:.58,scale:1,speed:2.55,damage:12,aggro:21,name:'Island scavenger',color:0x71664c},
+  islandDeer:{health:64,radius:.56,scale:1.08,speed:4.15,damage:0,aggro:0,name:'Island deer',color:0x927653},
 };
 
 /** Higher construction grades slow a raid, keeping structure upgrades defensively meaningful. */
@@ -60,6 +61,19 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     const id=`scavenger-${context.seed}-${index}`,seed=Math.floor(random()*0x7fffffff),position={x,y,z},archetype:ScavengerArchetype=index===1?'lookout':'scavenger',actor=createScavenger(id,archetype,position,angle+Math.PI,seed,random()*.8,context.nodeChanges?.[id]);if(actor)actors.push(actor);
     if(index===1){const guardAngle=angle+Math.PI,guardX=site.x+Math.cos(guardAngle)*8,guardZ=site.z+Math.sin(guardAngle)*8,guardY=context.heightAt(guardX,guardZ),guardId=`${id}-guard`,guardSeed=(context.seed^Math.imul(index+1,0x45d9f3b))>>>0;if(Number.isFinite(guardY)&&guardY>.5&&Math.abs(guardX)<=margin&&Math.abs(guardZ)<=margin){const guard=createScavenger(guardId,'guard',{x:guardX,y:guardY,z:guardZ},angle,guardSeed,guardSeed%80/100,context.nodeChanges?.[guardId]);if(guard)actors.push(guard);}}
   }
+  // A separate random stream and namespace keep all established fauna IDs and positions stable.
+  if(context.generation===5){
+    const deerRandom=randomSource(context.seed^0x2c1b3c6d),desiredDeer=2,deerMargin=Math.max(24,context.halfSize*.88),deerMinRadius=72,deerMaxRadius=Math.max(deerMinRadius+20,context.halfSize*.68);let placed=0;
+    for(let attempt=0;attempt<desiredDeer*80&&placed<desiredDeer;attempt++){
+      const angle=deerRandom()*Math.PI*2,radius=deerMinRadius+deerRandom()*(deerMaxRadius-deerMinRadius),x=context.spawn.x+Math.cos(angle)*radius,z=context.spawn.z+Math.sin(angle)*radius;
+      if(Math.abs(x)>deerMargin||Math.abs(z)>deerMargin)continue;const y=context.heightAt(x,z),biome=context.biomeAt(x,z),temperature=context.temperatureAt?.(x,z)??(biome.includes('SNOW')?.18:biome.includes('ARID')?.68:.58),moisture=context.moistureAt?.(x,z)??(biome.includes('ARID')?.32:.58),slope=context.slopeAt?.(x,z)??0;
+      if(!Number.isFinite(y)||y<2||y>28||slope>.38||!biome.includes('GRASS')||temperature<.48||moisture<.28||moisture>.82)continue;
+      const id=`deer-${context.seed}-${placed}`,seed=Math.floor(deerRandom()*0x7fffffff),savedHealth=context.nodeChanges?.[id];if(savedHealth===0){placed++;continue;}
+      const position={x,y,z},maxHealth=SPECIES.islandDeer.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species:'islandDeer',state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:0,combatMoveTime:0,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,staggerSeconds:0,perceptionCooldown:0,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+        takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
+      actors.push(actor);placed++;
+    }
+  }
   return actors;
 }
 
@@ -91,6 +105,13 @@ export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:
   const spec=SPECIES[actor.species],dx=player.x-actor.position.x,dz=player.z-actor.position.z,distance=Math.hypot(dx,dz);
   actor.attackCooldown=Math.max(0,actor.attackCooldown-dt);
   if(actor.staggerSeconds>0){actor.staggerSeconds=Math.max(0,actor.staggerSeconds-dt);if(actor.staggerSeconds>0){actor.state='stagger';return;}}
+  if(actor.species==='islandDeer'){
+    actor.memorySeconds=Math.max(0,actor.memorySeconds-dt);
+    if(actor.angered){actor.memorySeconds=Math.max(actor.memorySeconds,7);actor.angered=false;}
+    if(distance<15)actor.memorySeconds=Math.max(actor.memorySeconds,3.8);
+    if(actor.memorySeconds>0&&distance<64){const awayX=actor.position.x-player.x,awayZ=actor.position.z-player.z,awayLength=Math.hypot(awayX,awayZ)||1,homeX=actor.home.x-actor.position.x,homeZ=actor.home.z-actor.position.z,homeLength=Math.hypot(homeX,homeZ),steerX=awayX/awayLength+(homeLength>5?homeX/homeLength*.8:0),steerZ=awayZ/awayLength+(homeLength>5?homeZ/homeLength*.8:0),steerLength=Math.hypot(steerX,steerZ)||1,step=Math.min(4.15*dt,Math.max(.08,distance));actor.state='flee';actor.yaw=Math.atan2(steerX,steerZ);actor.position.x+=steerX/steerLength*step;actor.position.z+=steerZ/steerLength*step;actor.position.y=heightAt(actor.position.x,actor.position.z)+.05;return;}
+    if(distance>92){actor.state='wander';return;}
+  }
   if(distance>92){actor.state='wander';return;}
   const animalAggro=actor.species!=='islandScavenger'&&spec.aggro>0&&distance<spec.aggro;
   const hostile=actor.angered||actor.alerted||animalAggro;
@@ -179,6 +200,10 @@ export class WildlifeSystem {
         add(new THREE.BoxGeometry(.11,.12,.18),0x454b47,.40,1.08,.02,1,1,1);
         add(new THREE.BoxGeometry(.13,.19,.17),0x514d42,.22,1.01,-.30,1,1,1);
       }
+    } else if(species==='islandDeer'){
+      ellipsoid(coat,0,.83,.02,.31,.39,.57);ellipsoid(coat,0,1.20,-.37,.19,.26,.22);ellipsoid(coat,0,1.37,-.51,.15,.16,.15);ellipsoid(dark,0,1.32,-.65,.10,.07,.10);
+      for(const side of [-1,1]){add(new THREE.CapsuleGeometry(.055,.48,4,7),coat,side*.17,.34,-.34,1,1,1,side*-.035);add(new THREE.CapsuleGeometry(.05,.42,4,7),coat,side*.17,.34,.34,1,1,1,side*.035);ellipsoid(0xd5c2a0,side*.17,.75,-.01,.075,.14,.37);ellipsoid(dark,side*.12,1.42,-.57,.025,.026,.025);}
+      for(const side of [-1,1]){add(new THREE.CapsuleGeometry(.028,.19,3,5),0x927653,side*.08,1.60,-.48,1,1,1,side*-.26);add(new THREE.CapsuleGeometry(.018,.12,3,5),0x927653,side*.16,1.70,-.49,1,1,1,side*.42);}
     } else {
       ellipsoid(coat,0,.68,0,.36,.37,.64);ellipsoid(coat,0,.78,-.49,.30,.31,.34);ellipsoid(coat,0,.66,-.72,.23,.16,.22);
       for(const x of [-.20,.20]){ellipsoid(coat,x,1.02,-.5,.10,.19,.075);ellipsoid(dark,x*.72,.81,-.73,.034,.035,.025);if(species==='coastalBoar')ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);}

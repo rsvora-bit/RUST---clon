@@ -2,6 +2,17 @@
 
 Toto je živý checkpoint po obnovení práce. Níže je ponechána historie předchozí relace v0.9.1; její Git stav už nepopisuje současnou větev.
 
+## Pokračování — deterministická pasivní fauna (jelen)
+
+- Generation 5 nyní vytváří až dva jeleny v teplých, mírně vlhkých travnatých nížinách. Umístění kontroluje teplotu, moisture, výšku a sklon přes existující climate/terrain API; Generations 1–4 i nevhodná klima jeleny nedostanou.
+- Jeleni používají oddělený PRNG stream a ID namespace `deer-${seed}-${index}`. Tím zůstávají ID a pozice už existujících vlků/divočáků/scavengerů beze změny. Seed actoru se spotřebuje i při načtení již uloveného zvířete, takže ulovení prvního jelena nemění polohu dalšího po reloadu; tento případ pokrývá regression test. Vyřazené deer ID a zraněné health se čtou/zapisují přes dosavadní `nodeChanges`; save schema ani world revision se nemění.
+- Přiblížení hráče a zásah spustí runtime-only únik bez útoku; po odeznění hrozby se jelen vrací k deterministickému wander chování. Jelení model se slučuje do sdílené geometrie/materialu na druh a death loot dává 2 raw meat + 3 hide. Oznámení je EN/CZ.
+- Nový `npm run test:deer` ověřil v Chrome/Metal skutečné Gen5 vytvoření, útěk o 4.15 m za sekundu při testu, nezměněné health, lov, odměny, persistované odstranění po save/reload a nula console/WebGL chyb. Výsledky v ignorovaném `test-results/deer/results.json`; snímky vizuálně zkontrolovány, žádné QA výstupy nejsou commitnuté.
+- `tests/wildlife-combat.test.ts`: 26/26 PASS. Plný `npm test`: **293/293 PASS (39 souborů)**. `npm run build`: PASS (stávající velký JS chunk warning); `git diff --check`: PASS. Plný browser průchod `test:deer`: 5/5 kontrol PASS.
+- Změněno: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs`, `package.json`, tento checkpoint. Změna je zatím v working tree a musí projít závěrečnou validací a běžným checkpoint commitem/pushem na `codex/combat-endgame-next`; bez releasu/main/PR.
+- Orientační celkový postup zůstává přibližně **64%**; subgoal estimates: Combat/weapon progression **57%**, Armor/AI/world danger **88%**, Raiding/security/electricity **48%**, POI/events/endgame **48%**, polish/performance/regression **78%**. Následující prioritní práce: dokončit další nedodělanou progression/endgame vrstvu a následně širší regrese. Estimáty jsou hrubé a nesčítají se jako dokončený scope.
+- Vite na portu 5174 byl použit pro QA a musí být ukončen po validaci.
+
 ## Feature-wide regrese — 2026-10-02
 
 - `scripts/world-performance-qa.mjs` nově bere aktuální verzi z `package.json`, umožňuje volit baseline URL/label a tiskne stručný metrický souhrn místo obřího world dumpu. V Chrome/Metal na Vite `127.0.0.1:5174` prošly `test:tech-tree` (**42 kontrol**), `test:hazard`, `test:power`, `test:base-security`, `test:raiding`, `test:world-events`, `test:combat`, `test:firearm`, `test:shotgun`, `test:ranged`, `test:scavenger`, `test:death`, `test:salvage`, `test:world` (**23 kontrol**), `test:world-art`, `test:tree-culling` a `test:door-lock`. Všechny skončily PASS; aplikační/WebGL chyby: 0. Pokryly craft/equip/research/save-load, cold/toxic damage, generator→switch→lamp, napájený alarm, koordinované prolomení dveří, opakované storm cache, melee/ranged zbraně, AI/LOS, Tech Part cache, Lost Pack recovery, Recycler/Furnace/building, Gen5 world/map/weather/fall damage, legacy Gen4/v0.9.0/v0.9.1 save compatibility, tree culling a záběr kamery.

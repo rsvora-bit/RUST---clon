@@ -26,6 +26,23 @@ describe('seeded island wildlife',()=>{
     expect(reloaded).toHaveLength(9);expect(reloaded.map(a=>a.id)).not.toContain(first[0]!.id);
     expect(reloaded.map(a=>a.id)).toContain(first[1]!.id);expect(reloaded.find(a=>a.id===first[1]!.id)?.health).toBe(37);
   });
+  it('adds a small deterministic deer population only to suitable Gen5 warm grassland and preserves old fauna placement',()=>{
+    const warmGrass={...context,biomeAt:()=>'TEMPERATE GRASSLAND',temperatureAt:()=>.68,moistureAt:()=>.56,slopeAt:()=>.12},first=createWildlifePopulation(warmGrass),again=createWildlifePopulation(warmGrass),deer=first.filter(actor=>actor.species==='islandDeer');
+    expect(deer).toHaveLength(2);expect(deer.map(actor=>[actor.id,actor.position])).toEqual(again.filter(actor=>actor.species==='islandDeer').map(actor=>[actor.id,actor.position]));
+    expect(first.filter(actor=>actor.species!=='islandDeer').map(actor=>[actor.id,actor.position])).toEqual(createWildlifePopulation(context).map(actor=>[actor.id,actor.position]));
+    expect(deer.every(actor=>actor.position.y>=2&&actor.position.y<=28)).toBe(true);
+    expect(createWildlifePopulation({...warmGrass,biomeAt:()=>'SNOW / ALPINE',temperatureAt:()=>.18}).some(actor=>actor.species==='islandDeer')).toBe(false);
+    expect(createWildlifePopulation({...warmGrass,biomeAt:()=>'ARID',temperatureAt:()=>.7,moistureAt:()=>.18}).some(actor=>actor.species==='islandDeer')).toBe(false);
+    const saved={[deer[0]!.id]:0,[deer[1]!.id]:23},reloaded=createWildlifePopulation({...warmGrass,nodeChanges:saved});expect(reloaded.some(actor=>actor.id===deer[0]!.id)).toBe(false);expect(reloaded.find(actor=>actor.id===deer[1]!.id)?.health).toBe(23);expect(reloaded.find(actor=>actor.id===deer[1]!.id)?.position).toEqual(deer[1]!.position);
+    expect(createWildlifePopulation({...warmGrass,generation:4}).some(actor=>actor.species==='islandDeer')).toBe(false);
+  });
+  it('makes deer flee without attacking, return to calm wandering, and share one batched model',()=>{
+    const deerContext={...context,biomeAt:()=>'TEMPERATE GRASSLAND',temperatureAt:()=>.68,moistureAt:()=>.56,slopeAt:()=>.12},scene=new THREE.Scene(),system=new WildlifeSystem(scene,deerContext),deer=system.actors.find(actor=>actor.species==='islandDeer')!;
+    const secondDeer=system.actors.find(actor=>actor.species==='islandDeer'&&actor!==deer);expect(deer).toBeTruthy();expect(secondDeer).toBeTruthy();expect(system.object(deer.id)).toBeInstanceOf(THREE.Mesh);expect(system.object(deer.id)!.geometry).toBe(system.object(secondDeer!.id)!.geometry);
+    const player={x:deer.position.x,y:deer.position.y,z:deer.position.z+4},start={...deer.position},attacks=vi.fn();tickWildlife(deer,.2,player,()=>3,attacks);
+    expect(deer.state).toBe('flee');expect(Math.hypot(deer.position.x-start.x,deer.position.z-start.z)).toBeGreaterThan(.4);expect(attacks).not.toHaveBeenCalled();
+    deer.memorySeconds=.05;const farPlayer={x:deer.position.x+80,y:3,z:deer.position.z};tickWildlife(deer,.1,farPlayer,()=>3,attacks);expect(deer.memorySeconds).toBe(0);expect(deer.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();system.dispose();
+  });
   it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');
     expect(scavengers).toHaveLength(3);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
