@@ -12,6 +12,7 @@ import {TerrainRoadRouter,roadGeometry} from '../terrain/roads';
 import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
 import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp','Stormwatch Station'];
@@ -40,7 +41,7 @@ export class WorldSurvival {
   private makeRoad(points:Vec3[]){if(points.length<2)return;if(this.env.terrain.generation===5&&this.env.worldRevision>=2){const mesh=new T.Mesh(roadGeometry(points,this.env.terrain),this.road);mesh.receiveShadow=true;mesh.name='Terrain-following island road';this.group.add(mesh);return;}const vertices:number[]=[],indices:number[]=[],width=this.env.terrain.generation===5?2.8:1.5;for(let i=0;i<points.length;i++){const p=points[i]!,a=points[Math.max(0,i-1)]!,b=points[Math.min(points.length-1,i+1)]!,dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len;vertices.push(p.x+nx*width,p.y,p.z+nz*width,p.x-nx*width,p.y,p.z-nz*width);if(i<points.length-1){const j=i*2;indices.push(j,j+1,j+2,j+1,j+3,j+2);}}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();const mesh=new T.Mesh(g,this.road);mesh.receiveShadow=true;mesh.name='Terrain-following island road';this.group.add(mesh);}
   private box(g:T.Group,x:number,y:number,z:number,w:number,h:number,d:number,m:T.Material){const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);mesh.castShadow=mesh.receiveShadow=true;g.add(mesh);return mesh;}
   private make(p:Landmark){
-    const g=new T.Group();g.position.set(p.position.x,p.position.y,p.position.z);this.group.add(g);
+    const g=new T.Group();g.name=p.id;g.position.set(p.position.x,p.position.y,p.position.z);this.group.add(g);
     if(p.kind===1){
       // A narrow, damaged antenna restores a useful skyline cue without rebuilding the old bulky scaffold.
       for(let i=0;i<6;i++){const beam=this.box(g,-1.7+i*.65,.12+(i%2)*.08,(i%3-1)*.58,1.05,.11,.13,this.metal);beam.rotation.y=(i*.71)%Math.PI;beam.rotation.z=(i%2?.08:-.06);}
@@ -64,8 +65,27 @@ export class WorldSurvival {
       for(const [x,z] of [[1.48,.38],[1.96,.62],[1.96,.14]] as const){const cup=new T.Mesh(new T.SphereGeometry(.105,7,5),this.cloth);cup.name='Stormwatch anemometer cup';cup.position.set(x,4.1,z);g.add(cup);}
       const panel=this.box(g,-.48,1.87,.36,1.05,.07,.72,this.metal);panel.name='Stormwatch weather instrument panel';panel.rotation.x=-.22;
       this.box(g,.48,.88,-.96,.42,.72,.08,this.rust);
+      this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===3){const tent=new T.Mesh(new T.ConeGeometry(1.8,2.3,4,1,true),this.cloth);tent.position.y=1.15;tent.rotation.y=Math.PI/4;g.add(tent);this.box(g,-2,.18,0,.3,.3,2,this.wood);
     }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);}
+  }
+  private mergeStaticLandmarkMeshes(group:T.Group){
+    type Batch={material:T.Material;castShadow:boolean;receiveShadow:boolean;geometries:T.BufferGeometry[];markers:{name:string;position:T.Vector3}[]};
+    const batches=new Map<string,Batch>();
+    for(const child of [...group.children]){
+      if(!(child instanceof T.Mesh)||Array.isArray(child.material))continue;
+      child.updateMatrix();const key=`${child.material.uuid}:${child.castShadow}:${child.receiveShadow}`;let batch=batches.get(key);
+      if(!batch){batch={material:child.material,castShadow:child.castShadow,receiveShadow:child.receiveShadow,geometries:[],markers:[]};batches.set(key,batch);}
+      const geometry=child.geometry.clone();geometry.applyMatrix4(child.matrix);batch.geometries.push(geometry);
+      if(child.name)batch.markers.push({name:child.name,position:child.position.clone()});
+      group.remove(child);child.geometry.dispose();
+    }
+    for(const batch of batches.values()){
+      const geometry=mergeGeometries(batch.geometries,false);batch.geometries.forEach(part=>part.dispose());
+      if(!geometry)throw new Error('Could not batch static Stormwatch geometry');geometry.computeBoundingBox();geometry.computeBoundingSphere();
+      const mesh=new T.Mesh(geometry,batch.material);mesh.castShadow=batch.castShadow;mesh.receiveShadow=batch.receiveShadow;mesh.name='Stormwatch batched structure';group.add(mesh);
+      for(const marker of batch.markers){const feature=new T.Object3D();feature.name=marker.name;feature.position.copy(marker.position);group.add(feature);}
+    }
   }
   private tier(rand:()=>number):LootTier{const roll=rand();return roll<.60?'common':roll<.92?'decent':'lucky';}
   fillLoot(s:Station,tier:LootTier,rand:()=>number){fillSalvageLoot(s,tier,rand);}

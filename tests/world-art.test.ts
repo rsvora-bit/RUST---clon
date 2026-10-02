@@ -25,6 +25,7 @@ describe('v0.9.1 world art stabilization',()=>{
     try{
       world.populate(state);const loot=state.progression!.stations.find(station=>station.id==='loot-poi-4'),cache=state.progression!.stations.find(station=>station.id==='secure-cache-poi-4');
       expect(world.group.getObjectByName('Stormwatch wind mast')).toBeTruthy();expect(world.group.getObjectByName('Stormwatch weather instrument panel')).toBeTruthy();
+      const stormwatch=world.group.getObjectByName(poi.id)!;expect(stormwatch.children.filter(child=>child instanceof THREE.Mesh)).toHaveLength(6);
       expect(world.collisionBoxes().some(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<1)).toBe(true);
       expect(loot?.inventory.some(stack=>stack?.itemId==='wiring'||stack?.itemId==='machineParts')).toBe(true);expect(cache).toMatchObject({kind:'secureCache',locked:true});
       expect(validateGameState(state)).toBe(true);
