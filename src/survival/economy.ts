@@ -32,11 +32,11 @@ export function fillSalvageLoot(station:Station,tier:LootTier,rand:()=>number){
 
 /** New-world POI caches have a light loot identity; existing saved stations are never rerolled. */
 export function fillPoiLoot(station:Station,kind:number,tier:LootTier,rand:()=>number){
-  const relay:[ItemId,number,number,number][]=[['scrap',8,24,.78],['wiring',1,4,.78],['gears',1,2,.46],['machineParts',1,2,.31],['techParts',1,1,.10],['bandage',1,2,.16]];
-  const quarry:[ItemId,number,number,number][]=[['metal',10,34,.74],['ore',24,86,.84],['sulfurOre',12,54,.42],['gears',1,3,.42],['machineParts',1,2,.22],['scrap',6,20,.52]];
+  const relay:[ItemId,number,number,number][]=[['scrap',8,24,.78],['wiring',1,4,.78],['gears',1,2,.46],['machineParts',1,2,.31],['techParts',1,1,.10],['pistolAmmo',2,4,.22],['bandage',1,2,.16]];
+  const quarry:[ItemId,number,number,number][]=[['metal',10,34,.74],['ore',24,86,.84],['sulfurOre',12,54,.42],['gears',1,3,.42],['machineParts',1,2,.22],['shotgunShells',1,2,.18],['scrap',6,20,.52]];
   const coast:[ItemId,number,number,number][]=[['scrap',5,18,.62],['wiring',1,3,.48],['wood',30,100,.78],['fiber',12,42,.65],['berries',2,8,.38],['canteen',1,2,.34],['bandage',1,2,.20]];
   const camp:[ItemId,number,number,number][]=[['wood',35,110,.84],['fiber',16,48,.75],['berries',3,10,.58],['bandage',1,3,.43],['canteen',1,2,.40],['scrap',4,14,.34]];
-  const stormwatch:[ItemId,number,number,number][]=[['wiring',2,6,.88],['machineParts',1,3,.52],['gears',1,2,.38],['scrap',10,28,.62],['techParts',1,1,.16],['bandage',1,2,.22],['canteen',1,2,.30]];
+  const stormwatch:[ItemId,number,number,number][]=[['wiring',2,6,.88],['machineParts',1,3,.52],['gears',1,2,.38],['scrap',10,28,.62],['techParts',1,1,.16],['pistolAmmo',2,4,.26],['bandage',1,2,.22],['canteen',1,2,.30]];
   const table=kind===1?relay:kind===2?quarry:kind===3?camp:kind===4?stormwatch:coast;
   const scale=tier==='lucky'?1.45:tier==='decent'?1.2:1;
   let total=0;
