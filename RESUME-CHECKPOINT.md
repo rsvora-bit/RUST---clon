@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Pracovní větev `codex/combat-endgame-next` byla při zahájení čistá a synchronizovaná na `4153b10`; aktuální melee miss-cost slice ještě čeká na commit/push. Poslední ověřený `origin/codex/combat-endgame-next` je `4153b10`.
+- Combat commit `944c7c0e3d8b3ff0f460f7e5c50e8723e7443d95` byl úspěšně pushnut na `codex/combat-endgame-next`. Následující pouze checkpointový commit zůstal lokální: push i následný fetch skončily po 75 s timeoutu spojení na `github.com:443`. Poslední lokálně známý `origin/codex/combat-endgame-next` je proto `944c7c0`; pracovní strom je čistý a lokální větev je o checkpoint commit napřed.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — melee miss cost a přesnost (2026-10-02)
@@ -12,7 +12,8 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Platný melee swing nyní spotřebuje zbraňovou výdrž při zahájení, i když mine nebo narazí do překážky. Condition nástroje se dál snižuje pouze při skutečném zásahu, takže minutí cenu má, ale neopotřebovává vybavení.
 - Chrome/Metal `test:combat` ověřil minutí (výdrž 100→95, condition i zdraví cíle beze změny), následný zásah, kopí, stagger, Dockside cleaver, lov/loot, equipment, armor a save/reload; browser/app/WebGL errors **0**. Jeden počáteční probe omylem mířil skrz cíl a byl opraven na skutečný odvrácený směr; assertion zůstala přísná.
 - `npm test`: **294/294 PASS (39 souborů)**; `npm run build`: PASS se stávajícím Vite upozorněním na 3.239 MB JS bundle; `git diff --check` a `node --check scripts/combat-qa.mjs`: PASS. Vite `127.0.0.1:5174` byl po QA korektně vypnut. Save formát, world generation a NPC persistence se nemění.
-- Změněno `src/app/GameApp.ts`, `scripts/combat-qa.mjs` a tento checkpoint. Progress odhad zůstává zhruba **65% hotovo / 35% zbývá**; Goal 1 přibližně **58%**, Goal 2 **88%**, Goal 3 **48%**, Goal 4 **52%**, Goal 5 **78%**. Žádný subgoal není dokončen; největší zbývající části jsou balance, endgame/world-danger další rozvoj a feature-wide QA.
+- Následný Chrome/Metal benchmark `test:performance`, seed 731942, HIGH, 1280×720: archiv v0.9.0 **60 FPS / 16.666 ms / 612 draw calls / 3,390,261 triangles / 1,318 nodes / 3,071 ms startup**; aktuální větev **60 FPS / 16.666 ms / 643 draw calls / 2,857,822 triangles / 1,598 nodes / 2,613 ms startup**. Oba běhy měly 0 browser errors. Shodný výsledek rendereru před/po potvrzuje, že melee výdrž neovlivnila draw calls ani triangles; FPS je 60Hz-limited a startup je jeden běh.
+- Změněno `src/app/GameApp.ts` a `scripts/combat-qa.mjs`; commit `944c7c0` byl úspěšně pushnut na pracovní větev. Progress odhad zůstává zhruba **65% hotovo / 35% zbývá**; Goal 1 přibližně **58%**, Goal 2 **88%**, Goal 3 **48%**, Goal 4 **52%**, Goal 5 **78%**. Žádný subgoal není dokončen; největší zbývající části jsou balance, endgame/world-danger další rozvoj a feature-wide QA.
 
 ## Pokračování — deterministická pasivní fauna (jelen)
 
