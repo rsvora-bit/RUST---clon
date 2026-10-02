@@ -12,7 +12,7 @@ try{
   await page.locator('#world-seed').fill('731942');await page.locator('[data-action="new"]').click();await page.locator('.save-browser:not([hidden])').waitFor({state:'visible'});await page.locator('[data-save-action="new"][data-save-slot="1"]').click();
   await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing',null,{timeout:180000});await page.evaluate(()=>window.__TIDELAND.setCapturePaused(true));await page.waitForTimeout(450);
   const initial=await page.evaluate(()=>window.__TIDELAND.worldArt());
-  assert.equal(initial.trees.length,1180,'revision 3 must retain the expected deterministic tree set');
+  assert.equal(initial.trees.length,1180,'revision 4 must retain the expected deterministic tree set');
   assert.ok(initial.renderedTrees>0&&initial.renderedTrees<initial.trees.length,'distance culling should trim remote trees');
   assert.equal(initial.renderedTreeInstances,initial.renderedTrees,'InstancedMesh count must match actual visible tree instances');
   console.log(`PASS compact tree instances ${initial.renderedTrees}/${initial.trees.length}`);

@@ -1,7 +1,7 @@
 import type {CollisionBox} from '../physics/PhysicsWorld';
 import * as T from 'three';
 import type {Environment} from '../rendering/environment';
-import type {GameState,ItemId,Vec3} from '../core/types';
+import type {GameState,ItemId,Vec3,WorldRevision} from '../core/types';
 import {ensureProgression} from './progression';
 import {createStation,type Station} from './stations';
 import {woodMaterial} from '../rendering/materials';
@@ -14,14 +14,15 @@ import {surfaceClimate} from '../world/climate';
 import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
-const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp'];
+const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp','Stormwatch Station'];
 export const worldToMap=(p:{x:number;z:number},size:number,pixels:number)=>({x:(p.x+size/2)/size*pixels,y:(p.z+size/2)/size*pixels});
 export const mapToWorld=(p:{x:number;y:number},size:number,pixels:number)=>({x:p.x/pixels*size-size/2,z:p.y/pixels*size-size/2});
 
 export interface WorldLayout{pois:Landmark[];trails:Vec3[][]}
-export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:CollisionBox[],seed:number,revision:1|2|3=3):WorldLayout{
+export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:CollisionBox[],seed:number,revision:WorldRevision=4):WorldLayout{
   const pois:Landmark[]=[],trails:Vec3[][]=[],rand=randomSource(seed+1939);
-  for(let k=0;k<4;k++){let best:Vec3|null=null,score=Infinity;const angle=k*Math.PI/2+.5+(rand()-.5)*.38;for(let i=0;i<2800;i++){const a=angle+Math.sin(i*2.31+seed)*.67,r=terrain.generation===5?155+(i%325):terrain.generation>=4?96+(i%215):82+(i%175);const x=Math.cos(a)*r,z=Math.sin(a)*r,y=terrain.heightAt(x,z);if(y<3||y>(terrain.generation===5?52:36))continue;const slope=terrain.slopeAt(x,z);if(slope>.36)continue;if(Math.hypot(x-spawn.x,z-spawn.z)<90||pois.some(p=>Math.hypot(p.position.x-x,p.position.z-z)<95))continue;const nearby=(terrain.generation===5&&revision===2?[]:colliders).some(c=>Math.abs(c.position.x-x)<5+c.halfExtents.x&&Math.abs(c.position.z-z)<5+c.halfExtents.z);if(nearby)continue;const rank=slope+Math.abs(r-(terrain.generation===5?300:175))*.001;if(rank<score){score=rank;best={x,y,z};}}if(best)pois.push({id:`poi-${k}`,name:NAMES[k]!,position:best,kind:k});}
+  const poiCount=terrain.generation===5&&revision>=4?NAMES.length:4;
+  for(let k=0;k<poiCount;k++){let best:Vec3|null=null,score=Infinity;const angle=k*Math.PI/2+.5+(rand()-.5)*.38;for(let i=0;i<2800;i++){const a=angle+Math.sin(i*2.31+seed)*.67,r=terrain.generation===5?155+(i%325):terrain.generation>=4?96+(i%215):82+(i%175);const x=Math.cos(a)*r,z=Math.sin(a)*r,y=terrain.heightAt(x,z);if(y<3||y>(terrain.generation===5?52:36))continue;const slope=terrain.slopeAt(x,z);if(slope>.36)continue;if(Math.hypot(x-spawn.x,z-spawn.z)<90||pois.some(p=>Math.hypot(p.position.x-x,p.position.z-z)<95))continue;const nearby=(terrain.generation===5&&revision===2?[]:colliders).some(c=>Math.abs(c.position.x-x)<5+c.halfExtents.x&&Math.abs(c.position.z-z)<5+c.halfExtents.z);if(nearby)continue;const rank=slope+Math.abs(r-(terrain.generation===5?300:175))*.001;if(rank<score){score=rank;best={x,y,z};}}if(best)pois.push({id:`poi-${k}`,name:NAMES[k]!,position:best,kind:k});}
   let from=spawn;const ordered=terrain.generation===5?(()=>{const remaining=[...pois],route:Landmark[]=[];let cursor=spawn;while(remaining.length){let best=0,bestDistance=Infinity;remaining.forEach((poi,index)=>{const d=Math.hypot(poi.position.x-cursor.x,poi.position.z-cursor.z);if(d<bestDistance){best=index;bestDistance=d;}});const next=remaining.splice(best,1)[0]!;route.push(next);cursor=next.position;}return route;})():pois;
   const router=terrain.generation===5&&revision>=2?new TerrainRoadRouter(terrain):null;
   for(const poi of ordered){if(router){trails.push(router.route(from,poi.position));from=poi.position;continue;}const points:Vec3[]=[],distance=Math.hypot(poi.position.x-from.x,poi.position.z-from.z),segments=Math.ceil(distance/3);for(let i=0;i<=segments;i++){const t=i/segments;let x=T.MathUtils.lerp(from.x,poi.position.x,t)+Math.sin(t*Math.PI)*Math.sin(seed+i*.03)*8,z=T.MathUtils.lerp(from.z,poi.position.z,t),y=terrain.heightAt(x,z);if(terrain.generation===5&&y<1){for(let j=1;j<=12&&y<1;j++){const pull=j/12*.86;x=T.MathUtils.lerp(x,0,pull);z=T.MathUtils.lerp(z,0,pull);y=terrain.heightAt(x,z);}}points.push({x,y:y+.08,z});}trails.push(points);from=poi.position;}
@@ -50,6 +51,19 @@ export class WorldSurvival {
       const puddle=()=>{const geometry=new T.CircleGeometry(1,20),position=geometry.getAttribute('position');for(let i=1;i<position.count;i++){const x=position.getX(i),y=position.getY(i),angle=Math.atan2(y,x),radius=.82+.11*Math.sin(angle*3+.4)+.07*Math.cos(angle*5-.2);position.setXY(i,x*radius,y*radius);}geometry.computeVertexNormals();return geometry;};
       for(const [x,z,sx,sz] of [[.45,1.35,2.15,1.25],[-1.35,2.35,.72,.46],[2.1,2.45,.55,.34]] as const){const runoff=new T.Mesh(puddle(),this.sludge);runoff.name='Leaking battery residue';runoff.rotation.x=-Math.PI/2;runoff.position.set(x,.035,z);runoff.scale.set(sx,sz,1);runoff.receiveShadow=true;g.add(runoff);}
       for(const [x,z,rotation] of [[1.25,1.05,.1],[2.15,.2,-.08],[-.25,2.4,.18]] as const){const drum=new T.Group();drum.position.set(x,.03,z);drum.rotation.y=rotation;g.add(drum);const body=new T.Mesh(new T.CylinderGeometry(.27,.30,.82,10,1),this.rust);body.castShadow=body.receiveShadow=true;drum.add(body);const rim=new T.Mesh(new T.TorusGeometry(.275,.025,5,12),this.metal);rim.rotation.x=Math.PI/2;rim.position.y=.33;drum.add(rim);drum.name='Corroded battery drum';}
+    }else if(p.kind===4){
+      // A compact, wind-battered field station gives the outer island a readable storm-survey landmark.
+      this.box(g,-.45,.14,.12,3.1,.22,2.65,this.metal);
+      for(const x of [-1.72,.82])for(const z of [-.92,1.16])this.box(g,x,.88,z,.13,1.45,.13,this.wood);
+      this.box(g,-.45,.78,-.89,2.45,1.23,.12,this.cloth);this.box(g,-.45,.78,1.13,2.45,1.23,.12,this.metal);
+      this.box(g,-1.67,1.48,.12,.15,.14,2.05,this.rust);this.box(g,.77,1.48,.12,.15,.14,2.05,this.rust);
+      this.box(g,-.45,1.61,.12,2.65,.17,2.85,this.metal).rotation.z=-.045;
+      const mast=new T.Mesh(new T.CylinderGeometry(.065,.11,4.2,7),this.metal);mast.name='Stormwatch wind mast';mast.position.set(1.72,2.25,.38);mast.castShadow=true;g.add(mast);
+      const arm=this.box(g,1.72,4.29,.38,.86,.055,.055,this.rust);arm.name='Stormwatch vane arm';
+      const vane=this.box(g,2.1,4.42,.38,.48,.06,.12,this.rust);vane.rotation.z=-.16;
+      for(const [x,z] of [[1.48,.38],[1.96,.62],[1.96,.14]] as const){const cup=new T.Mesh(new T.SphereGeometry(.105,7,5),this.cloth);cup.name='Stormwatch anemometer cup';cup.position.set(x,4.1,z);g.add(cup);}
+      const panel=this.box(g,-.48,1.87,.36,1.05,.07,.72,this.metal);panel.name='Stormwatch weather instrument panel';panel.rotation.x=-.22;
+      this.box(g,.48,.88,-.96,.42,.72,.08,this.rust);
     }else if(p.kind===3){const tent=new T.Mesh(new T.ConeGeometry(1.8,2.3,4,1,true),this.cloth);tent.position.y=1.15;tent.rotation.y=Math.PI/4;g.add(tent);this.box(g,-2,.18,0,.3,.3,2,this.wood);
     }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);}
   }
@@ -59,7 +73,7 @@ export class WorldSurvival {
     const progress=ensureProgression(state),existing=new Set(progress.stations.map(s=>s.id)),legacyEconomy=progress.lootGenerated&&progress.economyVersion===undefined;
     if(!progress.lootGenerated){
       for(const poi of this.pois){const id=`loot-${poi.id}`,pos={x:poi.position.x+2.7,y:this.env.heightAt(poi.position.x+2.7,poi.position.z+2.4),z:poi.position.z+2.4},rand=randomSource(this.seed+8000+poi.kind*313);if(!existing.has(id)){const s=createStation(id,'loot',pos,rand()*Math.PI*2);fillPoiLoot(s,poi.kind,this.tier(rand),rand);progress.stations.push(s);existing.add(id);}}
-      if(this.env.terrain.generation===5)for(const poi of this.pois.filter(p=>p.kind===1||p.kind===2)){const id=`secure-cache-${poi.id}`,x=poi.position.x-3.6,z=poi.position.z+3.1,rand=randomSource(this.seed+91000+poi.kind*719);if(existing.has(id))continue;const cache=createStation(id,'secureCache',{x,y:this.env.heightAt(x,z)+.03,z},rand()*Math.PI*2);cache.locked=true;fillSalvageLoot(cache,'lucky',rand);progress.stations.push(cache);existing.add(id);}
+      if(this.env.terrain.generation===5)for(const poi of this.pois.filter(p=>p.kind===1||p.kind===2||p.kind===4)){const id=`secure-cache-${poi.id}`,x=poi.position.x-3.6,z=poi.position.z+3.1,rand=randomSource(this.seed+91000+poi.kind*719);if(existing.has(id))continue;const cache=createStation(id,'secureCache',{x,y:this.env.heightAt(x,z)+.03,z},rand()*Math.PI*2);cache.locked=true;fillSalvageLoot(cache,'lucky',rand);progress.stations.push(cache);existing.add(id);}
       const rand=randomSource(this.seed+12091),placed:Vec3[]=[];
       for(let tries=0,index=0;tries<6500&&index<16;tries++){
         const span=this.env.terrain.generation===5?this.env.terrain.size*.92:this.env.terrain.generation>=4?640:530,x=(rand()-.5)*span,z=(rand()-.5)*span,y=this.env.heightAt(x,z);if(y<2.2||y>42||this.env.terrain.slopeAt(x,z)>.48||Math.hypot(x-this.env.spawn.x,z-this.env.spawn.z)<24)continue;if(placed.some(p=>Math.hypot(p.x-x,p.z-z)<24))continue;
@@ -96,7 +110,7 @@ export class WorldSurvival {
     }
     this.eventSiteCache.set(sequence,best);return best;
   }
-  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
+  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.cloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
 

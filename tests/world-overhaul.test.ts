@@ -38,6 +38,13 @@ describe('generation 5 world overhaul',()=>{
     for(const poi of a.pois){expect(Math.hypot(poi.position.x-terrain.spawn.x,poi.position.z-terrain.spawn.z)).toBeGreaterThanOrEqual(90);expect(terrain.slopeAt(poi.position.x,poi.position.z)).toBeLessThanOrEqual(.36);}
     const points=a.trails.flat();expect(points.every(p=>terrain.heightAt(p.x,p.z)>=.95)).toBe(true);expect(points.filter(p=>terrain.slopeAt(p.x,p.z)<1.25).length/points.length).toBeGreaterThan(.94);dispose(terrain);
   });
+  it('isolates Stormwatch Station to deterministic revision-4 worlds',()=>{
+    const terrain=new IslandTerrain(731942,5),legacy=generateWorldLayout(terrain,terrain.spawn,[],731942,3),current=generateWorldLayout(terrain,terrain.spawn,[],731942,4),replay=generateWorldLayout(terrain,terrain.spawn,[],731942,4);
+    expect(legacy.pois).toHaveLength(4);expect(legacy.trails).toHaveLength(4);expect(current.pois).toHaveLength(5);expect(current.trails).toHaveLength(5);
+    expect(current.pois.slice(0,4)).toEqual(legacy.pois);expect(current.pois[4]).toMatchObject({id:'poi-4',name:'Stormwatch Station',kind:4});expect(current).toEqual(replay);
+    for(const road of current.trails)expect(road.every(point=>terrain.heightAt(point.x,point.z)>=1.15)).toBe(true);
+    dispose(terrain);
+  });
   it('maps dynamic world coordinates round-trip without fixed 720m assumptions',()=>{
     const source={x:519.25,z:-407.5},pixel=worldToMap(source,1280,768),world=mapToWorld(pixel,1280,768);
     expect(world.x).toBeCloseTo(source.x,8);expect(world.z).toBeCloseTo(source.z,8);expect(worldToMap({x:-640,z:-640},1280,768)).toEqual({x:0,y:0});expect(worldToMap({x:640,z:640},1280,768)).toEqual({x:768,y:768});

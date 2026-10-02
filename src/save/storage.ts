@@ -36,7 +36,7 @@ export function validateGameState(value: unknown): value is GameState {
   // here so a valid custom island can be saved and continued later.
   if (!record(value) || value.version !== 1 || !integer(value.seed, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER) || !finite(value.elapsed, 0, 1e10) || !finite(value.timeOfDay, 0, 24) || !integer(value.nextId, 1)) return false;
   if (value.worldGeneration !== undefined && value.worldGeneration !== 1 && value.worldGeneration !== 2 && value.worldGeneration !== 3 && value.worldGeneration !== 4 && value.worldGeneration !== 5) return false;
-  if (value.worldRevision !== undefined && value.worldRevision !== 1 && value.worldRevision !== 2 && value.worldRevision !== 3) return false;
+  if (value.worldRevision !== undefined && value.worldRevision !== 1 && value.worldRevision !== 2 && value.worldRevision !== 3 && value.worldRevision !== 4) return false;
   if (!record(value.player) || !position(value.player.position) || !stats(value.player.stats) || !finite(value.player.yaw) || !finite(value.player.pitch, -Math.PI / 2, Math.PI / 2)) return false;
   if(value.player.equipment!==undefined&&(!record(value.player.equipment)||Object.entries(value.player.equipment).some(([slot,item])=>!['head','body','legs','feet'].includes(slot)||typeof item!=='string'||!EQUIPMENT[item as keyof typeof EQUIPMENT]||EQUIPMENT[item as keyof typeof EQUIPMENT]!.slot!==slot)||new Set(Object.values(value.player.equipment)).size!==Object.values(value.player.equipment).length))return false;
   if(!equipmentConditionValid(value.player))return false;

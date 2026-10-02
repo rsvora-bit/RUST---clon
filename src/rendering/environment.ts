@@ -3,7 +3,7 @@ import {WORLD} from '../config/balance';
 import {generateWorldLayout,type WorldLayout} from '../survival/WorldSurvival';
 import {palmSuitability,surfaceClimate,vegetationCover} from '../world/climate';
 import type {ClimateSample} from '../terrain/island';
-import type {ResourceNode,Vec3,Structure,WorldGeneration} from '../core/types';
+import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
@@ -71,7 +71,7 @@ export class Environment {
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
 
-  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:1|2|3=3){
+  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=4){
     this.root.name='Tideland — procedural island';scene.add(this.root);
     this.terrain=new IslandTerrain(seed,worldGeneration);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
     if(worldGeneration===5&&worldRevision>=2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,worldRevision);

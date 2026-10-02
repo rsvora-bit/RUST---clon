@@ -1,5 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 vi.mock('../src/rendering/materials',()=>({woodMaterial:()=>({dispose(){}})}));
+vi.mock('../src/world/materials',()=>({groundTexture:()=>({dispose(){}})}));
 import {IslandTerrain} from '../src/terrain/island';
 import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
@@ -18,6 +19,16 @@ describe('v0.9.1 world art stabilization',()=>{
     const world=new WorldSurvival(env,new THREE.Scene(),731942);
     try{const mast=world.group.getObjectByName('Weathered relay mast') as THREE.Mesh,reflector=world.group.getObjectByName('Relay reflector') as THREE.Mesh;expect(mast).toBeTruthy();expect(reflector).toBeTruthy();expect(mast.position.y).toBeCloseTo(4.2);expect(world.collisionBoxes()).toHaveLength(1);}
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
+  it('renders Stormwatch, gives it weather-survey salvage and guards a persistent cache',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,4),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:4,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state,poi=world.pois.find(entry=>entry.kind===4)!;
+    try{
+      world.populate(state);const loot=state.progression!.stations.find(station=>station.id==='loot-poi-4'),cache=state.progression!.stations.find(station=>station.id==='secure-cache-poi-4');
+      expect(world.group.getObjectByName('Stormwatch wind mast')).toBeTruthy();expect(world.group.getObjectByName('Stormwatch weather instrument panel')).toBeTruthy();
+      expect(world.collisionBoxes().some(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<1)).toBe(true);
+      expect(loot?.inventory.some(stack=>stack?.itemId==='wiring'||stack?.itemId==='machineParts')).toBe(true);expect(cache).toMatchObject({kind:'secureCache',locked:true});
+      expect(validateGameState(state)).toBe(true);
+    }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   for(const seed of [731942,447701,61417])it(`routes deterministic dry roads away from steep hills (${seed})`,()=>{
     const terrain=new IslandTerrain(seed,5);
@@ -53,7 +64,7 @@ describe('v0.9.1 world art stabilization',()=>{
   });
   it('preserves old gen5 snapshots without inventing a layout revision',()=>{
     const old=new GameSimulation(731942,{x:12,y:6,z:17}).state;delete old.worldRevision;old.inventory[8]={itemId:'scrap',count:70};old.nodeChanges={'tree-4':120};old.progression!.tech!.unlocked.push('efficiencyTooling');
-    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(3);
-    old.worldRevision=4 as 1;expect(validateGameState(old)).toBe(false);
+    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(4);
+    old.worldRevision=3;expect(validateGameState(old)).toBe(true);old.worldRevision=4;expect(validateGameState(old)).toBe(true);old.worldRevision=5 as 1;expect(validateGameState(old)).toBe(false);
   });
 });
