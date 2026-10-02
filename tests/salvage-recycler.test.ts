@@ -4,7 +4,7 @@ import {ITEMS,isItemId} from '../src/items/definitions';
 import {RECIPES} from '../src/crafting/recipes';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {activeLostPacks,consumeEmptyContainer,handlePlayerDeath,respawnPlayerState} from '../src/survival/death';
-import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,fillSecureCacheLoot,initializeWorldEconomy,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
+import {ECONOMY_VERSION,fillPoiLoot,fillSalvageLoot,fillSecureCacheLoot,initializeWorldEconomy,rollPoiLootTier,RECYCLE_RECIPES,SALVAGE_COMPONENTS} from '../src/survival/economy';
 import {accepts,countPlayerStations,createStation,HOMESTEAD_RADIUS,homesteadOwner,isPlaceableStationKind,MAX_PLAYER_STATIONS,stationStatus,takeAll,tickStation,transfer,validateStations} from '../src/survival/stations';
 import {ensureProgression} from '../src/survival/progression';
 import {randomSource} from '../src/world/noise';
@@ -50,6 +50,15 @@ describe('Recycler persistence and duplication safety',()=>{
 });
 
 describe('economy world bootstrap and loot',()=>{
+  it('scales ordinary crate tiers with POI risk while preserving deterministic field loot',()=>{
+    const distribution=(kind:number)=>{const counts={common:0,decent:0,lucky:0};for(let seed=0;seed<3000;seed++)counts[rollPoiLootTier(kind,randomSource(seed))]++;return counts;},field=distribution(0),camp=distribution(3),industrial=distribution(1),quarry=distribution(2),stormwatch=distribution(4),wreck=distribution(5);
+    expect(field).toEqual(camp);expect(industrial).toEqual(quarry);expect(stormwatch).toEqual(wreck);
+    expect(field.common).toBeGreaterThan(industrial.common);expect(industrial.common).toBeGreaterThan(stormwatch.common);
+    expect(field.decent).toBeLessThan(industrial.decent);expect(industrial.decent).toBeLessThan(stormwatch.decent);
+    expect(field.lucky).toBeLessThan(industrial.lucky);expect(industrial.lucky).toBeLessThan(stormwatch.lucky);
+    expect(distribution(5)).toEqual(wreck);
+    expect(rollPoiLootTier(0,()=>.59)).toBe('common');expect(rollPoiLootTier(0,()=>.60)).toBe('decent');expect(rollPoiLootTier(0,()=>.92)).toBe('lucky');
+  });
   it('gives new POI caches deterministic, location-specific loot identities',()=>{
     const make=(kind,seed)=>{const station=createStation(`poi-${kind}`,'loot',pos);fillPoiLoot(station,kind,'decent',randomSource(seed));return station.inventory.filter(Boolean).map(x=>x!.itemId);};
     const relay=make(1,451),quarry=make(2,451),camp=make(3,451);

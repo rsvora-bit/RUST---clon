@@ -19,6 +19,13 @@ export const RECYCLE_RECIPES:Record<SalvageComponent,RecycleRecipe>={
 export const isSalvageComponent=(value:unknown):value is SalvageComponent=>typeof value==='string'&&SALVAGE_COMPONENTS.includes(value as SalvageComponent);
 
 export type LootTier='common'|'decent'|'lucky';
+/** Riskier, more specialized POIs yield better ordinary crates; field loot keeps its original distribution. */
+export function rollPoiLootTier(kind:number,rand:()=>number):LootTier{
+  const roll=rand();
+  if(kind===4||kind===5)return roll<.2?'common':roll<.8?'decent':'lucky';
+  if(kind===1||kind===2)return roll<.35?'common':roll<.85?'decent':'lucky';
+  return roll<.6?'common':roll<.92?'decent':'lucky';
+}
 export const SALVAGE_LOOT:Record<LootTier,{item:ItemId;min:number;max:number;chance:number}[]>={
   common:[{item:'scrap',min:4,max:15,chance:.72},{item:'wiring',min:1,max:2,chance:.48},{item:'gears',min:1,max:1,chance:.12},{item:'wood',min:25,max:90,chance:.82},{item:'stone',min:20,max:75,chance:.72},{item:'fiber',min:10,max:40,chance:.58},{item:'berries',min:2,max:8,chance:.34},{item:'ore',min:8,max:28,chance:.30}],
   decent:[{item:'scrap',min:10,max:30,chance:.88},{item:'wiring',min:1,max:4,chance:.75},{item:'gears',min:1,max:3,chance:.48},{item:'machineParts',min:1,max:2,chance:.25},{item:'ore',min:28,max:75,chance:.88},{item:'metal',min:8,max:28,chance:.72},{item:'sulfurOre',min:15,max:55,chance:.68},{item:'bandage',min:1,max:3,chance:.48},{item:'canteen',min:1,max:2,chance:.35},{item:'hatchet',min:1,max:1,chance:.18},{item:'pickaxe',min:1,max:1,chance:.18}],
