@@ -48,8 +48,14 @@ describe('seeded island wildlife',()=>{
     actor.alerted=true;actor.attackCooldown=0;actor.takeDamage({amount:20,type:'melee'});expect(actor.staggerSeconds).toBe(0);
     actor.takeDamage({amount:40,type:'projectile'});expect(actor.staggerSeconds).toBe(0);
     actor.takeDamage({amount:40,type:'melee'});expect(actor.staggerSeconds).toBeCloseTo(.47);
-    tickWildlife(actor,.1,player,()=>3,attacks,true);expect(actor.state).toBe('reposition');expect(attacks).not.toHaveBeenCalled();
+    tickWildlife(actor,.1,player,()=>3,attacks,true);expect(actor.state).toBe('stagger');expect(attacks).not.toHaveBeenCalled();
     tickWildlife(actor,.4,player,()=>3,attacks,true);expect(actor.staggerSeconds).toBe(0);expect(actor.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
+  });
+  it('visually leans wildlife while staggered and returns it to its normal pose afterward',()=>{
+    const scene=new THREE.Scene(),system=new WildlifeSystem(scene,context),actor=system.actors[0]!,player={x:actor.position.x,y:actor.position.y,z:actor.position.z+1},model=system.object(actor.id)!;
+    actor.takeDamage({amount:40,type:'melee'});system.update(.1,player,()=>3,()=>{});const staggeredLean=Math.abs(model.rotation.x);
+    expect(actor.state).toBe('stagger');expect(staggeredLean).toBeGreaterThan(.1);expect(Math.abs(model.rotation.z)).toBeGreaterThan(.19);
+    system.update(.5,player,()=>3,()=>{});expect(actor.staggerSeconds).toBe(0);expect(Math.abs(model.rotation.x)).toBeLessThan(staggeredLean);expect(model.rotation.z).toBe(0);system.dispose();
   });
   it('keeps legacy generation wildlife layouts free of scavengers',()=>{
     const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
