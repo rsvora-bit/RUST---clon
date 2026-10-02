@@ -17,6 +17,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
   field_lamp:{id:'field_lamp',resultItemId:'lamp',resultCount:1,ingredients:{metal:15,wiring:5},requiredWorkbenchLevel:3,requiredTech:'workshopLighting',category:'Utilities',craftTime:4},
   salvage_vest:{id:'salvage_vest',resultItemId:'salvageVest',resultCount:1,ingredients:{metal:85,machineParts:2,gears:2,fiber:45,hide:8},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Equipment',craftTime:8},
   quarry_plate_rig:{id:'quarry_plate_rig',resultItemId:'yardPlate',resultCount:1,ingredients:{metal:180,machineParts:5,gears:4,techParts:1,fiber:35,hide:12},requiredWorkbenchLevel:3,requiredTech:'industrialArmor',category:'Equipment',craftTime:14},
+  trauma_kit:{id:'trauma_kit',resultItemId:'traumaKit',resultCount:1,ingredients:{bandage:2,techParts:1,machineParts:2,fiber:20},requiredWorkbenchLevel:3,requiredTech:'advancedMedicine',category:'Survival',craftTime:10},
   field_shirt:{id:'field_shirt',resultItemId:'shirt',resultCount:1,ingredients:{fiber:30},category:'Equipment',craftTime:2},
   work_trousers:{id:'work_trousers',resultItemId:'pants',resultCount:1,ingredients:{fiber:40,hide:4},category:'Equipment',craftTime:3},
   hide_boots:{id:'hide_boots',resultItemId:'boots',resultCount:1,ingredients:{fiber:25,hide:6},category:'Equipment',craftTime:3},

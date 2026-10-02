@@ -2,6 +2,14 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Pokračování — Advanced Field Medicine (2026-10-02)
+
+- Tier III Tech Tree nově nabízí `Advanced Field Medicine`, navázanou na `Field Medicine` a `Workbench III Research`; výzkum stojí 140 Scrap. Odemkne craft `Trauma Kit` na Workbench III za 2 Field Dressings, 1 Tech Part, 2 Machine Parts a 20 Fiber. Sada obnovuje 48 health a max stack je 2, takže silnější léčba spotřebuje vzácný modul i část zásob; existující spotřební simulace se znovu používá.
+- Přidán `traumaKit` do typů, položek a consumables, vlastní SVG ikona, recept a tech node. Nový node se nepřidává do `grandfatherUnlocks`, stávající TechState verze 1 a GameState/save verze 1 zůstávají stejné. Starší Gen1–5 save migrace se nemění.
+- Přidány unit kontroly pro gating, crafting, 48 HP heal, odmítnutí při plném zdraví, spotřebu, save/reload a vyloučení z automatické Legacy Tier III migrace. `npm test`: **298/298 PASS (39 souborů)**. `npm run build`: PASS, se stávajícím upozorněním na 3.24 MB JS chunk. Chrome/Metal `test:tech-tree`: **47/47 PASS**, včetně UI výzkumu/receptu, skutečného craft queue, heal a genuine save/reload, Quarry Maul a death/Lost Pack; browser/app console errors **0**. První běhy odhalily pouze chybu v test fixture (SwiftShader timeout a spotřeba Machine Parts) a byly opraveny; po opravách plný scénář prošel. QA Vite na portu 5173 byl vypnut.
+- Změněno `src/config/gameplay.ts`, `src/core/types.ts`, `src/crafting/recipes.ts`, `src/crafting/techTree.ts`, `src/items/definitions.ts`, `tests/tech-tree.test.ts`, `scripts/tech-tree-qa.mjs` a `public/assets/icons/traumaKit.svg`. Save verze/world layout/RNG, legacy saves, main/release/tag/PR se nemění.
+- Orientační cíl celkem přibližně **70% hotovo / 30% zbývá**; jde o hrubý odhad. Pokračovat feature-wide balance, zbývající endgame/progression práci a regresní QA. Žádný Goal není kompletní; nepřipravovat release automaticky.
+
 ## Aktuální Git snapshot
 
 - Aktuální poslední čistý/pushnutý checkpoint je `bd2c9e3`; firearm QA diagnostika nyní prošla runtime ověřením a čeká na svůj checkpoint commit. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.

@@ -52,6 +52,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   hammer: item('hammer', 'Builder\'s hammer', 'A compact field hammer for inspecting, upgrading, repairing and safely removing structures.', 'tool', 1, ['building','maintenance']),
   plan: item('plan', 'Building plan', 'Equip to place foundations, walls, doorways, doors, floors and roofs. Press B to choose a piece.', 'building', 1, ['build']),
   bandage: item('bandage', 'Field dressing', 'Clean plant-fiber dressing. Restores 24 health. Double-click to use.', 'utility', 5, ['healing'], { consumable: true }),
+  traumaKit: item('traumaKit', 'Trauma kit', 'A sealed advanced field kit. Restores 48 health. Double-click to use.', 'utility', 2, ['healing','medical'], { consumable: true }),
   canteen: item('canteen', 'Rainwater pouch', 'A small collector of fresh water. Restores 42 hydration. Double-click to drink.', 'utility', 3, ['water'], { consumable: true }),
   campfire: item('campfire', 'Campfire kit', 'A bundle of fuel and stones prepared for a sheltered fire.', 'utility', 1, ['camp'], { placeable: true }),
 };
