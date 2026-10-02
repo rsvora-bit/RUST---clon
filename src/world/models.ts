@@ -109,6 +109,12 @@ export function rockGeometry(seed:number):THREE.BufferGeometry {
   for(let i=0;i<p.count;i++){const nx=Math.abs(norm.getX(i)),ny=Math.abs(norm.getY(i));uv[i*2]=nx>.6?p.getZ(i):p.getX(i);uv[i*2+1]=ny>.6?p.getZ(i):p.getY(i);}
   geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));return geo;
 }
+/** Orient a rendered resource mesh into a sampled ground plane while retaining
+ * its deterministic yaw about the terrain normal. Gameplay colliders stay upright. */
+export function surfaceAlignedQuaternion(normal:THREE.Vector3,yaw:number):THREE.Quaternion {
+  const up=new THREE.Vector3(0,1,0),surface=normal.clone().normalize();
+  return new THREE.Quaternion().setFromAxisAngle(surface,yaw).multiply(new THREE.Quaternion().setFromUnitVectors(up,surface));
+}
 export function bushGeometry():THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[],r=randomSource(239);for(let i=0;i<16;i++){const a=r()*6.28,rad=r()*.7;parts.push(card(.8+r()*.45,.8+r()*.7,Math.cos(a)*rad,r()*.5,Math.sin(a)*rad,(r()-.5)*1.6,r()*6.28));}
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());

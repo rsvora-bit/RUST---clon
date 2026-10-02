@@ -8,7 +8,7 @@ import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,stoneMaterial,terrainMaterial,groundDecalTexture} from '../world/materials';
-import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../world/models';
+import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
 type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string};
@@ -227,14 +227,19 @@ export class Environment {
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;
       const material=kind==='stone'?this.stone:kind==='metal'?this.metal:kind==='sulfur'?this.sulfur:this.hqmetal;
-      const node=this.addNode(kind,x,z,size,rand()*6.28,capacity),group=new THREE.Group(),main=new THREE.Mesh(geos[Math.floor(rand()*3)]!,material);main.position.y=.52;main.scale.set(.94,.82,.88);main.castShadow=main.receiveShadow=true;group.add(main);
+      const node=this.addNode(kind,x,z,size,rand()*6.28,capacity),group=new THREE.Group(),main=new THREE.Mesh(geos[Math.floor(rand()*3)]!,material);main.position.y=.39;main.scale.set(.94,.82,.88);main.castShadow=main.receiveShadow=true;group.add(main);
       const secondary=new THREE.Mesh(geos[Math.floor(rand()*3)]!,material);secondary.position.set(.57,.22,.19);secondary.scale.set(.5,.5,.55);secondary.castShadow=true;group.add(secondary);
       if(kind!=='stone'){
         const colors={metal:0xb46e43,sulfur:0xe0c83d,hqmetal:0xacc7ce} as const,veinMat=new THREE.MeshStandardMaterial({color:colors[kind],metalness:kind==='sulfur'?.08:.62,roughness:kind==='sulfur'?.76:.38,emissive:kind==='sulfur'?0x302700:kind==='hqmetal'?0x10191b:0x1e0d05,emissiveIntensity:.18});this.materials.add(veinMat);
         const chunks=kind==='hqmetal'?3:kind==='sulfur'?5:4;for(let j=0;j<chunks;j++){const vein=new THREE.Mesh(this.own(new THREE.DodecahedronGeometry(.12+rand()*.07,0)),veinMat);const a=rand()*Math.PI*2;vein.position.set(Math.cos(a)*(.38+rand()*.24),.48+rand()*.55,Math.sin(a)*(.34+rand()*.22));vein.scale.set(1.3+rand()*1.5,.38+rand()*.45,.55+rand()*.65);vein.rotation.set(rand(),rand()*6.28,rand());group.add(vein);}
       }
       group.name=kind==='stone'?'Stone node':kind==='metal'?'Metal ore node':kind==='sulfur'?'Sulfur ore node':'High quality metal ore node';
-      this.place(group,node);this.colliders.push({nodeId:node.id,position:{x,y:node.position.y+.5*size,z},halfExtents:{x:.67*size,y:.73*size,z:.61*size},rotation:node.rotation});
+      this.place(group,node);
+      // Keep resource identity and the gameplay collider upright, while the
+      // rendered mineral mass settles into the local terrain plane.
+      const gradeX=(this.heightAt(x+2,z)-this.heightAt(x-2,z))*.25,gradeZ=(this.heightAt(x,z+2)-this.heightAt(x,z-2))*.25;
+      const surfaceNormal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();group.quaternion.copy(surfaceAlignedQuaternion(surfaceNormal,node.rotation));
+      this.colliders.push({nodeId:node.id,position:{x,y:node.position.y+.5*size,z},halfExtents:{x:.67*size,y:.73*size,z:.61*size},rotation:node.rotation});
     };
     if(this.terrain.generation>=3){make('stone',this.spawn.x+10,this.spawn.z-10,.95);make('stone',this.spawn.x-13,this.spawn.z-8,1.08);make('metal',this.spawn.x+16,this.spawn.z+11,1.02);}
     else {make('stone',24,206,.95);make('stone',35,199,1.1);make('metal',60,175,1.1);}

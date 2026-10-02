@@ -39,7 +39,7 @@ export class Atmosphere {
 
   private buildHorizon():void{
     for(let layer=2;layer>=0;layer--){
-      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,depthWrite:false,side:THREE.DoubleSide,fog:true});
+      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,depthWrite:false,side:THREE.DoubleSide,fog:false});
       const mesh=new THREE.Mesh(g,m);mesh.name=`Distant massif layer ${layer}`;mesh.userData.layer=layer;mesh.renderOrder=-5;mesh.frustumCulled=false;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
     }
   }
@@ -49,7 +49,7 @@ export class Atmosphere {
     this.sun.intensity=.28+this.daylight*2.50;this.sun.color.setRGB(.52+this.daylight*.48,.62+this.daylight*.31,.88+this.daylight*.19);this.fill.intensity=1.8+this.daylight*.4;this.fill.color.setRGB(.60+this.daylight*.10,.67+this.daylight*.09,.86+this.daylight*.06);this.fill.groundColor.setRGB(.42+this.daylight*.05,.45+this.daylight*.05,.52);
     const storm=this.sky.material.uniforms.weather.value as number;this.fog.color.setRGB(.05+.48*this.daylight,.078+.55*this.daylight,.14+.61*this.daylight).lerp(this.stormTint,storm*.45);this.fog.density=.00105+(1-this.daylight)*.00162+storm*.00048;
     const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.illuminationDirection.copy(this.sunDirection).multiplyScalar(this.daylight).addScaledVector(this.sunDirection,-(1-this.daylight)).normalize();this.sun.position.copy(this.sun.target.position).addScaledVector(this.illuminationDirection,105);this.sky.position.copy(camera);this.horizon.position.set(camera.x,camera.y-28,camera.z);
-    this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.horizonMaterials.forEach((m,i)=>{const layer=2-i,basic=m as THREE.MeshBasicMaterial;basic.color.setRGB(.055+this.daylight*(.22+layer*.065),.075+this.daylight*(.30+layer*.06),.12+this.daylight*(.35+layer*.055));this.mountainTint.setRGB(.13+this.daylight*.18,.12+this.daylight*.16,.18+this.daylight*.19);basic.color.lerp(this.mountainTint,storm*.58);const sunset=(1-this.daylight)*Math.max(0,this.sunDirection.y+.16);basic.color.r+=sunset*.2;});
+    this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.horizonMaterials.forEach((m,i)=>{const layer=2-i,basic=m as THREE.MeshBasicMaterial;basic.color.setRGB(.055+this.daylight*(.22+layer*.065),.075+this.daylight*(.30+layer*.06),.12+this.daylight*(.35+layer*.055)).multiplyScalar(.68+layer*.12);this.mountainTint.setRGB(.13+this.daylight*.18,.12+this.daylight*.16,.18+this.daylight*.19);basic.color.lerp(this.mountainTint,storm*.58);const sunset=(1-this.daylight)*Math.max(0,this.sunDirection.y+.16);basic.color.r+=sunset*.2;});
   }
 
   setQuality(q:GraphicsQuality):void{

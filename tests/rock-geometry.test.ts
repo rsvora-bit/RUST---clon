@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
-import {rockGeometry} from '../src/world/models';
+import * as THREE from 'three';
+import {rockGeometry,surfaceAlignedQuaternion} from '../src/world/models';
 
 describe('procedural rock geometry',()=>{
   it('keeps each seed deterministic while producing distinct faceted silhouettes',()=>{
@@ -16,5 +17,11 @@ describe('procedural rock geometry',()=>{
       }
       geometry.dispose();
     }
+  });
+
+  it('aligns only the rendered up axis to a slope and preserves yaw around it',()=>{
+    const normal=new THREE.Vector3(-.4,1,-.2).normalize();
+    const quaternion=surfaceAlignedQuaternion(normal,1.17),up=new THREE.Vector3(0,1,0).applyQuaternion(quaternion);
+    expect(up.dot(normal)).toBeCloseTo(1,6);
   });
 });
