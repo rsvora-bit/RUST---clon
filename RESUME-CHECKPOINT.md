@@ -4,8 +4,15 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Aktuální pracovní HEAD je `b4e6e217887f347d6f57f78e5928a787476142d2` (`Clarify raid persistence QA diagnostics`); push na `origin/codex/combat-endgame-next` uspěl a lokální tracking ref se shoduje. Pracovní strom je čistý. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
+- Aktuální pracovní HEAD je `248bc46` (`Balance stamina costs for advanced melee weapons`); změna čeká na QA checkpoint commit a push. Poslední potvrzený push pracovní větve byl `2a7c5f6`; `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
+
+## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
+
+- Combat review zjistil, že při stávající regeneraci 19 stamina/s byly i Quarry Maul (16/.96 s = 16.7/s) a Dockside Cleaver (10/.70 s = 14.3/s) udržitelně pod regenerací. Jejich stamina cena tedy téměř neomezovala opakované údery.
+- Dockside Cleaver nyní stojí 14 stamina za swing a Quarry Maul 22; jejich kadence odpovídá přibližně 20.0/s a 22.9/s, tedy spotřebovává rezervu. Field Spear zůstává na ~11.8/s, pod obnovou. Sprint drain, rané zbraně, damage, cooldowns, durability profily, save/world state se nezměnily.
+- Přidán unit test poměru cost/cooldown proti skutečnému `PLAYER.STAMINA_REGEN` a browser kontrola zásahu Maulu: stamina 100→78, durability 180→178 a zdraví živého cíle kleslo. `tests/melee-combat.test.ts` nyní 9 testů; Chrome/Metal `test:combat` prošel včetně nového scénáře, `test:tech-tree` ověřil tier-III crafting/save. Plná sada **296/296 PASS (39 souborů)**, `npm run build` PASS se stávajícím ~3.24 MB bundle upozorněním, `git diff --check` a skript syntax PASS. QA Vite server byl ukončen.
+- Goals 1/5 se posouvají orientačně na **61% / 90%**; Goals 2–4 zůstávají **90% / 48% / 52%**. Celkový pracovní odhad přibližně **68% hotovo / 32% zbývá**. Je to odhad, ne task counter; žádný Goal není kompletní.
 
 ## Pokračování — feature-wide regression QA po obnovení (2026-10-02)
 
