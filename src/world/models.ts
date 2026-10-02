@@ -38,6 +38,13 @@ export function broadleafGeometry(variant=0):THREE.BufferGeometry {
   // Separate bough clusters, with an asymmetric open-grown oak variant.
   for(const bough of broadleafBoughs(variant)){
     const cx=bough.x,cz=bough.z,cy=bough.y;
+    // A small faceted leaf mass gives the cutout sprays depth when viewed
+    // edge-on, without adding a separate mesh or a billboard cross.
+    const foliageCore=new THREE.IcosahedronGeometry(1,0);
+    foliageCore.setIndex(Array.from({length:foliageCore.getAttribute('position').count},(_,index)=>index));
+    foliageCore.scale(1.02+variant*.12,.78+variant*.08,.96+variant*.1);
+    foliageCore.translate(cx,cy,cz);
+    parts.push(foliageCore);
     for(let i=0;i<16;i++){
       const a=r()*6.28,rad=Math.sqrt(r())*(variant?2.1:1.65);
       parts.push(card(1.3+r()*.65,1.3+r()*.7,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
