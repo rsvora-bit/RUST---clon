@@ -58,6 +58,6 @@ try{
  // Fast camera sweep uses the actual render loop and covers both sides of foliage.
  for(let i=0;i<16;i++){await page.evaluate(({p,i})=>window.__TIDELAND.lookAt({x:p.x+Math.cos(i/16*Math.PI*2)*80,y:p.y+6,z:p.z+Math.sin(i/16*Math.PI*2)*80}),{p:palms[0].position,i});await page.waitForTimeout(80)}
  pass('Camera sweep produces no WebGL/application errors',errors.length===0);
- await page.evaluate(()=>window.__TIDELAND.save());const stable=await page.evaluate(()=>window.__TIDELAND.world());await page.reload();await boot();await play();const reload=await page.evaluate(()=>window.__TIDELAND.world());pass('Revision 4 save/reload keeps roads, POIs and node count',JSON.stringify(stable)===JSON.stringify(reload));
+ await page.evaluate(()=>window.__TIDELAND.save());const stable=await page.evaluate(()=>window.__TIDELAND.world());await page.reload();await boot();await play();const reload=await page.evaluate(()=>window.__TIDELAND.world());pass('Revision 5 save/reload keeps roads, POIs and node count',JSON.stringify(stable)===JSON.stringify(reload));
  fs.writeFileSync(`${out}/world-art-results.json`,JSON.stringify({passed:true,results,errors,palms:palms.length},null,2));
 }catch(e){fs.writeFileSync(`${out}/world-art-results.json`,JSON.stringify({passed:false,results,errors,error:e.message},null,2));throw e}finally{await browser.close()}
