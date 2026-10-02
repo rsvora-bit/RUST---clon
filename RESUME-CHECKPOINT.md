@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Aktuální pracovní HEAD je `248bc46` (`Balance stamina costs for advanced melee weapons`); změna čeká na QA checkpoint commit a push. Poslední potvrzený push pracovní větve byl `2a7c5f6`; `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2). Main, tagy, release ani PR se neměnily.
+- Aktuální pracovní HEAD je `78e9ba7` (`Record melee stamina balance validation`) a odpovídá pushnutému `origin/codex/combat-endgame-next`. Předchozí gameplay commit `248bc46` obsahuje stamina tuning a QA coverage. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
