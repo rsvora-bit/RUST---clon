@@ -820,3 +820,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `scripts/world-art-qa.mjs` ověřuje všechny tři pebble batches a nejméně 30 driftwood/stone clusters. `test:world-art` PASS, Rev6 i archive v0.9.0/v0.9.1 save compatibility, weather/landmarks/culling, errors 0; shoreline screenshot `test-results/world-art/shoreline-detail.png` vizuálně potvrzuje skupiny kamenů u naplavenin. Cílené world-art/environment testy **24/24 PASS**; `npm run build` PASS (známý chunk warning).
 - Chrome Metal HIGH 1280×720: archive v0.9.0 **60 FPS / 16.668ms / 612 calls / 3,390,261 tris / 1,318 nodes / startup 2,686ms**; Rev6 **60 FPS / 16.666ms / 680 calls / 4,157,050 tris / 2,033 nodes / startup 3,244ms**, errors 0. +2 draw calls a +27,850 triangles proti předchozímu Rev6 (~0.7 %), FPS beze změny; 60Hz cap.
 - Změna čeká na checkpoint commit na `codex/world-revision-6`. `main`, tag, GitHub Release a Pages zůstávají beze změny.
+
+
+## v0.10 pokračování — Denní/ noční fill light křivka — 2026-10-03
+
+- `src/world/atmosphere.ts`: hemisférické fill světlo se nyní mění s denním světlem od 1.42 v noci po 2.0 ve dne (původní konstantní základ 1.8 až 2.2). Noc získává hlubší stíny, ale ambient zůstává hratelný; save, gameplay a geometrie beze změny.
+- `tests/environment-visuals.test.ts` ověřuje, že noční fill je nad 1.35 a denní vyšší. Testy **4/4 PASS**, `npm run build` PASS (známý chunk warning), `test:world-art` PASS se dnem/nocí, bouřkou/zábleskem, shoreline debris a archivními save reloady; konzole/WebGL errors 0. Prohlédnuty noční a denní záběry. Bez nových meshes/draw calls.
+- Změna čeká na checkpoint commit v `codex/world-revision-6`; poslední performance měření před touto samotnou světelnou křivkou bylo Rev6 **60 FPS / 16.666ms / 680 calls / 4,157,050 tris / 2,033 nodes**, bez chyb.
