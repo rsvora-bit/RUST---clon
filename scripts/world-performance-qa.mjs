@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const out=process.env.TIDELAND_QA_DIR||'test-results/world-art';fs.mkdirSync(out,{recursive:true});
+const currentVersion=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`,'--enable-unsafe-swiftshader']});
 const measure=async(url,label)=>{
   const context=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1}),page=await context.newPage(),started=Date.now(),errors=[];console.log('START',label,url);
@@ -18,8 +19,10 @@ const measure=async(url,label)=>{
   assert.equal(errors.length,0,errors.join('\n'));await context.close();return {label,url,startupMs,errors,...result};
 };
 try{
-  const baseline=process.env.TIDELAND_BASELINE_FILE?JSON.parse(fs.readFileSync(process.env.TIDELAND_BASELINE_FILE,'utf8')):await measure('https://rsvora-bit.github.io/RUST---clon/versions/v0.9.0/','v090');
+  const baselineUrl=process.env.TIDELAND_BASELINE_URL||'https://rsvora-bit.github.io/RUST---clon/versions/v0.9.0/';
+  const baselineLabel=process.env.TIDELAND_BASELINE_LABEL||'v090';
+  const baseline=process.env.TIDELAND_BASELINE_FILE?JSON.parse(fs.readFileSync(process.env.TIDELAND_BASELINE_FILE,'utf8')):await measure(baselineUrl,baselineLabel);
   fs.writeFileSync(`${out}/baseline.json`,JSON.stringify(baseline,null,2));
-  if(!process.env.TIDELAND_BASELINE_ONLY){const current=await measure(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5173','v091');fs.writeFileSync(`${out}/performance.json`,JSON.stringify({baseline,current},null,2));console.log(JSON.stringify({baseline,current},null,2));}
+  if(!process.env.TIDELAND_BASELINE_ONLY){const current=await measure(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5173',`current-v${currentVersion}`);fs.writeFileSync(`${out}/performance.json`,JSON.stringify({baseline,current},null,2));const summary=entry=>({label:entry.label,startupMs:entry.startupMs,fps:Number(entry.fps.toFixed(2)),frameMs:Number(entry.frameMs.toFixed(3)),drawCalls:Number(entry.drawCalls.toFixed(1)),triangles:Math.round(entry.triangles),nodes:entry.nodes,errors:entry.errors.length});console.log(JSON.stringify({baseline:summary(baseline),current:summary(current)},null,2));}
   else console.log(JSON.stringify(baseline,null,2));
 }finally{await browser.close();}
