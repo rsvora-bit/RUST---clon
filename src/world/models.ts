@@ -89,14 +89,19 @@ export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
 }
 export function rockGeometry(seed:number):THREE.BufferGeometry {
   const r=randomSource(seed),points:THREE.Vector3[]=[];
-  // Fractured strata: each ring has a different centre and broad planar faces.
-  const skew=(r()-.5)*.42;
+  // Broken, slightly slumped strata give the three shared batches distinct
+  // silhouettes without adding meshes or changing any resource placement.
+  const skew=(r()-.5)*.42,phase=r()*Math.PI*2,profile=[.65,1.02,.89,.49];
+  const ringCount=6+Math.floor(r()*3);
   for(let ring=0;ring<4;ring++){
-    const y=[-.74,-.32,.36,.72][ring]!,radius=[.65,1.02,.89,.49][ring]!;
-    const offset=(ring-1.5)*skew;
-    for(let i=0;i<7;i++){
-      const a=i/7*Math.PI*2+.14*(ring%2),extent=radius*(.82+r()*.25);
-      points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*.13,Math.sin(a)*extent*(.72+r()*.23)));
+    const y=[-.74,-.32,.36,.72][ring]!,radius=profile[ring]!*(.88+r()*.24);
+    const offset=(ring-1.5)*skew,rotation=phase+(ring%2)*.11;
+    for(let i=0;i<ringCount;i++){
+      const a=i/ringCount*Math.PI*2+rotation;
+      const strata=Math.sin(a*2+phase)*.08+Math.sin(a*3-phase)*.045;
+      const extent=radius*(.77+r()*.34+strata);
+      const slump=(ring===3?Math.max(0,Math.cos(a+phase))*.16:0);
+      points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*.16-slump,Math.sin(a)*extent*(.68+r()*.31)));
     }
   }
   const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,.85);hull.dispose();
