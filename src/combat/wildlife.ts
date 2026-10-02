@@ -10,7 +10,7 @@ export type WildlifeSpecies='islandWolf'|'coastalBoar'|'islandScavenger';
 export type WildlifeState='wander'|'investigate'|'chase'|'reposition'|'return'|'raid'|'attack'|'dead';
 export type ScavengerArchetype='scavenger'|'lookout'|'guard';
 export interface WildlifeRaidTarget {id:string;position:Vec3}
-export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;combatMoveTime:number;combatMoveDirection:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
+export interface WildlifeActor extends Damageable {id:string;species:WildlifeSpecies;archetype?:ScavengerArchetype;state:WildlifeState;position:Vec3;health:number;maxHealth:number;yaw:number;angered:boolean;alerted:boolean;attackCooldown:number;shotSequence?:number;combatMoveTime:number;combatMoveDirection:number;wanderTime:number;wanderCycle:number;wanderX:number;wanderZ:number;hitReaction:number;staggerSeconds:number;perceptionCooldown:number;canSeePlayer:boolean;awareness:number;memorySeconds:number;lastKnownPlayer:Vec3;blockedRaidDoor?:WildlifeRaidTarget;readonly home:Vec3;readonly seed:number}
 export interface WildlifeSpawnContext {seed:number;generation:WorldGeneration;spawn:Vec3;halfSize:number;heightAt:(x:number,z:number)=>number;biomeAt:(x:number,z:number)=>string;scavengerSites?:readonly Vec3[];nodeChanges?:Record<string,number>}
 
 const SPECIES:Record<WildlifeSpecies,{health:number;radius:number;scale:number;speed:number;damage:number;aggro:number;name:string;color:number}>={
@@ -32,8 +32,8 @@ export function wildlifeSpeciesForBiome(biome:string,temperature:number):Wildlif
 function createScavenger(id:string,archetype:ScavengerArchetype,position:Vec3,yaw:number,seed:number,attackCooldown:number,savedHealth:number|undefined):WildlifeActor|null {
   if(savedHealth===0)return null;
   const maxHealth=archetype==='guard'?146:SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
-  const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
-    takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const armour=archetype==='guard'&&packet.type==='projectile'?.2:0,combined=1-(1-Math.max(0,Math.min(.85,mitigation)))*(1-armour),result=resolveDamage(actor.health,actor.maxHealth,packet,combined);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
+  const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,staggerSeconds:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+    takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const armour=archetype==='guard'&&packet.type==='projectile'?.2:0,combined=1-(1-Math.max(0,Math.min(.85,mitigation)))*(1-armour),result=resolveDamage(actor.health,actor.maxHealth,packet,combined);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;if(packet.type==='melee'&&packet.amount>=24)actor.staggerSeconds=Math.max(actor.staggerSeconds,Math.min(.62,.22+packet.amount/160));}if(result.killed)actor.state='dead';return result;}};
   return actor;
 }
 
@@ -49,8 +49,8 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     const biome=context.biomeAt(x,z),temperature=biome.includes('SNOW')?.18:biome.includes('COAST')?.62:biome.includes('ARID')?.72:.55,species=wildlifeSpeciesForBiome(biome,temperature);
     if(!species)continue;
     const id=`fauna-${context.seed}-${candidateId++}`,savedHealth=context.nodeChanges?.[id];if(savedHealth===0)continue;
-    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:random()*1.2,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
-      takeDamage(packet:DamagePacket,mitigation=0):DamageResult {const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
+    const seed=Math.floor(random()*0x7fffffff),position={x,y,z},maxHealth=SPECIES[species].health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth,actor:WildlifeActor={id,species,state:'wander',position:{...position},home:position,health,maxHealth,yaw:angle+Math.PI,angered:false,alerted:false,attackCooldown:random()*1.2,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:x,wanderZ:z,hitReaction:0,staggerSeconds:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
+      takeDamage(packet:DamagePacket,mitigation=0):DamageResult {const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;if(packet.type==='melee'&&packet.amount>=24)actor.staggerSeconds=Math.max(actor.staggerSeconds,Math.min(.62,.22+packet.amount/160));}if(result.killed)actor.state='dead';return result;}};
     actors.push(actor);
   }
   const sites=context.generation===5?(context.scavengerSites??[]):[];
@@ -90,6 +90,7 @@ export function tickWildlife(actor:WildlifeActor,dt:number,player:Vec3,heightAt:
   if(actor.state==='dead')return;
   const spec=SPECIES[actor.species],dx=player.x-actor.position.x,dz=player.z-actor.position.z,distance=Math.hypot(dx,dz);
   actor.attackCooldown=Math.max(0,actor.attackCooldown-dt);
+  if(actor.staggerSeconds>0){actor.staggerSeconds=Math.max(0,actor.staggerSeconds-dt);if(actor.staggerSeconds>0){actor.state='reposition';return;}}
   if(distance>92){actor.state='wander';return;}
   const animalAggro=actor.species!=='islandScavenger'&&spec.aggro>0&&distance<spec.aggro;
   const hostile=actor.angered||actor.alerted||animalAggro;

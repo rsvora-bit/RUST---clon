@@ -43,6 +43,14 @@ describe('seeded island wildlife',()=>{
     const composed=armouredAgain.takeDamage({amount:50,type:'projectile'},.5);expect(composed.applied).toBeCloseTo(20);expect(composed.absorbed).toBeCloseTo(30);
     const capped=createWildlifePopulation({...context,scavengerSites:sites}).find(a=>a.archetype==='guard')!.takeDamage({amount:50,type:'projectile'},.85);expect(capped.applied).toBeCloseTo(7.5);expect(capped.absorbed).toBeCloseTo(42.5);
   });
+  it('lets a solid melee hit briefly interrupt an enemy attack without staggering on light or ranged hits',()=>{
+    const actor=createWildlifePopulation({...context,scavengerSites:[{x:180,y:3,z:40}]}).find(a=>a.species==='islandScavenger')!,player={x:actor.position.x,y:actor.position.y,z:actor.position.z+1},attacks=vi.fn();
+    actor.alerted=true;actor.attackCooldown=0;actor.takeDamage({amount:20,type:'melee'});expect(actor.staggerSeconds).toBe(0);
+    actor.takeDamage({amount:40,type:'projectile'});expect(actor.staggerSeconds).toBe(0);
+    actor.takeDamage({amount:40,type:'melee'});expect(actor.staggerSeconds).toBeCloseTo(.47);
+    tickWildlife(actor,.1,player,()=>3,attacks,true);expect(actor.state).toBe('reposition');expect(attacks).not.toHaveBeenCalled();
+    tickWildlife(actor,.4,player,()=>3,attacks,true);expect(actor.staggerSeconds).toBe(0);expect(actor.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
+  });
   it('keeps legacy generation wildlife layouts free of scavengers',()=>{
     const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
   });
