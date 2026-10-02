@@ -6,8 +6,9 @@ import fs from 'node:fs';
 
 const base=process.env.TIDELAND_QA_URL||'http://localhost:5173';
 const out=process.env.TIDELAND_QA_DIR||'test-results/world-overhaul';fs.mkdirSync(out,{recursive:true});
-const executablePath=process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const browser=await chromium.launch({headless:true,executablePath,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
+const executablePath=process.env.CHROME_BIN||(process.platform==='win32'?'C:/Program Files/Google Chrome/Application/chrome.exe':process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':'/usr/bin/google-chrome');
+const angle=process.env.TIDELAND_QA_ANGLE||(process.platform==='darwin'?'metal':'swiftshader');
+const browser=await chromium.launch({headless:true,executablePath,args:['--enable-webgl','--use-gl=angle',`--use-angle=${angle}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],results=[];
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
 const pass=(label,value)=>{assert.ok(value,label);results.push(label);console.log('PASS',label)};
