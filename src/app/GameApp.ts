@@ -218,7 +218,7 @@ export class GameApp {
     if(this.cooldown>0||actor.state==='dead')return;
     const item=this.activeItem(),weapon=item&&Object.hasOwn(MELEE_WEAPONS,item)?MELEE_WEAPONS[item as keyof typeof MELEE_WEAPONS]:null;
     this.held.hit();
-    if(!weapon){this.cooldown=.28;this.audio.play('error');this.ui.notify('Equip the rock, hatchet or pickaxe to defend yourself');return;}
+    if(!weapon){this.cooldown=.28;this.audio.play('error');this.ui.notify('Equip a tool, spear or salvage weapon to defend yourself');return;}
     const stats=this.simulation.state.player.stats;if(stats.stamina<weapon.staminaCost){this.cooldown=.35;this.audio.play('error');this.ui.notify('Too exhausted to swing');return;}
     this.camera.getWorldDirection(this.direction);const target={id:actor.id,position:{x:actor.position.x,y:actor.position.y+.68,z:actor.position.z},radius:wildlifeDefinition(actor.species).radius};
     const origin={x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z};

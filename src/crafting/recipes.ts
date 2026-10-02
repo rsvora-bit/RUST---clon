@@ -11,6 +11,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
   bow:{id:'bow',resultItemId:'bow',resultCount:1,ingredients:{wood:90,fiber:35,hide:2},category:'Tools',craftTime:5},
   arrow:{id:'arrow',resultItemId:'arrow',resultCount:5,ingredients:{wood:20,stone:12,fiber:4},category:'Tools',craftTime:3},
   field_spear:{id:'field_spear',resultItemId:'spear',resultCount:1,ingredients:{wood:75,stone:45,fiber:20},requiredWorkbenchLevel:1,requiredTech:'fieldEngineering',category:'Tools',craftTime:5},
+  dockside_cleaver:{id:'dockside_cleaver',resultItemId:'docksideCleaver',resultCount:1,ingredients:{metal:65,machineParts:2,gears:1,fiber:30,hide:2},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Weapons',craftTime:7},
   field_generator:{id:'field_generator',resultItemId:'generator',resultCount:1,ingredients:{metal:90,wiring:8,machineParts:3},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Utilities',craftTime:9},
   field_switch:{id:'field_switch',resultItemId:'powerSwitch',resultCount:1,ingredients:{wood:20,metal:18,wiring:4},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Utilities',craftTime:4},
   field_lamp:{id:'field_lamp',resultItemId:'lamp',resultCount:1,ingredients:{metal:15,wiring:5},requiredWorkbenchLevel:3,requiredTech:'workshopLighting',category:'Utilities',craftTime:4},

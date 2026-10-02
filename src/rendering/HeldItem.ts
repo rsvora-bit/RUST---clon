@@ -115,6 +115,14 @@ export class HeldItem {
       const socket=this.mesh(new THREE.CylinderGeometry(.038,.034,.10,8),this.wrap,.27,.51,-.665);socket.rotation.z=-.16;
       for(let i=0;i<4;i++){const band=this.mesh(new THREE.TorusGeometry(.029,.003,5,12),this.wrap,.283,.03+i*.018,-.655);band.rotation.x=Math.PI/2;}
       this.addArm(-1,-.08,-.17,-.61,.18,true);
+    }else if(item==='docksideCleaver'){
+      const grip=this.mesh(new THREE.CylinderGeometry(.024,.034,.35,10),this.wrap,.28,-.005,-.64);grip.rotation.z=-.16;
+      const tang=this.mesh(new THREE.BoxGeometry(.045,.20,.035),this.metal,.28,.255,-.64);tang.rotation.z=-.12;
+      const edge=new THREE.Shape();edge.moveTo(-.025,-.08);edge.lineTo(.095,-.20);edge.lineTo(.19,-.28);edge.lineTo(.27,-.29);edge.lineTo(.30,-.23);edge.lineTo(.235,-.11);edge.lineTo(.15,.04);edge.lineTo(.065,.18);edge.lineTo(-.015,.15);edge.closePath();
+      this.mesh(new THREE.ExtrudeGeometry(edge,{depth:.035,bevelEnabled:true,bevelSize:.009,bevelThickness:.008,bevelSegments:2,steps:1}),this.metal,.27,.30,-.66).rotation.z=-.10;
+      const edgeMaterial=new THREE.MeshStandardMaterial({color:'#b9b6a3',roughness:.42,metalness:.58});this.mesh(new THREE.BoxGeometry(.018,.34,.008),edgeMaterial,.442,.285,-.615).rotation.z=-.48;
+      for(let i=0;i<4;i++){const wrap=this.mesh(new THREE.TorusGeometry(.031,.004,5,14),this.wrap,.28,-.11+i*.035,-.64);wrap.rotation.x=Math.PI/2;}
+      this.addArm(-1,-.09,-.16,-.61,.20,true);
     }else if(item==='salvageRevolver'||item==='fieldShotgun'){
       const weapon=new THREE.Group();weapon.scale.setScalar(.64);weapon.position.set(.10,.02,-.12);this.hand.add(weapon);
       const shotgun=item==='fieldShotgun';if(shotgun){weapon.scale.setScalar(.76);weapon.position.y=.11;}const grip=this.mesh(new THREE.BoxGeometry(shotgun?.13:.105,shotgun?.32:.27,shotgun?.15:.13),this.wrap,.28,shotgun?-.17:-.12,-.63,weapon);grip.rotation.x=-.18;
@@ -162,7 +170,7 @@ export class HeldItem {
     this.t+=dt;
     if(this.unequip>0){this.unequip=Math.max(0,this.unequip-dt*5.8);if(this.unequip===0&&this.pending!==undefined)this.build(this.pending);}
     this.equip=Math.max(0,this.equip-dt*5.2);
-    const swingRate=this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='rock'?3.55:4.1;
+    const swingRate=this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='docksideCleaver'?3.65:this.active==='rock'?3.55:4.1;
     this.swing=Math.max(0,this.swing-dt*swingRate);
     this.recoil=Math.max(0,this.recoil-dt*7.8);
     this.muzzleFlashTime=Math.max(0,this.muzzleFlashTime-dt);if(this.muzzleFlash){this.muzzleFlash.visible=this.muzzleFlashTime>0;(this.muzzleFlash.material as THREE.MeshBasicMaterial).opacity=Math.min(.92,this.muzzleFlashTime*14);}

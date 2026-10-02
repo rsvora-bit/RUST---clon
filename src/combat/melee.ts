@@ -1,7 +1,7 @@
 import type {ItemId,Vec3} from '../core/types';
 
 export interface MeleeWeapon {
-  itemId:Extract<ItemId,'rock'|'hatchet'|'pickaxe'|'spear'>;
+  itemId:Extract<ItemId,'rock'|'hatchet'|'pickaxe'|'spear'|'docksideCleaver'>;
   damage:number;
   range:number;
   cooldown:number;
@@ -16,6 +16,7 @@ export const MELEE_WEAPONS:Record<MeleeWeapon['itemId'],MeleeWeapon>={
   hatchet:{itemId:'hatchet',damage:27,range:2.0,cooldown:.62,staminaCost:7,durabilityCost:1,arcCosine:.45},
   pickaxe:{itemId:'pickaxe',damage:24,range:2.05,cooldown:.68,staminaCost:8,durabilityCost:1,arcCosine:.42},
   spear:{itemId:'spear',damage:36,range:2.7,cooldown:.76,staminaCost:9,durabilityCost:1,arcCosine:.72},
+  docksideCleaver:{itemId:'docksideCleaver',damage:43,range:2.2,cooldown:.7,staminaCost:10,durabilityCost:1,arcCosine:.62},
 };
 
 export interface MeleeTarget {id:string;position:Vec3;radius:number}

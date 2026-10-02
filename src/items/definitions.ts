@@ -38,6 +38,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   yardPlate: item('yardPlate','Quarry plate rig','A reinforced industrial torso rig cut from quarry machinery guards. Strong against bullets and impacts, with no weather insulation.','utility',1,['equipment','armor','industrial']),
   bow: item('bow','Island hunting bow','A simple ash-and-fiber bow. Hold primary fire to draw, then release to loose an arrow.','tool',1,['weapon','ranged']),
   spear: item('spear','Salvage-tipped spear','A long field haft with a hardened salvage point. Its reach is useful against wildlife, but the narrow thrust needs a steady aim.','tool',1,['weapon','melee']),
+  docksideCleaver: item('docksideCleaver','Dockside cleaver','A short, heavy salvage blade rebuilt from a cargo-handling tool. Quicker and broader than a spear, with less reach.','tool',1,['weapon','melee','salvage']),
   arrow: item('arrow','Field arrow','A recoverable wood-shaft arrow with a forged salvage point.','resource',100,['ammunition','crafting']),
   salvageRevolver:item('salvageRevolver','Salvage revolver','A hand-fitted six-shot sidearm assembled from recovered industrial parts. Press R to reload.','tool',1,['weapon','firearm','ranged']),
   fieldShotgun:item('fieldShotgun','Tidal salvage shotgun','A heavy four-shell break-action field gun with a broad close-range spread. Press R to reload.','tool',1,['weapon','firearm','ranged']),

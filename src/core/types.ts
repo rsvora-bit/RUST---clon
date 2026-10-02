@@ -3,7 +3,7 @@ import type {TechNodeId,TechState} from '../crafting/techTree';
 export type Vec3 = {x:number; y:number; z:number};
 export type WorldGeneration=1|2|3|4|5;
 export type WorldRevision=1|2|3|4;
-export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'rawMeat'|'hide'|'shirt'|'pants'|'boots'|'warmJacket'|'protectiveHood'|'salvageVest'|'yardPlate'|'bow'|'arrow'|'spear'|'salvageRevolver'|'fieldShotgun'|'pistolAmmo'|'shotgunShells'|'relayAccessCard'|'homesteadCore'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll'|'generator'|'powerSwitch'|'lamp';
+export type ItemId = 'rock'|'torch'|'wood'|'stone'|'metal'|'fiber'|'berries'|'rawMeat'|'hide'|'shirt'|'pants'|'boots'|'warmJacket'|'protectiveHood'|'salvageVest'|'yardPlate'|'bow'|'arrow'|'spear'|'docksideCleaver'|'salvageRevolver'|'fieldShotgun'|'pistolAmmo'|'shotgunShells'|'relayAccessCard'|'homesteadCore'|'sulfurOre'|'hqMetalOre'|'scrap'|'gears'|'wiring'|'machineParts'|'techParts'|'hatchet'|'pickaxe'|'hammer'|'plan'|'bandage'|'canteen'|'campfire'|'ore'|'storage'|'furnace'|'workbench1'|'workbench2'|'workbench3'|'bedroll'|'generator'|'powerSwitch'|'lamp';
 export type ItemCategory = 'resource'|'tool'|'food'|'building'|'utility';
 export type Language = 'en'|'cs';
 export type GraphicsQuality = 'low'|'medium'|'high'|'ultra';

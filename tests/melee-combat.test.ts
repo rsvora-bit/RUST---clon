@@ -16,6 +16,13 @@ describe('melee reach and swing rules',()=>{
     expect(MELEE_WEAPONS.spear.arcCosine).toBeGreaterThan(MELEE_WEAPONS.hatchet.arcCosine);
     expect(resolveMeleeHit(MELEE_WEAPONS.spear,origin,forward,target('boar',0,1,-2.4,.25)).hit).toBe(true);
   });
+  it('adds a durable salvage blade with heavier damage and a broader but shorter arc than the spear',()=>{
+    expect(MELEE_WEAPONS.docksideCleaver.damage).toBeGreaterThan(MELEE_WEAPONS.spear.damage);
+    expect(MELEE_WEAPONS.docksideCleaver.range).toBeLessThan(MELEE_WEAPONS.spear.range);
+    expect(MELEE_WEAPONS.docksideCleaver.arcCosine).toBeLessThan(MELEE_WEAPONS.spear.arcCosine);
+    expect(MELEE_WEAPONS.docksideCleaver.staminaCost).toBeGreaterThan(MELEE_WEAPONS.hatchet.staminaCost);
+    expect(resolveMeleeHit(MELEE_WEAPONS.docksideCleaver,origin,forward,target('boar',.7,1,-1.7,.25)).hit).toBe(true);
+  });
   it('hits a target in front inside reach',()=>{
     expect(resolveMeleeHit(MELEE_WEAPONS.rock,origin,forward,target('wolf'))).toMatchObject({hit:true,reason:'hit',targetId:'wolf'});
   });

@@ -31,4 +31,9 @@ describe('persistent tool condition and repair',()=>{
     sim.state.inventory[0]={itemId:'wood',count:1,condition:80};expect(validateGameState(sim.state)).toBe(false);
     sim.state.inventory[0]={itemId:'hatchet',count:1,condition:0};expect(validateGameState(sim.state)).toBe(false);
   });
+
+  it('persists and repairs condition for the advanced salvage melee weapon',()=>{
+    const sim=new GameSimulation(78,spawn);sim.state.inventory[0]={itemId:'docksideCleaver',count:1,condition:83};expect(validateGameState(structuredClone(sim.state))).toBe(true);
+    sim.state.progression!.stations.push(createStation('bench-2','workbench2',spawn));sim.addItem('metal',14);sim.addItem('machineParts',1);expect(sim.repairTool(0)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[0]).toMatchObject({itemId:'docksideCleaver',condition:128});expect(validateGameState(structuredClone(sim.state))).toBe(true);
+  });
 });
