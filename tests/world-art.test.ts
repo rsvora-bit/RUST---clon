@@ -32,6 +32,18 @@ describe('v0.9.1 world art stabilization',()=>{
       expect(validateGameState(state)).toBe(true);
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('adds a batched coastal wreck with distinct salvage, guarded cargo and safe rev-4 saves',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,5),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:5,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state,wreck=world.pois.find(poi=>poi.kind===5)!;
+    try{
+      world.populate(state);const loot=state.progression!.stations.find(station=>station.id==='loot-poi-5'),cache=state.progression!.stations.find(station=>station.id==='secure-cache-poi-5');
+      expect(wreck.name).toBe('Breakwater Cargo Wreck');expect(terrain.biomeAt(wreck.position.x,wreck.position.z)).toBe('COAST');expect(world.group.getObjectByName('Breakwater split cargo hull')).toBeTruthy();expect(world.group.getObjectByName('Breakwater corroded cargo')).toBeTruthy();
+      expect(world.collisionBoxes().filter(box=>Math.hypot(box.position.x-wreck.position.x,box.position.z-wreck.position.z)<5)).toHaveLength(2);
+      expect(loot?.inventory.some(stack=>stack?.itemId==='shotgunShells'||stack?.itemId==='machineParts'||stack?.itemId==='cookedMeat')).toBe(true);
+      expect(cache).toMatchObject({kind:'secureCache',locked:true});expect(cache?.inventory.some(stack=>stack?.itemId==='machineParts')).toBe(true);expect(cache?.inventory.some(stack=>stack?.itemId==='shotgunShells')).toBe(true);expect(validateGameState(state)).toBe(true);
+      const legacy=structuredClone(state);legacy.worldRevision=4;legacy.progression!.stations=[];legacy.progression!.lootGenerated=false;const oldLayout=generateWorldLayout(terrain,terrain.spawn,[],seed,4),oldEnv={...env,worldRevision:4,layout:oldLayout} as unknown as import('../src/rendering/environment').Environment,oldWorld=new WorldSurvival(oldEnv,new THREE.Scene(),seed);
+      try{oldWorld.populate(legacy);expect(oldWorld.pois).toHaveLength(5);expect(oldWorld.pois.some(poi=>poi.kind===5)).toBe(false);expect(legacy.progression!.stations.some(station=>station.id.includes('poi-5'))).toBe(false);expect(legacy.worldRevision).toBe(4);expect(validateGameState(legacy)).toBe(true);}finally{oldWorld.dispose();}
+    }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   for(const seed of [731942,447701,61417])it(`routes deterministic dry roads away from steep hills (${seed})`,()=>{
     const terrain=new IslandTerrain(seed,5);
     try {
@@ -66,7 +78,7 @@ describe('v0.9.1 world art stabilization',()=>{
   });
   it('preserves old gen5 snapshots without inventing a layout revision',()=>{
     const old=new GameSimulation(731942,{x:12,y:6,z:17}).state;delete old.worldRevision;old.inventory[8]={itemId:'scrap',count:70};old.nodeChanges={'tree-4':120};old.progression!.tech!.unlocked.push('efficiencyTooling');
-    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(4);
-    old.worldRevision=3;expect(validateGameState(old)).toBe(true);old.worldRevision=4;expect(validateGameState(old)).toBe(true);old.worldRevision=5 as 1;expect(validateGameState(old)).toBe(false);
+    expect(validateGameState(old)).toBe(true);const restored=new GameSimulation(old.seed,{x:0,y:4,z:0},JSON.parse(JSON.stringify(old)));expect(restored.state).toEqual(old);expect(restored.state.worldRevision).toBeUndefined();expect(new GameSimulation(731942,{x:0,y:4,z:0}).state.worldRevision).toBe(5);
+    old.worldRevision=3;expect(validateGameState(old)).toBe(true);old.worldRevision=4;expect(validateGameState(old)).toBe(true);old.worldRevision=5;expect(validateGameState(old)).toBe(true);old.worldRevision=6 as 1;expect(validateGameState(old)).toBe(false);
   });
 });

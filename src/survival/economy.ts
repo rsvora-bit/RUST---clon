@@ -37,7 +37,8 @@ export function fillPoiLoot(station:Station,kind:number,tier:LootTier,rand:()=>n
   const coast:[ItemId,number,number,number][]=[['scrap',5,18,.62],['wiring',1,3,.48],['wood',30,100,.78],['fiber',12,42,.65],['berries',2,8,.38],['canteen',1,2,.34],['bandage',1,2,.20]];
   const camp:[ItemId,number,number,number][]=[['wood',35,110,.84],['fiber',16,48,.75],['berries',3,10,.58],['bandage',1,3,.43],['canteen',1,2,.40],['scrap',4,14,.34]];
   const stormwatch:[ItemId,number,number,number][]=[['wiring',2,6,.88],['machineParts',1,3,.52],['gears',1,2,.38],['scrap',10,28,.62],['techParts',1,1,.16],['pistolAmmo',2,4,.26],['bandage',1,2,.22],['canteen',1,2,.30]];
-  const table=kind===1?relay:kind===2?quarry:kind===3?camp:kind===4?stormwatch:coast;
+  const wreck:[ItemId,number,number,number][]=[['scrap',8,26,.76],['machineParts',1,3,.38],['gears',1,2,.31],['wiring',1,4,.42],['shotgunShells',2,6,.34],['pistolAmmo',2,5,.26],['canteen',1,2,.48],['cookedMeat',1,2,.32],['wood',25,80,.55]];
+  const table=kind===1?relay:kind===2?quarry:kind===3?camp:kind===4?stormwatch:kind===5?wreck:coast;
   const scale=tier==='lucky'?1.45:tier==='decent'?1.2:1;
   let total=0;
   for(const [item,min,max,chance] of table){if(rand()>Math.min(.97,chance*scale))continue;const amount=Math.max(1,Math.round((min+Math.floor(rand()*(max-min+1))*scale)));const inserted=insertItem(station.inventory,item,amount);if(inserted>0&&(['scrap','wiring','gears','machineParts','techParts'] as ItemId[]).includes(item))total+=inserted;}
@@ -51,6 +52,7 @@ export function fillSecureCacheLoot(station:Station,kind:number,rand:()=>number)
     1:[['wiring',4,6],['pistolAmmo',3,5]],
     2:[['hqMetalOre',16,28],['shotgunShells',3,5],['machineParts',1,2]],
     4:[['techParts',1,1],['canteen',1,2],['gears',2,4]],
+    5:[['machineParts',2,4],['shotgunShells',4,8],['canteen',1,2],['cookedMeat',1,2]],
   };
   for(const [item,min,max] of signature[kind]??[])insertItem(station.inventory,item,min+Math.floor(rand()*(max-min+1)));
   fillSalvageLoot(station,'lucky',rand);

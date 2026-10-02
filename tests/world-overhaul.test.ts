@@ -38,11 +38,13 @@ describe('generation 5 world overhaul',()=>{
     for(const poi of a.pois){expect(Math.hypot(poi.position.x-terrain.spawn.x,poi.position.z-terrain.spawn.z)).toBeGreaterThanOrEqual(90);expect(terrain.slopeAt(poi.position.x,poi.position.z)).toBeLessThanOrEqual(.36);}
     const points=a.trails.flat();expect(points.every(p=>terrain.heightAt(p.x,p.z)>=.95)).toBe(true);expect(points.filter(p=>terrain.slopeAt(p.x,p.z)<1.25).length/points.length).toBeGreaterThan(.94);dispose(terrain);
   });
-  it('isolates Stormwatch Station to deterministic revision-4 worlds',()=>{
+  it('preserves revision 4 and adds a deterministic coastal wreck in revision 5',()=>{
     const terrain=new IslandTerrain(731942,5),legacy=generateWorldLayout(terrain,terrain.spawn,[],731942,3),current=generateWorldLayout(terrain,terrain.spawn,[],731942,4),replay=generateWorldLayout(terrain,terrain.spawn,[],731942,4);
     expect(legacy.pois).toHaveLength(4);expect(legacy.trails).toHaveLength(4);expect(current.pois).toHaveLength(5);expect(current.trails).toHaveLength(5);
     expect(current.pois.slice(0,4)).toEqual(legacy.pois);expect(current.pois[4]).toMatchObject({id:'poi-4',name:'Stormwatch Station',kind:4});expect(current).toEqual(replay);
-    for(const road of current.trails)expect(road.every(point=>terrain.heightAt(point.x,point.z)>=1.15)).toBe(true);
+    const next=generateWorldLayout(terrain,terrain.spawn,[],731942,5),nextReplay=generateWorldLayout(terrain,terrain.spawn,[],731942,5),wreck=next.pois[5];
+    expect(next.pois.slice(0,5)).toEqual(current.pois);expect(next.pois).toHaveLength(6);expect(next.trails).toHaveLength(6);expect(wreck).toMatchObject({id:'poi-5',name:'Breakwater Cargo Wreck',kind:5});expect(terrain.biomeAt(wreck!.position.x,wreck!.position.z)).toBe('COAST');expect(wreck!.position.y).toBeLessThan(10);expect(next).toEqual(nextReplay);
+    for(const road of [...current.trails,...next.trails])expect(road.every(point=>terrain.heightAt(point.x,point.z)>=1.15)).toBe(true);
     dispose(terrain);
   });
   it('maps dynamic world coordinates round-trip without fixed 720m assumptions',()=>{

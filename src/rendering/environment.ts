@@ -71,7 +71,7 @@ export class Environment {
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
 
-  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=4){
+  constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=5){
     this.root.name='Tideland — procedural island';scene.add(this.root);
     this.terrain=new IslandTerrain(seed,worldGeneration);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
     if(worldGeneration===5&&worldRevision>=2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,worldRevision);

@@ -55,7 +55,7 @@ export function createWildlifePopulation(context:WildlifeSpawnContext):WildlifeA
     actors.push(actor);
   }
   const sites=context.generation===5?(context.scavengerSites??[]):[];
-  for(let index=0;index<Math.min(3,sites.length);index++){
+  for(let index=0;index<Math.min(4,sites.length);index++){
     const site=sites[index]!,angle=(context.seed%997)*.013+index*2.399963,radius=5.5+index*.8,x=site.x+Math.cos(angle)*radius,z=site.z+Math.sin(angle)*radius;
     if(Math.abs(x)>margin||Math.abs(z)>margin)continue;const y=context.heightAt(x,z);if(!Number.isFinite(y)||y<.5)continue;
     const id=`scavenger-${context.seed}-${index}`,seed=Math.floor(random()*0x7fffffff),position={x,y,z},archetype:ScavengerArchetype=index===1?'lookout':'scavenger',actor=createScavenger(id,archetype,position,angle+Math.PI,seed,random()*.8,context.nodeChanges?.[id]);if(actor)actors.push(actor);

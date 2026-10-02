@@ -50,6 +50,11 @@ describe('seeded island wildlife',()=>{
     const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0,[scavengers[2]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
     expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id||a.id===scavengers[2]!.id)).toBe(false);
   });
+  it('adds one deterministic guard at the revision-5 fourth POI without changing earlier sites',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60},{x:330,y:3,z:-120},{x:-410,y:3,z:-210}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(actor=>actor.species==='islandScavenger');
+    expect(scavengers).toHaveLength(5);expect(scavengers.map(actor=>[actor.id,actor.position])).toEqual(again.filter(actor=>actor.species==='islandScavenger').map(actor=>[actor.id,actor.position]));expect(scavengers[4]!.id).toBe(`scavenger-${context.seed}-3`);expect(Math.hypot(scavengers[4]!.position.x-sites[3]!.x,scavengers[4]!.position.z-sites[3]!.z)).toBeLessThan(10);
+    const reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:{[scavengers[4]!.id]:0}});expect(reloaded.some(actor=>actor.id===scavengers[4]!.id)).toBe(false);expect(reloaded.find(actor=>actor.id===scavengers[3]!.id)?.position).toEqual(scavengers[3]!.position);
+  });
   it('lets armored guards absorb projectile damage while remaining vulnerable to melee',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],actors=createWildlifePopulation({...context,scavengerSites:sites}),guard=actors.find(a=>a.archetype==='guard')!,scavenger=actors.find(a=>a.archetype==='scavenger')!;
     const bullet=guard.takeDamage({amount:50,type:'projectile',sourceId:'player-test'});expect(bullet.requested).toBe(50);expect(bullet.applied).toBe(40);expect(bullet.absorbed).toBeCloseTo(10);expect(bullet.healthAfter).toBe(106);

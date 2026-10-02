@@ -25,7 +25,7 @@ export class GameSimulation implements Damageable {
 
   constructor(seed: number, spawn: Vec3, saved?: GameState) {
     this.state = saved ? structuredClone(saved) : {
-      version: 1, worldGeneration: 5, worldRevision: 4, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,
+      version: 1, worldGeneration: 5, worldRevision: 5, seed, elapsed: 0, timeOfDay: SURVIVAL.START_HOUR,
       player: { position: { ...spawn }, yaw: 0, pitch: 0, stats: { ...SURVIVAL.STARTING_STATS } },
       inventory: createStarterInventory(),
       activeSlot: 0, structures: [], nodeChanges: {}, drops: [], craftQueue: [], nextId: 1,
