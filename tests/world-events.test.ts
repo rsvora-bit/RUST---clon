@@ -39,6 +39,24 @@ describe('Generation 5 washed-ashore salvage event',()=>{
     expect(progress.washedAshore).toMatchObject({resolved:false,sequence:2,position:{x:320,z:-470}});expect(progress.stations.some(s=>s.id===washedAshoreStationId(2))).toBe(true);expect(validateGameState(structuredClone(state))).toBe(true);
   });
 
+  it('adds a deterministic Tech Part to every third recovered storm cache',()=>{
+    const reachThird=(seed:number)=>{
+      const state=stormState(seed),progress=ensureProgression(state);let third:(typeof progress.stations)[number]|undefined;
+      for(let sequence=1;sequence<=3;sequence++){
+        progress.weather.kind='storm';expect(updateWashedAshoreEvent(state,5,index=>({x:coast.x+index*12,y:coast.y,z:coast.z-index*9}))).toBe(false);
+        progress.weather.kind='clear';expect(updateWashedAshoreEvent(state,5,index=>({x:coast.x+index*12,y:coast.y,z:coast.z-index*9}))).toBe(true);
+        const id=washedAshoreStationId(sequence),cache=progress.stations.find(station=>station.id===id)!;
+        const techParts=cache.inventory.filter(item=>item?.itemId==='techParts').reduce((sum,item)=>sum+(item?.count??0),0);
+        if(sequence===2)expect(techParts).toBe(0);if(sequence===3)expect(techParts).toBe(1);
+        if(sequence===3)third=structuredClone(cache);
+        progress.stations=progress.stations.filter(station=>station.id!==id);expect(resolveWashedAshoreEvent(state,id)).toBe(true);
+        state.elapsed=(progress.washedAshore?.nextSpawnAt??state.elapsed)+1;expect(validateGameState(structuredClone(state))).toBe(true);
+      }
+      return third!;
+    };
+    const first=reachThird(673),again=reachThird(673);expect(first.inventory).toEqual(again.inventory);
+  });
+
   it('leaves legacy generations and old Gen5 saves without the optional field unchanged',()=>{
     const legacy=stormState();legacy.worldGeneration=4;const legacyProgress=ensureProgression(legacy);legacyProgress.weather.kind='storm';
     expect(updateWashedAshoreEvent(legacy,4,()=>coast)).toBe(false);expect(legacyProgress.washedAshore).toBeUndefined();

@@ -24,7 +24,7 @@ export function updateWashedAshoreEvent(state:GameState,generation:number,findCo
   const sequence=(event.sequence??(event.position?1:0))+1,position=findCoast(sequence);if(!position)return false;
   event.sequence=sequence;event.position={...position};event.appearedAt=state.elapsed;event.resolved=false;delete event.nextSpawnAt;
   const eventSeed=(state.seed^Math.imul(sequence,0x45d9f3b))>>>0,station=createStation(washedAshoreStationId(sequence),'loot',position,randomSource(eventSeed^0x5a17)()*Math.PI*2);
-  fillSalvageLoot(station,sequence===1?'lucky':'decent',randomSource(eventSeed^0x5a18));progress.stations.push(station);
+  fillSalvageLoot(station,sequence===1?'lucky':'decent',randomSource(eventSeed^0x5a18));if(sequence%3===0)insertItem(station.inventory,'techParts',1);progress.stations.push(station);
   return true;
 }
 
