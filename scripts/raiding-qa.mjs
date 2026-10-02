@@ -34,6 +34,6 @@ try{
   pass('At least one raider enters through the breached doorway',[result.actorPosition,result.supportPosition].some(position=>position&&position.z<setup.doorPosition.z));
   pass('Raid alarm alerts a nearby ally and directs it to the same blocked door',result.supportAlerted);
   assert.equal(result.saveValid,true,'breached base should remain save-compatible');await page.reload();await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:180000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:180000});await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});
-  const persisted=await page.evaluate(id=>window.__TIDELAND.sim().state.structures.some(s=>s.id===id),setup.door);pass('Destroyed door remains absent after save and reload',!persisted);
-  pass('No browser application or WebGL errors',errors.length===0);await page.screenshot({path:`${outputDir}/door-raid.png`});console.log(JSON.stringify({passed:true,setup,result,persisted,errors}));
+  const doorPresentAfterReload=await page.evaluate(id=>window.__TIDELAND.sim().state.structures.some(s=>s.id===id),setup.door);pass('Destroyed door remains absent after save and reload',!doorPresentAfterReload);
+  pass('No browser application or WebGL errors',errors.length===0);await page.screenshot({path:`${outputDir}/door-raid.png`});console.log(JSON.stringify({passed:true,setup,result,doorPresentAfterReload,errors}));
 }finally{await browser.close();}
