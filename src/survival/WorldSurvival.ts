@@ -33,7 +33,7 @@ export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:C
 export class WorldSurvival {
   readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
   private readonly eventSiteCache=new Map<number,Vec3|null>();
-  private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private paint=new T.MeshStandardMaterial({color:0x52645c,roughness:.78,metalness:.36});private glass=new T.MeshStandardMaterial({color:0x526d70,roughness:.4,metalness:.25,emissive:0x162426,emissiveIntensity:.16});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private sludge=new T.MeshStandardMaterial({color:0x4d5941,roughness:.38,metalness:.04,transparent:true,opacity:.73,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0x0d1209,emissiveIntensity:.12,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+  private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private paint=new T.MeshStandardMaterial({color:0x52645c,roughness:.78,metalness:.36});private glass=new T.MeshStandardMaterial({color:0x77979a,roughness:.28,metalness:.12,transparent:true,opacity:.38,depthWrite:false,emissive:0x162426,emissiveIntensity:.16});private display=new T.MeshStandardMaterial({color:0x588879,roughness:.4,metalness:.12,emissive:0x42b98c,emissiveIntensity:.72});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private sludge=new T.MeshStandardMaterial({color:0x4d5941,roughness:.38,metalness:.04,transparent:true,opacity:.73,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0x0d1209,emissiveIntensity:.12,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   private readonly relayMast=new T.CylinderGeometry(.08,.2,8.4,6,5);private readonly relayDish=new T.SphereGeometry(.48,9,6,0,Math.PI*2,0,Math.PI*.58);
   constructor(private env:Environment,scene:T.Scene,private seed:number){
     scene.add(this.group);const layout=env.layout??generateWorldLayout(env.terrain,env.spawn,env.colliders,seed,env.worldRevision);this.pois.push(...layout.pois);this.trails.push(...layout.trails);for(const poi of this.pois)this.make(poi);if(env.terrain.generation===5&&env.worldRevision>=2){this.road.color.set(0xffffff);this.road.vertexColors=true;this.road.map=groundTexture('dirt',713);this.road.transparent=true;this.road.depthWrite=false;this.road.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat edge=min(vMapUv.x,1.-vMapUv.x);diffuseColor.a*=smoothstep(0.,.17,edge);diffuseColor.rgb*=.88+.12*sin(vMapUv.x*18.);');};}for(const points of this.trails)this.makeRoad(points);
@@ -95,10 +95,27 @@ export class WorldSurvival {
       if(this.env.worldRevision>=6){
         // Revision 6 turns the wreck into a readable stranded work site while keeping its gameplay IDs.
         this.box(g,-.25,1.23,0,5.1,.12,1.45,this.metal).name='Breakwater buckled deck plate';
-        this.box(g,-1.48,1.7,.04,1.2,.82,.96,this.paint).name='Breakwater weather station cabin';
+        // Assemble the wheelhouse around real window openings so the exposed
+        // bridge reads as a flooded, abandoned workspace rather than a box.
+        this.box(g,-1.48,1.34,.04,1.2,.10,.96,this.paint).name='Breakwater weather station cabin';
+        this.box(g,-1.48,1.70,-.42,1.2,.82,.08,this.paint).name='Breakwater cabin aft bulkhead';
+        this.box(g,-2.04,1.70,.04,.08,.82,.96,this.paint).name='Breakwater cabin port bulkhead';
+        this.box(g,-.92,1.44,-.34,.08,.30,.24,this.paint).name='Breakwater cabin starboard lower bulkhead';
+        this.box(g,-.92,1.96,-.34,.08,.30,.24,this.paint).name='Breakwater cabin starboard upper bulkhead';
+        this.box(g,-.92,1.70,-.005,.08,.82,.11,this.paint).name='Breakwater cabin starboard forward post';
+        this.box(g,-.92,1.70,.415,.08,.82,.13,this.paint).name='Breakwater cabin starboard aft post';
+        // Twin front panes span most of the forward wall; leave a center pier
+        // and narrow outer posts to keep the sightline into the cabin open.
+        this.box(g,-1.48,1.44,.52,1.2,.30,.08,this.paint);
+        this.box(g,-1.48,2.06,.52,1.2,.24,.08,this.paint);
         this.box(g,-1.48,2.15,.04,1.48,.13,1.18,this.rust).rotation.z=-.035;
         for(const x of [-1.82,-1.18]){this.box(g,x,1.77,.535,.37,.34,.035,this.glass).name='Breakwater bridge window';this.box(g,x,1.98,.56,.40,.045,.045,this.rust);}
         this.box(g,-.86,1.78,.04,.035,.35,.62,this.glass).name='Breakwater side window';
+        const chart=this.box(g,-1.48,1.56,.21,.70,.12,.34,this.metal);chart.name='Breakwater bridge chart console';
+        const instrument=this.box(g,-1.48,1.68,.32,.58,.12,.08,this.display);instrument.name='Breakwater weather instrument display';instrument.rotation.x=-.18;
+        for(let i=0;i<3;i++){const dial=this.box(g,-1.68+i*.20,1.725,.36,.055,.018,.014,i===1?this.rust:this.metal);dial.name='Breakwater bridge control dial';}
+        const seat=this.box(g,-1.48,1.50,-.08,.31,.08,.28,this.wood);seat.name='Breakwater bridge operator seat';
+        const seatBack=this.box(g,-1.48,1.70,-.20,.31,.35,.07,this.wood);seatBack.name='Breakwater bridge operator seat';seatBack.rotation.x=-.10;
         const stack=new T.Mesh(new T.CylinderGeometry(.10,.14,.72,7),this.rust);stack.name='Breakwater exhaust stack';stack.position.set(-2.24,2.23,-.2);stack.castShadow=true;g.add(stack);
         this.box(g,-2.24,2.61,-.2,.28,.07,.28,this.metal).name='Breakwater exhaust cap';
         for(const x of [-3.15,3.62]){const bollard=this.box(g,x,1.42,.68,.15,.37,.15,this.metal);bollard.name='Breakwater mooring bollard';}
@@ -177,7 +194,7 @@ export class WorldSurvival {
     this.eventSiteCache.set(sequence,best);return best;
   }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
-  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.glass,this.cloth,this.sludge,this.road].forEach(m=>m.dispose());}
+  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.glass,this.display,this.cloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
 
 export class IslandMap {
