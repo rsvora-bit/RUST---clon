@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {rockGeometry} from '../world/models';
 import {flameMaterial} from './Flame';
 import type {ItemId} from '../core/types';
@@ -127,9 +128,25 @@ export class HeldItem {
     }else if(item==='quarryMaul'){
       const haft=this.mesh(new THREE.CylinderGeometry(.027,.036,.82,10),this.wood,.27,.10,-.65);haft.rotation.z=-.18;
       const grip=this.mesh(new THREE.CylinderGeometry(.039,.043,.24,10),this.wrap,.27,-.18,-.645);grip.rotation.z=-.18;
-      const head=this.mesh(new THREE.BoxGeometry(.36,.18,.16,2,2,2),this.metal,.27,.53,-.67);head.rotation.z=-.12;
-      const face=this.mesh(new THREE.BoxGeometry(.055,.21,.19),this.rust,.065,.52,-.67);face.rotation.z=-.12;
-      const endPlate=this.mesh(new THREE.BoxGeometry(.025,.15,.165),this.metal,.465,.54,-.67);endPlate.rotation.z=-.12;
+      for(const y of [-.215,-.155]){const band=this.mesh(new THREE.TorusGeometry(.041,.004,5,14),this.rust,.27,y,-.645);band.rotation.x=Math.PI/2;band.rotation.z=-.18;}
+
+      // A compact forged head with clipped corners and salvage-steel face plates.
+      // Keep the repeated metal details in one geometry so the model remains cheap.
+      const headShape=new THREE.Shape();headShape.moveTo(-.145,-.048);headShape.lineTo(-.119,-.075);headShape.lineTo(.119,-.075);headShape.lineTo(.15,-.043);headShape.lineTo(.15,.043);headShape.lineTo(.119,.075);headShape.lineTo(-.119,.075);headShape.lineTo(-.145,.048);headShape.closePath();
+      const core=new THREE.ExtrudeGeometry(headShape,{depth:.145,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.008,bevelThickness:.008});core.translate(0,0,-.0725);
+      const steelParts:THREE.BufferGeometry[]=[core];
+      const addSteel=(geometry:THREE.BufferGeometry,x:number,y:number,z:number)=>{geometry.translate(x,y,z);steelParts.push(geometry);};
+      addSteel(new THREE.BoxGeometry(.025,.13,.15),.141,0,0);
+      for(const x of [-.095,.095])for(const y of [-.045,.045]){const rivet=new THREE.CylinderGeometry(.012,.012,.008,8);rivet.rotateX(Math.PI/2);addSteel(rivet,x,y,.078);}
+      const mergeParts=steelParts.map(part=>part.index?part.toNonIndexed():part);
+      steelParts.forEach((part,index)=>{if(mergeParts[index]!==part)part.dispose();});
+      const steelGeometry=mergeGeometries(mergeParts,false);for(const part of mergeParts)part.dispose();
+      if(!steelGeometry)throw new Error('Could not assemble Quarry Maul head geometry');
+      const head=this.mesh(steelGeometry,this.metal,.27,.53,-.67);head.rotation.z=-.12;
+
+      const faceShape=new THREE.Shape();faceShape.moveTo(-.073,-.027);faceShape.lineTo(-.059,-.041);faceShape.lineTo(.059,-.041);faceShape.lineTo(.073,-.027);faceShape.lineTo(.073,.027);faceShape.lineTo(.059,.041);faceShape.lineTo(-.059,.041);faceShape.lineTo(-.073,.027);faceShape.closePath();
+      const face=this.mesh(new THREE.ShapeGeometry(faceShape),this.wrap,.27,.53,-.584);face.rotation.z=-.12;
+      const rustCap=this.mesh(new THREE.BoxGeometry(.035,.13,.15),this.rust,.105,.53,-.67);rustCap.rotation.z=-.12;
       const collar=this.mesh(new THREE.CylinderGeometry(.07,.055,.105,8),this.wrap,.27,.36,-.66);collar.rotation.z=-.18;
       this.addArm(-1,-.10,-.18,-.61,.23,true);
     }else if(item==='salvageRevolver'||item==='fieldShotgun'){
