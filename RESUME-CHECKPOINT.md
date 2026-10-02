@@ -775,3 +775,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `test:world-art` přes Chrome Metal PASS: 1 850 ferns, 780 fallen twigs, 850 meadow tufts, culling, routes/roads, archive save reload, weather/horizon, screenshot series a save/reload. Errors **0**. Prohlédnutý `forest-understory-close.png` potvrzuje výraznější kapradinové clumps; celkový forest edge zůstává otevřený a průchozí.
 - Performance Chrome Metal HIGH 1280×720: archiv v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / startup 2 816 ms**; Rev6 **60 FPS / 16.668 ms / 677 calls / 4 129 104 tris / 2 033 nodes / startup 2 991 ms**, 0 errors. +53 136 triangles proti předchozímu Rev6 (+1.3 %), bez dalších draw calls; 60Hz cap.
 - Následně `npm test` **310/310 PASS / 40 files**, `npm run build` PASS (známé ~3.26 MB JS chunk warning), `git diff --check` a `node --check scripts/world-art-qa.mjs` PASS. Odhad celkem **60 % / 40 % zbývá**; otevřené: hlubší tree/forest volume, další POI/environment storytelling, weather/night VFX, models/viewmodels, širší regression QA. Release stále 0.9.3 a pracovní branch `codex/world-revision-6`.
+
+## v0.10 pokračování — Weather hot-path cleanup — 2026-10-03
+
+- `src/survival/Weather.ts`: mlžný tint `THREE.Color` se nyní vytvoří jednou místo opakovaného alokování v každém update framu. Barevná hodnota, weather blend, save state a vizuální výsledek zůstávají stejné.
+- Cílené `tests/environment-visuals.test.ts` + `tests/world-art.test.ts`: **23/23 PASS**; `npm run build` PASS se známým velkým minifikovaným bundle warningem; `git diff --check` PASS. Plná sada 310/310 a celá browser/performance sada byly provedeny bezprostředně před touto čistě allocation-only změnou.
+- Aktuální odhad zůstává **60 % hotovo / 40 % zbývá**. Dále prioritizovat viditelný forest/terrain/POI/weather art a potom zopakovat široký regression QA; pracovní release candidate ještě není.
