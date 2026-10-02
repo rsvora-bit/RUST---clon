@@ -2,7 +2,10 @@ import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
 import {fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
+import {Weather,stormLightningRoll} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
+import {GameSimulation} from '../src/simulation/GameSimulation';
+import {ensureProgression} from '../src/survival/progression';
 
 describe('environment visual building blocks',()=>{
   it('builds non-empty low-cost understory and coast geometry',()=>{
@@ -26,5 +29,14 @@ describe('environment visual building blocks',()=>{
     atmosphere.update(0,12,new THREE.Vector3());expect(atmosphere.daylightAmount).toBeGreaterThan(.9);expect(atmosphere.fill.intensity).toBeGreaterThan(1.9);
     atmosphere.setQuality('ultra');expect(atmosphere.sun.castShadow).toBe(true);expect(atmosphere.sun.shadow.mapSize.x).toBe(3072);
     atmosphere.setQuality('low');expect(atmosphere.sun.castShadow).toBe(false);atmosphere.dispose();height.dispose();
+  });
+
+  it('adds deterministic, brief lightning flashes only during storms',()=>{
+    const seed=731942,bucket=Array.from({length:2000},(_,index)=>index).find(index=>stormLightningRoll(seed,index)>.88)!;
+    expect(bucket).toBeDefined();expect(stormLightningRoll(seed,bucket)).toBe(stormLightningRoll(seed,bucket));expect(stormLightningRoll(seed,bucket)).toBeGreaterThanOrEqual(0);expect(stormLightningRoll(seed,bucket)).toBeLessThan(1);
+    const state=new GameSimulation(seed,{x:0,y:4,z:0}).state,weatherState=ensureProgression(state).weather;weatherState.kind='storm';weatherState.remaining=3600;weatherState.blend=1;weatherState.rain=1;weatherState.storm=1;state.elapsed=bucket*11;
+    const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3();let peak=0;
+    try{for(let frame=0;frame<20;frame++){atmosphere.update(1/60,10,camera);const output=weather.update(1/60,state,atmosphere,camera,'high');peak=Math.max(peak,output.lightning);state.elapsed+=1/60;}expect(peak).toBeGreaterThan(.35);expect(atmosphere.sky.material.uniforms.lightning.value).toBeGreaterThanOrEqual(0);weatherState.kind='clear';expect(weather.update(1/60,state,atmosphere,camera,'high').lightning).toBe(0);}
+    finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 });
