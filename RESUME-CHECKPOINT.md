@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Pracovní větev `codex/combat-endgame-next` navazuje na pushnutý checkpoint `21f4a24`; aktuální QA doplnění je lokálně ověřeno a checkpointuje se. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
+- Integrovaný raid/security checkpoint `6fa904c` je pushnutý na `origin/codex/combat-endgame-next`; novější změny této pracovní linie budou navazovat na něj. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
