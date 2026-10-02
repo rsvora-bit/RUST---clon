@@ -2,6 +2,15 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+
+## Pokračování — táborákové vaření a cooked meat (2026-10-02)
+
+- Doplněn chybějící survival loop pro syrové maso: táborák má sloty `FUEL`, `RAW MEAT`, `OUTPUT`; jedno dřevo a jedno raw meat se rezervují při startu, vaření trvá 12 sekund a vydá jedno `cookedMeat`, které obnoví 24 hunger. Vaření pokračuje z uloženého jobu; hráč nemůže vložit předmět přímo do output slotu a plný výstup nespotřebuje ingredience ani palivo. Přidány item definice, consumable hodnota, SVG ikona, receptní/status copy v StationUI a `npm run test:cooking` browser harness.
+- Save compatibility: validace dál přijímá původní 1-slot campfire z uložených v0.9.2 světů; `GameSimulation` při načtení bezpečně doplní dva prázdné sloty. Save schema/version, starší inventáře, world generation/revision, struktury ani progression se nemění.
+- Nové unit kontroly pokrývají raw meat jako nejedlou surovinu, save/reload uprostřed vaření, dokončení/konzumaci, plný output, odmítnutí vložení cooked meat do outputu a migraci legacy campfire. `npm test`: **301/301 PASS (39 souborů)**; `npm run build`: PASS se stávajícím upozorněním na ~3.24 MB JS chunk; `node --check scripts/cooking-qa.mjs` a `git diff --check`: PASS. Chrome/SwiftShader `test:cooking`: **6/6 PASS**, UI/drag/slot inputs/vaření/konzumace ověřeny, browser/app/WebGL chyby **0**. QA server na 5173 byl ukončen.
+- Změněno `src/survival/stations.ts`, `src/simulation/GameSimulation.ts`, `src/survival/StationUI.ts`, `src/config/gameplay.ts`, `src/core/types.ts`, `src/items/definitions.ts`, `tests/survival.test.ts`, `scripts/cooking-qa.mjs`, `package.json` a `public/assets/icons/cookedMeat.svg`. Feature commit `163c143` je pushnut na `codex/combat-endgame-next`; release/main/tag/PR se nemění.
+- Orientační odhad cílů po této malé gameplay vrstvě: Goal 1 **62%**, Goal 2 **91%**, Goal 3 **53%**, Goal 4 **55%**, Goal 5 **96%**; souhrnně přibližně **72% hotovo / 28% zbývá**. Je to hrubý odhad. Žádný Goal není kompletní; pokračovat dalšími cíli combat/endgame a průběžnou regresí.
+
 ## Pokračování — Advanced Field Medicine (2026-10-02)
 
 - Tier III Tech Tree nově nabízí `Advanced Field Medicine`, navázanou na `Field Medicine` a `Workbench III Research`; výzkum stojí 140 Scrap. Odemkne craft `Trauma Kit` na Workbench III za 2 Field Dressings, 1 Tech Part, 2 Machine Parts a 20 Fiber. Sada obnovuje 48 health a max stack je 2, takže silnější léčba spotřebuje vzácný modul i část zásob; existující spotřební simulace se znovu používá.
@@ -15,7 +24,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Aktuální čisté/pushnuté branche checkpointy: `b494147` (Advanced Field Medicine) a `7ea7bee` (QA report). `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
+- Aktuální pracovní větev `codex/combat-endgame-next` obsahuje pushnutý feature commit `163c143` (campfire cooking); předchozí checkpointy zahrnují `b494147` a `7ea7bee`. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
