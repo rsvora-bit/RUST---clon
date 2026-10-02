@@ -64,6 +64,9 @@ export class WorldSurvival {
       const vane=this.box(g,2.1,4.42,.38,.48,.06,.12,this.rust);vane.rotation.z=-.16;
       for(const [x,z] of [[1.48,.38],[1.96,.62],[1.96,.14]] as const){const cup=new T.Mesh(new T.SphereGeometry(.105,7,5),this.cloth);cup.name='Stormwatch anemometer cup';cup.position.set(x,4.1,z);g.add(cup);}
       const panel=this.box(g,-.48,1.87,.36,1.05,.07,.72,this.metal);panel.name='Stormwatch weather instrument panel';panel.rotation.x=-.22;
+      const solar=this.box(g,-.45,1.81,-.78,1.36,.055,.88,this.paint);solar.name='Stormwatch solar array';solar.rotation.x=-.18;
+      for(const x of [-1.13,-.79,-.45,-.11,.23]){const cell=this.box(g,x,1.846,-.78,.025,.012,.81,this.metal);cell.rotation.x=-.18;cell.name='Stormwatch solar cell divider';}
+      for(const z of [-1.21,-.35]){const rail=this.box(g,-.45,1.85,z,1.43,.035,.045,this.rust);rail.rotation.x=-.18;rail.name='Stormwatch solar array frame';}
       this.box(g,.48,.88,-.96,.42,.72,.08,this.rust);
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===6){
