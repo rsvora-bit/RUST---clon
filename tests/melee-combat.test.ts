@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {MELEE_WEAPONS,MeleeSwing,resolveMeleeHit} from '../src/combat/melee';
+import {PLAYER} from '../src/config/balance';
 
 const origin={x:0,y:1.5,z:0},forward={x:0,y:0,z:-1};
 const target=(id:string,x=0,y=1,z=-1.2,radius=.25)=>({id,position:{x,y,z},radius});
@@ -30,6 +31,12 @@ describe('melee reach and swing rules',()=>{
     expect(MELEE_WEAPONS.quarryMaul.staminaCost).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.staminaCost);
     expect(MELEE_WEAPONS.quarryMaul.durabilityCost).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.durabilityCost);
     expect(resolveMeleeHit(MELEE_WEAPONS.quarryMaul,origin,forward,target('boar',.8,1,-1.45,.25)).hit).toBe(true);
+  });
+  it('makes advanced melee cadence draw stamina instead of being self-sustaining at rest',()=>{
+    const sustainedRate=(weapon:typeof MELEE_WEAPONS[keyof typeof MELEE_WEAPONS])=>weapon.staminaCost/weapon.cooldown;
+    expect(sustainedRate(MELEE_WEAPONS.spear)).toBeLessThan(PLAYER.STAMINA_REGEN);
+    expect(sustainedRate(MELEE_WEAPONS.docksideCleaver)).toBeGreaterThan(PLAYER.STAMINA_REGEN);
+    expect(sustainedRate(MELEE_WEAPONS.quarryMaul)).toBeGreaterThan(sustainedRate(MELEE_WEAPONS.docksideCleaver));
   });
   it('hits a target in front inside reach',()=>{
     expect(resolveMeleeHit(MELEE_WEAPONS.rock,origin,forward,target('wolf'))).toMatchObject({hit:true,reason:'hit',targetId:'wolf'});
