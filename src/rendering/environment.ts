@@ -287,7 +287,7 @@ export class Environment {
     const fernM=new THREE.MeshLambertMaterial({color:0x526d40,side:THREE.DoubleSide});
     const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
     const fernPos:{x:number;y:number;z:number;s:number;r:number}[]=[],twigPos:{x:number;y:number;z:number;s:number;r:number}[]=[],tuftPos:{x:number;y:number;z:number;s:number;r:number}[]=[];
-    const revision6=this.worldRevision>=6,fernTarget=revision6?1400:720,twigTarget=revision6?780:620,tuftTarget=revision6?850:680;
+    const revision6=this.worldRevision>=6,fernTarget=revision6?1850:720,twigTarget=revision6?780:620,tuftTarget=revision6?850:680;
     for(let i=0;i<(revision6?26000:12500)&&(fernPos.length<fernTarget||twigPos.length<twigTarget||tuftPos.length<tuftTarget);i++){
       const span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?640:550,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<2||h>42||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<12)continue;const forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
       if(fernPos.length<fernTarget&&(biome==='TEMPERATE FOREST'||biome==='FOREST')&&forest>.45&&rand()<.23){const clump=2+Math.floor(rand()*3);for(let j=0;j<clump&&fernPos.length<fernTarget;j++){const angle=rand()*Math.PI*2,radius=j===0?0:rand()*1.05,fx=x+Math.cos(angle)*radius,fz=z+Math.sin(angle)*radius,fy=this.heightAt(fx,fz);if(fy<2||this.terrain.slopeAt(fx,fz)>.72)continue;fernPos.push({x:fx,y:fy,z:fz,s:.38+rand()*.65,r:rand()*6.28});}}
