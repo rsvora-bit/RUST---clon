@@ -127,6 +127,13 @@ describe('seeded island wildlife',()=>{
     actor.yaw=Math.atan2(player.x-actor.position.x,player.z-actor.position.z);actor.perceptionCooldown=0;system.update(.05,player,()=>3,()=>{},canSee);system.update(.05,player,()=>3,()=>{},canSee);
     expect(canSee).toHaveBeenCalledOnce();expect(actor.canSeePlayer).toBe(true);system.dispose();
   });
+  it('requires throttled clear sight for predators and angered boars to attack',()=>{
+    const scene=new THREE.Scene(),system=new WildlifeSystem(scene,context),wolf=system.actors.find(actor=>actor.species==='islandWolf')!,boar=createWildlifePopulation({...context,biomeAt:()=>'GRASSLAND'}).find(actor=>actor.species==='coastalBoar')!;
+    wolf.position={x:0,y:3,z:0};wolf.yaw=0;wolf.attackCooldown=0;wolf.perceptionCooldown=0;const player={x:0,y:3,z:1},attacks=vi.fn(),sight=vi.fn(()=>false);
+    system.update(.1,player,()=>3,attacks,sight);expect(wolf.canSeePlayer).toBe(false);expect(wolf.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();expect(sight).toHaveBeenCalledOnce();
+    wolf.perceptionCooldown=0;system.update(.1,player,()=>3,attacks,()=>true);expect(wolf.canSeePlayer).toBe(true);expect(wolf.state).toBe('attack');expect(attacks).toHaveBeenCalledOnce();
+    boar.position={x:0,y:3,z:0};boar.angered=true;boar.attackCooldown=0;const boarPlayer={x:0,y:3,z:1};tickWildlife(boar,.1,boarPlayer,()=>3,attacks,false);expect(attacks).toHaveBeenCalledOnce();tickWildlife(boar,.1,boarPlayer,()=>3,attacks,true);expect(attacks).toHaveBeenCalledTimes(2);system.dispose();
+  });
   it('shares a confirmed POI sighting with a nearby ally without granting wall-penetrating attacks',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],scene=new THREE.Scene(),system=new WildlifeSystem(scene,{...context,scavengerSites:sites}),guard=system.actors.find(a=>a.archetype==='guard')!,lookout=system.actors.find(a=>a.archetype==='lookout')!,player={x:guard.position.x+14,y:3,z:guard.position.z};
     guard.yaw=Math.atan2(player.x-guard.position.x,player.z-guard.position.z);guard.awareness=.99;guard.perceptionCooldown=0;lookout.perceptionCooldown=10;lookout.canSeePlayer=false;
