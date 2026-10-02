@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.2%20%7C%20EA--09.2-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.3%20%7C%20EA--09.3-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.9.2 / EA-09.2` · **1 October 2026**
+**Current release:** `v0.9.3 / EA-09.3` · **2 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.9.2](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.2/)
+Latest stable: [▶ PLAY v0.9.3](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.3/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -123,7 +123,7 @@ The browser locally persists world generation, settings, inventory, crafting, re
 
 ## 🚀 Current development focus
 
-**v0.9.2 / EA-09.2 — World Quality & Survival Progression** builds on the Generation 5 world with clearer forests and grass, terrain and night readability, plus integrated combat, equipment, hostile exploration and persistent Homestead ownership.
+**v0.9.3 / EA-09.3 — Combat & Endgame Expansion** builds on the Generation 5 world with deeper weapon and armor progression, guarded endgame POIs, repeatable world events, base raids, wildlife and campfire cooking.
 
 - ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
 - ✅ Frame-rate independent mouse-look accumulation and burst protection
@@ -160,6 +160,10 @@ The browser locally persists world generation, settings, inventory, crafting, re
 - ✅ Terrain-following POI roads and cached topographic map with hillshade, grid, pan and zoom
 - ✅ Three-layer distant mountain backdrop, expanded ocean and coordinated storm atmosphere
 - ✅ Landing-speed fall damage through the existing player damage/death lifecycle
+- ✅ Expanded melee and ranged weapon tiers, armor progression, trauma care and durable gear
+- ✅ Deterministic scavenger awareness, coordinated raids, wildlife and guarded high-risk POIs
+- ✅ Relay signal caches, repeatable storm salvage and risk-scaled location loot
+- ✅ Powered Homestead intrusion alarms, base security and persistent campfire cooking
 
 ---
 
@@ -274,6 +278,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.9.3` | Combat and armor progression, raiding/security, relay and storm events, Breakwater wreck and campfire cooking |
 | `v0.9.2` | Forest and terrain polish, combat, equipment, hostile scavengers, relay cache progression and Homestead ownership |
 | `v0.9.1` | Terrain-aware roads, climate-correct vegetation, continuous biome bands, distant massifs and save-safe stabilization |
 | `v0.9.0` | World generation 5, regional biomes, roads, topographic map, atmosphere and fall damage |
@@ -334,9 +339,17 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.9.2 / EA-09.2`
+`EARLY ACCESS DEVELOPMENT · v0.9.3 / EA-09.3`
 
 </div>
+
+### v0.9.3 validation and save compatibility
+
+Generation 1–4 saves retain their legacy generators. Existing Generation 5 saves retain their saved revision, player state, structures, stations, inventory, progression and Lost Packs; the coastal wreck and other new placements use deterministic IDs and existing persistence. The existing save schema remains compatible.
+
+Validation: `npm test` **304/304 passed in 39 files** and `npm run build` passed. Browser probes covered movement, gathering, crafting, building, doors, settings, save/reload, combat, death/respawn, raiding, power, POI caches, cooking and world events; the relevant browser runs reported no app/WebGL errors. Chrome/Metal High, 1280×720, seed 731942 comparison against archived v0.9.0: **60 FPS / 16.666 ms** in both, **612 → 664 draw calls**, **3,390,261 → 2,858,710 triangles (-15.7%)**, **1,318 → 1,598 nodes**, and **2,744 → 2,467 ms startup**. FPS was display-capped, so this is a same-device regression check rather than a maximum-throughput benchmark.
+
+`npm audit` reports two moderate development-only advisories in Vitest/@vitest/mocker; the available fix requires a major Vitest upgrade and was not forced into this release.
 
 ### v0.9.2 validation and save compatibility
 

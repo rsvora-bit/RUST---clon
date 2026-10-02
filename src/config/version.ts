@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.9.2';
-export const GAME_BUILD='EA-09.2';
-export const GAME_RELEASE_DATE='2026-10-01';
+export const GAME_VERSION='0.9.3';
+export const GAME_BUILD='EA-09.3';
+export const GAME_RELEASE_DATE='2026-10-02';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.9.3',date:'2026-10-02',title:'Combat & Endgame Expansion',changes:[
+    'Expanded combat progression with the Tidal Salvage Shotgun, Dockside Cleaver, Quarry Maul, armor tiers, trauma care, weapon condition, readable hit feedback and coordinated hostile scavengers.',
+    'Added deterministic relay signals and repeatable storm salvage, powered Homestead alarms, structure raiding, passive deer, and a coastal Breakwater Cargo Wreck with guarded, location-specific rewards.',
+    'Added persistent campfire cooking and contextual English/Czech guidance for caches, access cards and survival food.',
+    'Preserved legacy world generations and existing save data while extending Generation 5 content through deterministic additions and existing persistence systems.',
+    'Validated with 304 unit tests, production build, browser gameplay/regression probes and a same-device comparison against the archived v0.9.0 build.'
+  ]},
   {version:'0.9.2',date:'2026-10-01',title:'World Quality & Survival Progression',changes:[
     'Refined forest canopies, grass cover, mountain silhouettes, terrain blending and moonlit readability while retaining instancing and the existing Generation 5 world layout.',
     'Added persistent melee combat, recoverable bow projectiles, a research-gated salvage revolver, ammunition crafting and tool durability with workbench repair.',

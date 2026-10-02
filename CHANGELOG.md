@@ -1,3 +1,11 @@
+## v0.9.3 / EA-09.3 — Combat & Endgame Expansion (2026-10-02)
+
+- Expanded combat progression with the Tidal Salvage Shotgun, Dockside Cleaver, Quarry Maul, armor tiers, trauma care, weapon condition, clearer hit feedback and coordinated scavenger threats.
+- Added deterministic relay signals and repeatable storm salvage, powered Homestead alarms, structure raiding, passive deer, and a coastal Breakwater Cargo Wreck with guarded, location-specific rewards.
+- Added persistent campfire cooking plus contextual English/Czech guidance for salvage caches, access cards and survival food.
+- Preserved legacy world generations and existing save data while extending Generation 5 through deterministic additions and existing persistence systems.
+- Validated with 304 unit tests, production build, browser gameplay/regression probes and same-device performance comparison against the archived v0.9.0 build.
+
 ## v0.9.2 / EA-09.2 — World Quality & Survival Progression (2026-10-01)
 
 - Refined forests, grass cover, terrain blending, distant mountain silhouettes and moonlit readability without changing Generation 5 terrain heights or layout.
