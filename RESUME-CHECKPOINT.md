@@ -430,6 +430,17 @@ Tento oddíl zaznamenává stav známý k 2026-09-30 a je historický; aktuáln�
 
 # RESUME CHECKPOINT — 2026-09-13 13:36 Europe/Prague
 
+## Current continuation — 2026-10-02
+
+- Active campaign remains **INCOMPLETE**; no release/version bump. Current work is on `codex/combat-endgame-next`, based on v0.9.2. `main` and its release tag were not changed.
+- Added deterministic Generation-5 world revision 5 with the `Breakwater Cargo Wreck` coastal landmark. Revision 5 preserves the first five revision-4 POIs in place and adds a low-cost wreck mesh, two collision boxes, a locked signature cargo cache, and scavenger guard coverage. Revision-4 and legacy worlds retain their former layouts; saves keep their data and revision.
+- Updated world-art/scavenger QA and regression tests. Browser world-art QA passed 34 checks (including old archived-save reloads and rev4 layout preservation); scavenger QA passed 24 checks, with no console/WebGL errors. The wreck screenshot was visually inspected.
+- Current `npm test`: **303/303 tests, 39 files PASS**. `npm run build` PASS with the existing Vite warning that the minified JS bundle is over 500 kB. `git diff --check` PASS.
+- Latest native Chrome/Metal performance comparison against archived v0.9.0: 60 FPS / 16.666 ms both; draw calls 612 → 664 (+52), triangles 3,390,261 → 2,858,710 (-15.7%), startup 2,744 ms → 2,467 ms. SwiftShader numbers were also recorded but are not a useful absolute FPS target. The new POI itself adds 21 calls and 888 triangles compared with the immediately previous revision-4 branch snapshot.
+- This continuation's modified files before checkpoint: `scripts/scavenger-qa.mjs`, `scripts/tree-culling-qa.mjs`, `scripts/world-art-qa.mjs`, `src/app/GameApp.ts`, `src/combat/wildlife.ts`, `src/core/types.ts`, `src/rendering/environment.ts`, `src/save/storage.ts`, `src/simulation/GameSimulation.ts`, `src/survival/WorldSurvival.ts`, `src/survival/economy.ts`, `tests/wildlife-combat.test.ts`, `tests/world-art.test.ts`, `tests/world-overhaul.test.ts`.
+- Local Vite server was stopped after browser checks. No generated build/test artifacts were staged.
+- Immediate next step: review `git diff --check`, commit the revision-5 Breakwater feature, append this checkpoint, commit it, fetch and push the working branch normally, then continue with remaining long-session priorities. No merge, release, tag, or PR is authorized by this checkpoint.
+
 **INCOMPLETE.** Pokračovat v celém původním zadání v0.8.0 Graphics Overhaul. Tento checkpoint není release ani kandidát na merge. Přerušení kvůli usage limitu (85 % při poslední kontrole), nikoli kvůli iCloudu.
 
 ## Git a obnovení
