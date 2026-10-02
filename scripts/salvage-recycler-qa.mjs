@@ -4,15 +4,15 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const outputDir=process.env.TIDELAND_QA_DIR||'test-results/salvage-recycler';fs.mkdirSync(outputDir,{recursive:true});
+const outputDir=process.env.TIDELAND_QA_DIR||'test-results/salvage-recycler';fs.mkdirSync(outputDir,{recursive:true});const qaUrl=process.env.TIDELAND_QA_URL||'http://localhost:5173';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 const pass=(label,value)=>{assert.ok(value,label);console.log('PASS',label);};
 const shot=async name=>{await page.waitForTimeout(200);await page.screenshot({path:`${outputDir}/${name}.png`,timeout:60000});};
-const boot=async()=>{await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:120000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:120000});};
+const boot=async()=>{await page.goto(qaUrl);await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:120000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:120000});};
 const continueGame=async()=>{await boot();await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:120000});};
 const openStation=async station=>{const title=station.kind==='recycler'?'SALVAGE RECYCLER':station.kind==='deathbag'?'Lost Pack':station.kind==='loot'?'Salvage cache':station.kind;await page.evaluate(s=>{const a=window.__TIDELAND;a.teleport({x:s.position.x,y:s.position.y+.08,z:s.position.z+2.7});a.lookAt({x:s.position.x,y:s.position.y+.72,z:s.position.z});},station);await page.waitForFunction(expected=>window.__TIDELAND.interaction()?.title===expected,title,{timeout:30000});await page.keyboard.press('KeyE');await page.locator('.survival-panel:not(.world-map)').waitFor({state:'visible'});};
-const drag=async(from,to)=>{const a=await from.boundingBox(),b=await to.boundingBox();assert.ok(a&&b);await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});await page.mouse.up();};
+const drag=async(from,to)=>{await from.waitFor({state:'visible',timeout:30000});await to.waitFor({state:'visible',timeout:30000});const a=await from.boundingBox(),b=await to.boundingBox();assert.ok(a,`Drag source has no layout box: ${from}`);assert.ok(b,`Drag target has no layout box: ${to}`);await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});await page.mouse.up();};
 const itemCount=(inventory,id)=>inventory.reduce((n,x)=>n+(x?.itemId===id?x.count:0),0);
 
 try{
