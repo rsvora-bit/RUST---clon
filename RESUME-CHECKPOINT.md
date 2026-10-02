@@ -835,3 +835,12 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `test:world-art` PASS s přesně 2 400 ferns, shore clusters, canopy variation, lighting/weather screenshoty, archivní save load/reload; browser/WebGL errors 0. Unit `tests/world-art.test.ts` **20/20 PASS**, `npm run build` PASS (známý ~3.27 MB JS chunk warning).
 - Chrome Metal HIGH 1280×720: archive v0.9.0 **60 FPS / 16.666ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,892ms startup**; Rev6 **60.01 FPS / 16.664ms / 680 calls / 4,221,850 tris / 2,033 nodes / 3,220ms startup**, errors 0. +64,800 tris (+1.6 %) proti předchozímu Rev6, bez nových draw calls; 60Hz capped.
 - Změna čeká na checkpoint commit na `codex/world-revision-6`; release/main/tag/Pages nedotčené.
+
+
+## v0.10 continuation — Broadleaf canopy volume — 2026-10-03
+
+- `src/world/models.ts`: both broadleaf shared geometries now include a small central crown mass and four low-poly upper-volume lobes. This closes the visible gaps between bough clusters in close/mid-range forest shots; all trees remain instanced and tree IDs, trunk matrices, gathering/falling, colliders and save data are unchanged. No new draw calls.
+- Chrome Metal world-art QA PASS: archive v0.9.0/v0.9.1 saves, Rev6 POIs/roads/understory/shore/weather/lightning, camera sweep and reload, browser/WebGL errors 0. Foliage unit tests 2/2 PASS; `npm run build` PASS with existing ~3.27 MB JS chunk warning. Close and mid-distance forest canopy screenshots were inspected.
+- Performance HIGH 1280×720: archive v0.9.0 **60 FPS / 16.666ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,606ms startup**; Rev6 **60.01 FPS / 16.664ms / 680 calls / 4,303,650 tris / 2,033 nodes / 3,088ms startup**, errors 0. New broadleaf volume adds about 81,800 triangles (+1.9% versus prior Rev6), no draw calls, capped FPS unchanged.
+- Current goal estimates: (1) Rev6/map **100%**, (2) terrain/materials **75%**, (3) vegetation/water/nature **80%**, (4) POI/interiors **85%**, (5) lighting/weather/atmosphere **80%**, (6) models/viewmodels/character **45%**, (7) performance/QA **80%**; overall roughly **78%**. These are judgment estimates, not measured task counts. Remaining visible work centers on terrain/rock pass, viewmodel/character presentation, and final broader QA/checkpoint review. Goal remains active; no release, PR, main, tag or Pages changes.
+- This canopy change and this checkpoint await commit on `codex/world-revision-6`.

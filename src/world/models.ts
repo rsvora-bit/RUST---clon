@@ -35,6 +35,10 @@ export function pineGeometry(variant=0):THREE.BufferGeometry {
 }
 export function broadleafGeometry(variant=0):THREE.BufferGeometry {
   const r=randomSource(372+variant*517),parts:THREE.BufferGeometry[]=[];
+  // Low-poly crown masses soften the open center between the larger boughs
+  // without turning the canopy into a single opaque blob.
+  const crownCore=new THREE.IcosahedronGeometry(1,0);crownCore.setIndex(Array.from({length:crownCore.getAttribute('position').count},(_,index)=>index));crownCore.scale(1.08+variant*.08,1.04+variant*.12,1.02+variant*.08);crownCore.translate(0,7.1+variant*.18,0);parts.push(crownCore);
+  for(let i=0;i<4;i++){const angle=i*Math.PI*.5+variant*.37,mass=new THREE.IcosahedronGeometry(1,0);mass.setIndex(Array.from({length:mass.getAttribute('position').count},(_,index)=>index));mass.scale(.68+variant*.06,.73,.70);mass.translate(Math.cos(angle)*1.15,6.9+Math.sin(angle*1.8)*.28,Math.sin(angle)*1.15);parts.push(mass);}
   // Separate bough clusters, with an asymmetric open-grown oak variant.
   for(const [index,bough] of broadleafBoughs(variant).entries()){
     const cx=bough.x,cz=bough.z,cy=bough.y;
