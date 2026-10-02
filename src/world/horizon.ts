@@ -6,9 +6,9 @@ export function mountainLayer(seed:number,layer:number,largeWorld:boolean):THREE
   const random=randomSource(seed+7181+layer*991),positions:number[]=[],indices:number[]=[],groups=6,segments=72,rows=3,heroGroup=Math.floor(random()*groups);
   for(let group=0;group<groups;group++){
     const center=group/groups*Math.PI*2+layer*.41+(random()-.5)*1.05+Math.sin(group*2.31+seed)*.31,width=.25+random()*.42,radius=(largeWorld?875:755)+layer*215+random()*148;
-    const height=132+layer*42+random()*92,hero=group===heroGroup?1.55:.60+random()*.38,peakA=.14+random()*.72,peakB=.18+random()*.64,peakC=.12+random()*.76,peakWidthA=.11+random()*.11,peakWidthB=.13+random()*.15,peakWidthC=.07+random()*.12,phase=random()*8,base=positions.length/3;
+    const height=132+layer*42+random()*92,hero=group===heroGroup?1.55:.60+random()*.38,peakA=.14+random()*.72,peakB=.18+random()*.64,peakC=.12+random()*.76,peakWidthA=.19+random()*.16,peakWidthB=.18+random()*.19,peakWidthC=.12+random()*.15,phase=random()*8,base=positions.length/3;
     for(let row=0;row<rows;row++)for(let i=0;i<=segments;i++){
-      const t=i/segments,u=t*2-1,warp=.055*Math.sin(t*4.1+phase)+.033*Math.sin(t*11.3-phase),a=center+u*width+warp,envelope=Math.pow(Math.max(0,1-u*u),1.08),ridge=(p:number,w:number)=>Math.exp(-Math.pow(Math.abs((t-p)/w),4)),peaks=.29+.17*Math.sin(t*4.7+phase)+hero*.69*ridge(peakA,peakWidthA)+.52*ridge(peakB,peakWidthB)+.34*ridge(peakC,peakWidthC)+.12*Math.sin(t*13+phase)+.065*Math.sin(t*29-phase)+.035*Math.sin(t*53+phase*.7);
+      const t=i/segments,u=t*2-1,warp=.055*Math.sin(t*4.1+phase)+.033*Math.sin(t*11.3-phase),a=center+u*width+warp,envelope=Math.pow(Math.max(0,1-u*u),1.08),ridge=(p:number,w:number)=>Math.exp(-Math.pow(Math.abs((t-p)/w),2.35)),peaks=.29+.17*Math.sin(t*4.7+phase)+hero*.69*ridge(peakA,peakWidthA)+.52*ridge(peakB,peakWidthB)+.34*ridge(peakC,peakWidthC)+.12*Math.sin(t*13+phase)+.065*Math.sin(t*29-phase)+.035*Math.sin(t*53+phase*.7);
       const r=radius+(row-1)*74+Math.sin(t*7+phase)*34+Math.sin(t*17-phase)*12,y=row===1?Math.max(7,height*envelope*peaks):-142;positions.push(Math.cos(a)*r,y,Math.sin(a)*r);
       if(row<rows-1&&i<segments){const k=base+row*(segments+1)+i;indices.push(k,k+1,k+segments+1,k+1,k+segments+2,k+segments+1);}
     }

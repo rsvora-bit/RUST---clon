@@ -316,7 +316,9 @@ export class Environment {
 
   private populateShore():void {
     const rand=randomSource(this.seed+29119),stones:THREE.Matrix4[]=[],wood:THREE.Matrix4[]=[],weed:THREE.Matrix4[]=[],revision6=this.terrain.generation===5&&this.worldRevision>=6;
-    for(let i=0;i<(revision6?24000:this.worldRevision>=6?5600:4200);i++){
+    // The larger revision-six archipelago needs denser, still batched tidal
+    // debris so its broad beaches read as lived-in shore instead of bare sand.
+    for(let i=0;i<(revision6?36000:this.worldRevision>=6?5600:4200);i++){
       const span=this.terrain.generation===5?this.terrain.size*.98:this.terrain.generation>=4?670:590,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(h<.15||h>(revision6?2.9:2.35)||this.terrain.noise.at(x*.06,z*.06)<(revision6?.48:.54))continue;
       const choice=rand();if(choice<(revision6?.095:.075)){const s=.62+rand()*.92;this.matrixDummy.position.set(x,h,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();wood.push(this.matrixDummy.matrix.clone());}
       else if(choice<(revision6?.25:.19)){const s=.38+rand()*.68;this.matrixDummy.position.set(x,h-.03,z);this.matrixDummy.rotation.set(0,rand()*6.28,0);this.matrixDummy.scale.set(s,s*(.65+rand()*.6),s);this.matrixDummy.updateMatrix();weed.push(this.matrixDummy.matrix.clone());}
