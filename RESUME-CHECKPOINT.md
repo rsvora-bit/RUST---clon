@@ -13,7 +13,9 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 
 - Rozšířený Chrome/Metal `test:combat` jednou nedeterministicky minul okamžitý snapshot po inventářovém swapu warm jacket → salvage vest, ačkoli opakování diagnostikou potvrdilo správný runtime stav. Harness nyní explicitně počká maximálně 5 s na očekávaný equip a zachování původního kusu i condition, než vyhodnotí assertion. Tím se nic v gameplay logice nemění ani nesnižuje se náročnost kontroly.
 - Následný `test:combat` celý prošel: melee, wildlife rewards/death persistence, typed damage, cold gear/wear, warm jacket ↔ salvage vest swap, projectile armor tradeoff, Workbench III plate, durability i save/reload. Browser/app/WebGL chyby: žádné.
-- Změněn pouze `scripts/combat-qa.mjs`; unit/build baseline z Tech Tree checkpointu zůstává aktuální, protože gameplay zdroj se neměnil. Commitnout společně s tímto QA checkpointem.
+- Změněn pouze `scripts/combat-qa.mjs`; commit `8891570` (`Stabilize equipment swap regression QA`).
+- Následná runtime regrese v Chrome/Metal: `test:scavenger` PASS (guard/loot/access card/Tech Parts/cache/save), `test:raiding` PASS (koordinovaný průlom/door persistence), `test:world-events` PASS (tři opakované storm cycles a Tech Part save/reload), `test:death` PASS (fatal projectile/Lost Pack/partial recovery/respawn), `test:base-security` PASS (powered intrusion alarm/reload), `test:power` PASS (generator→switch→lamp/fuel persistence) a `test:door-lock` PASS (hammer lock/firearm breach/Homestead). Všechny bez browser/app/WebGL console errors. Společně s výše uvedenými `test:tech-tree` a `test:combat` pokryje aktuální průchod osm browser harnessů. Test/build znovu spouštět při další změně gameplay zdrojů.
+- Poslední potvrzené lokální commity: `8891570`, `5dd32c3`, `37be3f2`; všechny jsou na `codex/combat-endgame-next`. GitHub fetch/push se nepovedl kvůli timeoutu připojení `github.com:443`; žádný push/release/main zásah nebyl proveden.
 
 ## Cíl a postup
 
