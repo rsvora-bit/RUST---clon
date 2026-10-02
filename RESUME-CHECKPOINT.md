@@ -4,8 +4,17 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Combat commit `944c7c0e3d8b3ff0f460f7e5c50e8723e7443d95` byl úspěšně pushnut na `codex/combat-endgame-next`. Následující pouze checkpointový commit zůstal lokální: push i následný fetch skončily po 75 s timeoutu spojení na `github.com:443`. Poslední lokálně známý `origin/codex/combat-endgame-next` je proto `944c7c0`; pracovní strom je čistý a lokální větev je o checkpoint commit napřed.
+- Aktuální pracovní HEAD je `b4e6e217887f347d6f57f78e5928a787476142d2` (`Clarify raid persistence QA diagnostics`); push na `origin/codex/combat-endgame-next` uspěl a lokální tracking ref se shoduje. Pracovní strom je čistý. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
+
+## Pokračování — feature-wide regression QA po obnovení (2026-10-02)
+
+- Aktuální zdroj bez změn prošel znovu `npm test`: **295/295 PASS (39 souborů)** a `npm run build`: **PASS**; zůstává předchozí Vite upozornění na 3.24 MB JS bundle. QA prostředí běželo na Chrome/Metal a lokálním Vite `127.0.0.1:5173`, který byl po běhu korektně ukončen.
+- Browser QA PASS: `test:combat`, `test:scavenger`, `test:raiding`, `test:base-security`, `test:power`, `test:tech-tree`, `test:world-events`, `test:death`, `test:hazard`, `test:firearm` (samostatný retry), `test:shotgun`, `test:ranged`, `test:salvage`, `test:world`, `test:world-art`, `test:tree-culling`, `test:performance`, `test:deer`, `test:wildlife-los`, `test:door-lock` a `test:browser`. Ověřeny mimo jiné skutečné melee miss/hit/stagger, tier III crafting, firearm/headshot/reload, wildlife LOS, NPC raid, power/alarm, cyklický storm-cache loot, Lost Pack/death, Gen4 a archivované v0.9.0/v0.9.1 saves a běžné movement/build/save flow. Všechny úspěšně dokončené harnessy hlásily **0 browser/app/WebGL chyb**.
+- První `test:firearm` běh po delším startu skončil 300s `waitForFunction` timeoutem při přechodu do hraní. Izolovaný start Chrome/Metal následně dosáhl `playing` za přibližně 1.5s po vstupu do menu a samostatný `test:firearm` retry prošel **11/11** kontrol; timeout je proto zaznamenán jako flaky startup probe, ne reprodukovaný gameplay bug.
+- Performance QA, seed `731942`, HIGH, 1280×720, Chrome/Metal: archiv v0.9.0 **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,943 ms startup**; current v0.9.2 **60.00 FPS / 16.666 ms / 643 calls / 2,857,822 tris / 1,598 nodes / 2,461 ms startup**. FPS je limitováno 60Hz; startup je jednotlivé měření a kolísá. Draw calls jsou proti v0.9.0 +31 (+5.1%), triangles −15.7%; žádná browser chyba.
+- Vizuální snapshot `test-results/world-art/current-v0.9.2.png` byl ručně prohlédnut. QA build zobrazuje aktuální otevřený temperate landscape a HUD správně; jde o obecné ověření aktuálního view, ne nové art změny. Screenshoty a test output zůstávají ignorované.
+- Progress odhad aktualizován pouze pro Goal 5: cílené runtime regresní pokrytí je nyní přibližně **90%** (předchozí 80%); Goals 1–4 se touto QA nemění. Celkový orientační stav zůstává přibližně **66% hotovo / 34% zbývá**, protože QA sama neimplementuje zbývající balancing a endgame obsah. Žádný subgoal ani celkový cíl není kompletní.
 
 ## Pokračování — melee miss cost a přesnost (2026-10-02)
 
