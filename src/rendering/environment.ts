@@ -315,12 +315,12 @@ export class Environment {
   }
 
   private populateShore():void {
-    const rand=randomSource(this.seed+29119),stones:THREE.Matrix4[]=[],wood:THREE.Matrix4[]=[],weed:THREE.Matrix4[]=[];
-    for(let i=0;i<(this.worldRevision>=6?5600:4200);i++){
-      const span=this.terrain.generation===5?this.terrain.size*.98:this.terrain.generation>=4?670:590,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(h<.15||h>2.35||this.terrain.noise.at(x*.06,z*.06)<.54)continue;
-      const choice=rand();if(choice<.075){const s=.55+rand()*.8;this.matrixDummy.position.set(x,h,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();wood.push(this.matrixDummy.matrix.clone());}
-      else if(choice<.19){const s=.28+rand()*.55;this.matrixDummy.position.set(x,h-.03,z);this.matrixDummy.rotation.set(0,rand()*6.28,0);this.matrixDummy.scale.set(s,s*(.65+rand()*.6),s);this.matrixDummy.updateMatrix();weed.push(this.matrixDummy.matrix.clone());}
-      else{const s=.10+rand()*.32;this.matrixDummy.position.set(x,h-s*.3,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();stones.push(this.matrixDummy.matrix.clone());}
+    const rand=randomSource(this.seed+29119),stones:THREE.Matrix4[]=[],wood:THREE.Matrix4[]=[],weed:THREE.Matrix4[]=[],revision6=this.terrain.generation===5&&this.worldRevision>=6;
+    for(let i=0;i<(revision6?24000:this.worldRevision>=6?5600:4200);i++){
+      const span=this.terrain.generation===5?this.terrain.size*.98:this.terrain.generation>=4?670:590,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z);if(h<.15||h>(revision6?2.9:2.35)||this.terrain.noise.at(x*.06,z*.06)<(revision6?.48:.54))continue;
+      const choice=rand();if(choice<(revision6?.095:.075)){const s=.62+rand()*.92;this.matrixDummy.position.set(x,h,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();wood.push(this.matrixDummy.matrix.clone());}
+      else if(choice<(revision6?.25:.19)){const s=.38+rand()*.68;this.matrixDummy.position.set(x,h-.03,z);this.matrixDummy.rotation.set(0,rand()*6.28,0);this.matrixDummy.scale.set(s,s*(.65+rand()*.6),s);this.matrixDummy.updateMatrix();weed.push(this.matrixDummy.matrix.clone());}
+      else{const s=.12+rand()*.38;this.matrixDummy.position.set(x,h-s*.3,z);this.matrixDummy.rotation.set(0,rand()*6.28,(rand()-.5)*.12);this.matrixDummy.scale.setScalar(s);this.matrixDummy.updateMatrix();stones.push(this.matrixDummy.matrix.clone());}
     }
     const log=this.own(new THREE.CylinderGeometry(.055,.10,1.9,7));log.rotateZ(Math.PI/2);const weedG=this.own(seaweedGeometry()),weedM=new THREE.MeshStandardMaterial({color:0x596340,roughness:.92,side:THREE.DoubleSide});this.materials.add(weedM);
     for(const [matrices,geometry,material,name] of [[stones,this.own(rockGeometry(811)),this.stone,'Tide-washed pebbles'],[wood,log,this.bark,'Stranded branches'],[weed,weedG,weedM,'Tidal seaweed']] as const){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=name;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);if(name==='Tidal seaweed')this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});}
