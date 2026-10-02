@@ -1,5 +1,5 @@
 import {ensureProgression} from '../survival/progression';
-import {tickStation,nearbyWorkbench} from '../survival/stations';
+import {tickStation,nearbyWorkbench,migrateStationInventories} from '../survival/stations';
 import type { BuildCandidate, CraftJob, DroppedItem, GameState, ItemId, ResourceNode, Structure, Vec3 } from '../core/types';
 import { BUILD, PLAYER } from '../config/balance';
 import { BUILDING_RULES, CONSUMABLES, GATHERING, INVENTORY, SAVE, SURVIVAL } from '../config/gameplay';
@@ -32,7 +32,7 @@ export class GameSimulation implements Damageable {
     };
     for(const structure of this.state.structures)migrateStructure(structure);
     this.state.player.equipment??={};
-    ensureProgression(this.state);ensureTech(this.state);
+    ensureProgression(this.state);migrateStationInventories(this.state.progression!.stations);ensureTech(this.state);
   }
 
   tick(dt: number, sprinting: boolean): void {

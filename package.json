@@ -28,7 +28,8 @@
     "test:world": "node scripts/world-overhaul-qa.mjs",
     "test:world-art": "node scripts/world-art-qa.mjs",
     "test:tree-culling": "node scripts/tree-culling-qa.mjs",
-    "test:performance": "node scripts/world-performance-qa.mjs"
+    "test:performance": "node scripts/world-performance-qa.mjs",
+    "test:cooking": "node scripts/cooking-qa.mjs"
   },
   "dependencies": {
     "three": "^0.180.0",

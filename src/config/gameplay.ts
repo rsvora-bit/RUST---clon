@@ -28,6 +28,7 @@ export const GATHERING: Record<ResourceNode['kind'], GatherRule> = {
 
 export const CONSUMABLES: Partial<Record<ItemId, Partial<PlayerStats>>> = {
   berries: { hunger: 9, thirst: 5 },
+  cookedMeat: { hunger: 24 },
   bandage: { health: 24 },
   traumaKit: { health: 48 },
   canteen: { thirst: 42 },

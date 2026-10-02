@@ -28,6 +28,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   fiber: item('fiber', 'Plant fiber', 'Tough fibers from wild flax. Twist into cord or use as a dressing.', 'resource', 1000, ['crafting']),
   berries: item('berries', 'Wild berries', 'A small meal that restores 9 food and 5 hydration. Double-click to eat.', 'food', 20, ['food'], { consumable: true }),
   rawMeat: item('rawMeat', 'Raw meat', 'Freshly recovered island game. Cook it over a campfire before eating.', 'resource', 20, ['food','cooking']),
+  cookedMeat: item('cookedMeat', 'Cooked meat', 'A hot campfire meal. Restores 24 food when eaten.', 'food', 20, ['food','cooking'], { consumable: true }),
   hide: item('hide', 'Animal hide', 'Weathered hide recovered from hunted wildlife. Useful for field clothing.', 'resource', 50, ['crafting','equipment']),
   shirt: item('shirt','Flax field shirt','A light woven layer with modest protection against scrapes.','utility',1,['equipment']),
   pants: item('pants','Work trousers','Durable field trousers that soften impacts and protect against rough ground.','utility',1,['equipment']),
