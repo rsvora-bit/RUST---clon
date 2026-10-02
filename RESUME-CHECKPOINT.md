@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Integrovaný raid/security checkpoint `6fa904c` je pushnutý na `origin/codex/combat-endgame-next`; novější změny této pracovní linie budou navazovat na něj. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
+- Aktuální poslední čistý/pushnutý checkpoint je `bd2c9e3`; firearm QA diagnostika nyní prošla runtime ověřením a čeká na svůj checkpoint commit. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
@@ -13,6 +13,12 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Dockside Cleaver nyní stojí 14 stamina za swing a Quarry Maul 22; jejich kadence odpovídá přibližně 20.0/s a 22.9/s, tedy spotřebovává rezervu. Field Spear zůstává na ~11.8/s, pod obnovou. Sprint drain, rané zbraně, damage, cooldowns, durability profily, save/world state se nezměnily.
 - Přidán unit test poměru cost/cooldown proti skutečnému `PLAYER.STAMINA_REGEN` a browser kontrola zásahu Maulu: stamina 100→78, durability 180→178 a zdraví živého cíle kleslo. `tests/melee-combat.test.ts` nyní 9 testů; Chrome/Metal `test:combat` prošel včetně nového scénáře, `test:tech-tree` ověřil tier-III crafting/save. Plná sada **296/296 PASS (39 souborů)**, `npm run build` PASS se stávajícím ~3.24 MB bundle upozorněním, `git diff --check` a skript syntax PASS. QA Vite server byl ukončen.
 - Goals 1/5 se posouvají orientačně na **61% / 90%**; Goals 2–4 zůstávají **90% / 48% / 52%**. Celkový pracovní odhad přibližně **68% hotovo / 32% zbývá**. Je to odhad, ne task counter; žádný Goal není kompletní.
+
+## Pokračování — firearm QA timeout diagnostics (2026-10-02)
+
+- `scripts/firearm-qa.mjs` nyní při timeoutu při vstupu do hry nebo návratu po reloadu připojí aktuální herní obrazovku, loading fázi/procenta, část textu UI a uloží screenshot; chyba tím dává použitelnou příčinu a artefakt místo samotného 300s stack trace. Limit přechodu do hraní je 180s; všechny combat assertions zůstávají beze změny.
+- Chrome/Metal `test:firearm` po změně prošel **11/11** kontrol včetně headshotu, wear, reloadu, save/reload a nulových app/WebGL chyb. `node --check scripts/firearm-qa.mjs` PASS; žádná změna gameplay/save/performance kódu.
+- Goal 5 QA odhad nyní přibližně **92%**; Goals 1–4 jsou stále **61% / 90% / 52% / 52%**. Celkový odhad zůstává okolo **69% hotovo / 31% zbývá**; žádný Goal není kompletní.
 
 ## Pokračování — integrovaný raid a powered security QA (2026-10-02)
 
