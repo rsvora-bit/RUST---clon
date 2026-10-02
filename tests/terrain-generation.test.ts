@@ -3,7 +3,8 @@ import {IslandTerrain,terrainRockWeight} from '../src/terrain/island';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
 describe('world generation compatibility',()=>{
-  it('blends Gen5 exposed rock later across ordinary hillsides while retaining cliff and altitude coverage',()=>{
+  it('blends Gen5 exposed rock across moderate and steep hillsides while retaining cliff and altitude coverage',()=>{
+    expect(terrainRockWeight(.32,24,5)).toBeGreaterThan(.24);
     expect(terrainRockWeight(.5,24,5)).toBeLessThan(terrainRockWeight(.5,24,4));
     expect(terrainRockWeight(.9,24,5)).toBeGreaterThan(.9);
     expect(terrainRockWeight(.1,82,5)).toBeGreaterThan(.9);

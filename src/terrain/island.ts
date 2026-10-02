@@ -9,7 +9,7 @@ export interface ClimateSample{temperature:number;moisture:number;continentalnes
 export interface SatelliteIsland{x:number;z:number;radiusX:number;radiusZ:number;height:number}
 
 export function terrainRockWeight(slope:number,elevation:number,generation:WorldGeneration):number {
-  const slopeRock=generation===5?smoothstep(.28,.74,slope):smoothstep(.13,.43,slope);
+  const slopeRock=generation===5?smoothstep(.20,.56,slope):smoothstep(.13,.43,slope);
   const altitudeRock=generation===5?smoothstep(48,78,elevation):smoothstep(31,52,elevation);
   return Math.max(slopeRock,altitudeRock)*.95;
 }

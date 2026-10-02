@@ -85,7 +85,7 @@ export function terrainMaterial():THREE.MeshStandardMaterial {
       vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);
       vec3 sandCol=mix(texture2D(sandTex,gp.xz*.16).rgb,texture2D(sandTex,gp.xz*.73+warp).rgb,.20);
       vec3 dirtCol=mix(texture2D(dirtTex,gp.xz*.27).rgb,texture2D(dirtTex,gp.xz*.91+13.).rgb,.25);vec3 mudCol=mix(texture2D(mudTex,guv*.72).rgb,texture2D(mudTex,mat2(.8,.6,-.6,.8)*guv*.42+29.).rgb,.32)*vec3(1.03,.98,.88);
-      vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;
+      vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;float strata=groundNoise(gp.xz*.052+8.)*.62+groundNoise(gp.xz*.21-14.)*.38;rockCol*=mix(vec3(.53,.57,.55),vec3(.82,.79,.70),smoothstep(.28,.72,strata));
       float macro=groundNoise(gp.xz*.13+warp*2.)*.62+groundNoise(gp.xz*.034)*.38;float soil=smoothstep(.43,.69,macro)*(1.-vGroundWeights.x)*(1.-vGroundWeights.y*.65);grassCol=mix(grassCol,dirtCol,soil*.68);
       float micro=groundNoise(gp.xz*3.7)*.72+groundNoise(gp.xz*11.3)*.28;grassCol*=.83+.25*micro;dirtCol*=.86+.22*micro;
       float wet=max(max(surfaceWetness*.58,(1.-smoothstep(.08,2.6,gp.y))*.72),vGroundClimate.w*.62);sandCol=mix(sandCol,sandCol*vec3(.55,.65,.68),wet*.64);dirtCol=mix(dirtCol,dirtCol*vec3(.67,.73,.75),wet*.48);mudCol=mix(mudCol,mudCol*vec3(.64,.72,.72),wet*.22);grassCol=mix(grassCol,grassCol*vec3(.73,.80,.76),wet*.24);rockCol=mix(rockCol,rockCol*vec3(.70,.76,.79),wet*.28);
