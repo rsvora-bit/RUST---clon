@@ -33,6 +33,13 @@ describe('seeded island wildlife',()=>{
     const saved={ [scavengers[0]!.id]:46,[scavengers[1]!.id]:0,[scavengers[2]!.id]:0 },reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:saved});
     expect(reloaded.find(a=>a.id===scavengers[0]!.id)?.health).toBe(46);expect(reloaded.some(a=>a.id===scavengers[1]!.id||a.id===scavengers[2]!.id)).toBe(false);
   });
+  it('lets armored guards absorb projectile damage while remaining vulnerable to melee',()=>{
+    const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],actors=createWildlifePopulation({...context,scavengerSites:sites}),guard=actors.find(a=>a.archetype==='guard')!,scavenger=actors.find(a=>a.archetype==='scavenger')!;
+    const bullet=guard.takeDamage({amount:50,type:'projectile',sourceId:'player-test'});expect(bullet.requested).toBe(50);expect(bullet.applied).toBe(40);expect(bullet.absorbed).toBeCloseTo(10);expect(bullet.healthAfter).toBe(106);
+    const strike=guard.takeDamage({amount:20,type:'melee',sourceId:'player-test'});expect(strike).toMatchObject({requested:20,applied:20,absorbed:0,healthAfter:86});
+    expect(scavenger.takeDamage({amount:50,type:'projectile'}).applied).toBe(50);
+    const reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:{[guard.id]:guard.health}});expect(reloaded.find(a=>a.id===guard.id)?.health).toBe(86);
+  });
   it('keeps legacy generation wildlife layouts free of scavengers',()=>{
     const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
   });

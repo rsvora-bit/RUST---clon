@@ -33,7 +33,7 @@ function createScavenger(id:string,archetype:ScavengerArchetype,position:Vec3,ya
   if(savedHealth===0)return null;
   const maxHealth=archetype==='guard'?146:SPECIES.islandScavenger.health,health=Number.isFinite(savedHealth)?Math.max(1,Math.min(maxHealth,savedHealth!)):maxHealth;
   const actor:WildlifeActor={id,species:'islandScavenger',archetype,state:'wander',position:{...position},home:{...position},health,maxHealth,yaw,angered:false,alerted:false,attackCooldown,shotSequence:0,combatMoveTime:(seed%71)/100,combatMoveDirection:0,wanderTime:0,wanderCycle:0,wanderX:position.x,wanderZ:position.z,hitReaction:0,perceptionCooldown:(seed%251)/1000,canSeePlayer:false,awareness:0,memorySeconds:0,lastKnownPlayer:{...position},seed,
-    takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const result=resolveDamage(actor.health,actor.maxHealth,packet,mitigation);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
+    takeDamage(packet:DamagePacket,mitigation=0):DamageResult{const armour=archetype==='guard'&&packet.type==='projectile'?.2:0,combined=1-(1-Math.max(0,Math.min(.85,mitigation)))*(1-armour),result=resolveDamage(actor.health,actor.maxHealth,packet,combined);actor.health=result.healthAfter;if(result.applied>0){actor.angered=true;actor.hitReaction=1;}if(result.killed)actor.state='dead';return result;}};
   return actor;
 }
 
