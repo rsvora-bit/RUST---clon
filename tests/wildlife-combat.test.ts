@@ -39,9 +39,9 @@ describe('seeded island wildlife',()=>{
   it('makes deer flee without attacking, return to calm wandering, and share one batched model',()=>{
     const deerContext={...context,biomeAt:()=>'TEMPERATE GRASSLAND',temperatureAt:()=>.68,moistureAt:()=>.56,slopeAt:()=>.12},scene=new THREE.Scene(),system=new WildlifeSystem(scene,deerContext),deer=system.actors.find(actor=>actor.species==='islandDeer')!;
     const secondDeer=system.actors.find(actor=>actor.species==='islandDeer'&&actor!==deer);expect(deer).toBeTruthy();expect(secondDeer).toBeTruthy();expect(system.object(deer.id)).toBeInstanceOf(THREE.Mesh);expect(system.object(deer.id)!.geometry).toBe(system.object(secondDeer!.id)!.geometry);
-    const player={x:deer.position.x,y:deer.position.y,z:deer.position.z+4},start={...deer.position},attacks=vi.fn();tickWildlife(deer,.2,player,()=>3,attacks);
-    expect(deer.state).toBe('flee');expect(Math.hypot(deer.position.x-start.x,deer.position.z-start.z)).toBeGreaterThan(.4);expect(attacks).not.toHaveBeenCalled();
-    deer.memorySeconds=.05;const farPlayer={x:deer.position.x+80,y:3,z:deer.position.z};tickWildlife(deer,.1,farPlayer,()=>3,attacks);expect(deer.memorySeconds).toBe(0);expect(deer.state).toBe('wander');expect(attacks).not.toHaveBeenCalled();system.dispose();
+    const player={x:deer.position.x,y:deer.position.y,z:deer.position.z+4},start={...deer.position},model=system.object(deer.id)!,attacks=vi.fn();system.update(.2,player,()=>3,attacks);
+    expect(deer.state).toBe('flee');expect(Math.hypot(deer.position.x-start.x,deer.position.z-start.z)).toBeGreaterThan(.4);expect(model.position.y).toBeGreaterThan(deer.position.y+.025);expect(Math.abs(model.rotation.x)).toBeGreaterThan(.01);expect(attacks).not.toHaveBeenCalled();
+    deer.memorySeconds=.05;const farPlayer={x:deer.position.x+80,y:3,z:deer.position.z};system.update(.1,farPlayer,()=>3,attacks);expect(deer.memorySeconds).toBe(0);expect(deer.state).toBe('wander');expect(model.position.y).toBeCloseTo(deer.position.y);expect(attacks).not.toHaveBeenCalled();system.dispose();
   });
   it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');

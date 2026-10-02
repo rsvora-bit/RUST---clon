@@ -18,6 +18,13 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Orientační celkový postup je přibližně **65%**; subgoal odhady: Combat/weapon progression **57%**, Armor/AI/world danger **88%**, Raiding/security/electricity **48%**, POI/events/endgame **52%**, polish/performance/regression **78%**. Další prioritní práce: širší balance a zbývající regression QA. Odhady jsou hrubé, nikoli měřené počty úkolů.
 - Vite na portu 5174 byl po browser QA korektně ukončen.
 
+## Pokračování — deer flee gait feedback
+
+- Útěk jelena nyní dostává levný deterministický gallop pose: krátký body lift a pitch řízené runtime fází, bez skeletu, nových geometrií, materiálů nebo RNG. Po skončení strachu se model vrátí přesně na terénní idle pozici.
+- `tests/wildlife-combat.test.ts` teď ověřuje posun, gallop lift/pitch, žádné útočné poškození a návrat na ground pose. Browser QA nyní používá explicitní seed `391808898`, protože náhodný New Game seed někdy nevytvoří vhodný teplý grassland a způsobil falešný fail ještě před gameplay assertion. Chrome/Metal `test:deer`: **5/5 PASS**, screenshot `test-results/deer/deer-flee.png` ručně zkontrolován, browser/app/WebGL errors: **0**.
+- Plná unit sada po změně: **294/294 PASS (39 souborů)**; `npm run build` PASS se stávajícím warningem o ~3.24 MB JS; `git diff --check` PASS. Vite server vypnutý.
+- Změněno `src/combat/wildlife.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs` a checkpoint. Save schema, animal placement/IDs, RNG a výpočet světa beze změny. Změna zatím ve working tree; vytvořit validovaný checkpoint commit a push na `codex/combat-endgame-next`. Progress celku zůstává pracovně **65%**; jde o polish pod Goal 2, nikoli samostatné dokončení subgoal.
+
 ## Pokračování — POI-specific endgame cache loot
 
 - Tři Generation 5 zamčené cache u Relay, Quarry a Stormwatch nyní garantují tematickou odměnu navíc k dřívější náhodné lucky salvage kořisti: relay dává wiring + pistol ammo, quarry hq metal ore + shotgun shells + machine parts a Stormwatch Tech Part + canteen + gears. Signature položky se vkládají jako první, takže je plná náhodná tabulka nevytlačí.
