@@ -4,7 +4,7 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Aktuální pracovní HEAD je `78e9ba7` (`Record melee stamina balance validation`) a odpovídá pushnutému `origin/codex/combat-endgame-next`. Předchozí gameplay commit `248bc46` obsahuje stamina tuning a QA coverage. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
+- Pracovní větev `codex/combat-endgame-next` navazuje na pushnutý checkpoint `21f4a24`; aktuální QA doplnění je lokálně ověřeno a checkpointuje se. `origin/main` zůstává `ecc3197e7ac4eaa02bd37b3b4b341a776a296e93` (v0.9.2); main, tagy, release ani PR se neměnily.
 - `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — stamina trade-off vyšší melee tier (2026-10-02)
@@ -13,6 +13,12 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 - Dockside Cleaver nyní stojí 14 stamina za swing a Quarry Maul 22; jejich kadence odpovídá přibližně 20.0/s a 22.9/s, tedy spotřebovává rezervu. Field Spear zůstává na ~11.8/s, pod obnovou. Sprint drain, rané zbraně, damage, cooldowns, durability profily, save/world state se nezměnily.
 - Přidán unit test poměru cost/cooldown proti skutečnému `PLAYER.STAMINA_REGEN` a browser kontrola zásahu Maulu: stamina 100→78, durability 180→178 a zdraví živého cíle kleslo. `tests/melee-combat.test.ts` nyní 9 testů; Chrome/Metal `test:combat` prošel včetně nového scénáře, `test:tech-tree` ověřil tier-III crafting/save. Plná sada **296/296 PASS (39 souborů)**, `npm run build` PASS se stávajícím ~3.24 MB bundle upozorněním, `git diff --check` a skript syntax PASS. QA Vite server byl ukončen.
 - Goals 1/5 se posouvají orientačně na **61% / 90%**; Goals 2–4 zůstávají **90% / 48% / 52%**. Celkový pracovní odhad přibližně **68% hotovo / 32% zbývá**. Je to odhad, ne task counter; žádný Goal není kompletní.
+
+## Pokračování — integrovaný raid a powered security QA (2026-10-02)
+
+- `scripts/raiding-qa.mjs` nově sestaví testovací základnu s běžícím generátorem, aktivním switchem a napájeným Homestead Beaconem, následně ověří skutečný NPC raid proti zamčeným dveřím. Kontroly ověřují aktivaci alarmu a červeného Beaconu při nástupu raidu, ochranu hráče dokud dveře stojí, jejich proražení, průchod raidera, koordinaci podpory a zachování zničených dveří po save/reload.
+- Chrome/Metal `test:raiding`: **8/8 PASS**, browser/app/WebGL chyby **0**. Změněn pouze browser regression harness; gameplay, save format, svět a obsah se nemění. `node --check scripts/raiding-qa.mjs` PASS.
+- QA nyní pokrývá i přímou integraci Goal 3. Odhad Goal 3 se aktualizuje na **52%** a Goal 5 na **91%**; Goal 1 **61%**, Goal 2 **90%**, Goal 4 **52%**. Celkový hrubý postup přibližně **69% / 31% zbývá**. Nejde o task counter a žádný Goal není kompletní.
 
 ## Pokračování — feature-wide regression QA po obnovení (2026-10-02)
 
