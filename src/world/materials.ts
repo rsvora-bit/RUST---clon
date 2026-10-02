@@ -20,8 +20,9 @@ export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',see
   return texture(c);
 }
 export function barkTexture():THREE.CanvasTexture {
-  const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle='#625340';ctx.fillRect(0,0,512,512);
-  for(let i=0;i<900;i++){const x=rand()*512,y=rand()*512,w=1+rand()*9;ctx.fillStyle=i%3===0?'#3d3930':i%2?'#786950':'#524b3d';ctx.fillRect(x,y,w,8+rand()*72);ctx.fillStyle='rgba(170,155,123,.24)';ctx.fillRect(x,y,1,rand()*50);}
+  const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle='#75664f';ctx.fillRect(0,0,512,512);
+  for(let i=0;i<1150;i++){const x=rand()*512,y=rand()*512,w=1+rand()*9;ctx.fillStyle=i%4===0?'#50483a':i%3===0?'#998568':i%2?'#87765b':'#695a43';ctx.fillRect(x,y,w,8+rand()*72);ctx.fillStyle='rgba(196,173,132,.27)';ctx.fillRect(x,y,1,rand()*50);}
+  for(let i=0;i<86;i++){const x=rand()*512,y=rand()*512;ctx.strokeStyle=i%2?'rgba(181,166,127,.2)':'rgba(48,57,39,.18)';ctx.lineWidth=1+rand()*2;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+(rand()-.5)*12,y+6,x+(rand()-.5)*5,y+14+rand()*24);ctx.stroke();}
   return texture(c);
 }
 export function grassTexture(seed:number,straw=false):THREE.CanvasTexture {
