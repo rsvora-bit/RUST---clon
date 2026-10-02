@@ -8,7 +8,7 @@ import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,stoneMaterial,terrainMaterial,groundDecalTexture} from '../world/materials';
-import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry} from '../world/models';
+import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
 type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string};
@@ -39,6 +39,7 @@ export class Environment {
   private readonly instances=new Map<string,InstanceRef[]>();
   private readonly resources:THREE.Object3D[]=[];
   private readonly grassChunks:GrassChunk[]=[];
+  private readonly reedLocations:Vec3[]=[];
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
@@ -80,6 +81,8 @@ export class Environment {
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
   get grassChunkCount():number{return this.grassChunks.length;}
+  get reedInstanceCount():number{const reeds=this.root.getObjectByName('Marsh reeds');return reeds instanceof THREE.InstancedMesh?reeds.count:0;}
+  get marshReedLocations():Vec3[]{return this.reedLocations;}
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=5){
     this.root.name='Tideland — procedural island';scene.add(this.root);
@@ -97,7 +100,7 @@ export class Environment {
   }
   private populateNow():void {
     if(this.populated)return;
-    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
+    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateMarshReeds();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
   }
   private removeTreeInstance(id:string):void {
     const tree=this.treeInstancesById.get(id);if(!tree)return;tree.active=false;
@@ -119,6 +122,7 @@ export class Environment {
     await stage(36,'Scattering rock fields','Building stone outcrops and metal deposits');this.populateRocks();
     await stage(47,'Planting ground resources','Adding fiber, berries and shoreline pickups');this.populatePlants();
     await stage(53,'Layering forest understory','Adding ferns, fallen twigs and dry meadow tufts');this.populateUnderstory();
+    await stage(56,'Growing wetland reeds','Planting climate-aware marsh cover');this.populateMarshReeds();
     await stage(59,'Seeding windblown grass','Preparing vegetation chunks and distance culling');this.populateGrass();
     await stage(63,'Finishing the shoreline','Placing pebbles, driftwood and tidal seaweed');this.populateShore();
     await stage(64,'Painting terrain detail','Scattering low-cost soil, leaf-litter and rock decals');this.populateGroundDecals();
@@ -161,7 +165,7 @@ export class Environment {
     for(let i=0;i<treeAttempts&&treeNodes.length<treeLimit;i++){
       const span=g5?this.terrain.size*.94:expanded?650:580,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
       if(h<4||h>(g5?58:38)||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<30||!this.roadClear(x,z,4.4))continue;
-      const density=smoothstep(.32,.68,forest),climateDensity=g5&&this.worldRevision>=2?revisionTreeCover(vegetationCover(this.terrain.climateAt(x,z),h,slope),forest,this.worldRevision):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
+      const density=smoothstep(.32,.68,forest),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0,climateDensity=g5&&this.worldRevision>=2?revisionTreeCover(vegetationCover(this.terrain.climateAt(x,z),h,slope,wetlandNoise),forest,this.worldRevision):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
       let overlaps=false;if(useTreeGrid){for(let dz=-1;dz<=1&&!overlaps;dz++)for(let dx=-1;dx<=1&&!overlaps;dx++)for(const t of treeGrid.get(`${Math.floor(x/4)+dx},${Math.floor(z/4)+dz}`)??[])if(Math.hypot(t.x-x,t.z-z)<4){overlaps=true;break;}}else overlaps=treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4);if(overlaps)continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
@@ -284,6 +288,23 @@ export class Environment {
     build(fernPos,fernG,fernM,'Forest fern understory','medium');build(twigPos,twigG,this.bark,'Fallen twig litter','medium');build(tuftPos,tuftG,tuftM,'Dry meadow tufts','low');
   }
 
+  private populateMarshReeds():void {
+    if(this.terrain.generation!==5||this.worldRevision<6)return;
+    const rand=randomSource(this.seed+78031),positions:{x:number;y:number;z:number;s:number;r:number}[]=[],target=1900,span=this.terrain.size*.94;
+    for(let tries=0;positions.length<target&&tries<target*18;tries++){
+      const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<3.35||h>13.5||slope>.28||!this.roadClear(x,z,3.4))continue;
+      const wetland=surfaceClimate(this.terrain.climateAt(x,z),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+17,z*.035-63,3);if(wetland<.39||patch<.39||rand()>.62)continue;
+      // Each accepted marsh patch seeds a small, tightly grouped clump rather than isolated stalks.
+      for(let stalk=0;stalk<3+Math.floor(rand()*3)&&positions.length<target;stalk++){
+        const angle=rand()*Math.PI*2,radius=rand()*1.7,rx=x+Math.cos(angle)*radius,rz=z+Math.sin(angle)*radius,rh=this.heightAt(rx,rz);if(!this.roadClear(rx,rz,3.4))continue;
+        positions.push({x:rx,y:rh-.025,z:rz,s:.78+rand()*.86,r:rand()*Math.PI*2});this.reedLocations.push({x:rx,y:rh,z:rz});
+      }
+    }
+    if(!positions.length)return;
+    const geometry=this.own(reedGeometry()),material=new THREE.MeshLambertMaterial({color:0xc4b27c}),mesh=new THREE.InstancedMesh(geometry,material,positions.length);this.materials.add(material);mesh.name='Marsh reeds';mesh.castShadow=true;mesh.receiveShadow=true;
+    positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.19+rand()*.07,.22+rand()*.16,.56+rand()*.16));});mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum:'low'});
+  }
+
   private populateGroundDecals():void {
     const rand=randomSource(this.seed+7719),geometry=this.own(new THREE.CircleGeometry(1,14));geometry.rotateX(-Math.PI/2);
     const multiplier=this.worldRevision>=6?1.3:1,configs=[['soil',groundDecalTexture(251,'soil'),Math.round(240*multiplier)],['leaves',groundDecalTexture(617,'leaves'),Math.round(220*multiplier)],['stone',groundDecalTexture(877,'stone'),Math.round(150*multiplier)]] as const;
@@ -315,7 +336,7 @@ export class Environment {
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
       const near=count<(this.terrain.generation===5?(this.worldRevision>=6?18000:15000):2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*82:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*82:(rand()-.5)*span;
       const h=this.heightAt(x,z);if(h<2||h>48||this.terrain.slopeAt(x,z)>.55||!this.roadClear(x,z,3.1))continue;
-      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3);const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAt(x,z),h,this.terrain.slopeAt(x,z)):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
+      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3),slope=this.terrain.slopeAt(x,z),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0;const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAt(x,z),h,slope,wetlandNoise):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94)*(1-climate.marsh*.52):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
       const cx=Math.floor(x/chunkSize),cz=Math.floor(z/chunkSize),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=revision6?`${cx},${cz}`:`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){chunk={positions:[],x:cx*chunkSize+chunkSize/2,z:cz*chunkSize+chunkSize/2,type:revision6?0:type};chunks.set(key,chunk);}
       chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2,dry:revision6&&type===1});count++;
     }

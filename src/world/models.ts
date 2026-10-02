@@ -149,3 +149,14 @@ export function seaweedGeometry():THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[];
   for(let blade=0;blade<6;blade++){const g=new THREE.PlaneGeometry(.14,.9,2,7),p=g.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i)+.45,t=y/.9;p.setX(i,p.getX(i)*(1-t*.72)+Math.sin(t*8+blade)*.05*t);p.setZ(i,Math.sin(t*5+blade)*.055);}g.translate((blade-2.5)*.045,.44,0);g.rotateY(blade/6*Math.PI*2);parts.push(g);}const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());geo.computeVertexNormals();return geo;
 }
+
+/** Solid, instancing-friendly marsh reed tuft; no alpha cards or per-stalk draws. */
+export function reedGeometry():THREE.BufferGeometry{
+  const parts:THREE.BufferGeometry[]=[];
+  for(let stalk=0;stalk<7;stalk++){
+    const angle=stalk*2.399,height=1.05+((stalk*37)%7)*.105,x=Math.cos(angle)*(.06+(stalk%3)*.095),z=Math.sin(angle)*(.06+(stalk%3)*.095),stem=new THREE.CylinderGeometry(.014,.032,height,5,2);
+    const p=stem.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i),t=(y+height/2)/height;p.setX(i,p.getX(i)+t*t*Math.cos(angle)*.16);p.setZ(i,p.getZ(i)+t*t*Math.sin(angle)*.16);}stem.translate(x,height/2,z);stem.computeVertexNormals();parts.push(stem);
+    if(stalk%2===0){const seed=new THREE.SphereGeometry(.052,5,5);seed.scale(.72,1.7,.72);seed.translate(x+Math.cos(angle)*.16,height+.045,z+Math.sin(angle)*.16);parts.push(seed);}
+  }
+  const geometry=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());geometry.computeVertexNormals();return geometry;
+}

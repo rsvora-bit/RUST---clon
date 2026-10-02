@@ -1,12 +1,12 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
-import {fernGeometry,twigGeometry,seaweedGeometry} from '../src/world/models';
+import {fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
 import {mountainLayer} from '../src/world/horizon';
 
 describe('environment visual building blocks',()=>{
   it('builds non-empty low-cost understory and coast geometry',()=>{
-    for(const geometry of [fernGeometry(),twigGeometry(),seaweedGeometry()]){expect(geometry.getAttribute('position').count).toBeGreaterThan(20);geometry.dispose();}
+    for(const geometry of [fernGeometry(),twigGeometry(),seaweedGeometry(),reedGeometry()]){expect(geometry.getAttribute('position').count).toBeGreaterThan(20);expect(Array.from(geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true);geometry.dispose();}
   });
 
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{

@@ -90,6 +90,11 @@ describe('v0.9.1 world art stabilization',()=>{
     for(let t=.2;t<.8;t+=.005){const a=surfaceClimate(climate(t,.42),28,.1),b=surfaceClimate(climate(t+.005,.42),28,.1);for(const key of ['arid','snow','forest'] as const){expect(a[key]).toBeGreaterThanOrEqual(0);expect(a[key]).toBeLessThanOrEqual(1);expect(Math.abs(a[key]-b[key])).toBeLessThan(.055);}}
     expect(vegetationCover(climate(.65,.70),12,.1)).toBeGreaterThan(vegetationCover(climate(.75,.25),12,.1)*3);
     expect(vegetationCover(climate(.6),30,.85)).toBe(0);expect(vegetationCover(climate(.2),68,.1)).toBe(0);
+    expect(surfaceClimate(climate(.7,.9),4,.04,.92).marsh).toBeGreaterThan(.7);expect(surfaceClimate(climate(.7,.9),4,.04,.37).marsh).toBe(0);expect(surfaceClimate(climate(.7,.3),4,.04,.92).marsh).toBe(0);
+  });
+  it('adds a bounded marsh biome only to new revision-6 geography',()=>{
+    const old=new IslandTerrain(731942,5,5),current=new IslandTerrain(731942,5,6);let marsh=0;
+    try{for(let z=-816;z<=816;z+=12)for(let x=-816;x<=816;x+=12){if(current.biomeAt(x,z)==='WETLAND / MARSH')marsh++;expect(old.biomeAt(x,z)).not.toBe('WETLAND / MARSH');}expect(marsh).toBeGreaterThan(12);}finally{old.geometry.dispose();old.heightTexture.dispose();current.geometry.dispose();current.heightTexture.dispose();}
   });
   it('keeps horizon deterministic, bounded, disconnected and cheap',()=>{
     for(let layer=0;layer<3;layer++){const a=mountainLayer(731942,layer,true),b=mountainLayer(731942,layer,true);expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));expect(a.index!.count/3).toBe(1728);expect(Array.from(a.getAttribute('normal').array).every(Number.isFinite)).toBe(true);expect(a.boundingSphere!.radius).toBeLessThan(1600);a.dispose();b.dispose();}

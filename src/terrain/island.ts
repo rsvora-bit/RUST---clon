@@ -4,7 +4,7 @@ import type {WorldGeneration,WorldRevision} from '../core/types';
 import {Noise,randomSource,smoothstep} from '../world/noise';
 import {surfaceClimate} from '../world/climate';
 
-export type TerrainBiome='COAST'|'TEMPERATE FOREST'|'TEMPERATE GRASSLAND'|'ARID'|'SNOW / ALPINE'|'ROCKY MOUNTAIN';
+export type TerrainBiome='COAST'|'TEMPERATE FOREST'|'TEMPERATE GRASSLAND'|'WETLAND / MARSH'|'ARID'|'SNOW / ALPINE'|'ROCKY MOUNTAIN';
 export interface ClimateSample{temperature:number;moisture:number;continentalness:number}
 export interface SatelliteIsland{x:number;z:number;radiusX:number;radiusZ:number;height:number}
 
@@ -33,7 +33,7 @@ export class IslandTerrain {
     const n=this.resolution;
     this.geometry=new THREE.PlaneGeometry(this.size,this.size,n,n);this.geometry.rotateX(-Math.PI/2);
     const p=this.geometry.getAttribute('position');this.heights=new Float32Array((n+1)*(n+1));
-    const colors=new Float32Array(p.count*3),weights=new Float32Array(p.count*3),climateWeights=new Float32Array(p.count*3),texData=new Uint8Array(p.count*4);
+    const colors=new Float32Array(p.count*3),weights=new Float32Array(p.count*3),climateWeights=new Float32Array(p.count*4),texData=new Uint8Array(p.count*4);
     for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),h=this.rawHeight(x,z);p.setY(i,h);this.heights[i]=h;const v=Math.round(Math.max(0,Math.min(1,(h+20)/100))*255);texData.set([v,v,v,255],i*4);}
     this.geometry.computeVertexNormals();const normals=this.geometry.getAttribute('normal');
     for(let i=0;i<p.count;i++){
@@ -41,8 +41,8 @@ export class IslandTerrain {
       const rock=terrainRockWeight(slope,h,this.generation);
       const sand=(1-smoothstep(1.6,4.8,h))*(1-rock);
       weights.set([sand,rock,1-sand-rock],i*3);
-      const variation=.87+n1*.24;let tr=1,tg=1,tb=1,arid=0,snow=0,forest=0;if(this.generation===5){const c=this.climateAtRaw(x,z,h);({snow,arid,forest}=surfaceClimate(c,h,slope));tr=.95+(.78-.95)*forest;tg=1+(.94-1)*forest;tb=.86+(.72-.86)*forest;tr+=(1.08-tr)*arid;tg+=(.93-tg)*arid;tb+=(.70-tb)*arid;tr+=(1.28-tr)*snow;tg+=(1.30-tg)*snow;tb+=(1.34-tb)*snow;tr+=(.91-tr)*rock;tg+=(.94-tg)*rock;tb+=(.96-tb)*rock;}colors.set([variation*tr,variation*tg,variation*tb],i*3);
-      climateWeights.set([arid,snow,forest],i*3);
+      const variation=.87+n1*.24;let tr=1,tg=1,tb=1,arid=0,snow=0,forest=0,marsh=0;if(this.generation===5){const c=this.climateAtRaw(x,z,h),wetlandNoise=this.revision>=6?this.noise.at(x*.0071+72,z*.0071-31):0;({snow,arid,forest,marsh}=surfaceClimate(c,h,slope,wetlandNoise));tr=.95+(.78-.95)*forest;tg=1+(.94-1)*forest;tb=.86+(.72-.86)*forest;tr+=(1.08-tr)*arid;tg+=(.93-tg)*arid;tb+=(.70-tb)*arid;tr+=(1.28-tr)*snow;tg+=(1.30-tg)*snow;tb+=(1.34-tb)*snow;tr+=(.91-tr)*rock;tg+=(.94-tg)*rock;tb+=(.96-tb)*rock;tr+=(1.03-tr)*marsh;tg+=(.99-tg)*marsh;tb+=(.87-tb)*marsh;}colors.set([variation*tr,variation*tg,variation*tb],i*3);
+      climateWeights.set([arid,snow,forest,marsh],i*4);
     }
     this.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));this.geometry.setAttribute('surfaceWeights',new THREE.BufferAttribute(weights,3));this.geometry.setAttribute('surfaceClimate',new THREE.BufferAttribute(climateWeights,3));
     this.heightTexture=new THREE.DataTexture(texData,n+1,n+1,THREE.RGBAFormat);this.heightTexture.minFilter=THREE.LinearFilter;this.heightTexture.magFilter=THREE.LinearFilter;this.heightTexture.needsUpdate=true;
@@ -147,7 +147,7 @@ export class IslandTerrain {
   slopeAt(x:number,z:number):number{return Math.hypot(this.heightAt(x+2,z)-this.heightAt(x-2,z),this.heightAt(x,z+2)-this.heightAt(x,z-2))/4;}
   private climateAtRaw(x:number,z:number,h:number):ClimateSample{const macro=this.noise.fbm(x*.0021+70,z*.0021-33,4),wet=this.noise.fbm(x*.0027-12,z*.0027+57,4);return {temperature:Math.max(0,Math.min(1,.62+z/this.size*.42-h*.006+(macro-.5)*.18)),moisture:Math.max(0,Math.min(1,.54-x/this.size*.20+(wet-.5)*.38)),continentalness:Math.max(0,Math.min(1,(h+5)/45))};}
   climateAt(x:number,z:number):ClimateSample{const h=this.heightAt(x,z);if(this.generation<5)return {temperature:Math.max(0,Math.min(1,.58-h*.004)),moisture:this.forestAt(x,z),continentalness:Math.max(0,Math.min(1,(h+4)/30))};return this.climateAtRaw(x,z,h);}
-  private biomeAtRaw(x:number,z:number,h:number,slope:number):TerrainBiome|string{if(this.generation<5){if(h<3.5)return 'COAST';if(h>29||slope>.7)return 'ROCKY UPLAND';if(this.forestAt(x,z)>.48)return 'FOREST';return 'GRASSLAND';}if(h<3.2)return 'COAST';const c=this.climateAtRaw(x,z,h);if(slope>.86||h>67)return 'ROCKY MOUNTAIN';if((c.temperature<.38&&h>18)||h>54)return slope>.72?'ROCKY MOUNTAIN':'SNOW / ALPINE';if(c.temperature>.57&&c.moisture<.50)return 'ARID';if(c.moisture>.55&&h<46)return 'TEMPERATE FOREST';return 'TEMPERATE GRASSLAND';}
+  private biomeAtRaw(x:number,z:number,h:number,slope:number):TerrainBiome|string{if(this.generation<5){if(h<3.5)return 'COAST';if(h>29||slope>.7)return 'ROCKY UPLAND';if(this.forestAt(x,z)>.48)return 'FOREST';return 'GRASSLAND';}if(h<3.2)return 'COAST';const c=this.climateAtRaw(x,z,h);if(slope>.86||h>67)return 'ROCKY MOUNTAIN';if((c.temperature<.38&&h>18)||h>54)return slope>.72?'ROCKY MOUNTAIN':'SNOW / ALPINE';if(this.revision>=6&&surfaceClimate(c,h,slope,this.noise.at(x*.0071+72,z*.0071-31)).marsh>.40)return 'WETLAND / MARSH';if(c.temperature>.57&&c.moisture<.50)return 'ARID';if(c.moisture>.55&&h<46)return 'TEMPERATE FOREST';return 'TEMPERATE GRASSLAND';}
   biomeAt(x:number,z:number):TerrainBiome|string {const h=this.heightAt(x,z);return this.biomeAtRaw(x,z,h,this.slopeAt(x,z));}
   forestAt(x:number,z:number):number{if(this.generation===2)return (this.noise.fbm(x*.007+8,z*.007+11,3)*.78+this.noise.at(x*.039,z*.039)*.22)*(1-smoothstep(38,57,this.heightAt(x,z)));if(this.generation>=4)return (this.noise.fbm(x*.011+8,z*.011+11,4)*.82+this.noise.at(x*.031,z*.031)*.18)*(1-smoothstep(34,50,this.heightAt(x,z)));return this.noise.fbm(x*.018+8,z*.018+11,3)*(1-smoothstep(26,43,this.heightAt(x,z)));}
 }
