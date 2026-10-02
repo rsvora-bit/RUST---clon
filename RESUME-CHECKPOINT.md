@@ -4,8 +4,8 @@ Toto je živý checkpoint po obnovení práce. Starší Git stavy v historickýc
 
 ## Aktuální Git snapshot
 
-- Pracovní větev `codex/combat-endgame-next` je čistá. `HEAD == origin/codex/combat-endgame-next == ad27064d23d8df0d55316973ce18413018fa5591` po `git fetch origin`. Push po předchozím 75s HTTPS timeoutu při retry prošel.
-- `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev je 95 commitů napřed a 0 pozadu, merge-base odpovídá `origin/main`. Main/tag/release/PR nebyly změněny ani vytvořeny.
+- Pracovní větev `codex/combat-endgame-next` je čistá a po `git fetch origin` lokální `HEAD` odpovídá vzdálené pracovní větvi. Push po předchozím 75s HTTPS timeoutu při retry prošel.
+- `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev z něj přímo vychází a není za ním. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — deterministická pasivní fauna (jelen)
 
