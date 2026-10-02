@@ -36,4 +36,9 @@ describe('persistent tool condition and repair',()=>{
     const sim=new GameSimulation(78,spawn);sim.state.inventory[0]={itemId:'docksideCleaver',count:1,condition:83};expect(validateGameState(structuredClone(sim.state))).toBe(true);
     sim.state.progression!.stations.push(createStation('bench-2','workbench2',spawn));sim.addItem('metal',14);sim.addItem('machineParts',1);expect(sim.repairTool(0)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[0]).toMatchObject({itemId:'docksideCleaver',condition:128});expect(validateGameState(structuredClone(sim.state))).toBe(true);
   });
+  it('preserves and industrially repairs the Quarry maul through its high-tier materials',()=>{
+    const sim=new GameSimulation(79,spawn);sim.state.inventory[0]={itemId:'quarryMaul',count:1,condition:120};expect(validateGameState(structuredClone(sim.state))).toBe(true);
+    sim.state.progression!.stations.push(createStation('bench-3','workbench3',spawn));sim.addItem('metal',24);sim.addItem('machineParts',2);sim.addItem('hqMetalOre',3);
+    expect(sim.repairTool(0)).toEqual({ok:true,reason:'ok'});expect(sim.state.inventory[0]).toMatchObject({itemId:'quarryMaul',condition:165});expect(sim.count('hqMetalOre')).toBe(0);expect(validateGameState(structuredClone(sim.state))).toBe(true);
+  });
 });

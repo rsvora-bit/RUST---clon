@@ -38,6 +38,7 @@ export class HeldItem {
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
   private metal=new THREE.MeshStandardMaterial({color:'#6d726f',roughness:.8,metalness:.25});
+  private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
 
   constructor(){
@@ -55,7 +56,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.wood,this.stone,this.metal,this.wrap];
+    const shared=[this.skin,this.sleeve,this.wood,this.stone,this.metal,this.wrap,this.rust];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -123,6 +124,14 @@ export class HeldItem {
       const edgeMaterial=new THREE.MeshStandardMaterial({color:'#b9b6a3',roughness:.42,metalness:.58});this.mesh(new THREE.BoxGeometry(.018,.34,.008),edgeMaterial,.442,.285,-.615).rotation.z=-.48;
       for(let i=0;i<4;i++){const wrap=this.mesh(new THREE.TorusGeometry(.031,.004,5,14),this.wrap,.28,-.11+i*.035,-.64);wrap.rotation.x=Math.PI/2;}
       this.addArm(-1,-.09,-.16,-.61,.20,true);
+    }else if(item==='quarryMaul'){
+      const haft=this.mesh(new THREE.CylinderGeometry(.027,.036,.82,10),this.wood,.27,.10,-.65);haft.rotation.z=-.18;
+      const grip=this.mesh(new THREE.CylinderGeometry(.039,.043,.24,10),this.wrap,.27,-.18,-.645);grip.rotation.z=-.18;
+      const head=this.mesh(new THREE.BoxGeometry(.36,.18,.16,2,2,2),this.metal,.27,.53,-.67);head.rotation.z=-.12;
+      const face=this.mesh(new THREE.BoxGeometry(.055,.21,.19),this.rust,.065,.52,-.67);face.rotation.z=-.12;
+      const endPlate=this.mesh(new THREE.BoxGeometry(.025,.15,.165),this.metal,.465,.54,-.67);endPlate.rotation.z=-.12;
+      const collar=this.mesh(new THREE.CylinderGeometry(.07,.055,.105,8),this.wrap,.27,.36,-.66);collar.rotation.z=-.18;
+      this.addArm(-1,-.10,-.18,-.61,.23,true);
     }else if(item==='salvageRevolver'||item==='fieldShotgun'){
       const weapon=new THREE.Group();weapon.scale.setScalar(.64);weapon.position.set(.10,.02,-.12);this.hand.add(weapon);
       const shotgun=item==='fieldShotgun';if(shotgun){weapon.scale.setScalar(.76);weapon.position.y=.11;}const grip=this.mesh(new THREE.BoxGeometry(shotgun?.13:.105,shotgun?.32:.27,shotgun?.15:.13),this.wrap,.28,shotgun?-.17:-.12,-.63,weapon);grip.rotation.x=-.18;
@@ -170,7 +179,7 @@ export class HeldItem {
     this.t+=dt;
     if(this.unequip>0){this.unequip=Math.max(0,this.unequip-dt*5.8);if(this.unequip===0&&this.pending!==undefined)this.build(this.pending);}
     this.equip=Math.max(0,this.equip-dt*5.2);
-    const swingRate=this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='docksideCleaver'?3.65:this.active==='rock'?3.55:4.1;
+    const swingRate=this.active==='quarryMaul'?2.25:this.active==='pickaxe'?2.65:this.active==='hammer'?3.35:this.active==='hatchet'?3.15:this.active==='docksideCleaver'?3.65:this.active==='rock'?3.55:4.1;
     this.swing=Math.max(0,this.swing-dt*swingRate);
     this.recoil=Math.max(0,this.recoil-dt*7.8);
     this.muzzleFlashTime=Math.max(0,this.muzzleFlashTime-dt);if(this.muzzleFlash){this.muzzleFlash.visible=this.muzzleFlashTime>0;(this.muzzleFlash.material as THREE.MeshBasicMaterial).opacity=Math.min(.92,this.muzzleFlashTime*14);}

@@ -21,6 +21,7 @@ export const RECIPES: Record<string, RecipeDefinition> = {
   homestead_core:{id:'homestead_core',resultItemId:'homesteadCore',resultCount:1,ingredients:{metal:55,wiring:4,gears:2,scrap:30},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Building',craftTime:8},
   pistol_cartridges:{id:'pistol_cartridges',resultItemId:'pistolAmmo',resultCount:8,ingredients:{metal:18,sulfurOre:8,scrap:3},requiredWorkbenchLevel:2,requiredTech:'advancedFabrication',category:'Ammunition',craftTime:4},
   tidal_shotgun:{id:'tidal_shotgun',resultItemId:'fieldShotgun',resultCount:1,ingredients:{metal:120,machineParts:4,gears:3,wood:35},requiredWorkbenchLevel:3,requiredTech:'armoryEngineering',category:'Weapons',craftTime:12},
+  quarry_maul:{id:'quarry_maul',resultItemId:'quarryMaul',resultCount:1,ingredients:{metal:120,machineParts:5,gears:4,hqMetalOre:18,techParts:1,wood:50,hide:5},requiredWorkbenchLevel:3,requiredTech:'armoryEngineering',category:'Weapons',craftTime:14},
   shotgun_shells:{id:'shotgun_shells',resultItemId:'shotgunShells',resultCount:6,ingredients:{metal:16,sulfurOre:10,scrap:5},requiredWorkbenchLevel:3,requiredTech:'armoryEngineering',category:'Ammunition',craftTime:5},
   workbench1:{id:'workbench1',resultItemId:'workbench1',resultCount:1,ingredients:{wood:250,metal:40},category:'Building',craftTime:6},
   workbench2:{id:'workbench2',resultItemId:'workbench2',resultCount:1,ingredients:{wood:350,metal:150},requiredWorkbenchLevel:1,requiredTech:'workbench2Research',category:'Building',craftTime:8},

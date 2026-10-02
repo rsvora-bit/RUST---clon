@@ -23,6 +23,14 @@ describe('melee reach and swing rules',()=>{
     expect(MELEE_WEAPONS.docksideCleaver.staminaCost).toBeGreaterThan(MELEE_WEAPONS.hatchet.staminaCost);
     expect(resolveMeleeHit(MELEE_WEAPONS.docksideCleaver,origin,forward,target('boar',.7,1,-1.7,.25)).hit).toBe(true);
   });
+  it('adds a slow, wide quarry maul with endgame damage and stamina cost',()=>{
+    expect(MELEE_WEAPONS.quarryMaul.damage).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.damage);
+    expect(MELEE_WEAPONS.quarryMaul.range).toBeLessThan(MELEE_WEAPONS.docksideCleaver.range);
+    expect(MELEE_WEAPONS.quarryMaul.cooldown).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.cooldown);
+    expect(MELEE_WEAPONS.quarryMaul.staminaCost).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.staminaCost);
+    expect(MELEE_WEAPONS.quarryMaul.durabilityCost).toBeGreaterThan(MELEE_WEAPONS.docksideCleaver.durabilityCost);
+    expect(resolveMeleeHit(MELEE_WEAPONS.quarryMaul,origin,forward,target('boar',.8,1,-1.45,.25)).hit).toBe(true);
+  });
   it('hits a target in front inside reach',()=>{
     expect(resolveMeleeHit(MELEE_WEAPONS.rock,origin,forward,target('wolf'))).toMatchObject({hit:true,reason:'hit',targetId:'wolf'});
   });
