@@ -220,14 +220,17 @@ export class GameApp {
     this.held.hit();
     if(!weapon){this.cooldown=.28;this.audio.play('error');this.ui.notify('Equip a tool, spear or salvage weapon to defend yourself');return;}
     const stats=this.simulation.state.player.stats;if(stats.stamina<weapon.staminaCost){this.cooldown=.35;this.audio.play('error');this.ui.notify('Too exhausted to swing');return;}
+    // Stamina pays for committing to the swing, not only for landing a hit.
+    // Tool condition still wears only on contact, so a miss costs effort but not equipment.
+    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);
     this.camera.getWorldDirection(this.direction);const target={id:actor.id,position:{x:actor.position.x,y:actor.position.y+.68,z:actor.position.z},radius:wildlifeDefinition(actor.species).radius};
     const origin={x:this.camera.position.x,y:this.camera.position.y,z:this.camera.position.z};
     const obstructionObjects=[this.groundMesh,...this.structures.objects.values(),...this.environment.nodeObjects.values(),this.worldSurvival.group];
     this.ray.set(this.camera.position,this.direction);this.ray.far=weapon.range;const blocker=this.ray.intersectObjects(obstructionObjects,true)[0];
     const hit=resolveMeleeHit(weapon,origin,{x:this.direction.x,y:this.direction.y,z:this.direction.z},target,blocker?.distance??Infinity);
-    this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.combat('swing');if(hit.reason==='occluded')this.impactFx.burst({x:blocker!.point.x,y:blocker!.point.y,z:blocker!.point.z},'stone',.24);return;}
+    this.cooldown=weapon.cooldown;if(!hit.hit){this.audio.combat('swing');if(hit.reason==='occluded')this.impactFx.burst({x:blocker!.point.x,y:blocker!.point.y,z:blocker!.point.z},'stone',.24);this.save(false,false);return;}
     const condition=this.simulation.state.inventory[this.simulation.state.activeSlot],maxCondition=condition?maxDurability(condition.itemId):0,conditionScale=condition&&maxCondition>0 ? .55+.45*itemCondition(condition)/maxCondition : 1;
-    stats.stamina=Math.max(0,stats.stamina-weapon.staminaCost);const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.combat('flesh',weapon.damage/36);this.impactFx.burst(actor.position,'fiber',.7);
+    const broken=this.simulation.wearItem(this.simulation.state.activeSlot,weapon.durabilityCost);const damage=actor.takeDamage({amount:Math.round(weapon.damage*conditionScale),type:'melee',sourceId:'player'});this.simulation.state.nodeChanges[actor.id]=damage.healthAfter;if(broken)this.syncHeld();this.held.impact();this.audio.combat('flesh',weapon.damage/36);this.impactFx.burst(actor.position,'fiber',.7);
     if(damage.killed)this.defeatWildlife(actor);this.emitCombatNoise(7,2.4);this.save(false,false);
   }
   private beginReload(){
