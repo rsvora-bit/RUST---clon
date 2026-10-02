@@ -1,6 +1,11 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-02
 
-Toto je živý checkpoint po obnovení práce. Níže je ponechána historie předchozí relace v0.9.1; její Git stav už nepopisuje současnou větev.
+Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
+
+## Aktuální Git snapshot
+
+- Pracovní větev `codex/combat-endgame-next` je čistá. `HEAD == origin/codex/combat-endgame-next == 65c527157479bfbc49aeb1cb823d3d00cdc9d2b6` po `git fetch origin`.
+- `origin/main` je `ecc3197 Tideland v0.9.2 / EA-09.2`; pracovní větev je 95 commitů napřed a 0 pozadu, merge-base odpovídá `origin/main`. Main/tag/release/PR nebyly změněny ani vytvořeny.
 
 ## Pokračování — deterministická pasivní fauna (jelen)
 
@@ -8,17 +13,17 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 - Jeleni používají oddělený PRNG stream a ID namespace `deer-${seed}-${index}`. Tím zůstávají ID a pozice už existujících vlků/divočáků/scavengerů beze změny. Seed actoru se spotřebuje i při načtení již uloveného zvířete, takže ulovení prvního jelena nemění polohu dalšího po reloadu; tento případ pokrývá regression test. Vyřazené deer ID a zraněné health se čtou/zapisují přes dosavadní `nodeChanges`; save schema ani world revision se nemění.
 - Přiblížení hráče a zásah spustí runtime-only únik bez útoku; po odeznění hrozby se jelen vrací k deterministickému wander chování. Jelení model se slučuje do sdílené geometrie/materialu na druh a death loot dává 2 raw meat + 3 hide. Oznámení je EN/CZ.
 - Nový `npm run test:deer` ověřil v Chrome/Metal skutečné Gen5 vytvoření, útěk o 4.15 m za sekundu při testu, nezměněné health, lov, odměny, persistované odstranění po save/reload a nula console/WebGL chyb. Výsledky v ignorovaném `test-results/deer/results.json`; snímky vizuálně zkontrolovány, žádné QA výstupy nejsou commitnuté.
-- `tests/wildlife-combat.test.ts`: 26/26 PASS. Plný `npm test`: **293/293 PASS (39 souborů)**. `npm run build`: PASS (stávající velký JS chunk warning); `git diff --check`: PASS. Plný browser průchod `test:deer`: 5/5 kontrol PASS.
-- Změněno: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs`, `package.json`, tento checkpoint. Commit `ec32e40` (`Add climate-aware passive deer`) a následný loot commit jsou pushnuté na `origin/codex/combat-endgame-next`; push po prvním HTTPS timeoutu úspěšně prošel při dalším pokusu. Ověřeno `HEAD == origin/codex/combat-endgame-next == d4fe16ec901918cab26e751bdce288dbdbc0d940`; working tree čistý. Bez releasu/main/PR.
-- Orientační celkový postup zůstává přibližně **64%**; subgoal estimates: Combat/weapon progression **57%**, Armor/AI/world danger **88%**, Raiding/security/electricity **48%**, POI/events/endgame **48%**, polish/performance/regression **78%**. Následující prioritní práce: dokončit další nedodělanou progression/endgame vrstvu a následně širší regrese. Estimáty jsou hrubé a nesčítají se jako dokončený scope.
-- Vite na portu 5174 byl použit pro QA a musí být ukončen po validaci.
+- `tests/wildlife-combat.test.ts`: 26/26 PASS. Plný `npm test`: **294/294 PASS (39 souborů)**. `npm run build`: PASS (stávající velký JS chunk warning); `git diff --check`: PASS. Plný browser průchod `test:deer`: 5/5 kontrol PASS.
+- Změněno: `src/combat/wildlife.ts`, `src/app/GameApp.ts`, `tests/wildlife-combat.test.ts`, `scripts/deer-qa.mjs`, `package.json`, tento checkpoint. Deer commit `ec32e40` a loot commit `d4fe16e` jsou pushnuté; aktuální checkpoint commit `65c5271` je také pushnutý na `origin/codex/combat-endgame-next`. Bez releasu/main/PR.
+- Orientační celkový postup je přibližně **65%**; subgoal odhady: Combat/weapon progression **57%**, Armor/AI/world danger **88%**, Raiding/security/electricity **48%**, POI/events/endgame **52%**, polish/performance/regression **78%**. Další prioritní práce: širší balance a zbývající regression QA. Odhady jsou hrubé, nikoli měřené počty úkolů.
+- Vite na portu 5174 byl po browser QA korektně ukončen.
 
 ## Pokračování — POI-specific endgame cache loot
 
 - Tři Generation 5 zamčené cache u Relay, Quarry a Stormwatch nyní garantují tematickou odměnu navíc k dřívější náhodné lucky salvage kořisti: relay dává wiring + pistol ammo, quarry hq metal ore + shotgun shells + machine parts a Stormwatch Tech Part + canteen + gears. Signature položky se vkládají jako první, takže je plná náhodná tabulka nevytlačí.
 - Změna je pouze v bootstrapu cache při dosud nevygenerovaném loot stavu; existující cache a inventáře se při save/reload nepřerolují. Save schema, access-card gating ani obsah běžných/field cache se nemění.
 - `tests/salvage-recycler.test.ts` ověřuje deterministické tematické obsahy; `tests/world-art.test.ts` ověřuje Stormwatch odměnu i zachování upraveného inventory při druhém `WorldSurvival.populate`. Chrome/Metal `test:scavenger` (**24 kontrol**) ověřil všechny tři cache signatures, access card/lock, loot UI, scavenger squad, armor/firearms, Tech Part relay event a save/reload; browser/app/WebGL chyby: 0. Po obou gameplay vrstvách plné `npm test`: **294/294 PASS (39 souborů)**, `npm run build`: PASS (stávající chunk warning kolem 3.24 MB JS), `git diff --check`: PASS.
-- Změněno `src/survival/economy.ts`, `src/survival/WorldSurvival.ts`, `tests/salvage-recycler.test.ts`, `tests/world-art.test.ts`, `scripts/scavenger-qa.mjs` a checkpoint. Loot commit `d4fe16e` i deer commit `ec32e40` jsou na `origin/codex/combat-endgame-next`; aktuální HEAD a origin branch se shodují. Zatím žádný release, tag, PR ani změna `main`.
+- Změněno `src/survival/economy.ts`, `src/survival/WorldSurvival.ts`, `tests/salvage-recycler.test.ts`, `tests/world-art.test.ts`, `scripts/scavenger-qa.mjs` a checkpoint. Loot commit `d4fe16e`, deer commit `ec32e40` i poslední checkpoint `65c5271` jsou na `origin/codex/combat-endgame-next`; aktuální HEAD a origin branch se shodují. Zatím žádný release, tag, PR ani změna `main`.
 - Progress estimate: Goal 1 **57%**, Goal 2 **88%**, Goal 3 **48%**, Goal 4 **52%**, Goal 5 **78%**; orientačně **65% hotovo / 35% zbývá**. (Vážený součet vychází ~65%; jedná se o pracovní odhad.)
 - Po nových vrstvách: `npm test` **294/294 PASS (39 souborů)**, `npm run build` PASS (stávající Vite upozornění na ~3.24 MB minifikovaný JS). Chrome/Metal deer QA **5/5 PASS**, scavenger/POI QA **24 kontrol PASS**, melee/equipment `test:combat` **23 kontrol PASS**, `test:firearm`, `test:shotgun` a `test:ranged` PASS; všechny s nulou browser/app/WebGL chyb. QA Vite servery korektně vypnuty.
 - Performance A/B, seed 731942, HIGH, 1280×720, Chrome/Metal: archiv v0.9.0 **60.01 FPS / 16.664 ms / 612 draw calls / 3,390,261 triangles / 1,318 nodes / 2,745 ms startup**; aktuální v0.9.2 větev **60.00 FPS / 16.668 ms / 643 draw calls / 2,857,822 triangles / 1,598 nodes / 2,559 ms startup**, oba bez browser errors. Je to široké srovnání současné větve s v0.9.0, nikoli izolovaný benchmark deer/cache změn; FPS je omezené 60 Hz a startup kolísá podle cache.
@@ -146,7 +151,7 @@ Toto je živý checkpoint po obnovení práce. Níže je ponechána historie př
 
 # Historický checkpoint — 2026-09-30
 
-Tento oddíl je aktuální; níže ponechaný checkpoint z 2026-09-13 je historie předchozího grafického úkolu. Cílem této relace je Goal **Tideland — Combat, Danger & Progression Expansion**. Goal je aktivní. V tomto rozhraní nelze vytvářet samostatné podúkoly pod Goal, proto se jejich stav vede níže a zde.
+Tento oddíl zaznamenává stav známý k 2026-09-30 a je historický; aktuální stav je v horních sekcích souboru. Níže ponechaný checkpoint z 2026-09-13 je historie předchozího grafického úkolu.
 
 ## Git
 
