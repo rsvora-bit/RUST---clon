@@ -39,6 +39,9 @@ describe('seeded island wildlife',()=>{
     const strike=guard.takeDamage({amount:20,type:'melee',sourceId:'player-test'});expect(strike).toMatchObject({requested:20,applied:20,absorbed:0,healthAfter:86});
     expect(scavenger.takeDamage({amount:50,type:'projectile'}).applied).toBe(50);
     const reloaded=createWildlifePopulation({...context,scavengerSites:sites,nodeChanges:{[guard.id]:guard.health}});expect(reloaded.find(a=>a.id===guard.id)?.health).toBe(86);
+    const armouredAgain=createWildlifePopulation({...context,scavengerSites:sites}).find(a=>a.archetype==='guard')!;
+    const composed=armouredAgain.takeDamage({amount:50,type:'projectile'},.5);expect(composed.applied).toBeCloseTo(20);expect(composed.absorbed).toBeCloseTo(30);
+    const capped=createWildlifePopulation({...context,scavengerSites:sites}).find(a=>a.archetype==='guard')!.takeDamage({amount:50,type:'projectile'},.85);expect(capped.applied).toBeCloseTo(7.5);expect(capped.absorbed).toBeCloseTo(42.5);
   });
   it('keeps legacy generation wildlife layouts free of scavengers',()=>{
     const legacy=createWildlifePopulation({...context,generation:4,scavengerSites:[{x:180,y:3,z:40}]});expect(legacy.every(actor=>actor.species!=='islandScavenger')).toBe(true);
