@@ -101,7 +101,7 @@ export class Environment {
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
     const terrainMat=terrainMaterial();this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
-    this.bark=new THREE.MeshStandardMaterial({map:barkTexture(),color:0xb6b4a4,roughness:.97});
+    this.bark=new THREE.MeshStandardMaterial({map:barkTexture(this.worldRevision>=6),color:0xb6b4a4,roughness:.97});
     this.leaves=this.foliageMaterial(leavesTexture(),0xffffff,.095);this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
     const rockStyle=rockMaterialStyle(this.worldRevision);this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});

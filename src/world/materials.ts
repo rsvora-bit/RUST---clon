@@ -19,9 +19,10 @@ export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',see
   for(let i=0;i<2200;i++){const x=rand()*512,y=rand()*512,r=.3+rand()*(kind==='sand'?1.3:3);ctx.fillStyle=i%2?'rgba(25,27,21,.18)':'rgba(218,210,181,.24)';ctx.beginPath();ctx.ellipse(x,y,r,r*.63,rand()*6.28,0,Math.PI*2);ctx.fill();}
   return texture(c);
 }
-export function barkTexture():THREE.CanvasTexture {
-  const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle='#75664f';ctx.fillRect(0,0,512,512);
-  for(let i=0;i<1150;i++){const x=rand()*512,y=rand()*512,w=1+rand()*9;ctx.fillStyle=i%4===0?'#50483a':i%3===0?'#998568':i%2?'#87765b':'#695a43';ctx.fillRect(x,y,w,8+rand()*72);ctx.fillStyle='rgba(196,173,132,.27)';ctx.fillRect(x,y,1,rand()*50);}
+export function barkTexture(revision6=false):THREE.CanvasTexture {
+  const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle=revision6?'#88765d':'#75664f';ctx.fillRect(0,0,512,512);
+  const streaks=revision6?['#625442','#ad9575','#9a8364','#7b674d']:['#50483a','#998568','#87765b','#695a43'];
+  for(let i=0;i<1150;i++){const x=rand()*512,y=rand()*512,w=1+rand()*9;ctx.fillStyle=streaks[i%4]!;ctx.fillRect(x,y,w,8+rand()*72);ctx.fillStyle=revision6?'rgba(215,194,158,.28)':'rgba(196,173,132,.27)';ctx.fillRect(x,y,1,rand()*50);}
   for(let i=0;i<86;i++){const x=rand()*512,y=rand()*512;ctx.strokeStyle=i%2?'rgba(181,166,127,.2)':'rgba(48,57,39,.18)';ctx.lineWidth=1+rand()*2;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+(rand()-.5)*12,y+6,x+(rand()-.5)*5,y+14+rand()*24);ctx.stroke();}
   return texture(c);
 }
