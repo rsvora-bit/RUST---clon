@@ -30,7 +30,7 @@ describe('environment visual building blocks',()=>{
 
   it('exposes upgraded sky/ocean uniforms and scales shadow quality through ultra',()=>{
     const data=new Uint8Array(4*4*4);const height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat);height.needsUpdate=true;const scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height);
-    expect(atmosphere.sky.material.uniforms.weather).toBeTruthy();expect(atmosphere.ocean.material.uniforms.heightMap.value).toBe(height);
+    expect(atmosphere.sky.material.uniforms.weather).toBeTruthy();expect(atmosphere.sky.material.uniforms.storm.value).toBe(0);expect(atmosphere.ocean.material.uniforms.heightMap.value).toBe(height);
     atmosphere.update(0,0,new THREE.Vector3());expect(atmosphere.daylightAmount).toBeLessThan(.1);const nightFill=atmosphere.fill.intensity;expect(nightFill).toBeGreaterThan(1.35);expect(atmosphere.fill.groundColor.r).toBeGreaterThan(.4);expect(atmosphere.sun.position.y).toBeGreaterThan(atmosphere.sun.target.position.y);
     atmosphere.update(0,12,new THREE.Vector3());expect(atmosphere.daylightAmount).toBeGreaterThan(.9);expect(atmosphere.fill.intensity).toBeGreaterThan(1.9);expect(atmosphere.fill.intensity).toBeGreaterThan(nightFill);
     atmosphere.setQuality('ultra');expect(atmosphere.sun.castShadow).toBe(true);expect(atmosphere.sun.shadow.mapSize.x).toBe(3072);
@@ -42,7 +42,7 @@ describe('environment visual building blocks',()=>{
     expect(bucket).toBeDefined();expect(stormLightningRoll(seed,bucket)).toBe(stormLightningRoll(seed,bucket));expect(stormLightningRoll(seed,bucket)).toBeGreaterThanOrEqual(0);expect(stormLightningRoll(seed,bucket)).toBeLessThan(1);
     const state=new GameSimulation(seed,{x:0,y:4,z:0}).state,weatherState=ensureProgression(state).weather;weatherState.kind='storm';weatherState.remaining=3600;weatherState.blend=1;weatherState.rain=1;weatherState.storm=1;state.elapsed=bucket*11;
     const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3();let peak=0;
-    try{for(let frame=0;frame<20;frame++){atmosphere.update(1/60,10,camera);const output=weather.update(1/60,state,atmosphere,camera,'high');peak=Math.max(peak,output.lightning);state.elapsed+=1/60;}expect(peak).toBeGreaterThan(.35);expect(atmosphere.sky.material.uniforms.lightning.value).toBeGreaterThanOrEqual(0);weatherState.kind='clear';expect(weather.update(1/60,state,atmosphere,camera,'high').lightning).toBe(0);}
+    try{for(let frame=0;frame<20;frame++){atmosphere.update(1/60,10,camera);const output=weather.update(1/60,state,atmosphere,camera,'high');peak=Math.max(peak,output.lightning);state.elapsed+=1/60;}expect(peak).toBeGreaterThan(.35);expect(atmosphere.sky.material.uniforms.lightning.value).toBeGreaterThanOrEqual(0);expect(atmosphere.sky.material.uniforms.storm.value).toBe(weatherState.storm);expect(weatherState.storm).toBeGreaterThan(0);weatherState.kind='clear';expect(weather.update(1/60,state,atmosphere,camera,'high').lightning).toBe(0);}
     finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 });
