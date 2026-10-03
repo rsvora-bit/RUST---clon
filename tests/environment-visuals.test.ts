@@ -18,9 +18,9 @@ describe('environment visual building blocks',()=>{
     finally{reeds.dispose();}
   });
 
-  it('keeps fuller revision-6 ferns broader without increasing their triangle count',()=>{
+  it('keeps fuller revision-6 ferns broad while reducing vertical tessellation',()=>{
     const legacy=fernGeometry(),fuller=fernGeometry(true);
-    try{legacy.computeBoundingBox();fuller.computeBoundingBox();const legacySize=legacy.boundingBox!.getSize(new THREE.Vector3()),fullerSize=fuller.boundingBox!.getSize(new THREE.Vector3());expect(Math.hypot(fullerSize.x,fullerSize.z)).toBeGreaterThan(Math.hypot(legacySize.x,legacySize.z)*1.1);expect(fullerSize.y).toBeGreaterThan(legacySize.y*1.1);expect(fuller.index!.count).toBe(legacy.index!.count);}
+    try{legacy.computeBoundingBox();fuller.computeBoundingBox();const legacySize=legacy.boundingBox!.getSize(new THREE.Vector3()),fullerSize=fuller.boundingBox!.getSize(new THREE.Vector3());expect(Math.hypot(fullerSize.x,fullerSize.z)).toBeGreaterThan(Math.hypot(legacySize.x,legacySize.z)*1.1);expect(fullerSize.y).toBeGreaterThan(legacySize.y*1.1);expect(fuller.index!.count).toBe(legacy.index!.count*.75);expect(Array.from(fuller.getAttribute('position').array).every(Number.isFinite)).toBe(true);}
     finally{legacy.dispose();fuller.dispose();}
   });
 

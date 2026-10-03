@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — Rev6 kapradiny s nižší geometrií (2026-10-03)
+
+- `src/world/models.ts`: pouze fuller/Rev6 varianta kapradiny nyní používá 3 vertikální segmenty frond místo 4. Legacy geometrii, šířku/výšku, počet devíti frondů, rozmístění instancí i materials jsme ponechali beze změny. Cílený test hlídá −25 % indexovaných trojúhelníků při zachování širokého/tall bounds a konečných vertexů: **11/11 PASS**.
+- Chrome/Metal `test:world-art`: **66/66 PASS**, včetně legacy a rev2 save kompatibility, deterministic save/reload, všech presetů a camera sweep; browser/WebGL errors **0**. `forest-understory-close.png` byl vizuálně zkontrolován; kapradiny zůstávají čitelné a zůstávají zachovány široké trsy.
+- Matched capped Chrome/Metal `test:performance`: baseline v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 480 ms startup**; současný v0.9.3 Rev6 **60,01 FPS / 16,664 ms / 702 calls / 4 370 164 tris / 2 033 nodes / 2 780 ms startup**, 0 browser errors. Jde o capovaný benchmark; zlepšení celkové rezervy FPS z něj nelze vyvozovat.
+- `npm test`: **440/440 PASS (42 souborů)**; `npm run build`: PASS, existující Vite upozornění na 3,300.21 kB JS chunk; `git diff --check`: PASS. Změna připravena pro samostatný checkpoint commit společně s tímto záznamem. Main, Pages ani release se nemění; uživatelské iCloud kopie s ` 2` nebyly upraveny ani staged.
+
 ## Render experiment — větší grass chunky ponechány na původní velikosti (2026-10-03)
 
 - Dočasně ověřena Rev6 velikost grass chunku 80 m místo 64 m. `test:world-art` při této variantě prošel všemi **67 kontrolami**, ale matched Chrome/Metal HIGH uncapped ukázal jen **702 → 697 draw calls**, současně **4 452 820 → 4 509 160 tris** (+56 340 kvůli hrubšímu vzdálenostnímu cullingu) a **184,14 → 184,32 FPS** (bez významného zisku). Počet vytvořených chunků klesl 375 → 248, ale většina je z benchmark pohledu skrytá, takže úspora draw calls se téměř neprojevila.

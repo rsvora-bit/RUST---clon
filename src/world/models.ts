@@ -188,7 +188,9 @@ export function fernGeometry(fuller=false):THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[];
   const height=fuller?1.12:.95,width=fuller?.46:.34,arms=9;
   for(let arm=0;arm<arms;arm++){
-    const g=new THREE.PlaneGeometry(width,height,2,4),p=g.getAttribute('position');
+    // Keep the legacy silhouette untouched; the wider revision-6 fronds do
+    // not need as many vertical bends to read well at gameplay distance.
+    const g=new THREE.PlaneGeometry(width,height,2,fuller?3:4),p=g.getAttribute('position');
     for(let i=0;i<p.count;i++){const y=p.getY(i)+height/2,t=Math.max(0,Math.min(1,y/height)),w=Math.sin(t*Math.PI)*(.92-.22*t);p.setX(i,p.getX(i)*w);p.setZ(i,Math.sin(t*Math.PI)*.13);}
     g.translate(0,height*.485,0);temp.position.set(0,.02,0);temp.rotation.set(-.72+(arm%3)*.08,arm/arms*Math.PI*2,(arm%2?1:-1)*.08);temp.scale.set(1,1,1);temp.updateMatrix();g.applyMatrix4(temp.matrix);parts.push(g);
   }
