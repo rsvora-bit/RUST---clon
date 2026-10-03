@@ -99,7 +99,7 @@ export class Environment {
     this.terrain=new IslandTerrain(seed,worldGeneration,worldRevision);this.terrainGeometry=this.terrain.geometry;this.spawn={...this.terrain.spawn};
     if(worldGeneration===5&&worldRevision>=2)this.layout=generateWorldLayout(this.terrain,this.spawn,[],seed,worldRevision);
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
-    const terrainMat=terrainMaterial();this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
+    const terrainMat=terrainMaterial(this.worldRevision);this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(this.worldRevision>=6),color:0xb6b4a4,roughness:.97});
     this.leaves=this.foliageMaterial(leavesTexture(),0xffffff,.095);this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
