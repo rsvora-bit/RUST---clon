@@ -67,6 +67,18 @@ describe('v0.9.1 world art stabilization',()=>{
       for(const road of a.trails){for(let i=1;i<road.length;i++){const a=road[i-1]!,b=road[i]!;expect(Math.hypot(a.x-b.x,a.z-b.z)).toBeLessThanOrEqual(2.51);expect(b.y).toBeCloseTo(terrain.heightAt(b.x,b.z)+.08,6);}const geometry=roadGeometry(road,terrain),p=geometry.getAttribute('position'),colors=geometry.getAttribute('color');for(let i=0;i<p.count;i++)expect(p.getY(i)).toBeCloseTo(terrain.heightAt(p.getX(i),p.getZ(i))+.075,3);expect(colors.count).toBe(p.count);expect(new Set(Array.from(colors.array)).size).toBeGreaterThan(3);geometry.dispose();}
     }finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  const revision6RouteSeeds=[...new Set([...Array.from({length:96},(_,index)=>(Math.imul(index+1,2654435761)>>>0)%1_000_000_000),0,17,81,61417,447701,84172522,123456789,555555555,987654321])];
+  for(const seed of revision6RouteSeeds)it(`keeps revision-6 coast POIs routable for seed ${seed}`,()=>{
+    const terrain=new IslandTerrain(seed,5,6);
+    try {
+      const layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6);
+      expect(layout.pois.length).toBe(8);
+      expect(layout.pois.filter(poi=>poi.kind===5||poi.kind===6).every(poi=>poi.position.y>=1.8)).toBe(true);
+      expect(layout.trails).toHaveLength(layout.pois.length);
+      expect(layout.trails.every(road=>road.length>20)).toBe(true);
+      expect(layout.trails.flat().every(point=>terrain.heightAt(point.x,point.z)>=.95)).toBe(true);
+    }finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it.each([-81,0,1,17,81,9999999999])('connects POIs for custom seed %s',seed=>{const terrain=new IslandTerrain(seed,5);try{const layout=generateWorldLayout(terrain,terrain.spawn,[],seed,2);expect(layout.trails.length).toBe(layout.pois.length);expect(layout.trails.flat().every(p=>terrain.heightAt(p.x,p.z)>=1.15)).toBe(true);}finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}});
   it('matches the immutable v0.9.0 legacy heightfields byte-for-byte',async()=>{
     const hashes=['954a91f22e0e8d27df0afc09121637865ac7b75f0e371cd6e2f7afe7580bf9a4','1806872a04946883bc4cf5dbc9bf6c7585945baf4ca89c19f74c351e1d2c790f','c532476227d4c1f488c083ddadbb3449e28660a4947292f79f3f29e974134f3f','d3bed34c95e9b0c714dd14c50e73ecb337f842bebd06add472fd51a6c2ee9765'];
