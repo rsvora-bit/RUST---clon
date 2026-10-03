@@ -25,4 +25,9 @@ describe('first-person firearm presentation',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const held=new HeldItem();held.set('docksideCleaver');held.update(.2,0);const wear=held.scene.getObjectByName('Dockside cleaver corrosion and rivets'),blade=held.scene.getObjectByName('Dockside cleaver forged blade') as THREE.Mesh;expect(wear).toBeInstanceOf(THREE.Mesh);expect((wear as THREE.Mesh).geometry.getAttribute('position').count).toBeGreaterThan(100);expect(blade.material).toBeInstanceOf(THREE.MeshStandardMaterial);expect((blade.material as THREE.MeshStandardMaterial).map).toBeInstanceOf(THREE.DataTexture);
   });
+  it('uses one shared forged texture for the Quarry Maul head and struck face',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const held=new HeldItem();held.set('quarryMaul');held.update(.2,0);const head=held.scene.getObjectByName('Quarry Maul forged head') as THREE.Mesh,face=held.scene.getObjectByName('Quarry Maul struck face') as THREE.Mesh;
+    expect(head).toBeTruthy();expect(face).toBeTruthy();expect(head.material).toBe(face.material);expect((head.material as THREE.MeshStandardMaterial).map).toBeInstanceOf(THREE.DataTexture);
+  });
 });

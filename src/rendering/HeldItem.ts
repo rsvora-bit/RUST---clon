@@ -15,6 +15,14 @@ function cleaverSurfaceTexture(){
   }
   const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(3.5,3.5);map.anisotropy=4;map.needsUpdate=true;return map;
 }
+function maulSurfaceTexture(){
+  const size=128,data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const hash=Math.sin(x*91.73+y*247.19)*15731.743,noise=hash-Math.floor(hash),grain=Math.sin(y*.39+Math.sin(x*.055)*1.6)*4.8+Math.sin(x*.22-y*.035)*2.2,oxideField=Math.sin(x*.105+Math.sin(y*.061)*1.8)*Math.sin(y*.17-x*.027),oxide=Math.max(0,oxideField-.60)*36,pit=noise>.982?13:0,at=(y*size+x)*4,steel=126+grain+(noise-.5)*13-pit;
+    data[at]=Math.max(0,Math.min(255,steel+oxide));data[at+1]=Math.max(0,Math.min(255,steel+grain*.18-oxide*.39));data[at+2]=Math.max(0,Math.min(255,steel-grain*.2-oxide*.55));data[at+3]=255;
+  }
+  const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2.6,2.6);map.anisotropy=4;map.needsUpdate=true;return map;
+}
 const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','shotgunShells','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
 export class HeldItem {
@@ -56,6 +64,7 @@ export class HeldItem {
   private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
   private cleaverBlade=new THREE.MeshStandardMaterial({map:cleaverSurfaceTexture(),roughness:.78,metalness:.36});
+  private quarrySteel=new THREE.MeshStandardMaterial({map:maulSurfaceTexture(),roughness:.72,metalness:.31});
 
   constructor(){
     const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#817768';ctx.fillRect(0,0,128,128);
@@ -72,7 +81,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust,this.cleaverBlade];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust,this.cleaverBlade,this.quarrySteel];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -169,10 +178,10 @@ export class HeldItem {
       steelParts.forEach((part,index)=>{if(mergeParts[index]!==part)part.dispose();});
       const steelGeometry=mergeGeometries(mergeParts,false);for(const part of mergeParts)part.dispose();
       if(!steelGeometry)throw new Error('Could not assemble Quarry Maul head geometry');
-      const head=this.mesh(steelGeometry,this.metal,.27,.53,-.67);head.rotation.z=-.12;
+      const head=this.mesh(steelGeometry,this.quarrySteel,.27,.53,-.67);head.rotation.z=-.12;head.name='Quarry Maul forged head';
 
       const faceShape=new THREE.Shape();faceShape.moveTo(-.073,-.027);faceShape.lineTo(-.059,-.041);faceShape.lineTo(.059,-.041);faceShape.lineTo(.073,-.027);faceShape.lineTo(.073,.027);faceShape.lineTo(.059,.041);faceShape.lineTo(-.059,.041);faceShape.lineTo(-.073,.027);faceShape.closePath();
-      const face=this.mesh(new THREE.ShapeGeometry(faceShape),this.wrap,.27,.53,-.584);face.rotation.z=-.12;
+      const face=this.mesh(new THREE.ShapeGeometry(faceShape),this.quarrySteel,.27,.53,-.584);face.rotation.z=-.12;face.name='Quarry Maul struck face';
       const rustCap=this.mesh(new THREE.BoxGeometry(.035,.13,.15),this.rust,.105,.53,-.67);rustCap.rotation.z=-.12;
       const collar=this.mesh(new THREE.CylinderGeometry(.07,.055,.105,8),this.wrap,.27,.36,-.66);collar.rotation.z=-.18;
       this.addArm(-1,-.10,-.18,-.61,.23,true);
