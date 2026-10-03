@@ -2,6 +2,13 @@
 
 Toto je nejnovější živý checkpoint; starší záznamy níže jsou historické.
 
+## Live update — diagnostika jižního horizontového hrotu (2026-10-03)
+
+- Na jižním pobřežním pohledu pro seed `731942` jehlový vrchol pochází konkrétně ze skupiny `1` nejbližší panoramatické vrstvy (`layer 0`). Potvrzeno izolovaným vykreslením každé ze šesti skupin; ostatní skupiny tento hrot nevytvářejí. Dočasné browser debug hooky byly odstraněny.
+- Vyzkoušeny a ze zdrojů vráceny tři lokální geometrické varianty (šířka masivu, Gaussův profil, šířka prostředního vrcholu). Stejný Chrome/Metal záběr potvrzuje, že žádná varianta neodstranila viditelnou jehlu dostatečně přesvědčivě. `src/world/horizon.ts` je čistý vůči poslednímu commitu; panoramatický limit zůstává otevřený a nemá se označit za opravený.
+- Aktuální zdroj znovu prošel cílenými testy panoramatu: `tests/world-art.test.ts` **127/127 PASS**, `tests/environment-visuals.test.ts` **10/10 PASS**; `npm run build` **PASS** se známým varováním na ~3,298 kB JS chunk. Lokální Revision 6 Chrome/Metal screenshot běhu vykázal **0 browser/app/WebGL chyb**, zhruba **59.4 FPS** při 60 Hz capu, **147 draw calls** a **3,790,311 triangles**. Tento izolovaný scénický odečet není srovnatelný s performance QA baseline.
+- Aktuální stabilní HEAD zůstává `4b61c10563fdb080b31ba29df7a653507bfc2029` na `codex/world-revision-6`; žádná změna `main`, tagu/releasu ani Pages. Uživatelská iCloud data s příponou ` 2` zůstala mimo změny. Celkový rozsah zůstává orientačně **94 %**, stále ne release candidate.
+
 ## Live update — tlumenější lesní podrost (2026-10-03)
 
 - `src/rendering/environment.ts`: Rev6 instancované keříky mají nyní méně sytou, tmavší zelenou paletu, která lépe čte ve stínu a nepůsobí jako jasné zelené facety. Zachována stejná procedurální geometrie, 1 400 instancí, deterministic placement, materiál/batching a draw-call budget. Stejný `forest-shrub-detail.png` byl před/po vizuálně prohlédnut; změna je viditelná bez přehnaného ztmavení.
