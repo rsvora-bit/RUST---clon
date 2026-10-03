@@ -1,5 +1,11 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Render experiment — větší grass chunky ponechány na původní velikosti (2026-10-03)
+
+- Dočasně ověřena Rev6 velikost grass chunku 80 m místo 64 m. `test:world-art` při této variantě prošel všemi **67 kontrolami**, ale matched Chrome/Metal HIGH uncapped ukázal jen **702 → 697 draw calls**, současně **4 452 820 → 4 509 160 tris** (+56 340 kvůli hrubšímu vzdálenostnímu cullingu) a **184,14 → 184,32 FPS** (bez významného zisku). Počet vytvořených chunků klesl 375 → 248, ale většina je z benchmark pohledu skrytá, takže úspora draw calls se téměř neprojevila.
+- Experiment byl vrácen na původních **64 m**. Hustota, seed, umístění trávy a starší generace se nemění. Důvod: nepřinesl praktické zlepšení výkonu a zvýšil geometrii v záběru. Toto je rozhodnutí z měření, ne nerozhodnutá změna v working tree.
+- Nejnovější ponechaný Rev6 profil tedy používá 64 m chunky, 84 000 grass instances, **375 chunks**, 702 calls; světová QA i screenshoty s touto stabilní variantou již prošly. Větší chunky se nepočítají do dokončené optimalizace.
+
 ## Live update — levnější mokřadní rákos bez změny screenshotu (2026-10-03)
 
 - `src/world/models.ts`: sdílený trs rákosí používá čtyřstranné, jednosegmentové zakřivené stonky místo pětihranných dvousegmentových. Zůstává 7 stonků, 4 seed heads, stejná výška/umístění, instancing, preset hustoty a materiál; cílem je ubrat opakované trojúhelníky bez změny viditelného porostu. `tests/environment-visuals.test.ts` teď drží geometrii pod **300 tris** a kontroluje její výšku/šířku.
