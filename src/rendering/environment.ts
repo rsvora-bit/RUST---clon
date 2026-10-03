@@ -179,7 +179,7 @@ export class Environment {
     }
     for(let species=0;species<6;species++){
       const palm=species===5,broad=species===1||species===4||palm,entries=treeNodes.filter(t=>t.species===species),trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():species===1||species===4?broadleafGeometry(species===4?1:0):pineGeometry(species===2?1:species===3?2:0));
-      if(this.worldRevision>=6){const lateral=palm?1.08:broad?1.22:1.14,position=crown.getAttribute('position');for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)*lateral,position.getY(i),position.getZ(i)*lateral);position.needsUpdate=true;crown.computeVertexNormals();}
+      if(this.worldRevision>=6){const lateral=palm?1.08:broad?1.28:1.18,position=crown.getAttribute('position');for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)*lateral,position.getY(i),position.getZ(i)*lateral);position.needsUpdate=true;crown.computeVertexNormals();}
       // Instanced canopy tinting needs a neutral per-vertex color channel;
       // without it Three.js multiplies the foliage texture by an undefined
       // attribute and the entire canopy falls to black.
