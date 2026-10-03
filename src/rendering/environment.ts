@@ -342,7 +342,7 @@ export class Environment {
   }
   private populateGrass():void {
     const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),revision6=this.worldRevision>=6,chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number;dry:boolean}[];x:number;z:number;type:number}>();
-    const chunkSize=this.worldRevision>=6?52:40;
+    const chunkSize=this.worldRevision>=6?64:40;
     for(const color of (revision6?[0xffffff]:[0xffffff,0xd5c39a])){
       const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
       this.grassMaterials.push(mat);this.materials.add(mat);
