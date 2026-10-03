@@ -23,6 +23,14 @@ function maulSurfaceTexture(){
   }
   const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2.6,2.6);map.anisotropy=4;map.needsUpdate=true;return map;
 }
+function weatheredMetalTexture(){
+  const size=128,data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const h=Math.sin(x*91.73+y*247.19)*15731.743,noise=h-Math.floor(h),brush=Math.sin(y*.61+Math.sin(x*.04)*1.6)*5.4+Math.sin(y*.19+x*.07)*2.3,wear=noise>.985?18:noise>.954?7:0,oxide=Math.max(0,Math.sin(x*.09+Math.sin(y*.043)*1.7)*Math.sin(y*.13-x*.021)-.79)*21,at=(y*size+x)*4,steel=194+brush+(noise-.5)*13-wear;
+    data[at]=Math.max(0,Math.min(255,steel+oxide));data[at+1]=Math.max(0,Math.min(255,steel+brush*.12-oxide*.34));data[at+2]=Math.max(0,Math.min(255,steel-brush*.18-oxide*.51));data[at+3]=255;
+  }
+  const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2.8,2.8);map.anisotropy=4;map.needsUpdate=true;return map;
+}
 const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','shotgunShells','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
 export class HeldItem {
@@ -57,7 +65,7 @@ export class HeldItem {
   private gloveWear=new THREE.MeshStandardMaterial({color:'#71684f',roughness:1});
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
-  private metal=new THREE.MeshStandardMaterial({color:'#6d726f',roughness:.8,metalness:.25});
+  private metal=new THREE.MeshStandardMaterial({color:'#8a8f89',map:weatheredMetalTexture(),roughness:.72,metalness:.32});
   private shellCasing=new THREE.MeshStandardMaterial({color:'#a04d34',roughness:.78,metalness:.08});
   private brass=new THREE.MeshStandardMaterial({color:'#a88a4b',roughness:.56,metalness:.38});
   private cylinderBore=new THREE.MeshStandardMaterial({color:'#252724',roughness:1});
