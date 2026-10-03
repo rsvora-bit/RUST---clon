@@ -211,9 +211,13 @@ export class WildlifeSystem {
         add(new THREE.BoxGeometry(.23,.105,.035),0x514c40,0,1.405,-.139,1,1,1);
       }
       for(const side of [-1,1]){
+        ellipsoid(actor.archetype==='guard'?0x687068:coat,side*.235,1.245,.005,.13,.145,.145);
         add(new THREE.CapsuleGeometry(.074,.40,4,8),coat,side*.34,1.00,0,1,1,1,side*-.08);
+        add(new THREE.CapsuleGeometry(.058,.22,4,7),actor.archetype==='guard'?0x464c47:0x51483a,side*.35,.77,-.018,1,1,1,side*-.055);
+        ellipsoid(0x343630,side*.35,.575,-.06,.068,.065,.067);
         add(new THREE.CapsuleGeometry(.09,.48,4,8),0x51483a,side*.13,.40,.015,1,1,1,side*-.025);
         add(new THREE.BoxGeometry(.18,.11,.24),dark,side*.13,.085,-.015,1,1,1);
+        add(new THREE.BoxGeometry(.135,.10,.07),actor.archetype==='guard'?0x555b54:0x5f5948,side*.13,.36,-.115,1,1,1);
         add(new THREE.SphereGeometry(.032,8,6),0xc3a274,side*.066,1.58,-.137,1,1,1);
       }
       if(actor.archetype==='lookout'){
