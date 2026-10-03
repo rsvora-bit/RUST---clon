@@ -16,6 +16,11 @@ describe('first-person firearm presentation',()=>{
     const held=new HeldItem();held.set('fieldShotgun');held.update(.2,0);const names:string[]=[];held.scene.traverse(object=>{if(object.name.startsWith('Shotgun stock shell')||object.name.startsWith('Shotgun shell brass'))names.push(object.name);});
     expect(names).toEqual(['Shotgun stock shell bodies','Shotgun shell brass bases']);
   });
+  it('gives the twin barrels a merged raised rib and a readable break-action latch',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const held=new HeldItem();held.set('fieldShotgun');held.update(.2,0);const barrels=['Shotgun twin barrel 1','Shotgun twin barrel 2'].map(name=>held.scene.getObjectByName(name)),stock=held.scene.getObjectByName('Shotgun weathered field stock') as THREE.Mesh,detail=held.scene.getObjectByName('Shotgun barrel rib and retaining bands') as THREE.Mesh,action=held.scene.getObjectByName('Shotgun action hinge and latch') as THREE.Mesh;
+    expect(barrels.every(barrel=>barrel instanceof THREE.Mesh)).toBe(true);expect(stock).toBeInstanceOf(THREE.Mesh);expect(stock.scale.x).toBeCloseTo(.86);expect(detail).toBeInstanceOf(THREE.Mesh);expect(detail.geometry.getAttribute('position').count).toBeGreaterThan(300);expect(detail.material).toBe((barrels[0] as THREE.Mesh).material);expect(action).toBeInstanceOf(THREE.Mesh);expect(action.geometry.getAttribute('position').count).toBeGreaterThan(80);expect(action.material).not.toBe(detail.material);
+  });
   it('faces a single merged six-port dark chamber plate outward on the revolver',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const held=new HeldItem();held.set('salvageRevolver');held.update(.2,0);const cylinder=held.scene.getObjectByName('Revolver cylinder'),face=held.scene.getObjectByName('Revolver six chamber face');

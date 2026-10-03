@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — stabilnější úchop a čitelnější brokovnice (2026-10-03)
+
+- `src/rendering/HeldItem.ts`: shotgun viewmodel nyní umisťuje podpůrnou levou ruku podle transformace předního držadla místo původní polohy vedle kamery. Pažba je mírně užší a zbraň dostala sloučené kovové pásky/ horní lištu hlavní a závěrovou páku; gameplay, střelba, munice a save data se nemění. Přibyly jen dva sloučené detailní mesh draw calls při držení brokovnice.
+- `tests/held-item.test.ts` ověřuje obě hlavně, rozměr pažby, sloučenou lištu/pásky i závěrovou páku. `npm run test:shotgun` v Chrome/Metal: **7/7 PASS**, včetně střelby, wear, animace přebití, munice a save/reload; browser/app/WebGL errors **0**. `npm test`: **439/439 PASS / 42 souborů**. `npm run build`: **PASS**, známé upozornění na minifikovaný JS chunk ~3,299 kB. Nový `test-results/shotgun/viewmodel-detail.png` byl ručně prohlédnut: podpůrná ruka nyní dosahuje na předpažbí a odstraněna byla chybná plovoucí destička.
+- Výchozí SwiftShader měl dva nestabilní běhy (jeden čekal na dokončení reloadu, druhý na aktivaci viewmodelu); opakovaný Chrome/Metal běh prošel celý scénář. `scripts/shotgun-qa.mjs` teď při případném reload timeoutu vypíše stav zásobníku/progress a uloží screenshot, seed fixture je deterministický. `node --check`, targeted `tests/held-item.test.ts` (**7/7**) a `git diff --check`: PASS.
+- Změněny pouze `src/rendering/HeldItem.ts`, `tests/held-item.test.ts`, `scripts/shotgun-qa.mjs` a tento checkpoint. Performance harness nebyl pro viewmodel znovu spuštěn; jeho dodatečné dvě sloučené části se vykreslují pouze při brokovnici v ruce. Pracovní větev `codex/world-revision-6`; checkpoint se právě ukládá. iCloud soubory s příponou ` 2` zůstávají nedotčené a mimo staging. `main`, release/tag, PR a produkční Pages zůstávají beze změny.
+- Progress zůstává přibližně **94 % celkem**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **97 %**, G5 **86 %**, G6 **87 %**, G7 **100 %**. Jde stále o rozpracovaný vizuální cíl, nikoli release candidate.
+
 ## Live update — výraznější jelení silueta (2026-10-03)
 
 - `src/combat/wildlife.ts`: model jelena nyní kombinuje širší větvené paroží z nízkopolygonových zakřivených trubek, delší uši, čitelnější čenich a světlejší spodní srst. Zůstává to jedna sdílená sloučená geometrie pro oba jeleny; wildlife actor ID, spawn, hitboxy, chování, loot i save data se nemění.
