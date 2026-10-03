@@ -132,7 +132,7 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
       // Reuse the snow texture's existing drift field to break up the Rev6
       // treeline/snowline. Legacy snapshots keep their original climate mask.
       float snowCover=mix(vGroundClimate.y,smoothstep(.24,.66,vGroundClimate.y+(snowDrift-.5)*.42),revision6Moss);
-      vec3 sandCol=mix(texture2D(sandTex,gp.xz*.16).rgb,texture2D(sandTex,gp.xz*.73+warp).rgb,.20);
+      vec3 sandCol=mix(texture2D(sandTex,gp.xz*.16).rgb,texture2D(sandTex,gp.xz*.73+warp).rgb,.20);float duneField=groundNoise(gp.xz*.035+warp*.24)*.62+groundNoise(gp.xz*.11+vec2(37.,-19.))*.38;sandCol*=mix(1.,.38+duneField*1.24,revision6Moss);
       vec3 dirtCol=mix(texture2D(dirtTex,gp.xz*.27).rgb,texture2D(dirtTex,gp.xz*.91+13.).rgb,.25);vec3 mudCol=mix(texture2D(mudTex,guv*.72).rgb,texture2D(mudTex,mat2(.8,.6,-.6,.8)*guv*.42+29.).rgb,.32)*vec3(1.03,.98,.88);
       vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;float strata=groundNoise(gp.xz*.052+8.)*.62+groundNoise(gp.xz*.21-14.)*.38;rockCol*=mix(vec3(.53,.57,.55),vec3(.82,.79,.70),smoothstep(.28,.72,strata));
       float macro=groundNoise(gp.xz*.13+warp*2.)*.62+groundNoise(gp.xz*.034)*.38;float soil=smoothstep(.43,.69,macro)*(1.-vGroundWeights.x)*(1.-vGroundWeights.y*.65);grassCol=mix(grassCol,dirtCol,soil*.68);
