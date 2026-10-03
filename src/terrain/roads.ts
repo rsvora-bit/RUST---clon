@@ -45,7 +45,8 @@ export class TerrainRoadRouter {
 /** Five vertices across the strip follow hillside relief; edges blend into soil. */
 export function roadGeometry(points:Vec3[],terrain:IslandTerrain):THREE.BufferGeometry{
   const positions:number[]=[],uv:number[]=[],colors:number[]=[],indices:number[]=[];let distance=0;
-  for(let i=0;i<points.length;i++){const p=points[i]!,a=points[Math.max(0,i-1)]!,b=points[Math.min(points.length-1,i+1)]!,dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,width=2.5+(terrain.noise.at(p.x*.037,p.z*.037)-.5)*.65;if(i)distance+=Math.hypot(p.x-a.x,p.z-a.z);
+  const revision6=terrain.generation===5&&terrain.revision>=6;
+  for(let i=0;i<points.length;i++){const p=points[i]!,a=points[Math.max(0,i-1)]!,b=points[Math.min(points.length-1,i+1)]!,dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,coast=revision6&&terrain.biomeAt(p.x,p.z)==='COAST',width=(revision6?(coast?1.95:2.25):2.5)+(terrain.noise.at(p.x*.037,p.z*.037)-.5)*(coast?.4:.65);if(i)distance+=Math.hypot(p.x-a.x,p.z-a.z);
     for(let j=0;j<5;j++){const across=j/4,side=(across*2-1)*width,x=p.x-dz/len*side,z=p.z+dx/len*side;positions.push(x,terrain.heightAt(x,z)+.075,z);uv.push(across,distance/5);const noise=terrain.noise.fbm(x*.085+37,z*.085-19,3),rut=Math.exp(-Math.pow((Math.abs(across-.5)-.20)/.12,2)),edge=Math.abs(across-.5)*2,shade=.88+noise*.20-rut*.105-edge*.07;colors.push(shade,shade*.98,shade*.94);}
     if(i<points.length-1)for(let j=0;j<4;j++){const k=i*5+j;indices.push(k,k+1,k+5,k+1,k+6,k+5);}
   }
