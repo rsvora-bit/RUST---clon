@@ -56,7 +56,10 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
     // through the volume.
     const foliageCore=revision6?revision6CanopyMass(variant):new THREE.IcosahedronGeometry(1,0);
     if(!revision6)foliageCore.setIndex(Array.from({length:foliageCore.getAttribute('position').count},(_,index)=>index));
-    foliageCore.scale(revision6?.76+variant*.04:1.02+variant*.12,revision6?.64+variant*.03:.78+variant*.08,revision6?.76+variant*.04:.96+variant*.1);
+    // Let neighboring bough masses overlap slightly so the lower-camera
+    // silhouette reads as one branching crown instead of seven detached
+    // pom-poms. Geometry remains shared and the instance/draw budget is fixed.
+    foliageCore.scale(revision6?.89+variant*.04:1.02+variant*.12,revision6?.76+variant*.03:.78+variant*.08,revision6?.89+variant*.04:.96+variant*.1);
     foliageCore.translate(cx,cy,cz);
     addMass(foliageCore);
     // A smaller offset mass rounds out the branch silhouette in profile.
@@ -68,7 +71,10 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
     for(let i=0;i<(revision6?18:16);i++){
       const a=r()*6.28,rad=Math.sqrt(r())*(revision6 ? .55 : variant ? 2.1 : 1.65);
       const leafWidth=revision6 ? .58+r()*.22 : 1.3+r()*.65,leafHeight=revision6 ? 1.2+r()*.25 : 1.3+r()*.7;
-      addLeaves(card(leafWidth,leafHeight,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
+      // Keep broadleaf sprays mostly upright. Fully random Euler tilts put
+      // many planes nearly horizontal, which reads as flat umbrellas from
+      // the player's low camera even though the cards are double-sided.
+      addLeaves(card(leafWidth,leafHeight,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*.85,r()*6.28,(r()-.5)*.65));
     }
   }
   const selected=part==='masses'?massParts:part==='leaves'?leafParts:parts,geo=mergeGeometries(selected)!;parts.forEach(g=>g.dispose());return geo;

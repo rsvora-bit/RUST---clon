@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 listnaté koruny z pohledu hráče — 2026-10-04
+
+- Větve `codex/world-revision-6` a `origin/codex/world-revision-6` byly před změnou shodné na `7fac3643b5a099a09529379ec65ea0fa56afc409`; canonical `origin` míří na `rsvora-bit/RUST---clon`. `main`, tagy, release ani Pages se neměnily.
+- Screenshotový průchod ve stejném seedovaném Chrome/Metal capture odhalil dvě příčiny plochého, odděleného broadleaf canopy vzhledu z nízkého pohledu: karty měly příliš široký náhodný náklon a bough mass objemy se od sebe rozestupovaly. `src/world/models.ts` nyní omezuje náklon karet kolem svislice a zvětšuje jen Rev6 instanced bough masses tak, aby se víc překrývaly. Revision 1–5, tree identity, transform count, mesh batching, draw calls a triangles se nemění.
+- Výsledný `tree-close-up.png` a `forest.png` byly vizuálně zkontrolovány: koruna má méně mezer mezi větvemi a soudržnější obrys; low-poly stylizace zůstává známou limitací. 16-scénový Chrome/Metal capture: 0 JS/console errors. `tests/foliage-geometry.test.ts` **5/5 PASS**; `npm test` **444/444, 43 souborů PASS**; `npm run build` **PASS** (existující Vite upozornění na 3,304.67 kB JS chunk); `npm run test:world-art` **76/76 PASS**, 0 browser/WebGL errors, včetně legacy Rev1/Rev2 save fixtures, quality presetů a Rev6 save/reload determinismu. `git diff --check` PASS.
+- Výkonový harness nebyl v tomto průchodu znovu spuštěn; úprava nemění mesh topologii ani počet instancí. QA screenshoty zůstávají v lokálním `artifacts/` mimo Git. iCloud duplicitní soubory `* 2.*` a ostatní uživatelská data nebyla upravena ani stageována.
+- Tento update je checkpoint na pracovní větvi; žádný merge/main/tag/release/Pages. V0.10 cíl zůstává aktivní a není release candidate. Další prioritou zůstává výraznější materiálové/world-art zlepšení a výkonové profilování.
+
 ## Live update — tree readability A/B a world-art QA — 2026-10-04
 
 - Branch `codex/world-revision-6`, HEAD i `origin/codex/world-revision-6` byly před prací `5bfd84f958e92abb1aafc08095bb3a6776939802`; `main`, tagy, release ani Pages se neměnily.
