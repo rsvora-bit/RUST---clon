@@ -94,7 +94,7 @@ export class HeldItem {
         for(let i=0;i<5;i++){const wrap=this.mesh(new THREE.TorusGeometry(.041,.004,5,14),this.wrap,.33,.26+i*.014,-.64);wrap.rotation.x=Math.PI/2;}
       }
       if(item==='pickaxe'){
-        const head=this.mesh(new THREE.CylinderGeometry(.019,.037,.36,8),this.metal,.27,.30,-.64);head.rotation.z=1.4;
+        const headShape=new THREE.Shape();headShape.moveTo(-.225,-.012);headShape.lineTo(-.135,-.046);headShape.lineTo(-.075,-.058);headShape.lineTo(.085,-.051);headShape.lineTo(.135,-.027);headShape.lineTo(.275,0);headShape.lineTo(.135,.027);headShape.lineTo(.085,.051);headShape.lineTo(-.075,.058);headShape.lineTo(-.135,.046);headShape.closePath();const headGeometry=new THREE.ExtrudeGeometry(headShape,{depth:.07,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.007,bevelThickness:.006});headGeometry.translate(0,0,-.035);const steel=new THREE.MeshStandardMaterial({color:'#999b90',roughness:.78,metalness:.16}),head=this.mesh(headGeometry,steel,.27,.30,-.64);head.rotation.z=-.08;
         this.addArm(-1,-.08,-.18,-.61,.2,true);
       }
       if(item==='hammer'){
