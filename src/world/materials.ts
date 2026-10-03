@@ -46,10 +46,12 @@ export function pineTexture():THREE.CanvasTexture {
     ctx.strokeStyle='#676752';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(126,y+12);ctx.lineTo(ex,ey);ctx.stroke();
     for(let j=0;j<8;j++){
       const t=.15+j*.11,cx=126+(ex-126)*t,cy=y+12+(ey-y-12)*t;
-      for(let k=0;k<14;k++){
-        const angle=-Math.PI*.5+side*.5+(rand()-.5)*2.9,length=5+rand()*11;
-        ctx.strokeStyle=['#344d38','#45613f','#5a714a','#718258'][Math.floor(rand()*4)]!;
-        ctx.lineWidth=1+rand()*1.05;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*(length+1),cy+Math.sin(angle)*(length+1));ctx.stroke();
+      // Short, overlapping sprays make each bough read as evergreen foliage
+      // at medium distance instead of a bare twig with isolated line needles.
+      for(let k=0;k<18;k++){
+        const angle=-Math.PI*.5+side*.5+(rand()-.5)*2.9,length=6+rand()*12;
+        ctx.strokeStyle=['#344d38','#45613f','#5a714a','#718258','#87935a'][Math.floor(rand()*5)]!;
+        ctx.lineWidth=1.2+rand()*1.15;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*(length+1),cy+Math.sin(angle)*(length+1));ctx.stroke();
       }
     }
   }
