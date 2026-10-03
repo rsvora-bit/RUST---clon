@@ -225,7 +225,16 @@ export class WildlifeSystem {
         add(new THREE.CylinderGeometry(.012,.012,.82,5),0x30332f,.39,1.08,-.24,1,1,1);
         add(new THREE.BoxGeometry(.11,.20,.12),0x4a5149,.23,1.02,-.24,1,1,1);
       }else if(actor.archetype==='guard'){
-        add(new THREE.BoxGeometry(.34,.26,.075),0x73796d,0,1.04,-.185,1,1,1);
+        // A faceted, layered plate breaks the smooth capsule torso and reads
+        // clearly at gameplay distance without adding another render object.
+        add(new THREE.CylinderGeometry(1,1,1,8,1),0x73796d,0,1.055,-.235,.17,.185,.065);
+        add(new THREE.BoxGeometry(.30,.075,.055),0x515950,0,.91,-.255,1,1,1);
+        for(const side of [-1,1]){
+          ellipsoid(0x62695f,side*.245,1.30,-.045,.15,.115,.15);
+          add(new THREE.BoxGeometry(.09,.105,.065),side<0?0x514c40:0x625a48,side*.13,.925,-.275,1,1,1);
+          add(new THREE.BoxGeometry(.075,.17,.045),0x555d55,side*.13,.43,-.14,1,1,1);
+        }
+        add(new THREE.BoxGeometry(.06,.06,.035),0xb08a4b,0,1.19,-.297,1,1,1);
         add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,-.12,1.05,-.23,1,1,1);
         add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,.12,1.05,-.23,1,1,1);
         add(new THREE.BoxGeometry(.10,.09,.34),0x292d2c,.40,1.08,-.30,1,1,1);
