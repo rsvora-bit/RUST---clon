@@ -7,6 +7,11 @@
 - Pracovní větev `codex/world-revision-6`; poslední code commit/push po těchto QA změnách je `bfe7dae` (skály), vzdálená větev je synchronizovaná. Předchozí `30008b9` drží úsporu trávy, `42644ed` úsporu fern tessellation. Následné testy změnily jen ignored QA artefakty. `main`, tag, release a Pages nebyly změněny.
 - Zachovány všechny nestagované iCloud ` 2` kopie. Výkonový bod: po grass úspoře capped režim stále 60 FPS / 702 calls, ale párový uncapped běh zůstává 5,219 ms Rev6 proti 4,081 ms baseline v0.9.0; potřeba cíleně profilovat před releasem, bez ukvapeného snižování vizuální hustoty.
 
+## Live update — Generation/world browser harness (2026-10-03)
+
+- `npm run test:world` na Chrome/Metal: **23/23 PASS**. Ověřil aktuální Gen5/Revision6 scale 1664 m / terrain 500, deterministické ostrovy, POI/roads a jejich terrain placement, starter resources, map/waypoint/zoom, čtyři biome regions, storm atmosféru, fall damage/God Mode, save/reload identity a načtení/uložení Generation 4 fixture bez Gen5 revision markeru. Browser console errors **0**.
+- K tomuto checkpointu jsou tak znovu potvrzeny generation/world, world-art a gameplay browser harnessy; unit suite **441**, build PASS. Release/merge/main/Pages zůstávají mimo scope; iCloud ` 2` soubory zachované.
+
 ## Live update — čitelnější plochy Rev6 skal (2026-10-03)
 
 - `src/world/models.ts` a `src/rendering/environment.ts`: Generation 5 / world revision 6 skalám se změnil pouze crease angle při výpočtu normál (`0.85` → `0.54`); geometrie, triangulace, pozice, colliders a starší revize zůstaly beze změny. `tests/rock-geometry.test.ts` potvrzuje shodné pozice a odlišné faceted normals pouze pro volitelnou variantu.
