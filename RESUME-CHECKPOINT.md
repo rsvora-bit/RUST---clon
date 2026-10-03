@@ -26,6 +26,12 @@
 - `npm run test:raiding`: **8/8 PASS**; alarm/generátor/Beacon, koordinovaný breach locked door, ally alert/entry a destroyed door persistence přes save/reload. Browser/WebGL errors 0.
 - Následné QA nezměnilo projektové soubory; artifacty zůstávají v ignorovaném `test-results/`. Aktuální code/build validace zůstává `npm test` **441/441**, `npm run build` PASS. Main ani produkční stránky nebyly dotčeny.
 
+## Live update — power network a hazard browser smoke (2026-10-03)
+
+- `npm run test:power`: **9/9 PASS**, 0 browser/WebGL errors. Generator station inventory/fuel cycle, switch power gating, lamp state a save/reload zachování byly ověřeny v reálném UI.
+- `npm run test:hazard`: **1/1 PASS**. Toxic relay a alpine storm exposure dávají damage, zobrazí warning a běží bez browser errors.
+- Tyto specializované gameplay kontroly doplňují world **23**, world-art **66**, general browser **71**, death **21**, salvage **21**, combat **25**, world-events **11**, Tech Tree **49** a raiding **8** checks. Žádný z těchto harnessů nehlásí runtime/app/WebGL regresi.
+
 ## Live update — čitelnější plochy Rev6 skal (2026-10-03)
 
 - `src/world/models.ts` a `src/rendering/environment.ts`: Generation 5 / world revision 6 skalám se změnil pouze crease angle při výpočtu normál (`0.85` → `0.54`); geometrie, triangulace, pozice, colliders a starší revize zůstaly beze změny. `tests/rock-geometry.test.ts` potvrzuje shodné pozice a odlišné faceted normals pouze pro volitelnou variantu.
