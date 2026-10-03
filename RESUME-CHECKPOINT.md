@@ -8,6 +8,13 @@
 - Poslední HIGH performance QA, Chrome headless/Metal, 1280×720, seed 731942, 240 frames: v0.9.0 **204.71 FPS / 4.885 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 26.524 s startup**; aktuální **207.38 FPS / 4.822 ms / 699 calls / 3,612,392 tris / 2,033 nodes / 10.699 s startup**, 0 errors. Oproti baseline jde o +87 calls, +222,131 tris, +715 nodes; opakované uncapped měření neukazuje zpomalení frame time, ale precompile guard je překročen a výkonová optimalizace zůstává otevřená.
 - Aktuální pracovní změny: `src/rendering/environment.ts`, `src/world/materials.ts`, `src/world/models.ts`, `tests/terrain-materials.test.ts` a tento checkpoint. Build a testy jsou zelené; nejbližší krok je commit/push těchto pěti souborů a pak pokračovat vizuální kontrolou ostatních oblastí, performance/save/gameplay regression auditem. `main`, tag, release a Pages zatím beze změny.
 
+## Live update — jemnější vlhký pás pobřeží (2026-10-03)
+
+- Předchozí screenshoty ukázaly suchou, ploše světlou pláž až k vodě. V `terrainMaterial` se vlhkost písku z výšky spouštěla jen do 2,6 m, zatímco Rev6 pobřežní profil leží výš. Pouze Rev6 nyní dostává pozvolný, sandy-weighted přechod do vlhkého písku mezi 1,1–6,4 m; terén, fyzika, legacy revize a save data se nemění.
+- `npm run test:world-art`: **76/76 PASS**, 0 browser/WebGL chyb; nově vytvořený `shoreline-water-detail.png` ukazuje ztmavený písek u vody a zachovanou čitelnou mělčinu/pěnu. `npm test`: **444/444, 43 souborů PASS**. `npm run build`: PASS; Vite hlásí existující velký JS chunk **3,304.42 kB**. `git diff --check`: PASS.
+- Vedlejší starší `scripts/visual-overhaul-capture.mjs` neprošel zahajovacím klikem, protože hledá neaktuální `01 NEW GAME`; to neovlivnilo hlavní world-art harness ani test. QA utility může potřebovat opravu selectoru po ověření současného menu.
+- Necommitnutá změna je nyní jen `src/world/materials.ts` plus doplnění tohoto checkpointu. Další bezpečný krok: checkpoint commit/push na `codex/world-revision-6`, pak pokračovat dalšími jasnými vizuálními/progression prioritami. `main`, tag, release a Pages beze změny.
+
 ## Live update — Rev6 listnaté koruny bez alpha artefaktů (2026-10-03)
 
 - Při kontrole `forest-interior.png` a `forest-pine-detail.png` byly vidět velké roztrhané listové plochy a tmavé štěrbiny. Příčina: jedno alpha-test foliage material obsluhovalo současně neprůhledné fazetované masy koruny i cutout leaf cards. Alpha maska tak vyřezávala díry i do objemové geometrie.
