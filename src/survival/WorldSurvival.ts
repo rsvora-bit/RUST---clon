@@ -151,6 +151,16 @@ export class WorldSurvival {
         const hoist=new T.Mesh(new T.CylinderGeometry(.018,.028,1.25,5),this.metal);hoist.name='Breakwater hanging hoist cable';hoist.position.set(2.48,3.82,.36);hoist.castShadow=true;g.add(hoist);
         const hook=new T.Mesh(new T.TorusGeometry(.10,.025,5,8,Math.PI*1.55),this.rust);hook.name='Breakwater cargo hook';hook.position.set(2.48,3.17,.36);hook.rotation.z=-.45;g.add(hook);
         const cableStart=new T.Vector3(.52,4.88,.36),cableEnd=new T.Vector3(2.36,1.35,.36),cableDelta=cableEnd.clone().sub(cableStart),stay=new T.Mesh(new T.CylinderGeometry(.018,.027,cableDelta.length(),5),this.wood);stay.name='Breakwater snapped derrick stay';stay.position.copy(cableStart).add(cableEnd).multiplyScalar(.5);stay.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),cableDelta.normalize());g.add(stay);
+        // A small washed-up cargo spill gives the wreck a grounded beach context.
+        // These static pieces join the existing per-material landmark batches.
+        const groundY=(x:number,z:number)=>this.env.heightAt(p.position.x+x,p.position.z+z)-p.position.y;
+        const palletX=4.65,palletZ=-2.15,palletRotation=.24,palletY=groundY(palletX,palletZ)+.09;
+        for(let i=0;i<5;i++){const slat=this.box(g,palletX+(i-2)*.19,palletY,palletZ,.15,.07,1.28,this.wood);slat.rotation.y=palletRotation;slat.name='Breakwater split pallet slat';}
+        for(const z of [-.43,.43]){const runner=this.box(g,palletX,palletY-.045,palletZ+z,.94,.08,.12,this.wood);runner.rotation.y=palletRotation;runner.name='Breakwater pallet runner';}
+        const drumGeometry=new T.CylinderGeometry(.24,.29,.70,10,2);drumGeometry.rotateZ(Math.PI/2);
+        const drum=new T.Mesh(drumGeometry,this.rust);drum.name='Breakwater washed cargo drum';drum.position.set(-4.65,groundY(-4.65,-1.65)+.28,-1.65);drum.rotation.z=.08;drum.castShadow=drum.receiveShadow=true;g.add(drum);
+        const buoy=new T.Mesh(new T.CylinderGeometry(.18,.31,.72,8,1),this.rust);buoy.name='Breakwater washed channel buoy';buoy.position.set(5.0,groundY(5.0,-.95)+.38,-.95);buoy.rotation.z=.16;buoy.castShadow=buoy.receiveShadow=true;g.add(buoy);
+        const cableCoil=new T.Mesh(new T.TorusGeometry(.34,.035,5,12),this.wood);cableCoil.name='Breakwater stranded cable coil';cableCoil.position.set(-4.0,groundY(-4.0,-2.9)+.36,-2.9);cableCoil.rotation.x=Math.PI/2;g.add(cableCoil);
       }
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===3){const tent=new T.Mesh(new T.ConeGeometry(1.8,2.3,4,1,true),this.cloth);tent.position.y=1.15;tent.rotation.y=Math.PI/4;g.add(tent);this.box(g,-2,.18,0,.3,.3,2,this.wood);
