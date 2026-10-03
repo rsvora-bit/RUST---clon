@@ -908,3 +908,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `tests/world-art.test.ts` verifies deterministic ridge vertex colors, bounded color values, ridge-to-base tone separation, finite normals and the existing triangle budget. Horizon unit test PASS. Chrome/Metal `test:world-art` PASS with archive save reloads, Rev6, camera sweep, lightning and zero browser/WebGL errors; day and night horizon screenshots inspected. `npm run build` PASS with existing bundle warning.
 - Chrome/Metal performance unchanged: archived v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / startup 2 876 ms**; current Rev6 **60 FPS / 16.666 ms / 678 calls / 4 335 834 tris / 2 033 nodes / startup 3 109 ms**, errors 0. Same geometry counts; 60Hz capped.
 - Horizon visual change awaits checkpoint commit. Branch `codex/world-revision-6`; no main/tag/Release/Pages change.
+
+## v0.10 pokračování — Cílený pohled do interiéru lesa — 2026-10-03
+
+- `scripts/world-art-qa.mjs`: přidán snímek `forest-interior.png`, jehož kamera se deterministicky umístí u stromu s nejhustším 24m okolím a míří na sousední korunu. První poloha ukazovala otevřený okraj, proto byla kamera upravena; výsledný Chrome/Metal snímek potvrzuje pohled mezi vrstvené koruny a podrost bez změny hry ani světového layoutu.
+- `node --check scripts/world-art-qa.mjs` a kompletní `test:world-art` PASS. Ověřeny archived v0.9.0/v0.9.1 save reloady, Rev6 POIs/roads/vegetace, storm lightning, camera sweep a save/reload; browser/app/WebGL chyby 0. Výkonové čítače tímto QA-only krokem neměněny.
+- Commit patří pouze na `codex/world-revision-6`; `main`, tagy, GitHub Release a Pages zůstávají nedotčené.
