@@ -125,6 +125,16 @@ export class WorldSurvival {
       if(this.env.worldRevision>=6){
         // Revision 6 turns the wreck into a readable stranded work site while keeping its gameplay IDs.
         this.box(g,-.25,1.23,0,5.1,.12,1.45,this.metal).name='Breakwater buckled deck plate';
+        // Uneven field repairs interrupt the broad hull color and make its
+        // exposed sides read as patched steel without adding separate draws.
+        const hullRepairs=[[-2.55,.34,.82,.26,-.055],[-1.38,.53,1.02,.31,.035],[-.12,.39,.78,.24,-.04],[1.10,.55,1.04,.29,.045],[2.22,.34,.56,.22,-.065]] as const;
+        for(const side of [-1,1])for(const [index,[x,y,width,height,tilt]] of hullRepairs.entries()){
+          const plate=this.box(g,x,y,side*.704,width,height,.035,this.metal);plate.rotation.z=tilt;plate.name='Breakwater hull repair plate';
+          const stripe=this.box(g,x+width*.20,y-height*.20,side*.728,.035,height*.56,.018,this.rust);stripe.rotation.z=tilt*.45;stripe.name='Breakwater hull rust streak';
+          for(const dx of [-width*.36,width*.36])for(const dy of [-height*.31,height*.31]){const rivet=this.box(g,x+dx,y+dy,side*.731,.042,.042,.025,index%3===0?this.rust:this.paint);rivet.name='Breakwater hull repair rivet';}
+        }
+        const waterline=this.box(g,-.18,.19,.716,3.8,.075,.022,this.paint);waterline.name='Breakwater oxidized waterline';
+        const oppositeWaterline=this.box(g,-.18,.19,-.716,3.8,.075,.022,this.paint);oppositeWaterline.name='Breakwater oxidized waterline';
         // Assemble the wheelhouse around real window openings so the exposed
         // bridge reads as a flooded, abandoned workspace rather than a box.
         this.box(g,-1.48,1.34,.04,1.2,.10,.96,this.paint).name='Breakwater weather station cabin';
