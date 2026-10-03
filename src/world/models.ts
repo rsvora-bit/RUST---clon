@@ -8,6 +8,14 @@ function card(w:number,h:number,x:number,y:number,z:number,rx:number,ry:number,r
   const g=new THREE.PlaneGeometry(w,h,1,2);g.translate(0,h/2,0);temp.position.set(x,y,z);temp.rotation.set(rx,ry,rz);temp.scale.set(1,1,1);temp.updateMatrix();g.applyMatrix4(temp.matrix);return g;
 }
 function broadleafBoughs(variant:number){const r=randomSource(903+variant*71);return Array.from({length:7},(_,b)=>{const angle=b*2.399,dist=1.5+r()*1.7;return {x:Math.cos(angle)*dist,z:Math.sin(angle)*dist,y:4.7+r()*3.5+Math.sin(angle)*.6};});}
+function revision6CanopyMass(variant:number):THREE.SphereGeometry{
+  const geometry=new THREE.SphereGeometry(1,6,4),position=geometry.getAttribute('position');
+  for(let i=0;i<position.count;i++){
+    const x=position.getX(i),y=position.getY(i),z=position.getZ(i),warp=1+.075*Math.sin(x*8.7+y*5.1+variant*1.9)*Math.cos(z*7.4-x*4.3+variant*.8);
+    position.setXYZ(i,x*warp,y*warp,z*warp);
+  }
+  geometry.computeVertexNormals();return geometry;
+}
 /** Branch sprays leave sky gaps and a broken silhouette instead of a solid cone. */
 export function pineGeometry(variant=0):THREE.BufferGeometry {
   const r=randomSource(81+variant*391),parts:THREE.BufferGeometry[]=[];
@@ -38,7 +46,7 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
   const addMass=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);massParts.push(geometry);},addLeaves=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);leafParts.push(geometry);};
   // Low-poly crown masses soften the open center between the larger boughs
   // without turning the canopy into a single opaque blob.
-  const crownCore=revision6?new THREE.SphereGeometry(1,6,4):new THREE.IcosahedronGeometry(1,0);if(!revision6)crownCore.setIndex(Array.from({length:crownCore.getAttribute('position').count},(_,index)=>index));crownCore.scale(revision6?.88+variant*.06:1.08+variant*.08,revision6?.88+variant*.06:1.04+variant*.12,revision6?.88+variant*.06:1.02+variant*.08);crownCore.translate(0,7.1+variant*.18,0);addMass(crownCore);
+  const crownCore=revision6?revision6CanopyMass(variant):new THREE.IcosahedronGeometry(1,0);if(!revision6)crownCore.setIndex(Array.from({length:crownCore.getAttribute('position').count},(_,index)=>index));crownCore.scale(revision6?.88+variant*.06:1.08+variant*.08,revision6?.88+variant*.06:1.04+variant*.12,revision6?.88+variant*.06:1.02+variant*.08);crownCore.translate(0,7.1+variant*.18,0);addMass(crownCore);
   if(!revision6)for(let i=0;i<4;i++){const angle=i*Math.PI*.5+variant*.37,mass=new THREE.IcosahedronGeometry(1,0);mass.setIndex(Array.from({length:mass.getAttribute('position').count},(_,index)=>index));mass.scale(.68+variant*.06,.73,.70);mass.translate(Math.cos(angle)*1.15,6.9+Math.sin(angle*1.8)*.28,Math.sin(angle)*1.15);addMass(mass);}
   // Separate bough clusters, with an asymmetric open-grown oak variant.
   for(const [index,bough] of broadleafBoughs(variant).entries()){
@@ -46,7 +54,7 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
     // A small opaque faceted mass gives the cutout sprays depth edge-on;
     // Revision 6 renders this separately so alpha testing cannot cut holes
     // through the volume.
-    const foliageCore=revision6?new THREE.SphereGeometry(1,6,4):new THREE.IcosahedronGeometry(1,0);
+    const foliageCore=revision6?revision6CanopyMass(variant):new THREE.IcosahedronGeometry(1,0);
     if(!revision6)foliageCore.setIndex(Array.from({length:foliageCore.getAttribute('position').count},(_,index)=>index));
     foliageCore.scale(revision6?.62+variant*.04:1.02+variant*.12,revision6?.54+variant*.03:.78+variant*.08,revision6?.62+variant*.04:.96+variant*.1);
     foliageCore.translate(cx,cy,cz);

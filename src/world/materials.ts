@@ -98,6 +98,20 @@ export function leavesTexture(seed=667,revision6=false):THREE.CanvasTexture {
   for(let i=0;i<120;i++){const x=25+rand()*205,y=15+rand()*220,dx=x-128,dy=y-125;if(dx*dx/15000+dy*dy/15000>1)continue;const a=rand()*6.28,l=6+rand()*13;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle=['#384a2b','#4d6036','#657a3f','#7b8745','#849452'][Math.floor(rand()*5)]!;ctx.beginPath();ctx.moveTo(0,-l);ctx.quadraticCurveTo(l*.8,-l*.1,0,l);ctx.quadraticCurveTo(-l*.8,-l*.1,0,-l);ctx.fill();ctx.strokeStyle='rgba(175,180,107,.3)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(0,-l);ctx.lineTo(0,l);ctx.stroke();ctx.restore();}
   return texture(c);
 }
+/** Opaque leaf breakup for the shaded volume behind Revision-6 cutout sprays. */
+export function leafMassTexture(seed=741):THREE.CanvasTexture {
+  const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#354d2d','#435d32','#526d39','#647a40','#75864a','#84914e'];
+  ctx.fillStyle='#50653a';ctx.fillRect(0,0,256,256);
+  const leaf=(x:number,y:number,w:number,h:number,angle:number,color:string)=>{
+    ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,w,h,angle,0,Math.PI*2);ctx.fill();
+  };
+  for(let i=0;i<1050;i++){
+    const x=rand()*256,y=rand()*256,w=1.1+rand()*2.5,h=.55+rand()*1.3,angle=(rand()-.5)*2.8,color=palette[Math.floor(rand()*palette.length)]!;
+    leaf(x,y,w,h,angle,color);
+    if(x<4)leaf(x+256,y,w,h,angle,color);else if(x>252)leaf(x-256,y,w,h,angle,color);
+  }
+  return texture(c);
+}
 export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
   const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),mud=groundTexture('dirt',1962),snow=groundTexture('snow',1181,worldRevision);
   const surfaceWetness={value:0},revision6Moss={value:worldRevision>=6?1:0},mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0});
