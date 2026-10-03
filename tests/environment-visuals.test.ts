@@ -93,7 +93,8 @@ describe('environment visual building blocks',()=>{
       expect(legacy.ocean.material.uniforms.revision6.value).toBe(0);
       expect(rev6.ocean.material.uniforms.revision6.value).toBe(1);
       expect(rev6.ocean.material.vertexShader).toContain('revision6*(sin(p.x*.024');
-      expect(rev6.ocean.material.fragmentShader).toContain('swell*revision6');
+      expect(rev6.ocean.material.fragmentShader).toContain('if(revision6>.5)');
+      expect(rev6.ocean.material.fragmentShader).toContain('swellNormal=vec2(');
     }finally{legacy.dispose();rev6.dispose();}
   });
 

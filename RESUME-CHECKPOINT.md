@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — analytický sklon Rev6 oceánských vln — 2026-10-04
+
+- Před úpravou byla pracovní větev a origin shodné na `9868ef960eebb20fa31bc86e99275d4ae348db01`. Přímý ocean probe našel, že dlouhý swell přidával sinusové výpočty do každého ze dvoustranných diferencí normál. `src/world/atmosphere.ts` nyní vypočítá dlouhý swell analyticky a pouze v Rev6 uniform větvi; samotný vertex swell i vlnový vzhled se zachovávají. `tests/environment-visuals.test.ts` hlídá Rev6-only větev. Starší revize dál používají původní normálový výpočet.
+- Opakovaný pobřežní Chrome/Metal HIGH uncapped probe, seed 731942, 1280×720: před analytickou optimalizací Rev6 **330.99 FPS / 3.021 ms**, po ní **332.53 FPS / 3.007 ms**, oba 98 calls, 1,393,783 tris, 0 browser errors. Rozdíl ~0.5 % je v běhovém rozptylu, tedy bez změřitelné regrese. v0.9.0 probe dal **361.49 FPS / 2.766 ms / 98 calls / 2,936,073 tris**; jeho svět má jiné rozlišení/obsah, takže to není izolované shader A/B a nelze rozdíl připsat této úpravě.
+- Chrome/Metal `npm run test:world-art`: **76/76 PASS**, 0 browser/WebGL chyb; archivní save fixtures, weather, quality presets a save/reload determinism PASS. Pobřežní screenshot `test-results/world-art/shoreline-water-detail.png` byl vizuálně zkontrolován. `npm test`: **445/445, 43 souborů PASS**; `npm run build`: **PASS**, známý Vite advisory na 3,305.16 kB JS chunk; targeted environment tests **12/12 PASS**.
+- Změněno `src/world/atmosphere.ts`, `tests/environment-visuals.test.ts` a checkpoint. QA server i jednorázový `/tmp/tideland-ocean-perf.mjs` probe byly zastaveny po běhu; screenshoty/logy zůstávají mimo Git. Bez zásahu do iCloud `* 2.*`, `main`, tag/release nebo Pages. Další krok: commit/push této optimalizace; v0.10 zůstává nedokončený a není release candidate.
+
 ## Live update — dlouhé oceánské swelly pouze pro Rev6 — 2026-10-04
 
 - Navazuje na commit `2cbebb240641143f9e7536c54625c287ddb15284` na `codex/world-revision-6`; origin v té době odpovídal. Hráčský pobřežní screenshot ukázal pravidelný krátký vlnový vzor a téměř rovnou vodní plochu.
