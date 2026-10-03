@@ -97,6 +97,19 @@ export class WorldSurvival {
       for(const x of [-2.65,2.65]){const cleat=new T.Mesh(new T.TorusGeometry(.16,.035,5,10),this.rust);cleat.name='Tidal pier mooring ring';cleat.position.set(x,1.05,.1);cleat.rotation.x=Math.PI/2;cleat.castShadow=true;g.add(cleat);}
       const pole=new T.Mesh(new T.CylinderGeometry(.045,.08,7.2,7),this.metal);pole.name='Tidal survey mast';pole.position.set(2.2,4.3,-.1);pole.castShadow=true;g.add(pole);
       const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Tidal survey reflector';dish.position.set(2.2,7.2,-.1);dish.rotation.set(.3,0,.5);dish.scale.set(.8,.58,.18);g.add(dish);
+      if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+        // Field samples and a marked log give this bare instrument platform a
+        // clear survey purpose without changing its gameplay footprint.
+        for(const x of [.22,1.34])for(const z of [-.12,.58])this.box(g,x,1.055,z,.075,.16,.075,this.rust).name='Tidal sample bench leg';
+        this.box(g,.78,1.17,.23,1.22,.07,.82,this.metal).name='Tidal sample workbench';
+        this.box(g,.48,1.212,.18,.43,.018,.52,this.chartPaper).name='Tidal current field log';
+        for(let line=0;line<4;line++){const mark=this.box(g,.48+(line%2?.035:-.035),1.225,.02+line*.09,.27-(line%2)*.035,.009,.012,line===3?this.rust:this.wood);mark.name='Tidal field log notation';mark.rotation.y=line%2?.035:-.025;}
+        for(const [index,x] of [.78,1.02,1.26].entries()){
+          const vial=new T.Mesh(new T.CylinderGeometry(.065,.078,.20,8),index===1?this.display:this.glass);vial.name='Tidal water sample vial';vial.position.set(x,1.36,.28);vial.castShadow=vial.receiveShadow=true;g.add(vial);
+          const cap=new T.Mesh(new T.CylinderGeometry(.076,.076,.035,8),index===0?this.display:this.rust);cap.name='Tidal sample vial cap';cap.position.set(x,1.478,.28);cap.castShadow=cap.receiveShadow=true;g.add(cap);
+        }
+        const rope=new T.Mesh(new T.TorusGeometry(.19,.035,5,12),this.wood);rope.name='Tidal survey rope coil';rope.position.set(-2.48,1.015,.12);rope.rotation.x=Math.PI/2;rope.castShadow=rope.receiveShadow=true;g.add(rope);
+      }
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===7){
       // A ridge-top triangular relay frame breaks the skyline and helps long-range navigation.
