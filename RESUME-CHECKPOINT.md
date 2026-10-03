@@ -1,5 +1,18 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+Toto je nejnovější živý checkpoint; starší záznamy níže jsou historické.
+
+## Live update — dálková silueta Breakwateru a potvrzená Rev6 QA (2026-10-03)
+
+- `src/survival/WorldSurvival.ts`: pouze Generation 5 / World Revision 6 má nyní vyšší poškozený jeřáb (12,8 m), širší ráhno (4,25 m), větší potrhaný signální praporek a odpovídající přepočítané lano. Vzdálený pobřežní snímek nyní ukazuje čitelnou rezavou vlajku nad vrakem; celkový QA záběr je upraven tak, aby zachytil celý jeřáb. Pozice/ID POI, footprint, kolize, loot, saves, RNG a Rev1–5 zůstávají beze změny. Změna nepřidala nové draw calls ani render trojúhelníky.
+- `tests/world-art.test.ts` ověřuje výšku značek, bounds dávkovaného Breakwateru a zachované dvě kolize; save/layout regresní scénáře zůstávají aktivní. `scripts/world-art-qa.mjs` nyní pořizuje celý přehledový záběr.
+- Plné `npm test`: **437/437 PASS / 42 souborů**. `npm run build`: **PASS**; známé Vite upozornění na 3,297.59 kB JS chunk zůstává. `node --check scripts/world-art-qa.mjs` a `git diff --check`: PASS.
+- Chrome/Metal `test:world-art`: **66/66 PASS**, browser/app/WebGL chyby **0**. Ověřeny reálné archivní v0.9.0 Rev1 a v0.9.1 Rev2 saves (inventář, structures, stations, research, pozice, legacy node/POI/roads), Rev6 save/reload determinismus, roads, biomy, vegetace, čtyři presety a storm/camera sweep. `breakwater-wreck.png` a `breakwater-wreck-distant.png` byly ručně prohlédnuty.
+- Chrome/Metal `test:performance`, HIGH 1280×720: archivní v0.9.0 **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 triangles / 1,318 nodes / 6,127 ms startup**; aktuální v0.9.3 + Rev6 **60 FPS / 16.666 ms / 702 calls / 4,672,756 triangles / 2,033 nodes / 6,846 ms startup / 375 grass chunks / 84,000 grass / 1,500 trees**, chyby **0**. Proti předchozím Rev6 vzorkům jsou calls/triangles beze změny a FPS je shodně limitováno 60 Hz; cold startup je proměnlivý. Starší headless odečty 56/55 FPS se neobnovily při dvou izolovaných měřeních 60 FPS, takže potvrzená regrese není prokázána.
+- Během QA byl jednou omylem odebrán řádek tvorby archivního v0.9.1 fixture; harness hned skončil `ReferenceError`, řádek byl obnoven a `node --check` i celý následný browser harness prošly. Nebyly upraveny ani ztraceny žádné save soubory.
+- Změněny `src/survival/WorldSurvival.ts`, `tests/world-art.test.ts`, `scripts/world-art-qa.mjs` a tento checkpoint. Aktuální větev `codex/world-revision-6`, výchozí HEAD `b765cb56282aa6f8b4b83889db8187a2efb6b630`; následující checkpoint commit/push ještě zbývá. iCloud soubory s koncovkou ` 2` jsou uživatelská data a musí zůstat nedotčená a nestagovaná. `main`, release v0.9.3, tagy, PR a produkční Pages se nemění.
+- Odhad rozsahu cíle: celek **92 %**; G1 **100 %**, G2 **79 %**, G3 **89 %**, G4 **94 %**, G5 **83 %**, G6 **84 %**, G7 **95 %**. Jde o orientační hodnoty z kontrolních oblastí, nikoliv přesný počet hotových kritérií. Zbývá rozsáhlá screenshotová kontrola dalších biome/POI/weather/model pohledů a další viditelné leštění; není to release candidate.
+
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
 ## Live update — čitelnější silueta jelena (2026-10-03)
