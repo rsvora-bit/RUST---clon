@@ -2,12 +2,12 @@
 
 Toto je nejnovější živý checkpoint; starší záznamy níže jsou historické.
 
-## Live update — diagnostika jižního horizontového hrotu (2026-10-03)
+## Live update — zjemnění vrcholů vzdáleného horizontu (2026-10-03)
 
 - Na jižním pobřežním pohledu pro seed `731942` jehlový vrchol pochází konkrétně ze skupiny `1` nejbližší panoramatické vrstvy (`layer 0`). Potvrzeno izolovaným vykreslením každé ze šesti skupin; ostatní skupiny tento hrot nevytvářejí. Dočasné browser debug hooky byly odstraněny.
-- Vyzkoušeny a ze zdrojů vráceny tři lokální geometrické varianty (šířka masivu, Gaussův profil, šířka prostředního vrcholu). Stejný Chrome/Metal záběr potvrzuje, že žádná varianta neodstranila viditelnou jehlu dostatečně přesvědčivě. `src/world/horizon.ts` je čistý vůči poslednímu commitu; panoramatický limit zůstává otevřený a nemá se označit za opravený.
-- Aktuální zdroj znovu prošel cílenými testy panoramatu: `tests/world-art.test.ts` **127/127 PASS**, `tests/environment-visuals.test.ts` **10/10 PASS**; `npm run build` **PASS** se známým varováním na ~3,298 kB JS chunk. Lokální Revision 6 Chrome/Metal screenshot běhu vykázal **0 browser/app/WebGL chyb**, zhruba **59.4 FPS** při 60 Hz capu, **147 draw calls** a **3,790,311 triangles**. Tento izolovaný scénický odečet není srovnatelný s performance QA baseline.
-- Aktuální stabilní HEAD zůstává `4b61c10563fdb080b31ba29df7a653507bfc2029` na `codex/world-revision-6`; žádná změna `main`, tagu/releasu ani Pages. Uživatelská iCloud data s příponou ` 2` zůstala mimo změny. Celkový rozsah zůstává orientačně **94 %**, stále ne release candidate.
+- Po diagnostickém porovnání skupin byly tři první tvarové pokusy vráceny. V `src/world/horizon.ts` je nyní mírně širší profil všech tří hlavních vrcholů; pevná regresní scéna `731942 / layer 0 / group 1` má 16 vzorků v horních 10 % oproti předchozím 9. Screenshot potvrzuje částečně měkčí masiv, ale jehlový vrchol zůstává zřetelný, takže horizont není opravený.
+- `tests/world-art.test.ts`: **127/127 PASS**, včetně nové kontroly šířky vrcholu a stávajícího determinismu/budgetu. `tests/environment-visuals.test.ts`: **10/10 PASS**. Lokální Revision 6 Chrome/Metal běh: **0 browser/app/WebGL chyb**, přibližně **59.4 FPS** při 60 Hz capu, **147 draw calls** a **3,790,239 triangles**. Jde o izolovaný scénický odečet, nikoli srovnatelný performance benchmark. `npm run build` **PASS**, zůstává známé varování Vite nad 500 kB (bundle ~3,298 kB).
+- Pracovní větev `codex/world-revision-6`, poslední commit `5b45cdb` (checkpoint diagnostiky); rozšíření hlavních vrcholů a test čekají na checkpoint commit/push. Žádná změna `main`, tagu/releasu ani Pages. Uživatelská iCloud data s příponou ` 2` zůstávají nedotčená. Celkový rozsah orientačně **94 %**, stále ne release candidate.
 
 ## Live update — tlumenější lesní podrost (2026-10-03)
 
