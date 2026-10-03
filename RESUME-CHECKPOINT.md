@@ -2,6 +2,15 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Live update — pobřežní cesty a silueta Breakwateru (2026-10-03)
+
+- `src/terrain/roads.ts`: pouze Generation 5 / Revision 6 používá pobřežní cestu o šířce 3,9 m a vnitrozemskou 4,5 m; starší generace i Revision 5 zachovávají dosavadních 5 m. `tests/road-geometry.test.ts` pokrývá všechny tři případy. `scripts/world-art-qa.mjs` nyní snímá skutečný pobřežní úsek trasy.
+- `src/survival/WorldSurvival.ts`: Rev6 Breakwater dostal vyšší poškozený jeřáb a malou potrhanou rezavou signalizační vlaječku pro čitelnější vzdálenou siluetu. Identita POI, jeho poloha, loot a kolize zůstávají beze změny. Vzdálený snímek potvrzuje lepší orientační obrys, vrak samotný je však z velké dálky stále drobný.
+- Plné `npm test`: **436/436 PASS / 42 souborů**. `npm run build`: **PASS**, Vite dál hlásí známý velký minifikovaný JS chunk 3,297.16 kB. `node --check scripts/world-art-qa.mjs` a `git diff --check`: PASS. Chrome/Metal `test:world-art`: **66/66 PASS**, browser/app/WebGL chyby **0**; Rev1/Rev2 archivní savy i Rev6 determinismus/reload beze změny.
+- Chrome/Metal HIGH 1280×720 performance: v0.9.0 **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 triangles / 1,318 nodes / 5,292 ms cold start**; Rev6 **60 FPS / 16.666 ms / 702 calls / 4,672,756 triangles / 2,033 nodes / 6,203 ms cold start / 375 grass chunks / 84,000 grass / 1,500 trees / 0 errors**. Oproti předchozímu Rev6 vzorku přibyly 1 draw call a 15,860 triangles; FPS i frame time jsou stejné. Jednorázový cold start kolísá.
+- Pushed checkpointy na `codex/world-revision-6`: `9656c59` (`Improve revision-six Breakwater skyline`) a `fc4883b` (`Narrow revision-six coastal tracks`). Následující aktualizace checkpointu bude samostatný dokumentační commit. `main`, tagy a vydání nebyly měněny. Zachované iCloud kopie s příponou ` 2` zůstávají mimo staging.
+- Orientační pokračování celého cíle zůstává přibližně **95%**; rozpracované jsou širší kontrola světových modelů, atmosféry a gameplay artu. Toto není release candidate ani vydání.
+
 ## Live update — soudržnější bouřková obloha a jemnější déšť (2026-10-03)
 
 - `src/world/atmosphere.ts`: storm shader přidává jednu nízkofrekvenční noise vrstvu do již existujícího sky passu a používá ji pro širší souvislé bouřkové masy. Nepřidává mesh, render pass ani draw call. `src/survival/Weather.ts`: dešťové čáry mají seedově pravidelně proměnlivou délku 0.34–0.59 m, v bouřce 0.50–0.75 m, a nižší opacity; počet částic, quality tiers, weather state a simulace se nemění.
