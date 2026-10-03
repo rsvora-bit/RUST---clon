@@ -252,10 +252,39 @@ export class WildlifeSystem {
       }
       ellipsoid(coat,0,.94,.62,.09,.105,.16);ellipsoid(0xe0d0b5,0,.96,.75,.055,.065,.07);
     } else {
-      ellipsoid(coat,0,.68,0,.36,.37,.64);ellipsoid(coat,0,.78,-.49,.30,.31,.34);ellipsoid(coat,0,.66,-.72,.23,.16,.22);
-      for(const x of [-.20,.20]){ellipsoid(coat,x,1.02,-.5,.10,.19,.075);ellipsoid(dark,x*.72,.81,-.73,.034,.035,.025);if(species==='coastalBoar')ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);}
-      for(const x of [-.23,.23])for(const z of [-.42,.42])add(new THREE.CapsuleGeometry(.075,.28,3,6),coat,x,.30,z,1,1,1);
-      if(species==='islandWolf'){for(const x of [-.12,.12])ellipsoid(coat,x,.98,-.47,.075,.17,.07);ellipsoid(dark,0,.72,-.91,.052,.04,.045);ellipsoid(coat,0,.78,.66,.075,.08,.24);ellipsoid(0xb0aaa0,0,.48,-.43,.22,.16,.22);}
+      const wolf=species==='islandWolf';
+      // Give the two common animals distinct mass and posture while keeping one
+      // shared merged mesh per species. Their gameplay capsules remain untouched.
+      ellipsoid(coat,0,.68,.015,wolf?.34:.39,wolf?.34:.39,wolf?.62:.66);
+      ellipsoid(wolf?0x62645f:0x684b39,0,.73,-.29,wolf?.31:.36,wolf?.35:.34,wolf?.36:.42);
+      ellipsoid(wolf?0x77766e:0x765841,0,.70,.35,wolf?.30:.31,wolf?.32:.34,wolf?.32:.37);
+      ellipsoid(coat,0,.80,-.51,wolf?.255:.30,wolf?.25:.27,wolf?.30:.34);
+      ellipsoid(wolf?0xa4a096:0x80654e,0,.50,-.22,wolf?.23:.27,wolf?.15:.18,wolf?.42:.45);
+      for(const x of [-.20,.20]){
+        if(wolf){
+          const ear=new THREE.ConeGeometry(.09,.23,7);add(ear,0x555650,x,1.075,-.49,1,1,1,x<0?-.10:.10);
+          ellipsoid(0x87857c,x*.70,.83,-.735,.045,.039,.025);
+          ellipsoid(dark,x*.70,.835,-.754,.019,.021,.012);
+        }else{
+          ellipsoid(0x745541,x*1.14,1.005,-.49,.105,.14,.095);
+          ellipsoid(0x8a6950,x*1.16,1.03,-.51,.062,.085,.045);
+          ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);
+        }
+      }
+      if(wolf){
+        ellipsoid(0x555650,0,.73,-.735,.155,.095,.19);
+        ellipsoid(dark,0,.73,-.905,.052,.042,.045);
+        ellipsoid(coat,0,.78,.66,.075,.08,.24);
+        ellipsoid(0xb0aaa0,0,.48,-.43,.22,.16,.22);
+      }else{
+        ellipsoid(0x57473c,0,.64,-.79,.245,.145,.16);
+        ellipsoid(0x302c28,0,.67,-.925,.105,.067,.045);
+        for(const x of [-.055,.055])ellipsoid(0x241f1b,x,.68,-.96,.018,.016,.009);
+      }
+      for(const x of [-.23,.23])for(const z of [-.42,.42]){
+        add(new THREE.CapsuleGeometry(.072,.29,3,6),coat,x,.31,z,1,1,1);
+        ellipsoid(wolf?0x4b4d49:0x574336,x,.075,z-(z<0?.035:-.01),.084,.075,.12);
+      }
     }
     const geometry=mergeGeometries(parts,false);for(const part of parts)part.dispose();if(!geometry)throw new Error('Could not combine wildlife model geometry');geometry.computeBoundingSphere();this.geometries.set(key,geometry);
     let material=this.materials.get(key);if(!material){material=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.94});this.materials.set(key,material);}return geometry;

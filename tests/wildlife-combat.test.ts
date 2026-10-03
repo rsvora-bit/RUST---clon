@@ -43,6 +43,15 @@ describe('seeded island wildlife',()=>{
     expect(deer.state).toBe('flee');expect(Math.hypot(deer.position.x-start.x,deer.position.z-start.z)).toBeGreaterThan(.4);expect(model.position.y).toBeGreaterThan(deer.position.y+.025);expect(Math.abs(model.rotation.x)).toBeGreaterThan(.01);expect(attacks).not.toHaveBeenCalled();
     deer.memorySeconds=.05;const farPlayer={x:deer.position.x+80,y:3,z:deer.position.z};system.update(.1,farPlayer,()=>3,attacks);expect(deer.memorySeconds).toBe(0);expect(deer.state).toBe('wander');expect(model.position.y).toBeCloseTo(deer.position.y);expect(attacks).not.toHaveBeenCalled();system.dispose();
   });
+  it('gives wolves and boars distinct shared low-poly silhouettes within a small geometry budget',()=>{
+    const forestScene=new THREE.Scene(),coastScene=new THREE.Scene(),wolves=new WildlifeSystem(forestScene,context),boars=new WildlifeSystem(coastScene,{...context,biomeAt:()=>'COAST'}),wolfActors=wolves.actors.filter(actor=>actor.species==='islandWolf'),boarActors=boars.actors.filter(actor=>actor.species==='coastalBoar');
+    expect(wolfActors.length).toBeGreaterThan(0);expect(boarActors.length).toBeGreaterThan(0);
+    const wolf=wolves.object(wolfActors[0]!.id)!,boar=boars.object(boarActors[0]!.id)!;
+    expect(wolf.geometry).toBe(wolves.object(wolfActors[1]!.id)?.geometry);expect(boar.geometry).toBe(boars.object(boarActors[1]!.id)?.geometry);expect(wolf.geometry).not.toBe(boar.geometry);
+    expect(wolf.geometry.getAttribute('color').count).toBe(wolf.geometry.getAttribute('position').count);expect(boar.geometry.getAttribute('color').count).toBe(boar.geometry.getAttribute('position').count);
+    expect(wolf.geometry.getAttribute('position').count/3).toBeLessThan(18_000);expect(boar.geometry.getAttribute('position').count/3).toBeLessThan(18_000);
+    wolves.dispose();boars.dispose();
+  });
   it('places persistent hostile scavengers deterministically beside industrial sites',()=>{
     const sites=[{x:180,y:3,z:40},{x:-220,y:3,z:60}],first=createWildlifePopulation({...context,scavengerSites:sites}),again=createWildlifePopulation({...context,scavengerSites:sites}),scavengers=first.filter(a=>a.species==='islandScavenger');
     expect(scavengers).toHaveLength(3);expect(scavengers.map(a=>[a.id,a.position])).toEqual(again.filter(a=>a.species==='islandScavenger').map(a=>[a.id,a.position]));
