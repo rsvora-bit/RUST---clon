@@ -37,6 +37,17 @@ describe('environment visual building blocks',()=>{
     atmosphere.setQuality('low');expect(atmosphere.sun.castShadow).toBe(false);atmosphere.dispose();height.dispose();
   });
 
+  it('keeps rain/fog from tinting distant mountains as a storm',()=>{
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),camera=new THREE.Vector3();
+    try{
+      atmosphere.update(0,10,camera);const clearFog=atmosphere.fog.color.clone(),clearMountain=(atmosphere.horizon.children[0] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color.clone(),clearDensity=atmosphere.fog.density;
+      atmosphere.sky.material.uniforms.weather.value=1;atmosphere.sky.material.uniforms.storm.value=0;atmosphere.update(0,10,camera);const rainMountain=(atmosphere.horizon.children[0] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color.clone();
+      expect(rainMountain.equals(clearMountain)).toBe(true);expect(atmosphere.fog.color.equals(clearFog)).toBe(true);expect(atmosphere.fog.density).toBeGreaterThan(clearDensity);
+      atmosphere.sky.material.uniforms.storm.value=1;atmosphere.update(0,10,camera);const stormMountain=(atmosphere.horizon.children[0] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color;
+      expect(stormMountain.equals(clearMountain)).toBe(false);expect(stormMountain.r+stormMountain.g+stormMountain.b).toBeLessThan(clearMountain.r+clearMountain.g+clearMountain.b);expect(atmosphere.fog.color.equals(clearFog)).toBe(false);
+    }finally{atmosphere.dispose();height.dispose();}
+  });
+
   it('adds deterministic, brief lightning flashes only during storms',()=>{
     const seed=731942,bucket=Array.from({length:2000},(_,index)=>index).find(index=>stormLightningRoll(seed,index)>.88)!;
     expect(bucket).toBeDefined();expect(stormLightningRoll(seed,bucket)).toBe(stormLightningRoll(seed,bucket));expect(stormLightningRoll(seed,bucket)).toBeGreaterThanOrEqual(0);expect(stormLightningRoll(seed,bucket)).toBeLessThan(1);
