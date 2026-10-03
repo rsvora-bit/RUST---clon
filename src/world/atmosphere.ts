@@ -15,7 +15,7 @@ export class Atmosphere {
   private readonly stormTint=new THREE.Color(.29,.27,.38);private readonly mountainTint=new THREE.Color();
   get daylightAmount(){return this.daylight;}
 
-  constructor(readonly scene:THREE.Scene,heightTexture:THREE.DataTexture,readonly terrainSize=720,private readonly seed=731942,worldRevision=5){
+  constructor(readonly scene:THREE.Scene,heightTexture:THREE.DataTexture,readonly terrainSize=720,private readonly seed=731942,private readonly worldRevision=5){
     this.sky=new THREE.Mesh(new THREE.SphereGeometry(1600,40,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{sunDir:{value:this.sunDirection},daylight:{value:1},clock:{value:0},weather:{value:0},storm:{value:0},lightning:{value:0}},vertexShader:`varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
       varying vec3 vDirection;uniform vec3 sunDir;uniform float daylight;uniform float clock;uniform float weather;uniform float storm;uniform float lightning;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}float fbm(vec2 p){float f=0.;f+=.5*noise(p);p=p*2.03+17.2;f+=.25*noise(p);p=p*2.01-12.7;f+=.125*noise(p);p=p*2.04+8.2;f+=.0625*noise(p);return f;}
@@ -39,7 +39,7 @@ export class Atmosphere {
 
   private buildHorizon():void{
     for(let layer=2;layer>=0;layer--){
-      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,vertexColors:true,depthWrite:false,side:THREE.DoubleSide,fog:false});
+      const g=mountainLayer(this.seed,layer,this.terrainSize>720,this.worldRevision),m=new THREE.MeshBasicMaterial({color:0x8299a8,vertexColors:true,depthWrite:false,side:THREE.DoubleSide,fog:false});
       const mesh=new THREE.Mesh(g,m);mesh.name=`Distant massif layer ${layer}`;mesh.userData.layer=layer;mesh.renderOrder=-5;mesh.frustumCulled=false;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
     }
   }

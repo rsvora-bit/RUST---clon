@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 horské panorama správně přebírá world revision — 2026-10-04
+
+- Opraveno předání revision do `Atmosphere`: konstruktorový parametr nebyl uložen jako vlastnost, proto `buildHorizon()` ve skutečnosti vždy volal Rev5 variantu. Nyní horizon opravdu používá Rev6 seedované, asymetrické širší masivy s vyšším pozitivním profilem; legacy revize zůstávají beze změny. Geometrie má stejný počet vrcholů, indexů, meshů a draw calls.
+- `tests/environment-visuals.test.ts` nyní ověřuje Rev6 determinismus, změnu proti Rev5, vyšší siluetu, nezměněnou topologii a integraci přes `Atmosphere`. Cílený test **13/13 PASS**; `npm test` **446/446, 43 souborů PASS**; `npm run build` PASS (dosavadní Vite upozornění na velký JS chunk zůstává).
+- Chrome/Metal `npm run test:world-art`: **76/76 PASS**, archivní v0.9.0 Rev1 a v0.9.1 Rev2 save/reload, Rev6 determinismus, všechny čtyři presety, počasí a kamera bez browser/WebGL/app chyb. Denní panorama screenshot `test-results/world-art/horizon-day.png` vizuálně zkontrolován; Rev6 vzdálené masivy se teď skutečně vykreslují. Benchmark nebyl v této iteraci opakován; změna nepřidává geometrii ani draw calls.
+- Změněno `src/world/atmosphere.ts`, `src/world/horizon.ts`, `tests/environment-visuals.test.ts` a tento checkpoint. Další práce pokračuje na `codex/world-revision-6`; žádná změna `main`, tagů/release ani Pages.
+
 ## Live update — analytický sklon Rev6 oceánských vln — 2026-10-04
 
 - Před úpravou byla pracovní větev a origin shodné na `9868ef960eebb20fa31bc86e99275d4ae348db01`. Přímý ocean probe našel, že dlouhý swell přidával sinusové výpočty do každého ze dvoustranných diferencí normál. `src/world/atmosphere.ts` nyní vypočítá dlouhý swell analyticky a pouze v Rev6 uniform větvi; samotný vertex swell i vlnový vzhled se zachovávají. `tests/environment-visuals.test.ts` hlídá Rev6-only větev. Starší revize dál používají původní normálový výpočet.

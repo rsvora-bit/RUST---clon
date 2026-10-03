@@ -64,18 +64,20 @@ describe('environment visual building blocks',()=>{
   });
 
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{
-    const a=mountainLayer(731942,1,true),b=mountainLayer(731942,1,true),c=mountainLayer(731943,1,true);
+    const a=mountainLayer(731942,1,true),b=mountainLayer(731942,1,true),c=mountainLayer(731943,1,true),rev6=mountainLayer(731942,1,true,6),rev6b=mountainLayer(731942,1,true,6);
     try {
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));
       expect(Array.from(a.getAttribute('position').array)).not.toEqual(Array.from(c.getAttribute('position').array));
       expect(a.index!.count/3).toBe(5184);expect(a.boundingBox).toBeNull();a.computeBoundingBox();
       expect(a.boundingBox!.max.y).toBeGreaterThan(260);expect(a.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(260);expect(a.boundingSphere!.radius).toBeLessThan(1800);
+      expect(rev6.index!.count).toBe(a.index!.count);expect(Array.from(rev6.getAttribute('position').array)).toEqual(Array.from(rev6b.getAttribute('position').array));expect(Array.from(rev6.getAttribute('position').array)).not.toEqual(Array.from(a.getAttribute('position').array));rev6.computeBoundingBox();rev6.computeBoundingSphere();expect(rev6.boundingBox!.max.y).toBeGreaterThan(a.boundingBox!.max.y*1.08);expect(rev6.boundingSphere!.radius).toBeLessThan(1800);
       const rowSize=73,groupSize=rowSize*7,ridges=Array.from({length:6},(_,group)=>Array.from({length:rowSize},(_,i)=>a.getAttribute('position').getY(group*groupSize+rowSize*3+i)));
       const peakCounts=ridges.map(profile=>profile.slice(1,-1).filter((height,index)=>height>profile[index]&&height>=profile[index+2]).length);
       expect(peakCounts.some(count=>count>=3)).toBe(true);
       const steepestRidgeStep=Math.max(...ridges.flatMap(profile=>profile.slice(1).map((height,index)=>Math.abs(height-profile[index]))));expect(steepestRidgeStep).toBeLessThan(90);
+      const rev6Ridges=Array.from({length:6},(_,group)=>Array.from({length:rowSize},(_,i)=>rev6.getAttribute('position').getY(group*groupSize+rowSize*3+i))),rev6PeakCounts=rev6Ridges.map(profile=>profile.slice(1,-1).filter((height,index)=>height>profile[index]&&height>=profile[index+2]).length);expect(rev6PeakCounts.some(count=>count>=2)).toBe(true);expect(rev6PeakCounts.reduce((sum,count)=>sum+count,0)).toBeGreaterThanOrEqual(8);const rev6SteepestStep=Math.max(...rev6Ridges.flatMap(profile=>profile.slice(1).map((height,index)=>Math.abs(height-profile[index]))));expect(rev6SteepestStep).toBeLessThan(90);
       for(let group=0;group<6;group++)for(let row=0;row<7;row++){expect(a.getAttribute('position').getY(group*groupSize+row*rowSize)).toBeLessThan(-50);expect(a.getAttribute('position').getY(group*groupSize+row*rowSize+rowSize-1)).toBeLessThan(-50);}
-    }finally{a.dispose();b.dispose();c.dispose();}
+    }finally{a.dispose();b.dispose();c.dispose();rev6.dispose();rev6b.dispose();}
   });
 
   it('exposes upgraded sky/ocean uniforms and scales shadow quality through ultra',()=>{
@@ -96,6 +98,17 @@ describe('environment visual building blocks',()=>{
       expect(rev6.ocean.material.fragmentShader).toContain('if(revision6>.5)');
       expect(rev6.ocean.material.fragmentShader).toContain('swellNormal=vec2(');
     }finally{legacy.dispose();rev6.dispose();}
+  });
+
+  it('builds taller layered horizon geometry for Rev6 while preserving legacy layers and draw topology',()=>{
+    const pixels=new Uint8Array(64),legacyHeight=new THREE.DataTexture(pixels,4,4,THREE.RGBAFormat),rev6Height=new THREE.DataTexture(pixels,4,4,THREE.RGBAFormat),legacy=new Atmosphere(new THREE.Scene(),legacyHeight,1280,731942,5),rev6=new Atmosphere(new THREE.Scene(),rev6Height,1280,731942,6);
+    try{
+      const legacyRidge=(legacy.horizon.children[1] as THREE.Mesh).geometry,rev6Ridge=(rev6.horizon.children[1] as THREE.Mesh).geometry;
+      legacyRidge.computeBoundingBox();rev6Ridge.computeBoundingBox();
+      expect(legacyRidge.index!.count).toBe(rev6Ridge.index!.count);
+      expect(rev6Ridge.boundingBox!.max.y).toBeGreaterThan(legacyRidge.boundingBox!.max.y*1.08);
+      expect(rev6.horizon.children).toHaveLength(legacy.horizon.children.length);
+    }finally{legacy.dispose();rev6.dispose();legacyHeight.dispose();rev6Height.dispose();}
   });
 
   it('keeps rain/fog from tinting distant mountains as a storm',()=>{
