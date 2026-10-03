@@ -84,7 +84,7 @@ export function terrainMaterial():THREE.MeshStandardMaterial {
       vec2 warp=vec2(groundNoise(gp.xz*.09),groundNoise(gp.zx*.07+17.));vec2 guv=gp.xz*.23+warp*.72;
       vec3 grassCol=mix(texture2D(grassTex,guv).rgb,texture2D(grassTex,mat2(.8,.6,-.6,.8)*guv*.43+7.).rgb,.38);
       vec3 dryCol=mix(texture2D(dryTex,guv*.82).rgb,texture2D(dryTex,mat2(.6,.8,-.8,.6)*guv*.37+19.).rgb,.36);
-      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);
+      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);float snowDrift=groundNoise(gp.xz*.12+warp*.35)*.62+groundNoise(gp.xz*.43+vec2(19.,-7.))*.38;snowCol*=.88+.20*snowDrift;
       vec3 sandCol=mix(texture2D(sandTex,gp.xz*.16).rgb,texture2D(sandTex,gp.xz*.73+warp).rgb,.20);
       vec3 dirtCol=mix(texture2D(dirtTex,gp.xz*.27).rgb,texture2D(dirtTex,gp.xz*.91+13.).rgb,.25);vec3 mudCol=mix(texture2D(mudTex,guv*.72).rgb,texture2D(mudTex,mat2(.8,.6,-.6,.8)*guv*.42+29.).rgb,.32)*vec3(1.03,.98,.88);
       vec3 rockCol=texture2D(rockTex,gp.zy*.19).rgb*blend.x+texture2D(rockTex,gp.xz*.19).rgb*blend.y+texture2D(rockTex,gp.xy*.19).rgb*blend.z;float strata=groundNoise(gp.xz*.052+8.)*.62+groundNoise(gp.xz*.21-14.)*.38;rockCol*=mix(vec3(.53,.57,.55),vec3(.82,.79,.70),smoothstep(.28,.72,strata));

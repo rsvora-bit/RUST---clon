@@ -990,3 +990,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Chrome/Metal `test:world-art` **45/45 PASS**, včetně archived save compatibility, kamerového sweepu a save/reloadu, bez browser/WebGL chyb. `shoreline-water-detail.png` byl vizuálně zkontrolován: na záběru zátoky je nyní čitelný nepravidelný pěnový okraj; zůstává lokální a nepřekreslí vodní plochu. Falešně zavádějící starý `shoreline-detail` mířil přes pláž, správný close-water záběr je `shoreline-water-detail`.
 - Performance z posledního běhu beze změny render counts: archive v0.9.0 **612 calls / 3 390 261 tris**, Rev6 **680 calls / 4 383 370 tris**, oba 60 FPS, 16.666 ms, 0 errors. `npm run build` PASS se známým chunk upozorněním; následné `npm test` **422/422 PASS / 41 souborů**.
 - Aktuální změna čeká na checkpoint commit/push na `codex/world-revision-6`; main/release/tag/Pages se nemění. Netrackované iCloud duplikáty ` 2` zachovat.
+
+## v0.10 pokračování — Víc detailu v alpském sněhu — 2026-10-03
+
+- `src/world/materials.ts`: snow albedo nyní používá dvě levné škály stávajícího procedural noise pro mírně proměnlivé závěje a odstín. Nemění terrain heightfield, climate weights/biome transitions, geometry, collisions ani save data.
+- Chrome/Metal `test:world-art`: **45/45 PASS**, včetně save compatibility Gen5 revision 1/2, kamerového sweepeu, weather/lightning a save/reload; browser/WebGL chyby **0**. `biome-SNOW---ALPINE.png` byl vizuálně zkontrolován: jemná variace je viditelná na rozsáhlé sněhové ploše, bez tvrdých pruhů či barevných kruhů.
+- `npm run build` PASS se stávajícím ~3.27 MB JS chunk advisory; následně `npm test` **422/422 PASS / 41 souborů**. Sníh přidává shader arithmetic bez draw call nebo geometry navýšení. Změna čeká na checkpoint commit/push; main/tag/release/Pages zůstávají beze změny.
