@@ -284,11 +284,21 @@ export class WildlifeSystem {
           const ear=new THREE.ConeGeometry(.09,.23,7);add(ear,0x555650,x,1.075,-.49,1,1,1,x<0?-.10:.10);
           ellipsoid(0x87857c,x*.70,.83,-.595,.044,.038,.024);
           ellipsoid(dark,x*.70,.835,-.614,.018,.020,.012);
-      }else{
-        ellipsoid(0x745541,x*1.14,1.005,-.49,.105,.14,.095);
-        ellipsoid(0x8a6950,x*1.16,1.03,-.51,.062,.085,.045);
-        const tusk=new THREE.ConeGeometry(.065,.22,7);add(tusk,bone,x*1.12,.64,-.82,1,1,1,x<0?.34:-.34);
-      }
+        }else{
+          const outerEar=new THREE.ConeGeometry(.12,.27,7,1);add(outerEar,0x745541,x*1.18,1.02,-.48,1,.90,.58,x<0?-.42:.42);
+          const innerEar=new THREE.ConeGeometry(.067,.17,7,1);add(innerEar,0x9a6b56,x*1.18,1.025,-.525,1,.88,.32,x<0?-.42:.42);
+          // Eyes sit on the cheek silhouette so they remain visible from a
+          // gameplay camera without bright cartoon highlights.
+          ellipsoid(0x352b24,x*1.40,.81,-.626,.061,.052,.034);
+          ellipsoid(0x987342,x*1.48,.816,-.646,.034,.036,.024);
+          ellipsoid(0x171614,x*1.60,.818,-.665,.019,.025,.018);
+          tube([
+            new THREE.Vector3(x*.96,.565,-.745),
+            new THREE.Vector3(x*1.10,.62,-.815),
+            new THREE.Vector3(x*1.24,.745,-.855),
+            new THREE.Vector3(x*1.30,.865,-.82),
+          ],.034,bone);
+        }
       }
       if(wolf){
         const muzzle=new THREE.CylinderGeometry(.07,.14,.28,8,1);muzzle.rotateX(-Math.PI/2);add(muzzle,0x62645f,0,.75,-.76,1,1,1);

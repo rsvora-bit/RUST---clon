@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — čitelnější hlava pobřežního prasete (2026-10-03)
+
+- `src/combat/wildlife.ts`: model pobřežního prasete má nyní špičatější uši s tlumeným vnitřním odstínem, oči posazené na viditelné hraně tváře a čitelnější zahnuté kly. Model zůstává jednou sdílenou sloučenou geometrií; pohyb, kolize/hitboxy, boj, spawn, loot i save data se nemění.
+- `tests/wildlife-combat.test.ts`: ověřuje výšku zahnutých klů, špičky uší, viditelnou geometrii očí a dosavadní limit pod 18 000 trojúhelníků. Cíleně **29/29 PASS**. Chrome/Metal `test:combat`: všechny scénáře **PASS**, včetně lovu a reloadu, výbavy a ochrany; browser/app/WebGL chyby **0**. Snímky `test-results/combat/coastal-boar-close.png` a `coastal-boar-profile.png` byly zkontrolovány; oči jsou nyní rozeznatelné i zepředu a profil má méně „plyšový“ obrys.
+- Plné `npm test`: **439/439 PASS / 42 souborů**. `npm run build`: **PASS**, stávající upozornění Vite na 3,299.60 kB JavaScript chunk přetrvává. `git diff --check`: PASS. Výkonový harness nebyl pro několik malých částí uvnitř již sloučeného modelu opakován; nevznikl další objekt/draw call, ale test geometrie hlídá modelový limit.
+- Změněny pouze `src/combat/wildlife.ts`, `tests/wildlife-combat.test.ts` a tento checkpoint. Větev `codex/world-revision-6`, commit/push checkpointu následuje; iCloud kopie s koncovkou ` 2` zůstávají nedotčené a mimo staging. `main`, tagy/release, PR a produkční Pages zůstávají beze změny.
+- Orientační stav pokračuje z posledního přehledu: celek **94 %**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **98 %**, G5 **86 %**, G6 **87 %**, G7 **100 %**. Tato úprava je dílčí polish modelu, nikoli dokončení vizuálního cíle ani release candidate.
+
 ## Live update — výraznější jeřáb Breakwateru na pobřeží (2026-10-03)
 
 - `src/survival/WorldSurvival.ts`: pouze vizuální Revision-6 Breakwater má nyní stabilnější 16,8m stožár, větší potrhaný praporek, výš posazené poškozené rameno a odpovídající závěsné lano/hák. Zůstávají stejné sdílené materiály a geometrické topologie; nepřibyl draw call ani triangle. POI, kolize, loot, secure cache, cesty, save formát i Rev1–5 se nemění.
