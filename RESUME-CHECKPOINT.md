@@ -894,3 +894,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `scripts/shotgun-qa.mjs`: přidán odklon kamery na prázdný záběr a `viewmodel-detail.png`, poté QA zamíří zpět na cíl. Nový snímek byl vizuálně prohlédnut; screenshoty zůstávají ignorované v `test-results/`.
 - Chrome/Metal `test:shotgun`: PASS pro tiered equip, multi-pellet damage, durability, reload, save/reload; errors **0**. `node --check scripts/shotgun-qa.mjs` PASS; `npm run build` PASS se známým ~3.27 MB bundle warningem; kompletní `npm test` **418/418 PASS / 40 souborů**; `test:browser` PASS pro New Game, gen1 fixture, movement, gathering, inventory, crafting, building, door, save/reload, LOW/MEDIUM/HIGH a browser console errors **0**.
 - Pracovní branch `codex/world-revision-6`; release `v0.9.3`; main, tagy, GitHub Release a Pages zůstávají beze změny. Tento model polish čeká na checkpoint commit. Uživatelovy iCloud duplicity s ` 2` zůstávají mimo staging.
+
+## v0.10 pokračování — Salvage Revolver viewmodel — 2026-10-03
+
+- `src/rendering/HeldItem.ts`: Salvage Revolver má zkosený forged receiver, konturovanou pažbičku, player-facing rust/ejection detail, přední objímku/mušku a šest tmavých komor sloučených do jedné geometrie. Vše je first-person art; combat stats, ammo, reload, durability, player/world state a saves zůstávají stejné.
+- `scripts/firearm-qa.mjs` vytváří neblokovaný `viewmodel-detail.png`, poté obnoví aim na cíl před testem střelby. Snímek byl vizuálně zkontrolován.
+- Targeted `tests/held-item.test.ts` + `tests/firearms.test.ts`: **10/10 PASS**; Chrome/Metal `test:firearm`: PASS pro equip, critical hit, ammo/condition, alert, muzzle flash, reload a genuine save/reload; browser/WebGL errors **0**. `node --check scripts/firearm-qa.mjs` a `npm run build` PASS se známým ~3.27 MB bundle warningem.
+- Změna čeká na checkpoint commit; release/main/tag/Pages bez změny. Zachovat iCloud duplicates ` 2` mimo staging.
