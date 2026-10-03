@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — levnější mokřadní rákos bez změny screenshotu (2026-10-03)
+
+- `src/world/models.ts`: sdílený trs rákosí používá čtyřstranné, jednosegmentové zakřivené stonky místo pětihranných dvousegmentových. Zůstává 7 stonků, 4 seed heads, stejná výška/umístění, instancing, preset hustoty a materiál; cílem je ubrat opakované trojúhelníky bez změny viditelného porostu. `tests/environment-visuals.test.ts` teď drží geometrii pod **300 tris** a kontroluje její výšku/šířku.
+- Před/po Chrome/Metal HIGH 1280×720, seed 731942: rákosí **576 460 → 423 776 tris** při stejných 1 558 viditelných instancích (−**152 684 / 26,5 %** této skupiny); celá scéna **4 605 504 → 4 452 820 tris** (−**3,3 %**), draw calls **702** zůstávají stejné. Nový `test-results/world-art/wetland-reed-close.png` byl ručně porovnán s předchozím: trs zůstává stejně vysoký/hustý; vizuální rozdíl z běžné kamery není patrný.
+- Rev6 Chrome/Metal `test:world-art`: **66/66 PASS**, errors **0**, legacy v0.9.0 Rev1 i v0.9.1 Rev2 savy a Rev6 determinismus/save-reload ověřeny. `npm test`: **440/440 PASS / 42 souborů**; `npm run build`: **PASS**, známý Vite advisory na 3,300.21 kB JS bundle. Cílený environment test 11/11 PASS; QA harness syntax a `git diff --check`: PASS.
+- Uncapped Chrome/Metal s doplněným render-budget diagnostickým API: archivní v0.9.0 **247,17 FPS / 4,046 ms**, Rev6 po optimalizaci **183,92 FPS / 5,437 ms**, 0 errors. Před optimalizací Rev6 naměřil 184,14 FPS / 5,431 ms; rozdíl je v rámci run variability, takže lokální geometrická úspora FPS měřitelně nezvedla. Běžný capovaný běh zůstává **60 FPS**, startup uncapped je nestabilní (**2,627 ms baseline / 37,489 ms current**) a není srovnatelný. Render headroom vůči Rev6 proto zůstává otevřenou optimalizační oblastí, nikoli potvrzeným 60-FPS propadem.
+- `src/app/GameApp.ts` a `scripts/world-performance-qa.mjs` nyní poskytují render-budget rozpad jen na výslovné QA zavolání, mimo frame loop. V aktuálním benchmark pohledu největší viditelné skupiny jsou ground **500k tris**, reeds **424k**, fern understory **331k**, grass **256k**; rozpad pokrývá world root a nevydává se za kompletní renderer total. `src/world/models.ts`, environment testy, QA diagnostika a checkpoint čekají na společný commit/push do `codex/world-revision-6`.
+- Progress zůstává **94 %** celkem; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **98 %**, G5 **86 %**, G6 **88 %**, G7 **96 %**. Vydání, tag, PR, `main` a produkční Pages se nemění. iCloud kopie s příponou ` 2` zůstávají nedotčené a nestagované.
+
 ## Live update — ověření render headroomu Rev6 (2026-10-03)
 
 - `scripts/world-performance-qa.mjs`: přibyl pouze volitelný `TIDELAND_QA_UNCAPPED=1`, který před benchmarkem vypne Chrome frame-rate limit a GPU VSync. Bez této proměnné zůstává původní QA režim beze změny. `node --check` i výchozí Chrome/Metal benchmark prošly.

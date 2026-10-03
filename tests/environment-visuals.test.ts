@@ -12,6 +12,12 @@ describe('environment visual building blocks',()=>{
     for(const geometry of [fernGeometry(),twigGeometry(),seaweedGeometry(),reedGeometry()]){expect(geometry.getAttribute('position').count).toBeGreaterThan(20);expect(Array.from(geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true);geometry.dispose();}
   });
 
+  it('keeps the shared marsh reed tuft low-poly while retaining its tall clustered silhouette',()=>{
+    const reeds=reedGeometry();
+    try{reeds.computeBoundingBox();expect(reeds.index!.count/3).toBeLessThanOrEqual(300);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(1.25);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.55);}
+    finally{reeds.dispose();}
+  });
+
   it('keeps fuller revision-6 ferns broader without increasing their triangle count',()=>{
     const legacy=fernGeometry(),fuller=fernGeometry(true);
     try{legacy.computeBoundingBox();fuller.computeBoundingBox();const legacySize=legacy.boundingBox!.getSize(new THREE.Vector3()),fullerSize=fuller.boundingBox!.getSize(new THREE.Vector3());expect(Math.hypot(fullerSize.x,fullerSize.z)).toBeGreaterThan(Math.hypot(legacySize.x,legacySize.z)*1.1);expect(fullerSize.y).toBeGreaterThan(legacySize.y*1.1);expect(fuller.index!.count).toBe(legacy.index!.count);}
