@@ -87,6 +87,16 @@ describe('environment visual building blocks',()=>{
     atmosphere.setQuality('low');expect(atmosphere.sun.castShadow).toBe(false);atmosphere.dispose();height.dispose();
   });
 
+  it('enables long ocean swells only for Revision 6 without changing legacy water',()=>{
+    const data=new Uint8Array(64),legacy=new Atmosphere(new THREE.Scene(),new THREE.DataTexture(data,4,4,THREE.RGBAFormat),1280,731942,5),rev6=new Atmosphere(new THREE.Scene(),new THREE.DataTexture(data,4,4,THREE.RGBAFormat),1280,731942,6);
+    try{
+      expect(legacy.ocean.material.uniforms.revision6.value).toBe(0);
+      expect(rev6.ocean.material.uniforms.revision6.value).toBe(1);
+      expect(rev6.ocean.material.vertexShader).toContain('revision6*(sin(p.x*.024');
+      expect(rev6.ocean.material.fragmentShader).toContain('swell*revision6');
+    }finally{legacy.dispose();rev6.dispose();}
+  });
+
   it('keeps rain/fog from tinting distant mountains as a storm',()=>{
     const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),camera=new THREE.Vector3();
     try{

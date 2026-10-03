@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — dlouhé oceánské swelly pouze pro Rev6 — 2026-10-04
+
+- Navazuje na commit `2cbebb240641143f9e7536c54625c287ddb15284` na `codex/world-revision-6`; origin v té době odpovídal. Hráčský pobřežní screenshot ukázal pravidelný krátký vlnový vzor a téměř rovnou vodní plochu.
+- `src/world/atmosphere.ts` přidává dvě nízkofrekvenční dlouhé vlny do Rev6 oceánského vrcholu i povrchových normálů/odlesků. `src/rendering/environment.ts` předává world revision do Atmosphere; test v `tests/environment-visuals.test.ts` ověřuje Rev6 uniform a legacy `revision6=0`. Výchozí starší water shader průběh zůstává zachovaný; žádná geometrie/collider/save/world identity se nemění.
+- Chrome/Metal `npm run test:world-art`: **76/76 PASS**, žádné browser/WebGL chyby; archivní Rev1/Rev2 saves, Rev6 determinismus/save-reload a weather/preset QA PASS. Ručně zkontrolovaný `test-results/world-art/shoreline-water-detail.png` má čitelnější široké swelly; pobřežní vlnění je stále stylizované a změna jemná. `tests/environment-visuals.test.ts` **12/12 PASS**; plné `npm test` **445/445, 43 souborů PASS**; `npm run build` **PASS** (známý Vite JS chunk advisory, nyní 3,304.96 kB).
+- Uncapped HIGH Chrome/Metal 1280×720 performance harness: v0.9.0 **245.86 FPS / 4.067 ms / 612 draw calls / 3,390,261 tris / 1,318 nodes**; current v0.9.3 Rev6 **199.75 FPS / 5.006 ms / 699 calls / 3,612,392 tris / 2,033 nodes**, browser errors 0; warmup guard >8 s se aktivoval. Benchmark kamera míří do vnitrozemí a nepředstavuje izolovaný vodní shader A/B; proti dřívějším Rev6 běhům 198–200 FPS není patrná obecná regrese. Přímé GPU/performance srovnání nad oceánem zůstává potřeba.
+- Změněné zdrojové soubory: `src/world/atmosphere.ts`, `src/rendering/environment.ts`, `tests/environment-visuals.test.ts` a tento checkpoint. QA artefakty jsou lokální; žádná iCloud kopie `* 2.*` nebyla upravena/stageována. `main`, tagy/release, Pages mimo scope. Následuje checkpoint commit/push na pracovní větev; v0.10 zůstává nedokončený, není release candidate.
+
 ## Live update — Rev6 listnaté koruny z pohledu hráče — 2026-10-04
 
 - Větve `codex/world-revision-6` a `origin/codex/world-revision-6` byly před změnou shodné na `7fac3643b5a099a09529379ec65ea0fa56afc409`; canonical `origin` míří na `rsvora-bit/RUST---clon`. `main`, tagy, release ani Pages se neměnily.
