@@ -49,6 +49,8 @@ describe('seeded island wildlife',()=>{
     const wolf=wolves.object(wolfActors[0]!.id)!,boar=boars.object(boarActors[0]!.id)!;
     expect(wolf.geometry).toBe(wolves.object(wolfActors[1]!.id)?.geometry);expect(boar.geometry).toBe(boars.object(boarActors[1]!.id)?.geometry);expect(wolf.geometry).not.toBe(boar.geometry);
     expect(wolf.geometry.getAttribute('color').count).toBe(wolf.geometry.getAttribute('position').count);expect(boar.geometry.getAttribute('color').count).toBe(boar.geometry.getAttribute('position').count);
+    const boarColors=boar.geometry.getAttribute('color'),distinctBoarColors=new Set(Array.from({length:boarColors.count},(_,index)=>`${boarColors.getX(index).toFixed(3)},${boarColors.getY(index).toFixed(3)},${boarColors.getZ(index).toFixed(3)}`));expect(distinctBoarColors.size).toBeGreaterThan(8);
+    const matchesColor=(hex:number)=>{const expected=new THREE.Color(hex);let count=0;for(let index=0;index<boarColors.count;index++)if(Math.abs(boarColors.getX(index)-expected.r)<.002&&Math.abs(boarColors.getY(index)-expected.g)<.002&&Math.abs(boarColors.getZ(index)-expected.b)<.002)count++;return count;};expect(matchesColor(0xd0c2a2)).toBeGreaterThan(20);expect(matchesColor(0x493b32)).toBeGreaterThan(200);
     expect(wolf.geometry.getAttribute('position').count/3).toBeLessThan(18_000);expect(boar.geometry.getAttribute('position').count/3).toBeLessThan(18_000);
     wolves.dispose();boars.dispose();
   });

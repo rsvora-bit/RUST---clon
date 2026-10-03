@@ -7,7 +7,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],checks=[];
 page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
 const pass=(name,condition)=>{assert.ok(condition,name);checks.push(name);console.log('PASS',name);};
-const characterScreenshot=async name=>{const style=await page.addStyleTag({content:'.interaction-prompt{visibility:hidden!important}'});try{await page.screenshot({path:`${outputDir}/${name}.png`});}finally{await style.evaluate(element=>element.remove());}};
+const characterScreenshot=async name=>{const style=await page.addStyleTag({content:'.interaction-prompt,.crosshair{visibility:hidden!important}'});try{await page.screenshot({path:`${outputDir}/${name}.png`});}finally{await style.evaluate(element=>element.remove());}};
 try{
   await page.goto(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5174');await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:150000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:150000});
   await page.locator('#world-seed').fill('391808898');await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});

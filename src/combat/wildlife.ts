@@ -274,11 +274,11 @@ export class WildlifeSystem {
           const ear=new THREE.ConeGeometry(.09,.23,7);add(ear,0x555650,x,1.075,-.49,1,1,1,x<0?-.10:.10);
           ellipsoid(0x87857c,x*.70,.83,-.595,.044,.038,.024);
           ellipsoid(dark,x*.70,.835,-.614,.018,.020,.012);
-        }else{
-          ellipsoid(0x745541,x*1.14,1.005,-.49,.105,.14,.095);
-          ellipsoid(0x8a6950,x*1.16,1.03,-.51,.062,.085,.045);
-          ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);
-        }
+      }else{
+        ellipsoid(0x745541,x*1.14,1.005,-.49,.105,.14,.095);
+        ellipsoid(0x8a6950,x*1.16,1.03,-.51,.062,.085,.045);
+        const tusk=new THREE.ConeGeometry(.065,.22,7);add(tusk,bone,x*1.12,.64,-.82,1,1,1,x<0?.34:-.34);
+      }
       }
       if(wolf){
         const muzzle=new THREE.CylinderGeometry(.07,.14,.28,8,1);muzzle.rotateX(-Math.PI/2);add(muzzle,0x62645f,0,.75,-.76,1,1,1);
@@ -287,9 +287,14 @@ export class WildlifeSystem {
         ellipsoid(coat,0,.78,.66,.075,.08,.24);
         ellipsoid(0xb0aaa0,0,.48,-.43,.22,.16,.22);
       }else{
-        ellipsoid(0x57473c,0,.64,-.79,.245,.145,.16);
-        ellipsoid(0x302c28,0,.67,-.925,.105,.067,.045);
-        for(const x of [-.055,.055])ellipsoid(0x241f1b,x,.68,-.96,.018,.016,.009);
+        ellipsoid(0x493b32,0,1.015,.12,.17,.115,.39);
+        ellipsoid(0x57473c,0,.64,-.79,.245,.145,.19);
+        ellipsoid(0x302c28,0,.68,-.975,.118,.075,.052);
+        for(const x of [-.055,.055])ellipsoid(0x171614,x,.685,-1.018,.018,.014,.008);
+        for(let tuft=0;tuft<3;tuft++){
+          const bristle=new THREE.ConeGeometry(.052,.16,5);bristle.rotateX(.34);
+          add(bristle,tuft===1?0x40352e:0x493b32,0,.965,.16+tuft*.17,1,1,1);
+        }
       }
       for(const x of [-.23,.23])for(const z of [-.42,.42]){
         add(new THREE.CapsuleGeometry(wolf?.064:.072,wolf?.38:.29,3,6),coat,x,wolf?.28:.31,z,1,1,1);
