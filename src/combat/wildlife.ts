@@ -230,9 +230,23 @@ export class WildlifeSystem {
         add(new THREE.BoxGeometry(.13,.19,.17),0x514d42,.22,1.01,-.30,1,1,1);
       }
     } else if(species==='islandDeer'){
-      ellipsoid(coat,0,.83,.02,.31,.39,.57);ellipsoid(coat,0,1.20,-.37,.19,.26,.22);ellipsoid(coat,0,1.37,-.51,.15,.16,.15);ellipsoid(dark,0,1.32,-.65,.10,.07,.10);
-      for(const side of [-1,1]){add(new THREE.CapsuleGeometry(.055,.48,4,7),coat,side*.17,.34,-.34,1,1,1,side*-.035);add(new THREE.CapsuleGeometry(.05,.42,4,7),coat,side*.17,.34,.34,1,1,1,side*.035);ellipsoid(0xd5c2a0,side*.17,.75,-.01,.075,.14,.37);ellipsoid(dark,side*.12,1.42,-.57,.025,.026,.025);}
-      for(const side of [-1,1]){add(new THREE.CapsuleGeometry(.028,.19,3,5),0x927653,side*.08,1.60,-.48,1,1,1,side*-.26);add(new THREE.CapsuleGeometry(.018,.12,3,5),0x927653,side*.16,1.70,-.49,1,1,1,side*.42);}
+      ellipsoid(coat,0,.83,.02,.34,.40,.60);
+      const neck=new THREE.CapsuleGeometry(.125,.30,4,8);neck.rotateX(-.42);add(neck,coat,0,1.10,-.34,1,1,1);
+      ellipsoid(coat,0,1.36,-.53,.15,.15,.16);ellipsoid(0x6e5741,0,1.315,-.665,.095,.064,.085);
+      for(const side of [-1,1]){
+        add(new THREE.CapsuleGeometry(.055,.48,4,7),coat,side*.17,.34,-.34,1,1,1,side*-.035);
+        add(new THREE.CapsuleGeometry(.05,.42,4,7),coat,side*.17,.34,.34,1,1,1,side*.035);
+        ellipsoid(0xd5c2a0,side*.17,.75,-.01,.075,.14,.37);
+        ellipsoid(dark,side*.075,1.39,-.653,.018,.021,.018);
+        ellipsoid(0x9c7753,side*.15,1.48,-.48,.105,.055,.145);
+        ellipsoid(0xd0ad83,side*.15,1.48,-.505,.065,.029,.10);
+        const mainAntler=new THREE.CapsuleGeometry(.022,.20,3,5);add(mainAntler,0x806447,side*.08,1.60,-.48,1,1,1,side*-.26);
+        const tine=new THREE.CapsuleGeometry(.014,.105,3,5);add(tine,0x806447,side*.165,1.72,-.49,1,1,1,-side*.52);
+        const tineTip=new THREE.CapsuleGeometry(.012,.075,3,5);add(tineTip,0x8a6c4b,side*.115,1.76,-.49,1,1,1,side*.16);
+        const hoof=new THREE.SphereGeometry(1,8,6);add(hoof,0x332e27,side*.17,.075,-.36,.06,.075,.085);
+        const rearHoof=new THREE.SphereGeometry(1,8,6);add(rearHoof,0x332e27,side*.17,.075,.33,.06,.075,.085);
+      }
+      ellipsoid(coat,0,.94,.62,.09,.105,.16);ellipsoid(0xe0d0b5,0,.96,.75,.055,.065,.07);
     } else {
       ellipsoid(coat,0,.68,0,.36,.37,.64);ellipsoid(coat,0,.78,-.49,.30,.31,.34);ellipsoid(coat,0,.66,-.72,.23,.16,.22);
       for(const x of [-.20,.20]){ellipsoid(coat,x,1.02,-.5,.10,.19,.075);ellipsoid(dark,x*.72,.81,-.73,.034,.035,.025);if(species==='coastalBoar')ellipsoid(bone,x*1.12,.60,-.82,.045,.105,.04);}
