@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — vrstvenější pancíř scavenger stráže (2026-10-03)
+
+- `src/combat/wildlife.ts`: stráž má nyní plošší fazetované ramenní pláty a malé odpovídající chrániče kolen. Jejich dodekaedrické tvary dostávají sekvenční index buffer, aby šly spojit se zbytkem role do jedné geometrie. Mesh zůstává jeden na archetyp; draw calls, AI, hitboxy, armor hodnoty, loot a persistence se nemění. `tests/wildlife-combat.test.ts` hlídá nové barevné/vertikální rozsahy plátů a limit pod 18 000 trojúhelníků.
+- Cílený wildlife test: **29/29 PASS**. První běh po výměně ramen odhalil nekompatibilitu indexovaných a neindexovaných geometrií; neúspěch byl opraven bez vynechání nebo oslabení aserce. Chrome/Metal `test:scavenger`: všechny **24 kontrol PASS**, včetně stealth/LOS, melee a střelby, armoru, guaranteed loot a death/cache/save/reload; browser/app/WebGL chyby **0**. `scripts/scavenger-qa.mjs` nyní fotí close záběr z opačné strany, protože předchozí záběr ukazoval záda místo požadovaného modelového detailu. Nový `guard-model-close.png` byl ručně zkontrolován; fazetované chrániče kolen jsou čitelné i v herním záběru.
+- Plná sada `npm test`: **439/439 PASS / 42 souborů**. `npm run build`: **PASS**, Vite stále hlásí existující 3,299.77 kB JS chunk advisory. `node --check scripts/scavenger-qa.mjs` a `git diff --check`: PASS. Žádné nové scény/materialy/draw calls; změněná geometrie je sloučena ve stávajícím sdíleném meshi.
+- Změněno `src/combat/wildlife.ts`, `tests/wildlife-combat.test.ts`, `scripts/scavenger-qa.mjs` a tento checkpoint. Commit/push na `codex/world-revision-6` následuje. iCloud kopie s koncovkou ` 2` zůstávají nedotčené, nestagované. `main`, tag/release, PR a produkční Pages beze změny.
+- Celkový pracovní odhad zůstává přibližně **94 %**; tato dílčí úprava modelu nepovyšuje cíle krajiny, vegetace, POI nebo celkové vizuální kontroly. Není to release candidate.
+
 ## Live update — čitelnější hlava pobřežního prasete (2026-10-03)
 
 - `src/combat/wildlife.ts`: model pobřežního prasete má nyní špičatější uši s tlumeným vnitřním odstínem, oči posazené na viditelné hraně tváře a čitelnější zahnuté kly. Model zůstává jednou sdílenou sloučenou geometrií; pohyb, kolize/hitboxy, boj, spawn, loot i save data se nemění.

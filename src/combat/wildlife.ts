@@ -177,6 +177,7 @@ export class WildlifeSystem {
     const add=(geometry:THREE.BufferGeometry,color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,rotationZ=0)=>{const matrix=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(sx,sy,sz));geometry.applyMatrix4(matrix);const base=new THREE.Color(color),position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);for(let i=0;i<position.count;i++){colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);};
     const ellipsoid=(color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>add(new THREE.SphereGeometry(1,16,12),color,x,y,z,sx,sy,sz);
     const tube=(points:THREE.Vector3[],radius:number,color:number)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),8,radius,5,false),color,0,0,0,1,1,1);
+    const facetedDodecahedron=()=>{const geometry=new THREE.DodecahedronGeometry(1,0);geometry.setIndex(Array.from({length:geometry.getAttribute('position').count},(_,index)=>index));return geometry;};
     if(species==='islandScavenger'){
       add(new THREE.CapsuleGeometry(.235,.34,5,10),coat,0,1.03,0,1,1,1);
       add(new THREE.SphereGeometry(.16,12,10),0x887c60,0,1.56,0,1,1,1);
@@ -226,14 +227,15 @@ export class WildlifeSystem {
         add(new THREE.CylinderGeometry(.012,.012,.82,5),0x30332f,.39,1.08,-.24,1,1,1);
         add(new THREE.BoxGeometry(.11,.20,.12),0x4a5149,.23,1.02,-.24,1,1,1);
       }else if(actor.archetype==='guard'){
-        // A faceted, layered plate breaks the smooth capsule torso and reads
-        // clearly at gameplay distance without adding another render object.
+        // Faceted shoulder and knee plates break the mannequin-like capsule
+        // silhouette while staying inside the role's single merged mesh.
         add(new THREE.CylinderGeometry(1,1,1,8,1),0x73796d,0,1.055,-.235,.17,.185,.065);
         add(new THREE.BoxGeometry(.30,.075,.055),0x515950,0,.91,-.255,1,1,1);
         for(const side of [-1,1]){
-          ellipsoid(0x62695f,side*.245,1.30,-.045,.15,.115,.15);
+          add(facetedDodecahedron(),0x62695f,side*.245,1.30,-.045,.145,.11,.15,side*-.16);
           add(new THREE.BoxGeometry(.09,.105,.065),side<0?0x514c40:0x625a48,side*.13,.925,-.275,1,1,1);
           add(new THREE.BoxGeometry(.075,.17,.045),0x555d55,side*.13,.43,-.14,1,1,1);
+          add(facetedDodecahedron(),0x656b61,side*.13,.38,-.16,.09,.09,.045,side*-.08);
         }
         add(new THREE.BoxGeometry(.06,.06,.035),0xb08a4b,0,1.19,-.297,1,1,1);
         add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,-.12,1.05,-.23,1,1,1);
