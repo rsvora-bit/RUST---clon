@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — opakovaná vizuální kontrola a validace — 2026-10-04
+
+- Aktivní branch zůstává `codex/world-revision-6`; před tímto zápisem jsou poslední kódové změny commitnuté a branch odpovídá `origin/codex/world-revision-6` na `e6b19a2dd29a4e7e8ce7779bf23b594a96a558d2`. `main`, produkční Pages a release metadata se neměnily.
+- Znovu proběhl `node scripts/visual-overhaul-capture.mjs after` v nativním Chrome/Metal: 15 záběrů, **0 JS/console errors**. Ručně zkontrolovány les, strom zblízka, okraj lesa, pláž a horizont. Les je čitelný, ale stále stylizovaný/řidší; broadleaf jádra mají tmavé facety zespodu. Žádnou změnu stromové geometrie/materialu jsem neponechal, protože pokus neprokázal chybu normál a přidaný test falešně předpokládal radiální hladké normály nízkopolygonové koule.
+- Pobřežní `ocean-horizon` harness u náhodně generovaného QA seedu několikrát mířil do laguny či na písečnou pláň, nikoli otevřený oceán. Experimentální automatický výběr byl vrácen; tento konkrétní snímek proto není validní důkaz vnějšího oceánského horizontu. Následující práce má nejprve udělat deterministický world fixture pro capture, ne upravovat mapu/horizont naslepo.
+- Po opakované kontrole: `npm test` **444/444, 43 souborů PASS**; `npm run build` **PASS** (909 ms, existující Vite advisory pro JS chunk 3,304.42 kB). Vizuální capture odečty jsou VSync-limited okolo 60 FPS a nejsou performance A/B; poslední párový uncapped benchmark zůstává v předchozím checkpointu.
+- V tomto průchodu nejsou potvrzené změny herního kódu. Další kroky: vytvořit deterministický seedovaný browser QA fixture; opravit a validovat otevřený oceánský pohled; pokračovat art review Rev6 korun/stínů a POI v reálném pohybu; dokončit uncapped profiling/optimalizaci; opakovat world-art, gameplay/save a regression QA. Celkový v0.10 cíl není hotový ani release candidate.
+
 ## Live update — spolehlivější world-art capture a pláž (2026-10-03)
 
 - Aktuální potvrzený code checkpoint před tímto krokem je `8081010cc15fa8568280166e1b8e73ef36aa68dd` na `codex/world-revision-6`; remote větev odpovídá. `main`, tag/release i produkční Pages zůstávají nedotčené.
