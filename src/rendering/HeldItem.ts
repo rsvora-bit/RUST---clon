@@ -41,6 +41,8 @@ export class HeldItem {
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
   private metal=new THREE.MeshStandardMaterial({color:'#6d726f',roughness:.8,metalness:.25});
+  private shellCasing=new THREE.MeshStandardMaterial({color:'#a04d34',roughness:.78,metalness:.08});
+  private brass=new THREE.MeshStandardMaterial({color:'#a88a4b',roughness:.56,metalness:.38});
   private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
 
@@ -59,7 +61,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.wrap,this.rust];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.wrap,this.rust];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -165,8 +167,10 @@ export class HeldItem {
         const receiverShape=new THREE.Shape();receiverShape.moveTo(-.09,-.045);receiverShape.lineTo(-.068,-.065);receiverShape.lineTo(.064,-.065);receiverShape.lineTo(.09,-.038);receiverShape.lineTo(.09,.038);receiverShape.lineTo(.066,.065);receiverShape.lineTo(-.068,.065);receiverShape.lineTo(-.09,.043);receiverShape.closePath();const receiverGeometry=new THREE.ExtrudeGeometry(receiverShape,{depth:.28,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.006,bevelThickness:.006});receiverGeometry.translate(0,0,-.14);const receiver=this.mesh(receiverGeometry,this.metal,.27,.07,-.79,weapon);receiver.rotation.x=-.04;
         // Keep the action plate on the player-facing side of the receiver.
         const sidePlate=this.mesh(new THREE.BoxGeometry(.012,.085,.16),this.rust,.176,.073,-.79,weapon);sidePlate.rotation.x=-.04;const ejectionPort=this.mesh(new THREE.BoxGeometry(.009,.034,.078),this.wrap,.166,.079,-.795,weapon);ejectionPort.rotation.x=-.04;const bolt=this.mesh(new THREE.CylinderGeometry(.018,.018,.026,8),this.metal,.151,.075,-.72,weapon);bolt.rotation.z=Math.PI/2;
-        for(let i=0;i<2;i++){const x=.245+i*.05,barrel=this.mesh(new THREE.CylinderGeometry(.032,.036,.47,10),this.metal,x,.08,-1.04,weapon);barrel.rotation.x=Math.PI/2;const muzzle=this.mesh(new THREE.CylinderGeometry(.036,.036,.035,10),this.wrap,x,.08,-1.276,weapon);muzzle.rotation.x=Math.PI/2;}
-        const frontSight=this.mesh(new THREE.BoxGeometry(.038,.045,.055),this.rust,.27,.145,-1.205,weapon);frontSight.rotation.x=-.05;const foregrip=this.mesh(new THREE.BoxGeometry(.19,.095,.23),this.wood,.27,.055,-1.05,weapon);foregrip.rotation.x=-.08;this.addArm(-1,-.13,-.10,-.63,.18,true);
+        for(let i=0;i<2;i++){const x=.228+i*.084,barrel=this.mesh(new THREE.CylinderGeometry(.028,.031,.47,10),this.metal,x,.08,-1.04,weapon);barrel.rotation.x=Math.PI/2;const muzzle=this.mesh(new THREE.CylinderGeometry(.031,.031,.035,10),this.wrap,x,.08,-1.276,weapon);muzzle.rotation.x=Math.PI/2;}
+        const frontSight=this.mesh(new THREE.BoxGeometry(.038,.045,.055),this.rust,.27,.145,-1.205,weapon);frontSight.rotation.x=-.05;const foregrip=this.mesh(new THREE.BoxGeometry(.19,.095,.23),this.wood,.27,.055,-1.05,weapon);foregrip.rotation.x=-.08;
+        const shellBodies:THREE.BufferGeometry[]=[],shellBases:THREE.BufferGeometry[]=[];for(let i=0;i<4;i++){const y=-.055+i*.043,body=new THREE.CylinderGeometry(.019,.019,.082,9,1);body.rotateZ(Math.PI/2);body.translate(.382,y,-.54);shellBodies.push(body);const base=new THREE.CylinderGeometry(.020,.020,.012,9,1);base.rotateZ(Math.PI/2);base.translate(.429,y,-.54);shellBases.push(base);}const bodyGeometry=mergeGeometries(shellBodies,false),baseGeometry=mergeGeometries(shellBases,false);shellBodies.forEach(g=>g.dispose());shellBases.forEach(g=>g.dispose());if(!bodyGeometry||!baseGeometry)throw new Error('Could not assemble shotgun stock shells');const shellMesh=this.mesh(bodyGeometry,this.shellCasing,0,0,0,weapon);shellMesh.name='Shotgun stock shell bodies';const brassMesh=this.mesh(baseGeometry,this.brass,0,0,0,weapon);brassMesh.name='Shotgun shell brass bases';const shellStrap=this.mesh(new THREE.BoxGeometry(.017,.197,.047),this.wrap,.407,.01,-.54,weapon);shellStrap.rotation.z=-.025;
+        this.addArm(-1,-.13,-.10,-.63,.18,true);
       }else{const frameShape=new THREE.Shape();frameShape.moveTo(-.08,-.045);frameShape.lineTo(-.058,-.063);frameShape.lineTo(.06,-.063);frameShape.lineTo(.08,-.038);frameShape.lineTo(.08,.035);frameShape.lineTo(.056,.063);frameShape.lineTo(-.06,.063);frameShape.lineTo(-.08,.04);frameShape.closePath();const frameGeometry=new THREE.ExtrudeGeometry(frameShape,{depth:.29,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.006,bevelThickness:.006});frameGeometry.translate(0,0,-.145);const frame=this.mesh(frameGeometry,this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;
         const sidePlate=this.mesh(new THREE.BoxGeometry(.012,.076,.155),this.rust,.188,.04,-.755,weapon);sidePlate.rotation.x=-.05;const port=this.mesh(new THREE.BoxGeometry(.009,.028,.062),this.wrap,.178,.046,-.755,weapon);port.rotation.x=-.05;
         const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;const muzzle=this.mesh(new THREE.CylinderGeometry(.038,.038,.035,10),this.wrap,.27,.07,-1.12,weapon);muzzle.rotation.x=Math.PI/2;const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;
