@@ -2,6 +2,14 @@
 
 Toto je nejnovější živý checkpoint; starší záznamy níže jsou historické.
 
+## Live update — tlumenější lesní podrost (2026-10-03)
+
+- `src/rendering/environment.ts`: Rev6 instancované keříky mají nyní méně sytou, tmavší zelenou paletu, která lépe čte ve stínu a nepůsobí jako jasné zelené facety. Zachována stejná procedurální geometrie, 1 400 instancí, deterministic placement, materiál/batching a draw-call budget. Stejný `forest-shrub-detail.png` byl před/po vizuálně prohlédnut; změna je viditelná bez přehnaného ztmavení.
+- Chrome/Metal `npm run test:world-art`: **66/66 PASS**, žádné browser/app/WebGL errors; Rev1/Rev2 archivní save data, Rev6 save/reload, vegetace, počasí, presety a kamera prošly. Kompletní `npm test`: **437/437 PASS / 42 souborů**. `npm run build`: **PASS**, zůstává známé Vite upozornění na ~3,298 kB JS chunk.
+- Matched Chrome/Metal HIGH 1280×720 `npm run test:performance`: archiv v0.9.0 **60.00 FPS / 16.666 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 4,555 ms startup**; aktuální Rev6 **60.01 FPS / 16.664 ms / 702 calls / 4,672,756 tris / 2,033 nodes / 6,532 ms startup**, 0 chyb. Paleta nepřidává geometrii ani draw calls. Rozdílné cold-start časy jsou jednotlivé vzorky a nejsou čistým A/B timingem.
+- Další pokus o zmenšení jižního horizontového hrotu úpravou dominantního vrcholu potvrdil, že hrot není tento vrchol; diagnostická změna byla vrácena. Zůstává tedy známý panoramatický limit. Pracovní branch `codex/world-revision-6`; poslední vzdálený checkpoint před právě připravovaným shrub commitem `d026e09e8e4b476b82b17c7c5e25f68368a16d0e`. Žádná změna main/tag/release/Pages; uživatelské iCloud kopie ` 2` jsou nedotčené.
+- Odhad celku **94 %**, G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **95 %**, G5 **86 %**, G6 **84 %**, G7 **100 %**. Zbývá širší kvalitativní vizuální review a konkrétní oprava úzkého horského hrotu; úkol není release candidate.
+
 ## Live update — opakovaná revize vzdáleného panoramatu a screenshot QA (2026-10-03)
 
 - Na větvi `codex/world-revision-6` je poslední commit `28c1d52d45325b6936879cdae11ece8915e463e2` a `origin/codex/world-revision-6` mu odpovídá. Během této kontroly nevznikla žádná zdrojová změna; několik tvarových variant nejbližší horizontové vrstvy bylo vizuálně vyzkoušeno na stejném pobřežním záběru a potom vráceno, protože jehlovou špičku přesvědčivě neodstranily a měnily okolní siluetu. `src/world/horizon.ts`, `src/app/GameApp.ts` i diagnostika testu jsou čisté.
