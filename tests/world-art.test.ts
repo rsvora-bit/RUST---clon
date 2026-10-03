@@ -20,6 +20,13 @@ describe('v0.9.1 world art stabilization',()=>{
     try{const mast=world.group.getObjectByName('Weathered relay mast') as THREE.Mesh,reflector=world.group.getObjectByName('Relay reflector') as THREE.Mesh;expect(mast).toBeTruthy();expect(reflector).toBeTruthy();expect(mast.position.y).toBeCloseTo(4.2);expect(world.collisionBoxes()).toHaveLength(1);}
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('adds a batched exposed relay control station only to new revision-6 worlds',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),poi={id:'poi-1',name:'Collapsed relay site',kind:1,position:{x:120,y:12,z:80}},layout={pois:[poi],trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed);
+    try{
+      expect(current.group.getObjectByName('Collapsed relay diagnostic screen')).toBeTruthy();expect(current.group.getObjectByName('Collapsed relay exposed control fascia')).toBeTruthy();expect(current.group.getObjectByName('Collapsed relay manual control')).toBeTruthy();expect(current.group.getObjectByName('Collapsed relay severed ground cable')).toBeTruthy();
+      expect(legacy.group.getObjectByName('Collapsed relay diagnostic screen')).toBeFalsy();expect(current.collisionBoxes()).toEqual(legacy.collisionBoxes());
+    }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('renders Stormwatch, gives it weather-survey salvage and guards a persistent cache',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,4),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:4,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state,poi=world.pois.find(entry=>entry.kind===4)!;
     try{

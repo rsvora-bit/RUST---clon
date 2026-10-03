@@ -46,13 +46,24 @@ export class WorldSurvival {
     if(p.kind===1){
       // A narrow, damaged antenna restores a useful skyline cue without rebuilding the old bulky scaffold.
       for(let i=0;i<6;i++){const beam=this.box(g,-1.7+i*.65,.12+(i%2)*.08,(i%3-1)*.58,1.05,.11,.13,this.metal);beam.rotation.y=(i*.71)%Math.PI;beam.rotation.z=(i%2?.08:-.06);}
-      this.box(g,.8,.23,-.7,1.55,.32,.85,this.metal);this.box(g,-.75,.16,.7,1.2,.2,.65,this.wood);
+      const powerUnit=this.box(g,.8,.23,-.7,1.55,.32,.85,this.metal);powerUnit.name='Collapsed relay power cabinet';this.box(g,-.75,.16,.7,1.2,.2,.65,this.wood);
       const mast=new T.Mesh(this.relayMast,this.metal);mast.name='Weathered relay mast';mast.position.set(-2.15,4.2,.35);mast.rotation.z=-.035;mast.castShadow=true;g.add(mast);
       const brace=this.box(g,-2.12,5.9,.38,2.25,.075,.075,this.rust);brace.rotation.z=-.04;
       const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Relay reflector';dish.position.set(-2.4,6.4,.43);dish.rotation.set(.38,.22,.72);dish.scale.set(1,.72,.20);dish.castShadow=true;g.add(dish);
       const puddle=()=>{const geometry=new T.CircleGeometry(1,20),position=geometry.getAttribute('position');for(let i=1;i<position.count;i++){const x=position.getX(i),y=position.getY(i),angle=Math.atan2(y,x),radius=.82+.11*Math.sin(angle*3+.4)+.07*Math.cos(angle*5-.2);position.setXY(i,x*radius,y*radius);}geometry.computeVertexNormals();return geometry;};
       for(const [x,z,sx,sz] of [[.45,1.35,2.15,1.25],[-1.35,2.35,.72,.46],[2.1,2.45,.55,.34]] as const){const runoff=new T.Mesh(puddle(),this.sludge);runoff.name='Leaking battery residue';runoff.rotation.x=-Math.PI/2;runoff.position.set(x,.035,z);runoff.scale.set(sx,sz,1);runoff.receiveShadow=true;g.add(runoff);}
       for(const [x,z,rotation] of [[1.25,1.05,.1],[2.15,.2,-.08],[-.25,2.4,.18]] as const){const drum=new T.Group();drum.position.set(x,.03,z);drum.rotation.y=rotation;g.add(drum);const body=new T.Mesh(new T.CylinderGeometry(.27,.30,.82,10,1),this.rust);body.castShadow=body.receiveShadow=true;drum.add(body);const rim=new T.Mesh(new T.TorusGeometry(.275,.025,5,12),this.metal);rim.rotation.x=Math.PI/2;rim.position.y=.33;drum.add(rim);drum.name='Corroded battery drum';}
+      if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+        // An exposed field console makes the collapsed relay read as abandoned
+        // infrastructure rather than a mast surrounded by anonymous boxes.
+        const fascia=this.box(g,.8,.235,-.238,1.16,.225,.035,this.paint);fascia.name='Collapsed relay exposed control fascia';
+        const display=this.box(g,.78,.285,-.214,.38,.105,.012,this.display);display.name='Collapsed relay diagnostic screen';
+        for(let vent=0;vent<5;vent++){const slot=this.box(g,.36+vent*.085,.20,-.211,.025,.092,.012,this.metal);slot.name='Collapsed relay cabinet cooling slot';}
+        for(let button=0;button<3;button++){const control=new T.Mesh(new T.CylinderGeometry(.017,.017,.018,8),button===1?this.display:this.rust);control.name='Collapsed relay manual control';control.position.set(.99+button*.09,.16,-.207);control.rotation.x=Math.PI/2;g.add(control);}
+        const looseHatch=this.box(g,1.61,.37,-.66,.055,.30,.53,this.rust);looseHatch.name='Collapsed relay hanging cabinet hatch';looseHatch.rotation.y=.42;looseHatch.rotation.z=-.31;
+        const cableStart=new T.Vector3(.78,.055,-.215);for(const [x,z] of [[1.25,1.05],[2.15,.2]] as const){const end=new T.Vector3(x,.045,z),delta=end.clone().sub(cableStart),cable=new T.Mesh(new T.CylinderGeometry(.018,.024,delta.length(),5),this.wood);cable.name='Collapsed relay severed ground cable';cable.position.copy(cableStart).add(end).multiplyScalar(.5);cable.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());g.add(cable);}
+        this.mergeStaticLandmarkMeshes(g);
+      }
     }else if(p.kind===4){
       // A compact, wind-battered field station gives the outer island a readable storm-survey landmark.
       this.box(g,-.45,.14,.12,3.1,.22,2.65,this.metal);
