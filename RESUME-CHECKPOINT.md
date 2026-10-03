@@ -11,6 +11,13 @@
 - `git diff --check` je čistý. Rozpracované změny jsou pouze uvedené zdrojové a QA soubory plus checkpoint; iCloud duplikáty `* 2.*` a QA artefakty `artifacts/` byly ponechány nedotčené a nesmí se stageovat. Další krok: review diff a checkpoint commit/push pouze na této pracovní větvi.
 - V0.10 dlouhodobý cíl zůstává aktivní a nedokončený; lesní polish je mírný, široká vizuální, performance a gameplay/save QA stále zbývá. Není release candidate.
 
+## Live update — Rev6 listnaté koruny s větším organickým objemem — 2026-10-04
+
+- V pevném seedu 731942 a záběru z výšky hráče byl problémem roztrhaný, oddělený vzhled listnatých korun; větve příliš prosvítaly mezi malými pravidelnými objemy. `src/world/models.ts` nyní pro Revision 6 pouze zvětšuje sdílené neprůhledné crown masses (střed a bough clustery) a deformuje jejich stejnou nízkopolygonovou síť deterministickým nepravidelným polem. Počet trojúhelníků/instancí, instancing, batchy, alpha cards, gameplay identity, generation a saves se nemění; revize 1–5 zůstávají stejné.
+- Chrome/Metal vizuální capture (`artifacts/visual-overhaul/after/tree-close-up.png`, `forest.png`) byl zkontrolován. Koruny pokrývají větší část větvení a jejich obrys je méně pravidelný; stále jsou viditelně stylizované/low-poly, nejde o realistické assety. Capture 16 scén: 0 JS/console errors. `tests/foliage-geometry.test.ts` **5/5 PASS**; plné `npm test` **444/444, 43 souborů PASS**; `npm run build` PASS (známé 3,304.67 kB chunk advisory); `npm run test:world-art` **76/76 PASS**, archivní v0.9.0 Rev1/v0.9.1 Rev2 save, všechny quality presety, determinismus/save-reload, 0 browser/WebGL errors.
+- HIGH, Chrome/Metal, 1280×720, seed 731942 uncapped: v0.9.0 **245.58 FPS / 4.072 ms / 612 calls / 3,390,261 tris / 1,318 nodes**; aktuální Rev6 **198.31 FPS / 5.043 ms / 699 calls / 3,612,392 tris / 2,033 nodes**. Oproti poslednímu Rev6 vzorku před změnou hmot **200.15 FPS / 4.996 ms**, rozdíl zhruba 0.9 % a uvnitř běhové variability; node/call/triangle count beze změny. Warm-up guard >8 s se aktivoval, incremental warm-up doběhl, browser chyby 0. Celkový Rev6 výkonový rozdíl vůči v0.9.0 stále vyžaduje širší optimalizační práci.
+- Zdrojové změny čekají na právě připravovaný checkpoint commit na pracovní větvi. `main`, release, tagy a Pages se nemění; QA artefakty zůstávají mimo Git, iCloud kopie `* 2.*` nedotčené. V0.10 stále není release candidate.
+
 ## Live update — opakovaná vizuální kontrola a validace — 2026-10-04
 
 - Aktivní branch zůstává `codex/world-revision-6`; před tímto zápisem jsou poslední kódové změny commitnuté a branch odpovídá `origin/codex/world-revision-6` na `e6b19a2dd29a4e7e8ce7779bf23b594a96a558d2`. `main`, produkční Pages a release metadata se neměnily.
