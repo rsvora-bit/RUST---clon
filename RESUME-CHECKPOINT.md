@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — lehčí Rev6 grass blades (2026-10-03)
+
+- `src/world/models.ts`: pro Rev6 tuftů zůstává 12 stejných čepelí, jejich deterministické pozice/barvy, šířky, výšky a náklon. Zjednodušil se jen mesh čepele z ohnuté tříúsekové plochy na jeden trojúhelník; legacy grass geometry zůstává přesně původní. `tests/foliage-geometry.test.ts` drží determinismus, footprint, výšku a pokles na **12 tris/tuft** oproti 36 legacy.
+- Chrome/Metal `test:world-art`: **66/66 PASS**, žádné app/WebGL chyby; capture `terrain-ground-detail.png` byl vizuálně zkontrolován a porost si zachovává hustotu i barevnou čitelnost. Cílené foliage/environment testy **15/15 PASS**.
+- Matched capped Chrome/Metal benchmark: před změnou grass **60,01 FPS / 16,664 ms / 702 calls / 4 370 164 tris**; po změně **60 FPS / 16,666 ms / 702 calls / 4 128 532 tris**, tedy −**241 632 tris** v aktuálním pohledu bez změny draw calls. V0.9.0 baseline **60 FPS / 16,668 ms / 612 calls / 3 390 261 tris**. Capovaný výsledek nepotvrzuje zisk FPS/headroom.
+- `npm test`: **440/440 PASS (42 souborů)**; `npm run build`: PASS se známým Vite advisory na JS chunk přibližně 3,3 MB; `git diff --check`: PASS. Tento krok čeká na vlastní checkpoint commit/push. Vydání, main a Pages beze změny.
+
 ## Live update — Rev6 kapradiny s nižší geometrií (2026-10-03)
 
 - `src/world/models.ts`: pouze fuller/Rev6 varianta kapradiny nyní používá 3 vertikální segmenty frond místo 4. Legacy geometrii, šířku/výšku, počet devíti frondů, rozmístění instancí i materials jsme ponechali beze změny. Cílený test hlídá −25 % indexovaných trojúhelníků při zachování širokého/tall bounds a konečných vertexů: **11/11 PASS**.

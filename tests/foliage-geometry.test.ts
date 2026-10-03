@@ -28,14 +28,14 @@ describe('foliage geometry stability',()=>{
       expect(a.index!.count/3).toBe(36);
     }finally{a.dispose();b.dispose();}
   });
-  it('fills revision-6 grass tufts without adding triangles',()=>{
+  it('fills revision-6 grass tufts while simplifying each blade mesh',()=>{
     const legacy=grassGeometry(),fuller=grassGeometry(true);
     try {
       legacy.computeBoundingBox();fuller.computeBoundingBox();
       expect(Math.hypot(fuller.boundingBox!.getSize(new THREE.Vector3()).x,fuller.boundingBox!.getSize(new THREE.Vector3()).z)).toBeGreaterThan(Math.hypot(legacy.boundingBox!.getSize(new THREE.Vector3()).x,legacy.boundingBox!.getSize(new THREE.Vector3()).z)*1.15);
       expect(fuller.boundingBox!.max.y).toBeGreaterThan(legacy.boundingBox!.max.y*1.08);
-      expect(fuller.index!.count).toBe(legacy.index!.count);
-      expect(fuller.index!.count/3).toBe(36);
+      expect(fuller.index!.count).toBe(legacy.index!.count/3);
+      expect(fuller.index!.count/3).toBe(12);
     }finally{legacy.dispose();fuller.dispose();}
   });
   it('keeps revision-6 broadleaf cards close to the branches without collapsing the crown',()=>{
