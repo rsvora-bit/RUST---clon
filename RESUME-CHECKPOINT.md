@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — čitelnější Highland Relay v dálce (2026-10-03)
+
+- `src/survival/WorldSurvival.ts`: pouze Highland Relay v Revision 6 nyní používá větší parabolu reflektoru (`2.2 × 1.7`) orientovanou k ostrovu a k obvyklému pozorovacímu směru. Používá existující sdílenou geometrii, materiál, statický mesh batch a pozici landmarku; nepřidává draw call, collider, save state ani world-layout změnu.
+- Porovnán Chrome/Metal dálkový záběr `test-results/world-art/highland-relay.png`: reflektor je nyní viditelný jako oválný panel u vrcholu stožáru, kde se předtím ztrácel jako tečka. `npm run test:world-art`: **66/66 PASS**, včetně save/reload, legacy revisions, weather a kamerového sweepu, 0 browser/app/WebGL chyb. `npm test`: **438/438 PASS / 42 souborů**; `npm run build`: **PASS**, známý ~3,298 kB JS chunk warning.
+- Transformace zachovává mesh topology, takže předchozí matched performance profil zůstává srovnatelný: HIGH, Chrome/Metal 1280×720, v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes**; Rev6 **60,01 FPS / 16,664 ms / 702 calls / 4 605 504 tris / 2 033 nodes**, 0 chyb. Po této transformaci nebyl spuštěn nový performance harness.
+- Změněno `src/survival/WorldSurvival.ts` a checkpoint; čeká na checkpoint commit/push do `codex/world-revision-6`. Žádná změna `main`, tagu/release, PR ani Pages. Uživatelské iCloud kopie ` 2` zůstávají nedotčené.
+- Orientační stav zůstává kolem **94 % celkem**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **97 %**, G5 **86 %**, G6 **85 %**, G7 **100 %**. Zbývá zejména výraznější terrain/nature polish, modely/viewmodely a širší ruční gameplay/art průchod.
+
 ## Live update — skutečný pohled do kormidelny Breakwateru (2026-10-03)
 
 - `scripts/world-art-qa.mjs` nyní pořizuje snímek z vnitřku kabiny; dosavadní pojmenovaný „interior“ záběr byl ve skutečnosti zvenku a nad střechou. QA teleport používá výšku hráčových nohou, takže nová pozice správně zohledňuje eye height.

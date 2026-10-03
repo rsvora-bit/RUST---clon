@@ -118,7 +118,7 @@ export class WorldSurvival {
       for(const x of [-.28,.28]){const rail=this.box(g,x,4.55,1.64,.055,8.8,.055,this.metal);rail.name='Highland relay access ladder';}
       for(let rung=0;rung<18;rung++){const step=this.box(g,0,.45+rung*.48,1.65,.62,.045,.055,this.rust);step.name='Highland relay access ladder rung';}
       this.box(g,0,10.65,0,2.5,.2,.2,this.wood).name='Highland relay crossarm';
-      const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Highland relay dish';dish.position.set(-.55,11.6,.1);dish.rotation.set(.3,.1,.75);dish.scale.set(1.35,.95,.23);dish.castShadow=true;g.add(dish);
+      const dish=new T.Mesh(this.relayDish,this.rust);dish.name='Highland relay dish';dish.position.set(-.55,11.6,.1);dish.rotation.set(1.06,.73,0);dish.scale.set(2.2,1.7,.28);dish.castShadow=true;g.add(dish);
       this.box(g,2.45,.74,.15,.88,1.34,.76,this.metal).name='Highland relay control cabinet';
       this.box(g,2.45,.82,.555,.62,.88,.045,this.paint).name='Highland relay cabinet door';
       for(let vent=0;vent<6;vent++){const slot=this.box(g,2.45,.68+vent*.095,.586,.36,.027,.018,this.rust);slot.name='Highland relay cabinet vent';}
