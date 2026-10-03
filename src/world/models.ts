@@ -99,7 +99,7 @@ export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
   for(let i=0;i<5;i++){const a=i*1.257;branch(new THREE.Vector3(0,.38,0),new THREE.Vector3(Math.cos(a)*.65,.02,Math.sin(a)*.65),.13);}
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
-export function rockGeometry(seed:number):THREE.BufferGeometry {
+export function rockGeometry(seed:number,sharperFacets=false):THREE.BufferGeometry {
   const r=randomSource(seed),points:THREE.Vector3[]=[];
   // Broken, slightly slumped strata give the three shared batches distinct
   // silhouettes without adding meshes or changing any resource placement.
@@ -116,7 +116,7 @@ export function rockGeometry(seed:number):THREE.BufferGeometry {
       points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*.16-slump,Math.sin(a)*extent*(.68+r()*.31)));
     }
   }
-  const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,.85);hull.dispose();
+  const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,sharperFacets?.54:.85);hull.dispose();
   const p=geo.getAttribute('position'),norm=geo.getAttribute('normal'),uv=new Float32Array(p.count*2),colors=new Float32Array(p.count*3);
   for(let i=0;i<p.count;i++){
     const nx=norm.getX(i),ny=norm.getY(i),nz=norm.getZ(i);uv[i*2]=Math.abs(nx)>.6?p.getZ(i):p.getX(i);uv[i*2+1]=Math.abs(ny)>.6?p.getZ(i):p.getY(i);

@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — čitelnější plochy Rev6 skal (2026-10-03)
+
+- `src/world/models.ts` a `src/rendering/environment.ts`: Generation 5 / world revision 6 skalám se změnil pouze crease angle při výpočtu normál (`0.85` → `0.54`); geometrie, triangulace, pozice, colliders a starší revize zůstaly beze změny. `tests/rock-geometry.test.ts` potvrzuje shodné pozice a odlišné faceted normals pouze pro volitelnou variantu.
+- Snímek `test-results/world-art/rock-outcrop-cluster.png` byl ručně zkontrolován; velké výchozy mají zřetelnější rovinné plochy a tvar zůstal stejný. `test:world-art`: **66/66 PASS**, 0 browser/WebGL chyb.
+- `npm test`: **441/441 PASS (42 souborů)**; `npm run build`: PASS se stávajícím ~3,3 MB JS chunk advisory. Změna nemění počet trojúhelníků/draw calls, proto opakování výkonového benchmarku není informativní; poslední uncapped párový běh před skalami: baseline v0.9.0 **245,02 FPS / 4,081 ms / 612 calls / 3 390 261 tris**, Rev6 **191,62 FPS / 5,219 ms / 702 calls / 4 128 532 tris**, oba 0 errors. Výkonová rezerva proti menšímu světu zůstává otevřeným bodem.
+- Čeká samostatný checkpoint commit/push. Main, release a Pages zůstávají beze změny; ` 2` iCloud soubory zůstaly nedotčené.
+
 ## Live update — lehčí Rev6 grass blades (2026-10-03)
 
 - `src/world/models.ts`: pro Rev6 tuftů zůstává 12 stejných čepelí, jejich deterministické pozice/barvy, šířky, výšky a náklon. Zjednodušil se jen mesh čepele z ohnuté tříúsekové plochy na jeden trojúhelník; legacy grass geometry zůstává přesně původní. `tests/foliage-geometry.test.ts` drží determinismus, footprint, výšku a pokles na **12 tris/tuft** oproti 36 legacy.

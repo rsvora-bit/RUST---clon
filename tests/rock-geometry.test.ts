@@ -30,6 +30,15 @@ describe('procedural rock geometry',()=>{
     a.dispose();again.dispose();
   });
 
+  it('sharpens only revision-6 rock normals without changing the seed shape',()=>{
+    const legacy=rockGeometry(114),rev6=rockGeometry(114,true);
+    try{
+      expect(Array.from(rev6.getAttribute('position').array)).toEqual(Array.from(legacy.getAttribute('position').array));
+      expect(Array.from(rev6.getAttribute('normal').array)).not.toEqual(Array.from(legacy.getAttribute('normal').array));
+      expect(rev6.getAttribute('position').count).toBe(legacy.getAttribute('position').count);
+    }finally{legacy.dispose();rev6.dispose();}
+  });
+
   it('keeps facet colors optional for legacy rock materials',()=>{
     expect(rockMaterialStyle(1)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
     expect(rockMaterialStyle(5)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
