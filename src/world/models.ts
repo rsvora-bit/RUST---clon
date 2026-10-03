@@ -116,9 +116,12 @@ export function rockGeometry(seed:number):THREE.BufferGeometry {
     }
   }
   const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,.85);hull.dispose();
-  const p=geo.getAttribute('position'),norm=geo.getAttribute('normal'),uv=new Float32Array(p.count*2);
-  for(let i=0;i<p.count;i++){const nx=Math.abs(norm.getX(i)),ny=Math.abs(norm.getY(i));uv[i*2]=nx>.6?p.getZ(i):p.getX(i);uv[i*2+1]=ny>.6?p.getZ(i):p.getY(i);}
-  geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));return geo;
+  const p=geo.getAttribute('position'),norm=geo.getAttribute('normal'),uv=new Float32Array(p.count*2),colors=new Float32Array(p.count*3);
+  for(let i=0;i<p.count;i++){
+    const nx=norm.getX(i),ny=norm.getY(i),nz=norm.getZ(i);uv[i*2]=Math.abs(nx)>.6?p.getZ(i):p.getX(i);uv[i*2+1]=Math.abs(ny)>.6?p.getZ(i):p.getY(i);
+    const hash=Math.sin(nx*127.1+ny*311.7+nz*74.7+seed*.017)*43758.5453,variation=hash-Math.floor(hash),shade=.76+variation*.40;colors[i*3]=shade*1.015;colors[i*3+1]=shade;colors[i*3+2]=shade*.975;
+  }
+  geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));return geo;
 }
 /** Orient a rendered resource mesh into a sampled ground plane while retaining
  * its deterministic yaw about the terrain normal. Gameplay colliders stay upright. */

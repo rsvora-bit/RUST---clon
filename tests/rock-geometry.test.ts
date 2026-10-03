@@ -19,6 +19,16 @@ describe('procedural rock geometry',()=>{
     }
   });
 
+  it('adds subtle deterministic color variation across rock facets',()=>{
+    const a=rockGeometry(51),again=rockGeometry(51),colors=a.getAttribute('color'),repeat=again.getAttribute('color');
+    expect(Array.from(colors.array)).toEqual(Array.from(repeat.array));
+    expect(colors.count).toBe(a.getAttribute('position').count);
+    const shades=Array.from({length:colors.count},(_,i)=>colors.getX(i));
+    expect(Math.max(...shades)-Math.min(...shades)).toBeGreaterThan(.08);
+    expect(Math.min(...shades)).toBeGreaterThan(.7);expect(Math.max(...shades)).toBeLessThan(1.2);
+    a.dispose();again.dispose();
+  });
+
   it('aligns only the rendered up axis to a slope and preserves yaw around it',()=>{
     const normal=new THREE.Vector3(-.4,1,-.2).normalize();
     const quaternion=surfaceAlignedQuaternion(normal,1.17),up=new THREE.Vector3(0,1,0).applyQuaternion(quaternion);
