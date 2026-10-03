@@ -42,11 +42,22 @@ describe('foliage geometry stability',()=>{
     const legacy=broadleafGeometry(0),rev6=broadleafGeometry(0,true),repeat=broadleafGeometry(0,true);
     try{
       legacy.computeBoundingBox();rev6.computeBoundingBox();
-      expect(rev6.index!.count).toBeLessThan(legacy.index!.count);
+      expect(rev6.index!.count).toBeLessThanOrEqual(legacy.index!.count*1.1);
       expect(Array.from(rev6.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
       const legacySpan=Math.hypot(legacy.boundingBox!.getSize(new THREE.Vector3()).x,legacy.boundingBox!.getSize(new THREE.Vector3()).z),rev6Span=Math.hypot(rev6.boundingBox!.getSize(new THREE.Vector3()).x,rev6.boundingBox!.getSize(new THREE.Vector3()).z);
       expect(rev6Span).toBeLessThan(legacySpan*.85);expect(rev6Span).toBeGreaterThan(legacySpan*.7);
       expect(rev6.boundingBox!.max.y).toBeGreaterThan(legacy.boundingBox!.max.y*.93);
     }finally{legacy.dispose();rev6.dispose();repeat.dispose();}
+  });
+  it('separates revision-6 solid crown masses from alpha-cutout leaf cards',()=>{
+    const whole=broadleafGeometry(0,true),masses=broadleafGeometry(0,true,'masses'),leaves=broadleafGeometry(0,true,'leaves');
+    try{
+      expect(masses.index!.count+leaves.index!.count).toBe(whole.index!.count);
+      expect(masses.index!.count).toBeGreaterThan(0);
+      expect(leaves.index!.count).toBeGreaterThan(0);
+      masses.computeBoundingBox();leaves.computeBoundingBox();
+      expect(masses.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(2.8);
+      expect(leaves.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(4.5);
+    }finally{whole.dispose();masses.dispose();leaves.dispose();}
   });
 });

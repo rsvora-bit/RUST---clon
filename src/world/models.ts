@@ -33,36 +33,37 @@ export function pineGeometry(variant=0):THREE.BufferGeometry {
   for(let i=0;i<5;i++)parts.push(card(.7,1.4,0,height-1,0,0,i*Math.PI/5));
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
-export function broadleafGeometry(variant=0,revision6=false):THREE.BufferGeometry {
-  const r=randomSource(372+variant*517),parts:THREE.BufferGeometry[]=[];
+export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|'leaves'='all'):THREE.BufferGeometry {
+  const r=randomSource(372+variant*517),parts:THREE.BufferGeometry[]=[],massParts:THREE.BufferGeometry[]=[],leafParts:THREE.BufferGeometry[]=[];
+  const addMass=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);massParts.push(geometry);},addLeaves=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);leafParts.push(geometry);};
   // Low-poly crown masses soften the open center between the larger boughs
   // without turning the canopy into a single opaque blob.
-  const crownCore=new THREE.IcosahedronGeometry(1,0);crownCore.setIndex(Array.from({length:crownCore.getAttribute('position').count},(_,index)=>index));crownCore.scale(1.08+variant*.08,1.04+variant*.12,1.02+variant*.08);crownCore.translate(0,7.1+variant*.18,0);parts.push(crownCore);
-  for(let i=0;i<4;i++){const angle=i*Math.PI*.5+variant*.37,mass=new THREE.IcosahedronGeometry(1,0);mass.setIndex(Array.from({length:mass.getAttribute('position').count},(_,index)=>index));mass.scale(.68+variant*.06,.73,.70);mass.translate(Math.cos(angle)*1.15,6.9+Math.sin(angle*1.8)*.28,Math.sin(angle)*1.15);parts.push(mass);}
+  const crownCore=new THREE.IcosahedronGeometry(1,0);crownCore.setIndex(Array.from({length:crownCore.getAttribute('position').count},(_,index)=>index));crownCore.scale(1.08+variant*.08,1.04+variant*.12,1.02+variant*.08);crownCore.translate(0,7.1+variant*.18,0);addMass(crownCore);
+  for(let i=0;i<4;i++){const angle=i*Math.PI*.5+variant*.37,mass=new THREE.IcosahedronGeometry(1,0);mass.setIndex(Array.from({length:mass.getAttribute('position').count},(_,index)=>index));mass.scale(.68+variant*.06,.73,.70);mass.translate(Math.cos(angle)*1.15,6.9+Math.sin(angle*1.8)*.28,Math.sin(angle)*1.15);addMass(mass);}
   // Separate bough clusters, with an asymmetric open-grown oak variant.
   for(const [index,bough] of broadleafBoughs(variant).entries()){
     const cx=bough.x,cz=bough.z,cy=bough.y;
-    // A small faceted leaf mass gives the cutout sprays depth when viewed
-    // edge-on, without adding a separate mesh or a billboard cross.
+    // A small opaque faceted mass gives the cutout sprays depth edge-on;
+    // Revision 6 renders this separately so alpha testing cannot cut holes
+    // through the volume.
     const foliageCore=new THREE.IcosahedronGeometry(1,0);
     foliageCore.setIndex(Array.from({length:foliageCore.getAttribute('position').count},(_,index)=>index));
-    foliageCore.scale(1.02+variant*.12,.78+variant*.08,.96+variant*.1);
+    foliageCore.scale(revision6?.55+variant*.04:1.02+variant*.12,revision6?.46+variant*.03:.78+variant*.08,revision6?.55+variant*.04:.96+variant*.1);
     foliageCore.translate(cx,cy,cz);
-    parts.push(foliageCore);
-    // A smaller offset leaf mass rounds out the branch silhouette in profile;
-    // it stays in this shared instanced geometry and adds no draw calls.
+    addMass(foliageCore);
+    // A smaller offset mass rounds out the branch silhouette in profile.
     const angle=index*2.399+variant*.63,lobe=new THREE.IcosahedronGeometry(1,0);
     lobe.setIndex(Array.from({length:lobe.getAttribute('position').count},(_,vertex)=>vertex));
-    lobe.scale(.66,.58,.64);
+    lobe.scale(revision6?.35:.66,revision6?.31:.58,revision6?.34:.64);
     lobe.translate(cx+Math.cos(angle)*.78,cy+.18+Math.sin(angle*1.7)*.24,cz+Math.sin(angle)*.78);
-    parts.push(lobe);
-    for(let i=0;i<(revision6?12:16);i++){
+    addMass(lobe);
+    for(let i=0;i<(revision6?18:16);i++){
       const a=r()*6.28,rad=Math.sqrt(r())*(revision6 ? .55 : variant ? 2.1 : 1.65);
       const leafWidth=revision6 ? .58+r()*.22 : 1.3+r()*.65,leafHeight=revision6 ? 1.2+r()*.25 : 1.3+r()*.7;
-      parts.push(card(leafWidth,leafHeight,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
+      addLeaves(card(leafWidth,leafHeight,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
     }
   }
-  const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
+  const selected=part==='masses'?massParts:part==='leaves'?leafParts:parts,geo=mergeGeometries(selected)!;parts.forEach(g=>g.dispose());return geo;
 }
 
 /** Low-cost original palm crown for arid/coastal generation-five groves. */

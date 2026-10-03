@@ -80,7 +80,20 @@ export function palmTexture(seed=905):THREE.CanvasTexture {
     for(const side of [-1,1]){ctx.strokeStyle=['#547041','#668047','#7d9457'][Math.floor(rand()*3)]!;ctx.lineWidth=3.5+rand()*2;ctx.beginPath();ctx.moveTo(128,y+14);ctx.quadraticCurveTo(128+side*width*.5,y+4,128+side*width,y-13);ctx.stroke();}}
   return texture(c);
 }
-export function leavesTexture(seed=667):THREE.CanvasTexture {
+export function leavesTexture(seed=667,revision6=false):THREE.CanvasTexture {
+  if(revision6){
+    const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#3e582e','#526c37','#668043','#7b8d4b','#8a9954'];
+    ctx.lineCap='round';ctx.strokeStyle='#514c35';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(125,250);ctx.quadraticCurveTo(143,131,129,17);ctx.stroke();
+    for(let pair=0;pair<14;pair++){
+      const t=.1+pair*.058,y=243-t*218,x=128+Math.sin(t*8)*10,side=pair%2?1:-1,length=23+rand()*22;
+      for(const direction of [-1,1]){
+        const ex=x+side*length,ey=y-direction*(9+rand()*13),leafColor=palette[Math.floor(rand()*palette.length)]!;
+        ctx.fillStyle=leafColor;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+side*length*.48,y-direction*22,ex,ey);ctx.quadraticCurveTo(x+side*length*.46,y+direction*8,x,y);ctx.fill();
+        ctx.strokeStyle='rgba(188,190,119,.42)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+      }
+    }
+    return texture(c);
+  }
   const [c,ctx]=canvas(256),rand=randomSource(seed);ctx.strokeStyle='#686040';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(128,255);ctx.lineTo(133,34);ctx.stroke();
   for(let i=0;i<120;i++){const x=25+rand()*205,y=15+rand()*220,dx=x-128,dy=y-125;if(dx*dx/15000+dy*dy/15000>1)continue;const a=rand()*6.28,l=6+rand()*13;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle=['#384a2b','#4d6036','#657a3f','#7b8745','#849452'][Math.floor(rand()*5)]!;ctx.beginPath();ctx.moveTo(0,-l);ctx.quadraticCurveTo(l*.8,-l*.1,0,l);ctx.quadraticCurveTo(-l*.8,-l*.1,0,-l);ctx.fill();ctx.strokeStyle='rgba(175,180,107,.3)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(0,-l);ctx.lineTo(0,l);ctx.stroke();ctx.restore();}
   return texture(c);
