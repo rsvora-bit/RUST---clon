@@ -7,6 +7,13 @@
 - Matched Chrome/Metal performance QA (HIGH, 1280×720, 60Hz cap): archiv v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 751 ms startup**; aktuální Rev6 **60 FPS / 16,668 ms / 702 calls / 4 605 540 tris / 2 033 nodes / 2 808 ms startup**, 0 chyb. Proti předchozímu Rev6 vzorku geometrie ušetřila přibližně **91,6 tisíce triangles**, bez změny draw calls či měřeného FPS; startup je jeden kolísavý vzorek.
 - Změněno pouze `src/world/models.ts`, `src/rendering/environment.ts`, `tests/foliage-geometry.test.ts` a checkpoint. Zatím bez commitu; následuje checkpoint commit/push a další vizuální práce. Necommitnuté iCloud kopie souborů s příponou ` 2` zůstávají nedotčené. Žádný `main`, tag/release, PR ani Pages zásah.
 
+## Live update — užší listové trsy (2026-10-03)
+
+- Druhý screenshotový průchod ukázal, že široké alfa karty jsou stále největším zdrojem „plochých plátů“ v listnatém lese. Pouze Rev6 nyní používá užší listy (`0.58–0.80 m`) s protáhlejší siluetou (`1.20–1.45 m`) a stejným počtem geometrií. Hustota instancí, bough pozice a materiál se nemění; starší revision zůstávají identické.
+- Chrome/Metal `npm run test:world-art`: **66/66 PASS**, save/reload, determinismus, preset hustota i kamerový sweep PASS, 0 app/WebGL chyb. Ručně zkontrolován nový `forest-pine-detail.png`: listové plochy jsou užší, výška koruny zůstala krytá regression testem. `npm test`: **438/438 PASS, 42 souborů**; `npm run build`: **PASS**, stávající upozornění na ~3,298 kB JS chunk. Cílený foliage test: **4/4 PASS**.
+- Změna velikosti vrcholů nemění počet triangles ani draw calls proti A/B z předchozího záznamu (aktuální Rev6: **60 FPS / 16,668 ms / 702 calls / 4 605 540 tris / 2 033 nodes**, bez chyb; měřeno HIGH, Chrome/Metal, 1280×720). Screenshot je lokální ignorovaný QA artefakt. Zbývá vizuální polish dalších oblastí; tato úprava sama o sobě nedokončuje lesní/vegetation cíl.
+- K této druhé úpravě zatím vznikne samostatný commit na `codex/world-revision-6`; žádná změna `main`, releasu, tagu, PR ani Pages. Cizí iCloud kopie ` 2` zůstávají nedotčené.
+
 ## Live update — širší jižní horský hřeben (2026-10-03)
 
 - Přesný Chrome/Metal záběr jižního pobřeží pro seed `731942` ukázal, že jehlový profil tvořil jeden široký masiv v nejbližší vrstvě. V `src/world/horizon.ts` má pouze deterministicky vybraný široký masiv nyní širší úhlovou základnu (`0.60–0.72 rad`) a nižší příspěvek centrálního vrcholu. Ostatních pět skupin, další dvě vrstvy, terrain i world/save identity zůstaly beze změny.
