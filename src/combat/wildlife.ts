@@ -256,6 +256,7 @@ export class WildlifeSystem {
         const mainAntler=new THREE.CapsuleGeometry(.022,.20,3,5);add(mainAntler,0x806447,side*.08,1.60,-.48,1,1,1,side*-.26);
         const tine=new THREE.CapsuleGeometry(.014,.105,3,5);add(tine,0x806447,side*.165,1.72,-.49,1,1,1,-side*.52);
         const tineTip=new THREE.CapsuleGeometry(.012,.075,3,5);add(tineTip,0x8a6c4b,side*.115,1.76,-.49,1,1,1,side*.16);
+        const outerFork=new THREE.CapsuleGeometry(.012,.10,3,5);add(outerFork,0x806447,side*.22,1.74,-.48,1,1,1,-side*.72);
         const hoof=new THREE.SphereGeometry(1,8,6);add(hoof,0x332e27,side*.17,.075,-.36,.06,.075,.085);
         const rearHoof=new THREE.SphereGeometry(1,8,6);add(rearHoof,0x332e27,side*.17,.075,.33,.06,.075,.085);
       }
