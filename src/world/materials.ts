@@ -98,8 +98,11 @@ export function terrainMaterial():THREE.MeshStandardMaterial {
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat surfaceWet= max(max(surfaceWetness*.68,(1.-smoothstep(.08,2.6,vGroundPosition.y))*.46),vGroundClimate.w*.50); roughnessFactor=mix(roughnessFactor,.48,surfaceWet);');
   };return mat;
 }
-export function stoneMaterial(tint=0xb0ada0):THREE.MeshStandardMaterial {
-  const tex=groundTexture('rock',773);const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors:true,roughness:.92,metalness:.015,bumpMap:tex,bumpScale:.075});
+export function rockMaterialStyle(worldRevision:number):{resourceTint:number;outcropTint:number;vertexColors:boolean} {
+  const revision6=worldRevision>=6;return{resourceTint:revision6?0x999b93:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:revision6};
+}
+export function stoneMaterial(tint=0xb0ada0,vertexColors=true):THREE.MeshStandardMaterial {
+  const tex=groundTexture('rock',773);const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.92,metalness:.015,bumpMap:tex,bumpScale:.075});
   mat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;diffuseColor.rgb*=.78+stoneDetail*1.1;`);};return mat;
 }
 

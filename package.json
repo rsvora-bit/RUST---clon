@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run",
+    "test": "vitest run --pool=forks --maxWorkers=1 --minWorkers=1",
     "test:browser": "node scripts/polish-qa.mjs",
     "test:death": "node scripts/death-respawn-qa.mjs",
     "test:combat": "node scripts/combat-qa.mjs",

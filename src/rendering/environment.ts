@@ -7,7 +7,7 @@ import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '..
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
-import {barkTexture,pineTexture,palmTexture,leavesTexture,stoneMaterial,terrainMaterial,groundDecalTexture} from '../world/materials';
+import {barkTexture,pineTexture,palmTexture,leavesTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
@@ -66,6 +66,7 @@ export class Environment {
   private readonly roadCells=new Map<string,Vec3[]>();
   private readonly bark:THREE.MeshStandardMaterial;
   private readonly stone:THREE.MeshStandardMaterial;
+  private readonly outcrop:THREE.MeshStandardMaterial;
   private readonly metal:THREE.MeshStandardMaterial;
   private readonly sulfur:THREE.MeshStandardMaterial;
   private readonly hqmetal:THREE.MeshStandardMaterial;
@@ -102,9 +103,9 @@ export class Environment {
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(),color:0xb6b4a4,roughness:.97});
     this.leaves=this.foliageMaterial(leavesTexture(),0xffffff,.095);this.pine=this.foliageMaterial(pineTexture(),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
-    this.stone=stoneMaterial(0xd5d0bf);this.metal=stoneMaterial(0x8b7567);this.sulfur=stoneMaterial(0xb7a74a);this.hqmetal=stoneMaterial(0x65757d);
+    const rockStyle=rockMaterialStyle(this.worldRevision);this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
-    [this.bark,this.leaves,this.pine,this.palm,this.stone,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
+    [this.bark,this.leaves,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
     if(!deferPopulation)this.populateNow();
   }
   private populateNow():void {
@@ -228,7 +229,7 @@ export class Environment {
       const size=rocky?1.8+rand()*5:.7+rand()*1.8;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.5),sy:size*(.7+rand()*.55),sz:size*(.8+rand()*.5),rot:rand()*6.28,variant:Math.floor(rand()*3)});
     }
     for(let v=0;v<3;v++){
-      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.stone,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
+      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.outcrop,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
     }
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;

@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
 import {rockGeometry,surfaceAlignedQuaternion,terrainContactOffset} from '../src/world/models';
+import {rockMaterialStyle} from '../src/world/materials';
 
 describe('procedural rock geometry',()=>{
   it('keeps each seed deterministic while producing distinct faceted silhouettes',()=>{
@@ -27,6 +28,12 @@ describe('procedural rock geometry',()=>{
     expect(Math.max(...shades)-Math.min(...shades)).toBeGreaterThan(.08);
     expect(Math.min(...shades)).toBeGreaterThan(.7);expect(Math.max(...shades)).toBeLessThan(1.2);
     a.dispose();again.dispose();
+  });
+
+  it('keeps facet colors optional for legacy rock materials',()=>{
+    expect(rockMaterialStyle(1)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
+    expect(rockMaterialStyle(5)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
+    expect(rockMaterialStyle(6)).toEqual({resourceTint:0x999b93,outcropTint:0xd5d0bf,vertexColors:true});
   });
 
   it('aligns only the rendered up axis to a slope and preserves yaw around it',()=>{
