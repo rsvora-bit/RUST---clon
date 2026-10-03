@@ -4,7 +4,7 @@ import {grassGeometry,pineGeometry,broadleafGeometry,bushGeometry,palmGeometry,p
 
 describe('foliage geometry stability',()=>{
   it('has finite, unit-length normals and no degenerate triangles across variants',()=>{
-    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1].map(broadleafGeometry)];
+    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1].map(variant=>broadleafGeometry(variant))];
     const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
     try {
       for(const geometry of geometries){
@@ -37,5 +37,16 @@ describe('foliage geometry stability',()=>{
       expect(fuller.index!.count).toBe(legacy.index!.count);
       expect(fuller.index!.count/3).toBe(36);
     }finally{legacy.dispose();fuller.dispose();}
+  });
+  it('keeps revision-6 broadleaf cards close to the branches without collapsing the crown',()=>{
+    const legacy=broadleafGeometry(0),rev6=broadleafGeometry(0,true),repeat=broadleafGeometry(0,true);
+    try{
+      legacy.computeBoundingBox();rev6.computeBoundingBox();
+      expect(rev6.index!.count).toBeLessThan(legacy.index!.count);
+      expect(Array.from(rev6.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
+      const legacySpan=Math.hypot(legacy.boundingBox!.getSize(new THREE.Vector3()).x,legacy.boundingBox!.getSize(new THREE.Vector3()).z),rev6Span=Math.hypot(rev6.boundingBox!.getSize(new THREE.Vector3()).x,rev6.boundingBox!.getSize(new THREE.Vector3()).z);
+      expect(rev6Span).toBeLessThan(legacySpan*.85);expect(rev6Span).toBeGreaterThan(legacySpan*.7);
+      expect(rev6.boundingBox!.max.y).toBeGreaterThan(legacy.boundingBox!.max.y*.93);
+    }finally{legacy.dispose();rev6.dispose();repeat.dispose();}
   });
 });

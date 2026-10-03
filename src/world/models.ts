@@ -33,7 +33,7 @@ export function pineGeometry(variant=0):THREE.BufferGeometry {
   for(let i=0;i<5;i++)parts.push(card(.7,1.4,0,height-1,0,0,i*Math.PI/5));
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
-export function broadleafGeometry(variant=0):THREE.BufferGeometry {
+export function broadleafGeometry(variant=0,revision6=false):THREE.BufferGeometry {
   const r=randomSource(372+variant*517),parts:THREE.BufferGeometry[]=[];
   // Low-poly crown masses soften the open center between the larger boughs
   // without turning the canopy into a single opaque blob.
@@ -56,9 +56,10 @@ export function broadleafGeometry(variant=0):THREE.BufferGeometry {
     lobe.scale(.66,.58,.64);
     lobe.translate(cx+Math.cos(angle)*.78,cy+.18+Math.sin(angle*1.7)*.24,cz+Math.sin(angle)*.78);
     parts.push(lobe);
-    for(let i=0;i<16;i++){
-      const a=r()*6.28,rad=Math.sqrt(r())*(variant?2.1:1.65);
-      parts.push(card(1.3+r()*.65,1.3+r()*.7,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
+    for(let i=0;i<(revision6?12:16);i++){
+      const a=r()*6.28,rad=Math.sqrt(r())*(revision6 ? .65 : variant ? 2.1 : 1.65);
+      const leafWidth=revision6 ? 1.0+r()*.5 : 1.3+r()*.65,leafHeight=revision6 ? 1.1+r()*.5 : 1.3+r()*.7;
+      parts.push(card(leafWidth,leafHeight,cx+Math.cos(a)*rad,cy+(r()-.5)*1.5,cz+Math.sin(a)*rad,(r()-.5)*2.2,r()*6.28,(r()-.5)*1.8));
     }
   }
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;

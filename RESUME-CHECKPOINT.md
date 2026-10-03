@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — stabilizace korun listnatých stromů Rev6 (2026-10-03)
+
+- `src/world/models.ts` nyní pro Rev6 drží širokolisté karty blíže větvím, zmenšuje jejich rozměr a počet na větev (16 → 12); objemové jádro koruny a varianty starších světů zůstávají zachované. `src/rendering/environment.ts` zapíná úpravu pouze pro Revision 6. Instancing, world generation, save data a gameplay identity se nemění.
+- Přidal jsem determinismus a obálku koruny do `tests/foliage-geometry.test.ts`. Cílený foliage test: **4/4 PASS**; kompletní `npm test`: **438/438 PASS, 42 souborů**; `npm run build`: **PASS**, se stávajícím upozorněním na ~3,298 kB JS chunk. Chrome/Metal world-art QA: **66/66 PASS**, archivní save/determinism kontroly PASS, bez browser/app/WebGL chyb. Screenshot `test-results/world-art/forest-pine-detail.png` ukazuje otevřenější, méně roztaženou korunu; část širokých listových ploch je stále viditelná, takže to není tvrzení o kompletně vyřešeném foliage vzhledu.
+- Matched Chrome/Metal performance QA (HIGH, 1280×720, 60Hz cap): archiv v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 751 ms startup**; aktuální Rev6 **60 FPS / 16,668 ms / 702 calls / 4 605 540 tris / 2 033 nodes / 2 808 ms startup**, 0 chyb. Proti předchozímu Rev6 vzorku geometrie ušetřila přibližně **91,6 tisíce triangles**, bez změny draw calls či měřeného FPS; startup je jeden kolísavý vzorek.
+- Změněno pouze `src/world/models.ts`, `src/rendering/environment.ts`, `tests/foliage-geometry.test.ts` a checkpoint. Zatím bez commitu; následuje checkpoint commit/push a další vizuální práce. Necommitnuté iCloud kopie souborů s příponou ` 2` zůstávají nedotčené. Žádný `main`, tag/release, PR ani Pages zásah.
+
 ## Live update — širší jižní horský hřeben (2026-10-03)
 
 - Přesný Chrome/Metal záběr jižního pobřeží pro seed `731942` ukázal, že jehlový profil tvořil jeden široký masiv v nejbližší vrstvě. V `src/world/horizon.ts` má pouze deterministicky vybraný široký masiv nyní širší úhlovou základnu (`0.60–0.72 rad`) a nižší příspěvek centrálního vrcholu. Ostatních pět skupin, další dvě vrstvy, terrain i world/save identity zůstaly beze změny.
