@@ -176,6 +176,7 @@ export class WildlifeSystem {
     const parts:THREE.BufferGeometry[]=[],coat=actor.archetype==='lookout'?0x635d4c:actor.archetype==='guard'?0x505650:SPECIES[species].color,bone=0xd0c2a2,dark=0x272a27;
     const add=(geometry:THREE.BufferGeometry,color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,rotationZ=0)=>{const matrix=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(sx,sy,sz));geometry.applyMatrix4(matrix);const base=new THREE.Color(color),position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);for(let i=0;i<position.count;i++){colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);};
     const ellipsoid=(color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>add(new THREE.SphereGeometry(1,16,12),color,x,y,z,sx,sy,sz);
+    const tube=(points:THREE.Vector3[],radius:number,color:number)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),8,radius,5,false),color,0,0,0,1,1,1);
     if(species==='islandScavenger'){
       add(new THREE.CapsuleGeometry(.235,.34,5,10),coat,0,1.03,0,1,1,1);
       add(new THREE.SphereGeometry(.16,12,10),0x887c60,0,1.56,0,1,1,1);
@@ -244,19 +245,27 @@ export class WildlifeSystem {
       }
     } else if(species==='islandDeer'){
       ellipsoid(coat,0,.83,.02,.34,.40,.60);
+      ellipsoid(0xc6ad8b,0,.64,.055,.235,.17,.43);
+      ellipsoid(0x896b4d,0,.92,-.28,.22,.25,.27);
       const neck=new THREE.CapsuleGeometry(.125,.30,4,8);neck.rotateX(-.42);add(neck,coat,0,1.10,-.34,1,1,1);
-      ellipsoid(coat,0,1.36,-.53,.15,.15,.16);ellipsoid(0x6e5741,0,1.315,-.665,.095,.064,.085);
+      ellipsoid(coat,0,1.36,-.53,.15,.15,.16);
+      ellipsoid(0xc6ad8b,0,1.315,-.635,.088,.061,.10);
+      const muzzle=new THREE.CylinderGeometry(.035,.072,.19,8,1);muzzle.rotateX(-Math.PI/2);add(muzzle,0xb99a76,0,1.31,-.69,1,1,1);
+      ellipsoid(0x29231f,0,1.31,-.786,.033,.023,.027);
       for(const side of [-1,1]){
         add(new THREE.CapsuleGeometry(.055,.48,4,7),coat,side*.17,.34,-.34,1,1,1,side*-.035);
         add(new THREE.CapsuleGeometry(.05,.42,4,7),coat,side*.17,.34,.34,1,1,1,side*.035);
         ellipsoid(0xd5c2a0,side*.17,.75,-.01,.075,.14,.37);
         ellipsoid(dark,side*.075,1.39,-.653,.018,.021,.018);
-        ellipsoid(0x9c7753,side*.15,1.48,-.48,.105,.055,.145);
-        ellipsoid(0xd0ad83,side*.15,1.48,-.505,.065,.029,.10);
-        const mainAntler=new THREE.CapsuleGeometry(.022,.20,3,5);add(mainAntler,0x806447,side*.08,1.60,-.48,1,1,1,side*-.26);
-        const tine=new THREE.CapsuleGeometry(.014,.105,3,5);add(tine,0x806447,side*.165,1.72,-.49,1,1,1,-side*.52);
-        const tineTip=new THREE.CapsuleGeometry(.012,.075,3,5);add(tineTip,0x8a6c4b,side*.115,1.76,-.49,1,1,1,side*.16);
-        const outerFork=new THREE.CapsuleGeometry(.012,.10,3,5);add(outerFork,0x806447,side*.22,1.74,-.48,1,1,1,-side*.72);
+        // Broad, pointed ears and a branched rack give the stag a readable
+        // outline at gameplay distance while remaining part of its one mesh.
+        ellipsoid(0x8e6c4e,side*.17,1.465,-.425,.13,.045,.072);
+        ellipsoid(0xc29e78,side*.18,1.47,-.438,.085,.022,.045);
+        const antler=(coords:ReadonlyArray<readonly [number,number,number]>,radius:number,color:number)=>tube(coords.map(([x,y,z])=>new THREE.Vector3(side*x,y,z)),radius,color);
+        antler([[.075,1.49,-.49],[.105,1.61,-.50],[.20,1.66,-.49],[.29,1.80,-.46]],.019,0x765b40);
+        antler([[.105,1.61,-.50],[.10,1.74,-.49],[.12,1.86,-.47]],.014,0x806447);
+        antler([[.19,1.65,-.49],[.22,1.78,-.47],[.26,1.92,-.44]],.013,0x806447);
+        antler([[.275,1.77,-.46],[.34,1.82,-.44],[.365,1.90,-.42]],.012,0x927553);
         const hoof=new THREE.SphereGeometry(1,8,6);add(hoof,0x332e27,side*.17,.075,-.36,.06,.075,.085);
         const rearHoof=new THREE.SphereGeometry(1,8,6);add(rearHoof,0x332e27,side*.17,.075,.33,.06,.075,.085);
       }

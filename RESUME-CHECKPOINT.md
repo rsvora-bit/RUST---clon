@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — výraznější jelení silueta (2026-10-03)
+
+- `src/combat/wildlife.ts`: model jelena nyní kombinuje širší větvené paroží z nízkopolygonových zakřivených trubek, delší uši, čitelnější čenich a světlejší spodní srst. Zůstává to jedna sdílená sloučená geometrie pro oba jeleny; wildlife actor ID, spawn, hitboxy, chování, loot i save data se nemění.
+- `tests/wildlife-combat.test.ts` ověřuje větší obálku paroží a limit pod 18 000 trojúhelníků. `npm run test:deer`: **5/5 PASS**, save/reload lovu zachován, browser/app/WebGL errors **0**. `npm test`: **438/438 PASS / 42 souborů**; `npm run build`: **PASS**, se známým Vite upozorněním na ~3,298 kB JS chunk.
+- Ručně porovnány stejné herní snímky `test-results/deer/deer-close-detail.png` a `test-results/deer-stag-pass/deer-close-detail.png`: paroží má nyní rozeznatelné větvení a větší siluetu. Chrome/Metal performance A/B, HIGH 1280×720, seed 731942: archiv v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 3 357 ms start**; Rev6 **60 FPS / 16,666 ms / 702 calls / 4 605 504 tris / 2 033 nodes / 2 802 ms start**, oba 0 browser errors. Standardní benchmark kamera jelena nezaměřuje; geometrický limit je proto ověřen testem a čísla A/B nejsou důkazem výkonu při přímém záběru na jelena.
+- Progress zůstává přibližně **94 % celkem**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **97 %**, G5 **86 %**, G6 **86 %**, G7 **100 %**. Největší otevřenou práci tvoří stále výraznější terrain/nature polish a širší ruční art/gameplay průchod; nejde o release candidate.
+
 ## Live update — čitelnější Highland Relay v dálce (2026-10-03)
 
 - `src/survival/WorldSurvival.ts`: pouze Highland Relay v Revision 6 nyní používá větší parabolu reflektoru (`2.2 × 1.7`) orientovanou k ostrovu a k obvyklému pozorovacímu směru. Používá existující sdílenou geometrii, materiál, statický mesh batch a pozici landmarku; nepřidává draw call, collider, save state ani world-layout změnu.
