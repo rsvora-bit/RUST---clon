@@ -40,6 +40,7 @@ export class Environment {
   private readonly resources:THREE.Object3D[]=[];
   private readonly grassChunks:GrassChunk[]=[];
   private readonly reedLocations:Vec3[]=[];
+  private readonly marshPoolLocations:Vec3[]=[];
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
@@ -89,6 +90,8 @@ export class Environment {
   }
   get reedInstanceCount():number{const reeds=this.root.getObjectByName('Marsh reeds');return reeds instanceof THREE.InstancedMesh?reeds.count:0;}
   get marshReedLocations():Vec3[]{return this.reedLocations;}
+  get marshPoolCount():number{const pools=this.root.getObjectByName('Marsh pools');return pools instanceof THREE.InstancedMesh?pools.count:0;}
+  get marshPoolPositions():Vec3[]{return this.marshPoolLocations;}
   get understoryLocations():{name:string;positions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
     return this.detailMeshes.filter(detail=>detail.mesh.name==='Forest fern understory'||detail.mesh.name==='Fallen twig litter'||detail.mesh.name==='Dry meadow tufts').map(detail=>({name:detail.mesh.name,positions:Array.from({length:detail.fullCount},(_,i)=>{detail.mesh.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);return{x:position.x,y:position.y,z:position.z};})}));
@@ -132,7 +135,7 @@ export class Environment {
     await stage(36,'Scattering rock fields','Building stone outcrops and metal deposits');this.populateRocks();
     await stage(47,'Planting ground resources','Adding fiber, berries and shoreline pickups');this.populatePlants();
     await stage(53,'Layering forest understory','Adding ferns, fallen twigs and dry meadow tufts');this.populateUnderstory();
-    await stage(56,'Growing wetland reeds','Planting climate-aware marsh cover');this.populateMarshReeds();
+    await stage(56,'Growing wetland reeds','Planting climate-aware marsh cover');this.populateMarshReeds();this.populateMarshPools();
     await stage(59,'Seeding windblown grass','Preparing vegetation chunks and distance culling');this.populateGrass();
     await stage(63,'Finishing the shoreline','Placing pebbles, driftwood and tidal seaweed');this.populateShore();
     await stage(64,'Painting terrain detail','Scattering low-cost soil, leaf-litter and rock decals');this.populateGroundDecals();
@@ -320,6 +323,25 @@ export class Environment {
     if(!positions.length)return;
     const geometry=this.own(reedGeometry()),material=new THREE.MeshLambertMaterial({color:0xc4b27c}),mesh=new THREE.InstancedMesh(geometry,material,positions.length);this.materials.add(material);mesh.name='Marsh reeds';mesh.castShadow=true;mesh.receiveShadow=true;
     positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.19+rand()*.07,.22+rand()*.16,.56+rand()*.16));});mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum:'low'});
+  }
+
+  private populateMarshPools():void {
+    if(this.terrain.generation!==5||this.worldRevision<6)return;
+    const rand=randomSource(this.seed+88217),pools:{x:number;y:number;z:number;sx:number;sz:number;r:number}[]=[],target=150,span=this.terrain.size*.94;
+    for(let tries=0;pools.length<target&&tries<target*110;tries++){
+      const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<3.8||h>11.5||slope>.105||Math.hypot(x-this.spawn.x,z-this.spawn.z)<20||!this.roadClear(x,z,4))continue;
+      const wetland=surfaceClimate(this.terrain.climateAt(x,z),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+49,z*.035-23,3);if(wetland<.48||patch<.39||rand()>.78)continue;
+      pools.push({x,y:h+.085,z,sx:1.25+rand()*2.3,sz:.82+rand()*1.5,r:rand()*Math.PI});
+      this.marshPoolLocations.push({x,y:h+.085,z});
+    }
+    if(!pools.length)return;
+    const geometry=this.own(new THREE.CircleGeometry(1,20)),position=geometry.getAttribute('position');
+    for(let i=1;i<position.count;i++){const x=position.getX(i),y=position.getY(i),angle=Math.atan2(y,x),radius=.93+.05*Math.sin(angle*3+.7)+.03*Math.sin(angle*5-1.3);position.setXY(i,x*radius,y*radius);}
+    position.needsUpdate=true;geometry.computeVertexNormals();geometry.rotateX(-Math.PI/2);
+    const material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.58,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});this.materials.add(material);
+    const mesh=new THREE.InstancedMesh(geometry,material,pools.length);mesh.name='Marsh pools';mesh.receiveShadow=true;mesh.castShadow=false;
+    pools.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.sx,1,p.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.49+rand()*.025,.34+rand()*.10,.07+rand()*.06));});
+    if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:pools.length,minimum:'medium'});
   }
 
   private populateGroundDecals():void {
