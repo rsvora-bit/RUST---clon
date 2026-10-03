@@ -82,6 +82,10 @@ export class Environment {
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
   get grassChunkCount():number{return this.grassChunks.length;}
+  get outcropInstances():{position:Vec3;scale:Vec3}[]{
+    const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();
+    return this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&object.name==='Weathered granite outcrops').flatMap(mesh=>Array.from({length:mesh.count},(_,index)=>{mesh.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return{position:{x:position.x,y:position.y,z:position.z},scale:{x:scale.x,y:scale.y,z:scale.z}};}));
+  }
   get reedInstanceCount():number{const reeds=this.root.getObjectByName('Marsh reeds');return reeds instanceof THREE.InstancedMesh?reeds.count:0;}
   get marshReedLocations():Vec3[]{return this.reedLocations;}
   get understoryLocations():{name:string;positions:Vec3[]}[]{
@@ -224,7 +228,7 @@ export class Environment {
       const size=rocky?1.8+rand()*5:.7+rand()*1.8;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.5),sy:size*(.7+rand()*.55),sz:size*(.8+rand()*.5),rot:rand()*6.28,variant:Math.floor(rand()*3)});
     }
     for(let v=0;v<3;v++){
-      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.stone,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .56 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .13 : .11,light=alpine ? .64 : arid ? .68 : .64;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.14));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
+      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.stone,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
     }
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;
