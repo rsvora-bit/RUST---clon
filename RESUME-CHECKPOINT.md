@@ -2,6 +2,14 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Live update — výraznější vzdálená silueta Breakwateru (2026-10-03)
+
+- `src/survival/WorldSurvival.ts`: pouze Rev6 cargo derrick vraku dostal vyšší stožár (8.4 m), zvednuté rameno, delší závěs a přepočítanou vzpěru. Osmimetrový půdorys, POI/world/save identita, loot i oba stávající collidery se nemění; stejné typy geometrií a materiálové batchování zachovávají počet trojúhelníků i draw calls. Rev1–5 zůstávají beze změny.
+- Skutečný Chrome/Metal screenshot pro seed `731942` byl pořízen ze stejné vzdálené i blízké kamery a ručně zkontrolován: derrick je nyní čitelný nad linií pláže, blízký záběr stále zahrnuje celý stožár. Terénní vzorky pod trupem mají odchylku přibližně −0.10 až +0.01 m, takže model není zapadlý; původní dojem vycházel hlavně z nízké siluety.
+- `tests/world-art.test.ts` teď kontroluje nové Rev6 výšky markerů a ramena. Celé `npm test`: **433/433 PASS / 41 souborů**; `npm run build`: **PASS**, stávající Vite upozornění na 3,294.33 kB minifikovaný JS chunk. Chrome/Metal `test:world-art`: **58/58 PASS**, včetně archivních v0.9.0 Rev1 a v0.9.1 Rev2 save/reload, Rev6 save/reload determinismu, presetů a **0 browser/app/WebGL errors**.
+- Chrome/Metal `test:performance`, HIGH 1280×720: archiv v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,904 ms startup**; Rev6 **60 FPS / 16.666 ms / 701 calls / 4,656,896 tris / 2,033 nodes / 3,137 ms startup / 375 grass chunks / 84,000 grass / 1,500 trees / 0 errors**. Rozměry modelových geometrií výkonové čítače nezměnily; cold startup jsou jednorázové kolísavé vzorky.
+- Změněny `src/survival/WorldSurvival.ts`, `tests/world-art.test.ts` a tento checkpoint. Změna čeká na samostatný checkpoint commit na `codex/world-revision-6`; poslední pushnutý HEAD je `911b3c1180a50716357f2380520375d80d58800c`. Pracovní strom obsahuje navíc zachované iCloud soubory ` 2`; nestagovat ani neměnit. Celkový postup zůstává orientačně **94%**, G4 přibližně **95%**; nejsou dokončeny širší vizuální/modelové a QA cíle, nic se nevydává.
+
 ## Live update — Rev6 mokřadní tůně (2026-10-03)
 
 - Rev6 marsh pools používají sdílenou 32segmentovou geometrii se třemi radiálními pásy, jemně zvednutou bahnitou hranou a vertex-color přechodem z tmavé vody do mokré zeminy. Každá instance se orientuje podle místního terénního sklonu; tůně zůstávají nekolizní, bez save state a pouze v Revision 6. Umístění, počet 150, quality tiers i deterministické save/reload pozice zůstávají stejné.

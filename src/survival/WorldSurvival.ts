@@ -185,11 +185,13 @@ export class WorldSurvival {
         for(const [x,z] of [[-4.3,-.7],[-3.7,1.0],[3.8,-.95],[4.25,.84]] as const){const debris=this.box(g,x,.16,z,.85,.18,.22,this.wood);debris.rotation.y=(x+z)*.12;debris.rotation.z=(x<0?.1:-.14);debris.name='Breakwater shore debris';}
         const cable=new T.Mesh(new T.CylinderGeometry(.018,.024,4.2,5),this.wood);cable.name='Breakwater slack mooring cable';cable.position.set(-3.5,1.05,-.38);cable.rotation.set(.24,.18,Math.PI/2.8);g.add(cable);
         const warning=this.box(g,2.03,1.48,.47,.34,.27,.025,this.rust);warning.name='Breakwater unmarked hazard placard';
-        const derrick=new T.Mesh(new T.CylinderGeometry(.075,.11,3.9,7),this.metal);derrick.name='Breakwater cargo derrick mast';derrick.position.set(.72,3,.36);derrick.rotation.z=-.11;derrick.castShadow=true;g.add(derrick);
-        const boom=this.box(g,1.55,4.52,.36,2.7,.12,.11,this.rust);boom.name='Breakwater broken cargo boom';boom.rotation.z=-.12;
-        const hoist=new T.Mesh(new T.CylinderGeometry(.018,.028,1.25,5),this.metal);hoist.name='Breakwater hanging hoist cable';hoist.position.set(2.48,3.82,.36);hoist.castShadow=true;g.add(hoist);
-        const hook=new T.Mesh(new T.TorusGeometry(.10,.025,5,8,Math.PI*1.55),this.rust);hook.name='Breakwater cargo hook';hook.position.set(2.48,3.17,.36);hook.rotation.z=-.45;g.add(hook);
-        const cableStart=new T.Vector3(.52,4.88,.36),cableEnd=new T.Vector3(2.36,1.35,.36),cableDelta=cableEnd.clone().sub(cableStart),stay=new T.Mesh(new T.CylinderGeometry(.018,.027,cableDelta.length(),5),this.wood);stay.name='Breakwater snapped derrick stay';stay.position.copy(cableStart).add(cableEnd).multiplyScalar(.5);stay.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),cableDelta.normalize());g.add(stay);
+        // Lift the broken cargo gear above the low hull so the stranded vessel
+        // keeps a readable skyline silhouette beyond the shoreline.
+        const derrick=new T.Mesh(new T.CylinderGeometry(.075,.11,8.4,7),this.metal);derrick.name='Breakwater cargo derrick mast';derrick.position.set(.72,4.55,.36);derrick.rotation.z=-.11;derrick.castShadow=true;g.add(derrick);
+        const boom=this.box(g,1.48,8.35,.36,3.15,.12,.11,this.rust);boom.name='Breakwater broken cargo boom';boom.rotation.z=-.12;
+        const hoist=new T.Mesh(new T.CylinderGeometry(.018,.028,1.8,5),this.metal);hoist.name='Breakwater hanging hoist cable';hoist.position.set(2.62,7.25,.36);hoist.castShadow=true;g.add(hoist);
+        const hook=new T.Mesh(new T.TorusGeometry(.10,.025,5,8,Math.PI*1.55),this.rust);hook.name='Breakwater cargo hook';hook.position.set(2.62,6.25,.36);hook.rotation.z=-.45;g.add(hook);
+        const cableStart=new T.Vector3(.52,8.55,.36),cableEnd=new T.Vector3(2.48,1.35,.36),cableDelta=cableEnd.clone().sub(cableStart),stay=new T.Mesh(new T.CylinderGeometry(.018,.027,cableDelta.length(),5),this.wood);stay.name='Breakwater snapped derrick stay';stay.position.copy(cableStart).add(cableEnd).multiplyScalar(.5);stay.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),cableDelta.normalize());g.add(stay);
         // A small washed-up cargo spill gives the wreck a grounded beach context.
         // These static pieces join the existing per-material landmark batches.
         const groundY=(x:number,z:number)=>this.env.heightAt(p.position.x+x,p.position.z+z)-p.position.y;
