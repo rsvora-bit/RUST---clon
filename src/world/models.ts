@@ -146,6 +146,16 @@ export function bushGeometry():THREE.BufferGeometry {
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
   const colors=new Float32Array(geo.getAttribute('position').count*3);colors.fill(1);geo.setAttribute('color',new THREE.BufferAttribute(colors,3));return geo;
 }
+/** Compact solid woodland shrub; shared by the Rev6 instanced understory batch. */
+export function forestShrubGeometry():THREE.BufferGeometry {
+  const parts:THREE.BufferGeometry[]=[],rand=randomSource(4187);
+  for(let lobe=0;lobe<7;lobe++){
+    const angle=lobe*2.399+rand()*.24,radius=lobe===0?0:.17+rand()*.16,geometry=new THREE.IcosahedronGeometry(lobe===0?.26:.155+rand()*.075,0);
+    geometry.scale(.92+rand()*.42,.8+rand()*.38,.88+rand()*.46);
+    geometry.translate(Math.cos(angle)*radius,lobe===0?.47:.36+rand()*.20,Math.sin(angle)*radius);parts.push(geometry);
+  }
+  const geometry=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());geometry.computeVertexNormals();return geometry;
+}
 /** Small bent blades use real silhouettes, so distant alpha cards cannot turn
  * into dark quads. One shared 36-triangle tuft is instanced across the island. */
 export function grassGeometry(fuller=false):THREE.BufferGeometry {

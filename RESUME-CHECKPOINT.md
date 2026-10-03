@@ -1,6 +1,15 @@
-# AKTUÁLNÍ CHECKPOINT — 2026-10-02
+# AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
+
+## Live update — Rev6 instancovaný lesní podrost (2026-10-03)
+
+- Revision 6 nyní přidává 1 400 deterministických lesních keřů v jednom sdíleném instancovaném batchi. Placement je omezen na vhodné mírné, nezasněžené a nearidní lesní klima; respektuje road/spawn clearance. Nová samostatná RNG větev nemění stromy, resource ID, POI, trasy, kolize, save data ani světové revision. Starší Rev1–5 tento batch vůbec nedostávají. Keř má sedmilaločnou plnou low-poly siluetu, 147 trojúhelníků na instanci, instanční barevnou variantnost a spodní okraj nad terénem. Batch je zahrnut do existujícího detail quality/culling systému od MEDIUM výše.
+- `Environment.understoryLocations` nyní zpřístupňuje kompletní i aktuálně viditelné transformy; QA tak pořizuje screenshot z vykreslené množiny místo instance skryté presetem HIGH. Nový Chrome/Metal `test:world-art`: **56/56 PASS**, včetně nepřítomnosti keřů v archivním v0.9.0 Rev1 a v0.9.1 Rev2, těsného shlukování, Rev6 pozic deterministických po save/reload a **0 browser/app/WebGL errors**. Nový `forest-shrub-detail.png` byl vizuálně zkontrolován; keře jsou jako zelená vegetace rozlišitelné, bez alpha karet.
+- Nový `tests/environment-visuals.test.ts` případ kontroluje konečnou geometrii, maximální triangle budget, konečné vertexy a světlou výšku. Celé `npm test`: **432/432 PASS / 41 souborů**; `npm run build`: **PASS**, existující upozornění na 3,293.52 kB JS chunk; `node --check scripts/world-art-qa.mjs` a `git diff --check`: PASS.
+- Chrome/Metal HIGH 1280×720 performance: archived v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3,390,261 triangles / 1,318 nodes / 2,826 ms startup**; aktuální Rev6 **60 FPS / 16.666 ms / 701 calls / 4,639,816 triangles / 2,033 nodes / 4,966 ms startup / 375 grass chunks / 84,000 grass / 1,500 trees**, browser errors **0**. Oproti před-keřovému Rev6 checkpointu jde o **+1 call a +160,720 triangles (~3.6%)**, bez měřitelného FPS poklesu. Startup je jediný cold run a kolísá.
+- Změny `src/world/models.ts`, `src/rendering/environment.ts`, `tests/environment-visuals.test.ts`, `scripts/world-art-qa.mjs` a tento checkpoint čekají na checkpoint commit. Před commitem HEAD je `26ebd4390298f952c25f8c44ad0a3634c0eb9d25`; větev `codex/world-revision-6`. Orientačně G3 **92%**, G7 **98%**, celkově kolem **94%**; zbývá podstatná ruční vizuální kontrola dalších modelů/POI/weather views, takže overhaul není hotový ani release candidate.
+- `origin/main` a veřejná vydaná v0.9.3, tagy, GitHub Release a produkční Pages zůstávají nedotčené. Nevytvářet release automaticky. Existující Vite servery na portech 5173 a 5174 ponechat spuštěné. Všechny iCloud kopie končící ` 2` zůstávají uživatelskými, nestagovanými soubory a musí být zachovány.
 
 
 ## Pokračování — táborákové vaření a cooked meat (2026-10-02)

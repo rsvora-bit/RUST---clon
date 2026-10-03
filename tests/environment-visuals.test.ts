@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
-import {fernGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../src/world/models';
+import {fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
 import {Weather,stormLightningRoll} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
@@ -16,6 +16,19 @@ describe('environment visual building blocks',()=>{
     const legacy=fernGeometry(),fuller=fernGeometry(true);
     try{legacy.computeBoundingBox();fuller.computeBoundingBox();const legacySize=legacy.boundingBox!.getSize(new THREE.Vector3()),fullerSize=fuller.boundingBox!.getSize(new THREE.Vector3());expect(Math.hypot(fullerSize.x,fullerSize.z)).toBeGreaterThan(Math.hypot(legacySize.x,legacySize.z)*1.1);expect(fullerSize.y).toBeGreaterThan(legacySize.y*1.1);expect(fuller.index!.count).toBe(legacy.index!.count);}
     finally{legacy.dispose();fuller.dispose();}
+  });
+
+  it('builds a solid shared shrub silhouette within a small triangle budget',()=>{
+    const shrub=forestShrubGeometry();
+    try{
+      const positions=shrub.getAttribute('position');
+      expect(positions.count/3).toBeLessThanOrEqual(147);
+      expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
+      shrub.computeBoundingBox();
+      expect(shrub.boundingBox!.min.y).toBeGreaterThan(.04);
+      expect(shrub.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(.35);
+      expect(shrub.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.65);
+    }finally{shrub.dispose();}
   });
 
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{
