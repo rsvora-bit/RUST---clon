@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — výraznější jeřáb Breakwateru na pobřeží (2026-10-03)
+
+- `src/survival/WorldSurvival.ts`: pouze vizuální Revision-6 Breakwater má nyní stabilnější 16,8m stožár, větší potrhaný praporek, výš posazené poškozené rameno a odpovídající závěsné lano/hák. Zůstávají stejné sdílené materiály a geometrické topologie; nepřibyl draw call ani triangle. POI, kolize, loot, secure cache, cesty, save formát i Rev1–5 se nemění.
+- Chrome/Metal `test:world-art`: **66/66 PASS**, `world-art-results.json` uvádí `passed: true`, **0 browser/app/WebGL errors**; archivní Revision 1/2 savy, Rev6 save/reload a placement determinismus prošly. `tests/world-art.test.ts`: **127/127 PASS**; plné `npm test`: **439/439 PASS / 42 souborů**; `npm run build`: **PASS**, známé upozornění na JS chunk **3,299.35 kB**. `node --check scripts/world-art-qa.mjs` a `git diff --check`: PASS.
+- Ručně zkontrolované nové snímky `test-results/world-art/breakwater-wreck-distant.png` a `breakwater-crane-profile.png`: vlajka/stožár nyní tvoří čitelný pobřežní orientační bod i z dálky; profilový záběr zachycuje celý jeřáb bez ořezu. QA harness přidává tento kontrolní úhel. Původní blízký záběr záměrně zůstává a některé jeho úhly vysoký stožár oříznou; další screenshoty proto používají profilový úhel.
+- Chrome/Metal performance A/B, HIGH, 1280×720, seed 731942: archiv v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,825 ms start**; aktuální Rev6 **60 FPS / 16,668 ms / 702 calls / 4,605,504 tris / 2,033 nodes / 2,783 ms start**, oba 0 errors. Proti předchozímu Rev6 checkpointu se calls/triangles nezměnily; 0,002 ms frame-time rozdíl při 60Hz limitu není významná regrese, startup je jednotlivý běh.
+- Změněno `src/survival/WorldSurvival.ts`, `tests/world-art.test.ts`, `scripts/world-art-qa.mjs` a tento checkpoint. Větev `codex/world-revision-6`, předchozí commit `3264c40`; tento Breakwater checkpoint se ukládá. iCloud soubory s příponou ` 2` zůstávají nedotčené a nestagované. `main`, tag/release, PR a produkční Pages se nemění.
+- Orientační cíle: celek **94 %**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **98 %**, G5 **86 %**, G6 **87 %**, G7 **100 %**. Není to release candidate; dál zůstává viditelný terrain/nature polish a širší ruční art/gameplay průchod.
+
 ## Live update — stabilnější úchop a čitelnější brokovnice (2026-10-03)
 
 - `src/rendering/HeldItem.ts`: shotgun viewmodel nyní umisťuje podpůrnou levou ruku podle transformace předního držadla místo původní polohy vedle kamery. Pažba je mírně užší a zbraň dostala sloučené kovové pásky/ horní lištu hlavní a závěrovou páku; gameplay, střelba, munice a save data se nemění. Přibyly jen dva sloučené detailní mesh draw calls při držení brokovnice.
