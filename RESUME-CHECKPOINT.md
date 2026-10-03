@@ -927,3 +927,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `src/app/GameApp.ts` posílá aktuální biom do mixeru; `tests/audio-ambience.test.ts` ověřuje relativní úrovně příboje/listí napříč pobřežím, lesem, mokřadem, grasslandem a arid oblastí.
 - Audio ambient testy 2/2 a environment visual testy 5/5 PASS; kompletní `npm test` **421/421 PASS / 41 souborů**; `npm run build` PASS se známým ~3.27 MB JS bundle warningem. Chrome/Metal `test:browser` PASS včetně New Game, pohybu, inventory/crafting/building, save/reloadu a LOW/MEDIUM/HIGH profilů; konzolové chyby 0. Browser test potvrdil funkčnost AudioContext start flow bez aplikačních chyb; skutečný subjektivní poslech mimo headless ověření zůstává ruční QA.
 - Zvuková změna čeká na checkpoint commit na `codex/world-revision-6`; release/main/tag/Pages beze změny.
+
+## v0.10 pokračování — Ručně vrstvený hunting bow viewmodel — 2026-10-03
+
+- `src/rendering/HeldItem.ts`: Island Hunting Bow nyní přidává kontrastní tenkou laminovanou hranu po stávající limb křivce, dvojitou koženou grip omotávku, malou kovovou arrow rest a tři opeřovací plochy na již skrytém draw arrow. Geometrie je lokální pro first-person model; bow draw transform, rychlost projektilu, damage, spotřeba šípů, AI a save data se nemění.
+- Chrome/Metal `test:ranged` PASS: craft bow/ammo, natažení tětivy, jednoznačná spotřeba šípu, projectile, kritický zásah scavigengera, recoverable arrow, weapon repair a save/reload; browser/app/WebGL chyby 0. `npm run build` PASS se známým ~3.27 MB JS chunk warningem. `test-results/ranged/bow-drawn.png` vizuálně prohlédnut; jde o jemný materiálový detail, nikoli nový art style.
+- Změna čeká na checkpoint commit na `codex/world-revision-6`; full `npm test` se po tomto samotném renderer passu ještě jednou spustí před release-candidate validací. Main/tag/Release/Pages beze změny.

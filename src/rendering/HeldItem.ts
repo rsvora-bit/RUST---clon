@@ -167,11 +167,16 @@ export class HeldItem {
     }else if(item==='bow'){
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,0),new THREE.Vector3(.37,.02,-.05),new THREE.Vector3(.05,.34,0));
       this.mesh(new THREE.TubeGeometry(curve,18,.018,8,false),this.wood,.20,.04,-.68);
+      const laminate=new THREE.QuadraticBezierCurve3(new THREE.Vector3(.05,-.30,.017),new THREE.Vector3(.345,.02,-.033),new THREE.Vector3(.05,.34,.017));
+      this.mesh(new THREE.TubeGeometry(laminate,18,.0045,5,false),this.rust,.20,.04,-.68);
       this.bowString=this.mesh(new THREE.CylinderGeometry(.003,.003,.65,5),this.wrap,.05,.02,-.68);this.bowString.rotation.z=.12;
       const grip=this.mesh(new THREE.CylinderGeometry(.027,.03,.13,8),this.wrap,.17,.02,-.68);grip.rotation.z=-.18;
+      for(const y of [-.025,.026]){const wrap=this.mesh(new THREE.TorusGeometry(.031,.004,5,12),this.rust,.17,y,-.68);wrap.rotation.x=Math.PI/2;wrap.rotation.z=-.18;}
+      const arrowRest=this.mesh(new THREE.BoxGeometry(.07,.018,.045),this.metal,.235,.018,-.66);arrowRest.rotation.z=-.12;
       this.bowArrow=new THREE.Group();this.bowArrow.position.set(.14,.02,-.71);this.bowArrow.visible=false;this.hand.add(this.bowArrow);
       const shaft=this.mesh(new THREE.CylinderGeometry(.008,.009,.48,5),this.wood,0,0,0,this.bowArrow);shaft.rotation.z=-Math.PI/2;
       const tip=this.mesh(new THREE.ConeGeometry(.018,.07,5),this.metal,.26,0,0,this.bowArrow);tip.rotation.z=-Math.PI/2;
+      for(let vane=0;vane<3;vane++){const feather=this.mesh(new THREE.PlaneGeometry(.105,.05),this.wrap,-.165,0,0,this.bowArrow);feather.rotation.set(vane*Math.PI*2/3,0,.08);}
       this.addArm(-1,-.16,-.10,-.61,.21,true);
     }else if(item==='plan'){
       const paper=new THREE.MeshStandardMaterial({color:'#638b97',roughness:1,side:THREE.DoubleSide});const plane=this.mesh(new THREE.BoxGeometry(.37,.28,.009),paper,.05,-.055,-.66);plane.rotation.set(-.4,0,-.04);
