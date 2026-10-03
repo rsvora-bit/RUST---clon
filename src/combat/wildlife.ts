@@ -287,9 +287,21 @@ export class WildlifeSystem {
         ellipsoid(coat,0,.78,.66,.075,.08,.24);
         ellipsoid(0xb0aaa0,0,.48,-.43,.22,.16,.22);
       }else{
-        ellipsoid(0x493b32,0,1.015,.12,.17,.115,.39);
         ellipsoid(0x57473c,0,.64,-.79,.245,.145,.19);
         ellipsoid(0x302c28,0,.68,-.975,.118,.075,.052);
+        // A low, weather-darkened mantle and short backward-leaning bristles
+        // break up the smooth toy-like back while staying in the merged mesh.
+        ellipsoid(0x725540,0,.90,-.01,.29,.105,.47);
+        for(let tuft=0;tuft<8;tuft++){
+          const z=-.39+tuft*.105,top=.91+.12*Math.sqrt(Math.max(.12,1-(z/.48)**2)),bristle=new THREE.ConeGeometry(.029,.13,5,1);
+          bristle.rotateX(.32);add(bristle,tuft%3===0?0x594438:0x604a3c,tuft%2?-.012:.012,top+.045,z,1,1,1);
+        }
+        const tail=new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0,.82,.54),new THREE.Vector3(.025,.96,.68),
+          new THREE.Vector3(.12,1.04,.78),new THREE.Vector3(.19,1.00,.82),
+          new THREE.Vector3(.17,.91,.79),new THREE.Vector3(.12,.89,.73),
+        ]);
+        add(new THREE.TubeGeometry(tail,14,.026,5,false),0x514034,0,0,0,1,1,1);
         for(const x of [-.055,.055])ellipsoid(0x171614,x,.685,-1.018,.018,.014,.008);
         for(let tuft=0;tuft<3;tuft++){
           const bristle=new THREE.ConeGeometry(.052,.16,5);bristle.rotateX(.34);
