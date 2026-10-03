@@ -35,12 +35,13 @@ export function grassTexture(seed:number,straw=false):THREE.CanvasTexture {
   }
   return texture(c);
 }
-export function pineTexture():THREE.CanvasTexture {
+export function pineTexture(fuller=false):THREE.CanvasTexture {
   const [c,ctx]=canvas(256),rand=randomSource(789);
   // Irregular bundles grow around secondary twigs rather than a comb-like fern.
   ctx.lineCap='round';ctx.strokeStyle='#655e4c';ctx.lineWidth=2.4;
   ctx.beginPath();ctx.moveTo(128,254);ctx.quadraticCurveTo(115,137,137,20);ctx.stroke();
-  for(let b=0;b<19;b++){
+  const palette=fuller?['#45613f','#587346','#6b824e','#7e9259','#8b9c63']:['#344d38','#45613f','#5a714a','#718258','#87935a'];
+  for(let b=0;b<(fuller?23:19);b++){
     const y=40+rand()*184,side=b%2?1:-1,len=(24+y*.28)*(.55+rand()*.55);
     const ex=128+side*len,ey=y-18-rand()*32;
     ctx.strokeStyle='#676752';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(126,y+12);ctx.lineTo(ex,ey);ctx.stroke();
@@ -48,10 +49,10 @@ export function pineTexture():THREE.CanvasTexture {
       const t=.15+j*.11,cx=126+(ex-126)*t,cy=y+12+(ey-y-12)*t;
       // Short, overlapping sprays make each bough read as evergreen foliage
       // at medium distance instead of a bare twig with isolated line needles.
-      for(let k=0;k<18;k++){
-        const angle=-Math.PI*.5+side*.5+(rand()-.5)*2.9,length=6+rand()*12;
-        ctx.strokeStyle=['#344d38','#45613f','#5a714a','#718258','#87935a'][Math.floor(rand()*5)]!;
-        ctx.lineWidth=1.2+rand()*1.15;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*(length+1),cy+Math.sin(angle)*(length+1));ctx.stroke();
+      for(let k=0;k<(fuller?20:18);k++){
+        const angle=-Math.PI*.5+side*.5+(rand()-.5)*2.9,length=(fuller?7:6)+rand()*(fuller?13:12);
+        ctx.strokeStyle=palette[Math.floor(rand()*palette.length)]!;
+        ctx.lineWidth=(fuller?1.65:1.2)+rand()*(fuller?1.35:1.15);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*(length+1),cy+Math.sin(angle)*(length+1));ctx.stroke();
       }
     }
   }
