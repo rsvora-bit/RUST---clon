@@ -285,7 +285,7 @@ export class Environment {
     }
   }
   private populateUnderstory():void {
-    const revision6=this.worldRevision>=6,rand=randomSource(this.seed+4421),fernG=this.own(fernGeometry(revision6)),twigG=this.own(twigGeometry()),tuftG=this.own(grassGeometry());
+    const revision6=this.worldRevision>=6,rand=randomSource(this.seed+4421),fernG=this.own(fernGeometry(revision6)),twigG=this.own(twigGeometry()),tuftG=this.own(grassGeometry(revision6));
     const fernM=new THREE.MeshLambertMaterial({color:revision6?0x6d8050:0x526d40,side:THREE.DoubleSide});
     const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
     const fernPos:{x:number;y:number;z:number;s:number;r:number}[]=[],twigPos:{x:number;y:number;z:number;s:number;r:number}[]=[],tuftPos:{x:number;y:number;z:number;s:number;r:number}[]=[];
@@ -341,7 +341,7 @@ export class Environment {
     for(const [matrices,geometry,material,name] of [[wood,log,this.bark,'Stranded branches'],[weed,weedG,weedM,'Tidal seaweed']] as const){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=name;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);if(name==='Tidal seaweed')this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});}
   }
   private populateGrass():void {
-    const rand=randomSource(this.seed+814),geometry=this.own(grassGeometry()),revision6=this.worldRevision>=6,chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number;dry:boolean}[];x:number;z:number;type:number}>();
+    const rand=randomSource(this.seed+814),revision6=this.worldRevision>=6,geometry=this.own(grassGeometry(revision6)),chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number;dry:boolean}[];x:number;z:number;type:number}>();
     const chunkSize=this.worldRevision>=6?64:40;
     for(const color of (revision6?[0xffffff]:[0xffffff,0xd5c39a])){
       const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
@@ -357,7 +357,7 @@ export class Environment {
     }
     for(const chunk of chunks.values()){
       const mesh=new THREE.InstancedMesh(geometry,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=true;
-      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tint=new THREE.Color().setHSL(.20+rand()*.035,.10,.84+rand()*.12);if(p.dry)tint.offsetHSL(.035,.07,-.12);mesh.setColorAt(i,tint);});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
+      chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tint=new THREE.Color().setHSL(revision6 ? .18+rand()*.065 : .20+rand()*.035,revision6 ? .15+rand()*.09 : .10,revision6 ? .72+rand()*.18 : .84+rand()*.12);if(p.dry)tint.offsetHSL(.035,.07,-.12);mesh.setColorAt(i,tint);});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
     }
   }
   update(dt:number,timeOfDay:number,cameraPosition:THREE.Vector3):void {
