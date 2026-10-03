@@ -6,6 +6,15 @@ import type {ItemId} from '../core/types';
 import {woodMaterial,stoneMaterial} from './materials';
 
 const smoothPalm=(y:number)=>Math.max(0,1-Math.abs(y-.25));
+function cleaverSurfaceTexture(){
+  const size=128,data=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const hash=Math.sin(x*127.1+y*311.7)*43758.5453,noise=hash-Math.floor(hash),grain=Math.sin(x*.42+Math.sin(y*.075)*1.8)*3.2+Math.sin(y*.31+x*.08)*2.1,pit=noise>.972?12:0;
+    const oxideNoise=Math.sin(x*.13+Math.sin(y*.05)*2.2)*Math.sin(y*.21+x*.025),oxide=Math.max(0,oxideNoise-.76)*42,at=(y*size+x)*4,steel=119+grain+(noise-.5)*11-pit;
+    data[at]=Math.max(0,Math.min(255,steel+oxide));data[at+1]=Math.max(0,Math.min(255,steel+grain*.25-oxide*.44));data[at+2]=Math.max(0,Math.min(255,steel-grain*.15-oxide*.62));data[at+3]=255;
+  }
+  const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(3.5,3.5);map.anisotropy=4;map.needsUpdate=true;return map;
+}
 const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','shotgunShells','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
 export class HeldItem {
@@ -46,6 +55,7 @@ export class HeldItem {
   private cylinderBore=new THREE.MeshStandardMaterial({color:'#252724',roughness:1});
   private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
+  private cleaverBlade=new THREE.MeshStandardMaterial({map:cleaverSurfaceTexture(),roughness:.78,metalness:.36});
 
   constructor(){
     const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#817768';ctx.fillRect(0,0,128,128);
@@ -62,7 +72,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust,this.cleaverBlade];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -133,8 +143,13 @@ export class HeldItem {
       const grip=this.mesh(new THREE.CylinderGeometry(.024,.034,.35,10),this.wrap,.28,-.005,-.64);grip.rotation.z=-.16;
       const tang=this.mesh(new THREE.BoxGeometry(.045,.20,.035),this.metal,.28,.255,-.64);tang.rotation.z=-.12;
       const edge=new THREE.Shape();edge.moveTo(-.025,-.08);edge.lineTo(.095,-.20);edge.lineTo(.19,-.28);edge.lineTo(.27,-.29);edge.lineTo(.30,-.23);edge.lineTo(.235,-.11);edge.lineTo(.15,.04);edge.lineTo(.065,.18);edge.lineTo(-.015,.15);edge.closePath();
-      this.mesh(new THREE.ExtrudeGeometry(edge,{depth:.035,bevelEnabled:true,bevelSize:.009,bevelThickness:.008,bevelSegments:2,steps:1}),this.metal,.27,.30,-.66).rotation.z=-.10;
+      const blade=this.mesh(new THREE.ExtrudeGeometry(edge,{depth:.035,bevelEnabled:true,bevelSize:.009,bevelThickness:.008,bevelSegments:2,steps:1}),this.cleaverBlade,.27,.30,-.66);blade.rotation.z=-.10;blade.name='Dockside cleaver forged blade';
       const edgeMaterial=new THREE.MeshStandardMaterial({color:'#b9b6a3',roughness:.42,metalness:.58});this.mesh(new THREE.BoxGeometry(.018,.34,.008),edgeMaterial,.442,.285,-.615).rotation.z=-.48;
+      const wearParts:THREE.BufferGeometry[]=[];
+      const placeWear=(geometry:THREE.BufferGeometry,x:number,y:number,z:number,rotationZ=0)=>{geometry.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(1,1,1)));wearParts.push(geometry);};
+      for(const [x,y,length,angle] of [[.39,.36,.115,-.22],[.46,.19,.088,.34]] as const)placeWear(new THREE.BoxGeometry(.018,length,.006),x,y,-.621,angle);
+      for(const [x,y] of [[.30,.24],[.32,.32],[.36,.18]] as const){const rivet=new THREE.CylinderGeometry(.012,.012,.008,8);rivet.rotateX(Math.PI/2);placeWear(rivet,x,y,-.619);}
+      const wearGeometry=mergeGeometries(wearParts,false);wearParts.forEach(part=>part.dispose());if(!wearGeometry)throw new Error('Could not assemble Dockside cleaver surface wear');this.mesh(wearGeometry,this.rust,0,0,0).name='Dockside cleaver corrosion and rivets';
       for(let i=0;i<4;i++){const wrap=this.mesh(new THREE.TorusGeometry(.031,.004,5,14),this.wrap,.28,-.11+i*.035,-.64);wrap.rotation.x=Math.PI/2;}
       this.addArm(-1,-.09,-.16,-.61,.20,true);
     }else if(item==='quarryMaul'){

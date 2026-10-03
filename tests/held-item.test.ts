@@ -21,4 +21,8 @@ describe('first-person firearm presentation',()=>{
     const held=new HeldItem();held.set('salvageRevolver');held.update(.2,0);const cylinder=held.scene.getObjectByName('Revolver cylinder'),face=held.scene.getObjectByName('Revolver six chamber face');
     expect(cylinder).toBeTruthy();expect(face).toBeTruthy();expect((cylinder as THREE.Mesh).rotation.x).toBeCloseTo(Math.PI/2);expect((cylinder as THREE.Mesh).position.z).toBeCloseTo(-.55);expect((face as THREE.Mesh).geometry.getAttribute('position').count).toBeGreaterThan(48);(face as THREE.Mesh).geometry.computeBoundingBox();expect((face as THREE.Mesh).geometry.boundingBox?.max.z).toBeCloseTo(.071);expect((face as THREE.Mesh).material).toBeInstanceOf(THREE.MeshStandardMaterial);
   });
+  it('batches Dockside cleaver corrosion and rivets into one readable surface-detail mesh',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const held=new HeldItem();held.set('docksideCleaver');held.update(.2,0);const wear=held.scene.getObjectByName('Dockside cleaver corrosion and rivets'),blade=held.scene.getObjectByName('Dockside cleaver forged blade') as THREE.Mesh;expect(wear).toBeInstanceOf(THREE.Mesh);expect((wear as THREE.Mesh).geometry.getAttribute('position').count).toBeGreaterThan(100);expect(blade.material).toBeInstanceOf(THREE.MeshStandardMaterial);expect((blade.material as THREE.MeshStandardMaterial).map).toBeInstanceOf(THREE.DataTexture);
+  });
 });
