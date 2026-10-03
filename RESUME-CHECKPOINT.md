@@ -1,5 +1,18 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — širší jižní horský hřeben (2026-10-03)
+
+- Přesný Chrome/Metal záběr jižního pobřeží pro seed `731942` ukázal, že jehlový profil tvořil jeden široký masiv v nejbližší vrstvě. V `src/world/horizon.ts` má pouze deterministicky vybraný široký masiv nyní širší úhlovou základnu (`0.60–0.72 rad`) a nižší příspěvek centrálního vrcholu. Ostatních pět skupin, další dvě vrstvy, terrain i world/save identity zůstaly beze změny.
+- Nový screenshot `test-results/world-art/horizon-target-wide-ridge.png` byl pořízen se stejným seedem, kamerou, pobřežím a 1280×720 viewportem: úzký hrot se změnil na širší dvojitý hřeben napojený na okolní masivy. Screenshot je ignorovaný QA artefakt, nepatří do Gitu.
+- `npm test`: **437/437 PASS / 42 souborů**. `npm run build`: **PASS**, stávající Vite upozornění na ~3,298 kB JS bundle. Chrome/Metal `npm run test:world-art`: **66/66 PASS**, včetně skutečných archivních Rev1/Rev2 save fixtures, Rev6 determinismu/save-reload, počasí, presetů a kamery; browser/app/WebGL chyby **0**. `npm run test:performance`: archiv v0.9.0 **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,834 ms startup**; Rev6 **60 FPS / 16.666 ms / 702 calls / 4,697,156 tris / 2,033 nodes / 2,798 ms startup**, 0 chyb. Shodný frame-time při 60Hz capu; cold-start časy jsou jednotlivé vzorky.
+- Zdrojově změněny `src/world/horizon.ts`; validační výstup a průběh doplněn v checkpointu. Žádný dočasný debug hook, test screenshot, `main`, tag/release, PR ani Pages změna. Předchozí mokřadní commit `3090c00` zůstává zachován. Uživatelské iCloud kopie ` 2` nejsou součástí změn.
+
+## Live update — izolace horského hrotu (2026-10-03)
+
+- Po mokřadním checkpointu `3090c00` byl na Chrome/Metal znovu vytvořen přesný jižní pobřežní záběr seed `731942`, 1280×720. Dočasné zobrazení po jednom masivu ověřilo, že štíhlý hrot je ve skupině `1` nejbližší panoramatické vrstvy. Dočasný browser hook byl odstraněn.
+- Experiment rozšířil peak widths pouze pro tento vybraný široký masiv, ale nový screenshot neukázal smysluplnou změnu obrysu. Tato neúčinná změna byla vrácena; `src/world/horizon.ts` zůstává na ověřeném stavu z `3090c00`. Není potvrzen důkaz, že zdrojem je šířka centrálního peak termu; příště je třeba analyzovat výšku/profil a polohu masivu, ne slepě dál zvětšovat Gaussian width.
+- Pozorovaný screenshot je artefakt diagnostiky, není součástí Gitu. Během izolace se nezměnilo save/world state, produkční nastavení ani veřejná QA API. Další zdrojové kroky zůstávají nadále samostatné a musí mít jasný screenshotový přínos.
+
 ## Live update — mokřadní tůně a performance ověření (2026-10-03)
 
 - Na `wetland-pool-detail.png` byly tůně vidět jako ploché, pravidelné ovály s ostrým okrajem. `src/world/models.ts` nyní generuje hlubší mělkou mísu, nepravidelnější pobřežní obrys a několik barevných přechodových prstenců od tmavší vody po vlhké bahno. Vnitřní barevná interpolace je deterministická a bez radiálního artefaktu; záběr byl po opravě znovu vizuálně zkontrolován. Instancing, počet tůní a umístění zůstaly stejné.
