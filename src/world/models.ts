@@ -200,6 +200,15 @@ export function twigGeometry():THREE.BufferGeometry {
   add(0,0,.95,.2);add(.08,.03,.62,-.55);add(-.14,-.04,.48,.83);const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
 
+/** One wind-felled forest trunk with two broken branch stubs, for instancing. */
+export function fallenLogGeometry():THREE.BufferGeometry {
+  const trunk=new THREE.CylinderGeometry(.125,.19,2.45,8,2,false);trunk.rotateX(Math.PI/2);
+  const parts:THREE.BufferGeometry[]=[trunk];
+  for(const side of [-1,1]){const branch=new THREE.CylinderGeometry(.028,.065,.42,5,1,false);branch.rotateZ(side*.95);branch.translate(0,.08,side*.42);parts.push(branch);}
+  const geometry=mergeGeometries(parts,false);parts.forEach(part=>part.dispose());
+  if(!geometry)throw new Error('Could not build fallen log geometry');geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+}
+
 export function seaweedGeometry():THREE.BufferGeometry {
   const parts:THREE.BufferGeometry[]=[];
   for(let blade=0;blade<6;blade++){const g=new THREE.PlaneGeometry(.14,.9,2,7),p=g.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i)+.45,t=y/.9;p.setX(i,p.getX(i)*(1-t*.72)+Math.sin(t*8+blade)*.05*t);p.setZ(i,Math.sin(t*5+blade)*.055);}g.translate((blade-2.5)*.045,.44,0);g.rotateY(blade/6*Math.PI*2);parts.push(g);}const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());geo.computeVertexNormals();return geo;

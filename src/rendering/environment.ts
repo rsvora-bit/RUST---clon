@@ -8,7 +8,7 @@ import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
-import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
+import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
 type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string};
@@ -95,7 +95,7 @@ export class Environment {
   get understoryLocations():{name:string;positions:Vec3[];visiblePositions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
     const read=(mesh:THREE.InstancedMesh,count:number)=>Array.from({length:count},(_,i)=>{mesh.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);return{x:position.x,y:position.y,z:position.z};});
-    return this.detailMeshes.filter(detail=>detail.mesh.name==='Forest fern understory'||detail.mesh.name==='Forest shrub understory'||detail.mesh.name==='Fallen twig litter'||detail.mesh.name==='Dry meadow tufts').map(detail=>({name:detail.mesh.name,positions:read(detail.mesh,detail.fullCount),visiblePositions:read(detail.mesh,detail.mesh.count)}));
+    return this.detailMeshes.filter(detail=>detail.mesh.name==='Forest fern understory'||detail.mesh.name==='Forest shrub understory'||detail.mesh.name==='Forest fallen logs'||detail.mesh.name==='Fallen twig litter'||detail.mesh.name==='Dry meadow tufts').map(detail=>({name:detail.mesh.name,positions:read(detail.mesh,detail.fullCount),visiblePositions:read(detail.mesh,detail.mesh.count)}));
   }
 
   constructor(readonly scene:THREE.Scene,readonly seed:number,worldGeneration:WorldGeneration=5,deferPopulation=false,readonly worldRevision:WorldRevision=5){
@@ -114,7 +114,7 @@ export class Environment {
   }
   private populateNow():void {
     if(this.populated)return;
-    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateMarshReeds();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
+    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateForestDeadfall();this.populateMarshReeds();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
   }
   private removeTreeInstance(id:string):void {
     const tree=this.treeInstancesById.get(id);if(!tree)return;tree.active=false;
@@ -135,7 +135,7 @@ export class Environment {
     await stage(24,'Growing coastal forest','Placing harvestable trees and preparing canopy batches');this.populateTrees();
     await stage(36,'Scattering rock fields','Building stone outcrops and metal deposits');this.populateRocks();
     await stage(47,'Planting ground resources','Adding fiber, berries and shoreline pickups');this.populatePlants();
-    await stage(53,'Layering forest understory','Adding ferns, fallen twigs and dry meadow tufts');this.populateUnderstory();
+    await stage(53,'Layering forest understory','Adding ferns, fallen logs, broken twigs and dry meadow tufts');this.populateUnderstory();this.populateForestDeadfall();
     await stage(56,'Growing wetland reeds','Planting climate-aware marsh cover');this.populateMarshReeds();this.populateMarshPools();
     await stage(59,'Seeding windblown grass','Preparing vegetation chunks and distance culling');this.populateGrass();
     await stage(63,'Finishing the shoreline','Placing pebbles, driftwood and tidal seaweed');this.populateShore();
@@ -327,6 +327,28 @@ export class Environment {
     }
     const build=(positions:typeof fernPos,geometry:THREE.BufferGeometry,material:THREE.Material,name:string,minimum:'low'|'medium'|'high')=>{const mesh=new THREE.InstancedMesh(geometry,material,positions.length);mesh.name=name;mesh.receiveShadow=true;positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);if(name.includes('Fern'))mesh.setColorAt(i,new THREE.Color().setHSL(revision6?.29+rand()*.035:.24+rand()*.045,revision6?.38:.28,revision6?.34+rand()*.09:.52+rand()*.13));});if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum});};
     build(fernPos,fernG,fernM,'Forest fern understory','medium');build(twigPos,twigG,this.bark,'Fallen twig litter','medium');build(tuftPos,tuftG,tuftM,'Dry meadow tufts','low');
+  }
+
+  private populateForestDeadfall():void {
+    if(this.terrain.generation!==5||this.worldRevision<6)return;
+    const rand=randomSource(this.seed+93241),span=this.terrain.size*.94,target=220,positions:{x:number;y:number;z:number;s:number;r:number}[]=[];
+    for(let tries=0;tries<target*80&&positions.length<target;tries++){
+      const ax=(rand()-.5)*span,az=(rand()-.5)*span,ah=this.heightAt(ax,az),aslope=this.terrain.slopeAt(ax,az);
+      if(ah<3.6||ah>31||aslope>.36||Math.hypot(ax-this.spawn.x,az-this.spawn.z)<24||!this.roadClear(ax,az,6))continue;
+      const climate=surfaceClimate(this.terrain.climateAt(ax,az),ah,aslope,this.terrain.noise.at(ax*.0071+72,az*.0071-31));
+      if(climate.forest<.64||climate.arid>.46||climate.snow>.38||climate.marsh>.44||rand()>.72)continue;
+      const clump=1+Math.floor(rand()*3);
+      for(let j=0;j<clump&&positions.length<target;j++){
+        const angle=rand()*Math.PI*2,radius=j===0?0:rand()*4.8,x=ax+Math.cos(angle)*radius,z=az+Math.sin(angle)*radius,y=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
+        if(y<3.6||y>31||slope>.4||!this.roadClear(x,z,5.5))continue;
+        const local=surfaceClimate(this.terrain.climateAt(x,z),y,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31));
+        if(local.forest<.56||local.arid>.52||local.snow>.44||local.marsh>.48)continue;
+        positions.push({x,y:y+.035,z,s:.72+rand()*.62,r:rand()*Math.PI*2});
+      }
+    }
+    const mesh=new THREE.InstancedMesh(this.own(fallenLogGeometry()),this.bark,positions.length);mesh.name='Forest fallen logs';mesh.castShadow=false;mesh.receiveShadow=false;
+    positions.forEach((p,i)=>{const gradeX=(this.heightAt(p.x+1.5,p.z)-this.heightAt(p.x-1.5,p.z))/3,gradeZ=(this.heightAt(p.x,p.z+1.5)-this.heightAt(p.x,p.z-1.5))/3,normal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(p.x,p.y+.165*p.s,p.z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,p.r));this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.055+rand()*.035,.22+rand()*.12,.43+rand()*.11));});
+    if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum:'medium'});
   }
 
   private populateMarshReeds():void {

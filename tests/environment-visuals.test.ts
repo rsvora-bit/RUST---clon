@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
-import {fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
+import {fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
 import {Weather,rainStreakLength,stormLightningRoll} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
@@ -29,6 +29,18 @@ describe('environment visual building blocks',()=>{
       expect(shrub.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(.35);
       expect(shrub.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.65);
     }finally{shrub.dispose();}
+  });
+
+  it('builds a stable low-cost fallen log with broken branch stubs',()=>{
+    const log=fallenLogGeometry();
+    try{
+      const positions=log.getAttribute('position');log.computeBoundingBox();
+      expect(log.index!.count/3).toBeLessThanOrEqual(180);
+      expect(log.boundingBox!.getSize(new THREE.Vector3()).z).toBeGreaterThan(2.3);
+      expect(log.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(.4);
+      expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
+      expect(Array.from(log.getAttribute('normal').array).every(Number.isFinite)).toBe(true);
+    }finally{log.dispose();}
   });
 
   it('builds a deterministic shallow marsh bowl with a silty vertex-color edge',()=>{
