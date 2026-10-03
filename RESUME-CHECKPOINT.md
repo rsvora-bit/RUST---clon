@@ -12,6 +12,13 @@
 - `npm run test:world` na Chrome/Metal: **23/23 PASS**. Ověřil aktuální Gen5/Revision6 scale 1664 m / terrain 500, deterministické ostrovy, POI/roads a jejich terrain placement, starter resources, map/waypoint/zoom, čtyři biome regions, storm atmosféru, fall damage/God Mode, save/reload identity a načtení/uložení Generation 4 fixture bez Gen5 revision markeru. Browser console errors **0**.
 - K tomuto checkpointu jsou tak znovu potvrzeny generation/world, world-art a gameplay browser harnessy; unit suite **441**, build PASS. Release/merge/main/Pages zůstávají mimo scope; iCloud ` 2` soubory zachované.
 
+## Live update — death, salvage a combat gameplay harnessy (2026-10-03)
+
+- `npm run test:death`: **21/21 PASS**, 0 browser errors. Ověřeny lethal projectile/death lifecycle, jediný Lost Pack, zachování craft queue, save při smrti, přesný respawn kit, collision-safe spawn, movement resume, partial/full loot recovery, building/doors/Hammer po recovery a no duplicate pack po reload.
+- `npm run test:salvage`: **21/21 PASS**, 0 console errors. Ověřeny Recycler inputs, exact Scrap/Metal output, full-output atomicity, save/reload rozpracované job fronty, Salvage Cache/Lost Pack bez duplikací, building upgrade, furnace conversion, přesně dva persistentní world Recyclers.
+- `npm run test:combat`: **25/25 PASS**, bez app/WebGL chyb. Ověřeny seedované wildlife, melee/timing/stamina/durability/stagger/loot persistence, crafted gear sloty, cold/projectile mitigation, armor wear a save/reload průběhu výbavy.
+- Tyto gameplay harnessy běžely po Rev6 world-art úpravách, bez změn gameplay kódu. Aktuální branch `codex/world-revision-6`; poslední commit `42b66cf` a origin branch se shodují. Main/PR/tag/release/Pages se nemění.
+
 ## Live update — čitelnější plochy Rev6 skal (2026-10-03)
 
 - `src/world/models.ts` a `src/rendering/environment.ts`: Generation 5 / world revision 6 skalám se změnil pouze crease angle při výpočtu normál (`0.85` → `0.54`); geometrie, triangulace, pozice, colliders a starší revize zůstaly beze změny. `tests/rock-geometry.test.ts` potvrzuje shodné pozice a odlišné faceted normals pouze pro volitelnou variantu.
