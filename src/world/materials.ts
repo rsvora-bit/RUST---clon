@@ -3,9 +3,9 @@ import {Noise,randomSource} from './noise';
 
 function canvas(size:number):[HTMLCanvasElement,CanvasRenderingContext2D]{const c=document.createElement('canvas');c.width=c.height=size;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas 2D unavailable');return [c,ctx];}
 function texture(c:HTMLCanvasElement,repeat=1):THREE.CanvasTexture {const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(repeat,repeat);t.anisotropy=8;return t;}
-export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',seed:number):THREE.CanvasTexture {
-  const [c,ctx]=canvas(512),n=new Noise(seed),rand=randomSource(seed);const img=ctx.createImageData(512,512);
-  const base=kind==='grass'?[88,98,69]:kind==='dry'?[139,122,76]:kind==='sand'?[172,162,138]:kind==='dirt'?[101,82,58]:kind==='snow'?[211,218,218]:[108,107,96];
+export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',seed:number,worldRevision=0):THREE.CanvasTexture {
+  const [c,ctx]=canvas(512),n=new Noise(seed),rand=randomSource(seed),revision6Snow=kind==='snow'&&worldRevision>=6;const img=ctx.createImageData(512,512);
+  const base=kind==='grass'?[88,98,69]:kind==='dry'?[139,122,76]:kind==='sand'?[172,162,138]:kind==='dirt'?[101,82,58]:kind==='snow'?(revision6Snow?[190,204,210]:[211,218,218]):[108,107,96];
   for(let y=0;y<512;y++)for(let x=0;x<512;x++){
     const u=x/512,vv=y/512,u2=u*u*(3-2*u),v2=vv*vv*(3-2*vv);
     const sample=(dx:number,dy:number)=>n.fbm(dx*.025,dy*.025,4);
@@ -16,6 +16,19 @@ export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',see
   ctx.putImageData(img,0,0);
   if(kind==='grass')for(let i=0;i<12500;i++){const x=rand()*512,y=rand()*512;ctx.strokeStyle=i%4===0?'rgba(151,143,89,.35)':'rgba(37,53,28,.22)';ctx.lineWidth=.5+rand();ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+rand()*5-2.5,y-rand()*7);ctx.stroke();}
   if(kind==='rock')for(let i=0;i<190;i++){let x=rand()*512,y=rand()*512;ctx.strokeStyle='rgba(34,37,31,.26)';ctx.lineWidth=.4+rand()*1.1;ctx.beginPath();ctx.moveTo(x,y);for(let j=0;j<6;j++){x+=rand()*29-12;y+=rand()*19;ctx.lineTo(x,y);}ctx.stroke();}
+  if(revision6Snow){
+    // Low-contrast, wind-combed sastrugi and ice grains add scale to the
+    // bright alpine ground without introducing another shader sample.
+    ctx.lineCap='round';
+    for(let i=0;i<228;i++){
+      const x=rand()*512,y=rand()*512,length=20+rand()*68,drift=(rand()-.5)*17;
+      ctx.strokeStyle=i%4===0?'rgba(239,246,247,.42)':`rgba(54,83,101,${.10+rand()*.13})`;ctx.lineWidth=.9+rand()*2;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+length*.48,y+drift*.35,x+length,y+drift);ctx.stroke();
+    }
+    for(let i=0;i<4200;i++){
+      const x=rand()*512,y=rand()*512,r=.35+rand()*1.35;ctx.fillStyle=i%5===0?'rgba(239,246,247,.38)':'rgba(54,83,101,.19)';ctx.beginPath();ctx.ellipse(x,y,r,r*(.45+rand()*.65),rand()*6.28,0,Math.PI*2);ctx.fill();
+    }
+  }
   for(let i=0;i<2200;i++){const x=rand()*512,y=rand()*512,r=.3+rand()*(kind==='sand'?1.3:3);ctx.fillStyle=i%2?'rgba(25,27,21,.18)':'rgba(218,210,181,.24)';ctx.beginPath();ctx.ellipse(x,y,r,r*.63,rand()*6.28,0,Math.PI*2);ctx.fill();}
   return texture(c);
 }
@@ -73,7 +86,7 @@ export function leavesTexture(seed=667):THREE.CanvasTexture {
   return texture(c);
 }
 export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
-  const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),mud=groundTexture('dirt',1962),snow=groundTexture('snow',1181);
+  const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),mud=groundTexture('dirt',1962),snow=groundTexture('snow',1181,worldRevision);
   const surfaceWetness={value:0},revision6Moss={value:worldRevision>=6?1:0},mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0});
   mat.userData.surfaceWetness=surfaceWetness;
   mat.userData.textures=[grass,dry,sand,rock,dirt,mud,snow];
@@ -86,7 +99,7 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
       vec2 warp=vec2(groundNoise(gp.xz*.09),groundNoise(gp.zx*.07+17.));vec2 guv=gp.xz*.23+warp*.72;
       vec3 grassCol=mix(texture2D(grassTex,guv).rgb,texture2D(grassTex,mat2(.8,.6,-.6,.8)*guv*.43+7.).rgb,.38);
       vec3 dryCol=mix(texture2D(dryTex,guv*.82).rgb,texture2D(dryTex,mat2(.6,.8,-.8,.6)*guv*.37+19.).rgb,.36);
-      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);float snowDrift=groundNoise(gp.xz*.12+warp*.35)*.62+groundNoise(gp.xz*.43+vec2(19.,-7.))*.38;snowCol*=.88+.20*snowDrift;
+      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);float snowDrift=groundNoise(gp.xz*.12+warp*.35)*.62+groundNoise(gp.xz*.43+vec2(19.,-7.))*.38;snowCol*=mix(.88+.20*snowDrift,.72+.52*snowDrift,revision6Moss);
       // Reuse the snow texture's existing drift field to break up the Rev6
       // treeline/snowline. Legacy snapshots keep their original climate mask.
       float snowCover=mix(vGroundClimate.y,smoothstep(.24,.66,vGroundClimate.y+(snowDrift-.5)*.42),revision6Moss);

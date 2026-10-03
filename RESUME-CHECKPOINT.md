@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — Rev6 alpine snow detail (2026-10-03)
+
+- `src/world/materials.ts` přidává pouze pro world revision 6 chladnější, seedovanou texturu sněhu s větrem ošlehanými jemnými rýhami a zrnem; terrain shader znovu používá existující `snowDrift` pro čitelnější lokální variaci bez nových GPU texture samples. Legacy revisions si zachovávají původní snow texture/mask.
+- `scripts/world-art-qa.mjs` nyní vybírá reprezentativní mírný alpský svah a ukládá `alpine-snow-detail.png`; `tests/terrain-materials.test.ts` hlídá determinismus a neměnnost legacy textury. Screenshot je v herním měřítku subtilní, ne dramatický zásah.
+- Chrome/Metal `test:world-art`: **66/66 PASS**, legacy v0.9.0/rev1 a v0.9.1/rev2 fixtures, preset density, determinismus/save-reload ověřeny; browser/WebGL chyby **0**. `npm test`: **442/442 PASS (43 souborů)**; `npm run build`: **PASS**, existující Vite advisory pro ~3,301 kB JS chunk.
+- Aktivní pracovní větev `codex/world-revision-6`; před tímto checkpointem HEAD `21afe4beaa06e06b00946f08841c70efc151a75b`. Ještě zopakovat uncapped performance A/B; poslední párový údaj je 5,219 ms Rev6 proti 4,081 ms archivní v0.9.0. Není doloženo, že poslední sněhová změna problém výkonu řeší. Před release candidate zbývá zacílený profiling/optimalizace a závěrečné browser/gameplay/performance QA; main/tag/release/Pages zůstávají nedotčené.
+
 ## Live update — Rev6 skály a browser gameplay regression (2026-10-03)
 
 - Po Rev6 sharper-facet změně proběhlo `npm test`: **441/441 PASS (42 souborů)**, `npm run build`: PASS se známým ~3,3 MB JS chunk advisory, a Chrome/Metal `test:world-art`: **66/66 PASS**, žádné browser/WebGL chyby. Scale/faceting úprava nemění geology triangles, draw calls, transformace, resource nodes ani colliders.

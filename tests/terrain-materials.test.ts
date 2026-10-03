@@ -1,0 +1,36 @@
+import {afterEach,describe,expect,it,vi} from 'vitest';
+import {groundTexture} from '../src/world/materials';
+
+type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[]};
+function installCanvasStub():TestCanvas[]{
+  const canvases:TestCanvas[]=[];
+  vi.stubGlobal('document',{createElement:()=>{
+    const canvas={width:0,height:0,strokes:[],fills:[]} as unknown as TestCanvas;canvases.push(canvas);
+    let ctx:{fillStyle:string;strokeStyle:string};
+    ctx={fillStyle:'#000',strokeStyle:'#000',
+      createImageData:(width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),
+      putImageData:(image:ImageData)=>{canvas.pixelData=image.data.slice();},
+      beginPath:()=>{},moveTo:()=>{},lineTo:()=>{},quadraticCurveTo:()=>{},
+      ellipse:()=>{},fill:()=>canvas.fills.push(ctx.fillStyle),stroke:()=>canvas.strokes.push(ctx.strokeStyle),
+    } as unknown as {fillStyle:string;strokeStyle:string};
+    (canvas as unknown as {getContext:(kind:string)=>unknown}).getContext=()=>ctx;
+    return canvas;
+  }});
+  return canvases;
+}
+
+afterEach(()=>vi.unstubAllGlobals());
+
+describe('revision-6 alpine snow texture',()=>{
+  it('adds deterministic wind grain only to revision 6 while preserving legacy pixels',()=>{
+    const canvases=installCanvasStub(),legacy=groundTexture('snow',1181),legacyRepeat=groundTexture('snow',1181),revision6=groundTexture('snow',1181,6);
+    try{
+      expect(canvases[0]!.pixelData).toEqual(canvases[1]!.pixelData);
+      expect(canvases[0]!.pixelData).not.toEqual(canvases[2]!.pixelData);
+      expect(canvases[0]!.strokes).toHaveLength(0);
+      expect(canvases[2]!.strokes).toHaveLength(228);
+      expect(canvases[0]!.fills).toHaveLength(2200);
+      expect(canvases[2]!.fills).toHaveLength(6400);
+    }finally{legacy.dispose();legacyRepeat.dispose();revision6.dispose();}
+  });
+});
