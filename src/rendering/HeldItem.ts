@@ -36,6 +36,8 @@ export class HeldItem {
 
   private skin=new THREE.MeshStandardMaterial({color:'#d0c4b3',roughness:.86});
   private sleeve=new THREE.MeshStandardMaterial({color:'#555b4c',roughness:1});
+  private glove=new THREE.MeshStandardMaterial({color:'#39413c',roughness:.98});
+  private gloveWear=new THREE.MeshStandardMaterial({color:'#71684f',roughness:1});
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
   private metal=new THREE.MeshStandardMaterial({color:'#6d726f',roughness:.8,metalness:.25});
@@ -57,7 +59,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.wood,this.stone,this.metal,this.wrap,this.rust];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.wrap,this.rust];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -67,13 +69,20 @@ export class HeldItem {
     const cuff=this.mesh(new THREE.CylinderGeometry(.063,.069,.068,16),this.sleeve,x,y-.065,z+.045);cuff.rotation.x=-.5;cuff.rotation.z=rotationZ*.45;
     const palmGeometry=new THREE.SphereGeometry(1,24,16),palmPosition=palmGeometry.getAttribute('position');
     for(let i=0;i<palmPosition.count;i++){const py=palmPosition.getY(i),px=palmPosition.getX(i);const taper=.82+.18*smoothPalm(py);palmPosition.setXYZ(i,px*.065*taper,py*.089-.025,palmPosition.getZ(i)*.043*(1-.16*py)+.008*px*side);}
-    palmGeometry.computeVertexNormals();const palm=this.mesh(palmGeometry,this.skin,x,y,z);palm.rotation.z=rotationZ;
+    palmGeometry.computeVertexNormals();const palm=this.mesh(palmGeometry,this.glove,x,y,z);palm.rotation.z=rotationZ;
+    // A worn fingerless work glove adds a readable material break on the back
+    // of the hand without changing the held-item grip or its action transforms.
+    const backPlate=this.mesh(new THREE.BoxGeometry(.092,.026,.018),this.glove,x,y+.047,z-.018);backPlate.rotation.z=rotationZ;
+    for(let i=0;i<3;i++){const knuckle=this.mesh(new THREE.SphereGeometry(.012,8,6),this.gloveWear,x+side*(-.025+i*.025),y+.054,z-.033);knuckle.scale.set(1,.75,.65);}
+    const wristWrap=this.mesh(new THREE.TorusGeometry(.066,.007,5,14),this.gloveWear,x,y-.035,z+.035);wristWrap.rotation.z=rotationZ;
     const fingerLength=compact?.068:.084;
     for(let i=0;i<4;i++){
       const fx=x+side*(-.046+i*.029),fy=y-.012-i*.012,fz=z-.046;
-      const finger=this.mesh(new THREE.CapsuleGeometry(.012,fingerLength,4,8),this.skin,fx,fy,fz);finger.rotation.x=Math.PI/2.35;finger.rotation.z=rotationZ*.35;
+      const finger=this.mesh(new THREE.CapsuleGeometry(.012,fingerLength*.72,4,8),this.glove,fx,fy,fz+.008);finger.rotation.x=Math.PI/2.35;finger.rotation.z=rotationZ*.35;
+      this.mesh(new THREE.SphereGeometry(.011,8,6),this.skin,fx,fy-.006,fz-fingerLength*.40);
     }
-    const thumb=this.mesh(new THREE.CapsuleGeometry(.015,.065,4,8),this.skin,x-side*.061,y-.015,z-.018);thumb.rotation.x=Math.PI/2.5;thumb.rotation.z=side*.72;
+    const thumb=this.mesh(new THREE.CapsuleGeometry(.015,.047,4,8),this.glove,x-side*.061,y-.015,z-.012);thumb.rotation.x=Math.PI/2.5;thumb.rotation.z=side*.72;
+    this.mesh(new THREE.SphereGeometry(.014,8,6),this.skin,x-side*.067,y-.020,z-.052);
   }
 
   private build(item:ItemId|null){
