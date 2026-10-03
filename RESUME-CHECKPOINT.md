@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — spolehlivější world-art capture a pláž (2026-10-03)
+
+- Aktuální potvrzený code checkpoint před tímto krokem je `8081010cc15fa8568280166e1b8e73ef36aa68dd` na `codex/world-revision-6`; remote větev odpovídá. `main`, tag/release i produkční Pages zůstávají nedotčené.
+- `scripts/visual-overhaul-capture.mjs` už používá současný New Game/save-slot flow. Lesní záběry dynamicky najdou skutečný stromový shluk a rock close-up skutečný stone resource node, místo dřívějších souřadnic, které mířily do prázdného pobřeží/oblohy. Chrome/Metal capture vygeneroval 15 běhových záběrů, 0 browser errors; screenshoty hustého lesa a kamene byly ručně zkontrolovány. Jednotlivé FPS odečty jsou při 60 Hz capu, ne srovnávací benchmark.
+- Pokus rozšířit panoramatické vrcholy byl odmítnut: `tests/environment-visuals.test.ts` prokázal ztrátu vyžadovaných vícenásobných hřebenů. Změna `src/world/horizon.ts` byla kompletně vrácena a původní horizon test prošel **11/11**. Jehlový vrchol z některých jižních/pobřežních směrů tak zůstává otevřeným vizuálním nedostatkem; další úprava vyžaduje přesnější řešení než obecné rozšiřování píků.
+- Po posledním commitnutém mokrém pobřežním pásu zůstává `npm test` **444/444**, `npm run build` **PASS** (známé Vite varování, JS chunk 3,304.40 kB), `npm run test:world-art` **76/76** a 0 browser/WebGL chyb. Nové zdrojové změny nejsou kromě předchozího checkpointu; čeká commit pouze QA capture skript a tento stavový záznam. QA artefakty jsou dočasné a nepůjdou do commitu; iCloud soubory ` 2.*` jsou ponechány nedotčené.
+- Další krok: commit/push QA harness opravy; potom pokračovat Rev6 vizuálními a performance prioritami a širší gameplay/save regresní kontrolou. Celkový cíl zůstává aktivní a není release candidate.
+
 ## Live update — Rev6 listnaté koruny, druhý průchod (2026-10-03)
 
 - Před tímto krokem byl checkpoint `5ce0a3c8cc992d346c6f995d4adc582ab0db1dd7` na pracovní větvi a origin odpovídal. Aktuální změny ještě čekají na samostatný checkpoint commit/push; uživatelské iCloud kopie `* 2.*` zůstávají nedotčené a nestagované.
