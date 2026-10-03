@@ -3,8 +3,13 @@ import type {Settings} from '../core/types';
 export type FootstepSurface='sand'|'grass'|'forest'|'rock'|'wood';
 export type GatherTool='rock'|'hatchet'|'pickaxe';
 
+export function ambientLayerLevels(biome:string):{ocean:number;foliage:number}{
+  const forest=biome.includes('FOREST'),wetland=biome.includes('WETLAND');
+  return{ocean:biome==='COAST'?.68:.08,foliage:forest?.20:wetland?.13:biome==='COAST'?.025:biome==='ARID'?.015:.045};
+}
+
 export class AudioMixer {
-  private ctx:AudioContext|null=null;private master:GainNode|null=null;private sfx:GainNode|null=null;private ambience:GainNode|null=null;private music:GainNode|null=null;private buffer:AudioBuffer|null=null;private lastRain=0;
+  private ctx:AudioContext|null=null;private master:GainNode|null=null;private sfx:GainNode|null=null;private ambience:GainNode|null=null;private music:GainNode|null=null;private ocean:GainNode|null=null;private foliage:GainNode|null=null;private buffer:AudioBuffer|null=null;private lastRain=0;private biome='TEMPERATE GRASSLAND';
   constructor(private settings:Settings){}
   async start(){
     if(this.ctx){await this.ctx.resume();return;}
@@ -15,12 +20,15 @@ export class AudioMixer {
     this.music=ctx.createGain();this.music.connect(this.master);
     this.buffer=ctx.createBuffer(1,ctx.sampleRate*3,ctx.sampleRate);const data=this.buffer.getChannelData(0);let prev=0;for(let i=0;i<data.length;i++){prev=(prev+Math.random()*.08-.04)/1.025;data[i]=prev;}
     const wind=ctx.createBufferSource();wind.buffer=this.buffer;wind.loop=true;const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=680;wind.connect(filter);filter.connect(this.ambience);wind.start();
+    const layer=(type:BiquadFilterType,frequency:number,q:number)=>{const source=ctx.createBufferSource(),tone=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=this.buffer;source.loop=true;tone.type=type;tone.frequency.value=frequency;tone.Q.value=q;gain.gain.value=0;source.connect(tone);tone.connect(gain);gain.connect(this.ambience!);source.start();return gain;};
+    this.ocean=layer('lowpass',430,.55);this.foliage=layer('bandpass',1850,.32);
     const pad=ctx.createGain();pad.gain.value=.24;pad.connect(this.music);const low=ctx.createOscillator(),high=ctx.createOscillator(),padFilter=ctx.createBiquadFilter();padFilter.type='lowpass';padFilter.frequency.value=260;low.type='sine';high.type='sine';low.frequency.value=82.4;high.frequency.value=123.5;low.connect(padFilter);high.connect(padFilter);padFilter.connect(pad);low.start();high.start();
     this.setSettings(this.settings);
   }
   setSettings(s:Settings){this.settings=s;if(this.master)this.master.gain.value=s.masterVolume;if(this.sfx)this.sfx.gain.value=s.effectsVolume;if(this.music)this.music.gain.value=s.musicVolume*.045;this.updateAmbience();}
-  setWeather(rain:number){this.lastRain=rain;this.updateAmbience();}
-  private updateAmbience(){if(this.ambience&&this.ctx)this.ambience.gain.setTargetAtTime((.038+this.lastRain*.075)*this.settings.ambientVolume,this.ctx.currentTime,.4);}
+  setWeather(rain:number){const next=Math.max(0,Math.min(1,rain));if(Math.abs(next-this.lastRain)<.015)return;this.lastRain=next;this.updateAmbience();}
+  setBiome(biome:string){if(this.biome===biome)return;this.biome=biome;this.updateAmbience();}
+  private updateAmbience(){if(this.ambience&&this.ctx){const t=this.ctx.currentTime;this.ambience.gain.setTargetAtTime((.038+this.lastRain*.075)*this.settings.ambientVolume,t,.4);const layers=ambientLayerLevels(this.biome);this.ocean?.gain.setTargetAtTime(layers.ocean,t,1.1);this.foliage?.gain.setTargetAtTime(layers.foliage,t,1.4);}}
 
   footstep(surface:FootstepSurface,speed:number){
     if(!this.ctx||!this.sfx||!this.buffer)return;
