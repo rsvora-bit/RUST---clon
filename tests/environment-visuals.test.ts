@@ -25,6 +25,9 @@ describe('environment visual building blocks',()=>{
       expect(Array.from(a.getAttribute('position').array)).not.toEqual(Array.from(c.getAttribute('position').array));
       expect(a.index!.count/3).toBe(5184);expect(a.boundingBox).toBeNull();a.computeBoundingBox();
       expect(a.boundingBox!.max.y).toBeGreaterThan(260);expect(a.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(260);expect(a.boundingSphere!.radius).toBeLessThan(1800);
+      const rowSize=73,groupSize=rowSize*7,ridges=Array.from({length:6},(_,group)=>Array.from({length:rowSize},(_,i)=>a.getAttribute('position').getY(group*groupSize+rowSize*3+i)));
+      const peakCounts=ridges.map(profile=>profile.slice(1,-1).filter((height,index)=>height>profile[index]&&height>=profile[index+2]).length);
+      expect(peakCounts.some(count=>count>=3)).toBe(true);
     }finally{a.dispose();b.dispose();c.dispose();}
   });
 
