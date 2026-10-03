@@ -19,6 +19,13 @@
 - `npm run test:combat`: **25/25 PASS**, bez app/WebGL chyb. Ověřeny seedované wildlife, melee/timing/stamina/durability/stagger/loot persistence, crafted gear sloty, cold/projectile mitigation, armor wear a save/reload průběhu výbavy.
 - Tyto gameplay harnessy běžely po Rev6 world-art úpravách, bez změn gameplay kódu. Aktuální branch `codex/world-revision-6`; poslední commit `42b66cf` a origin branch se shodují. Main/PR/tag/release/Pages se nemění.
 
+## Live update — world events, Tech Tree a powered raiding (2026-10-03)
+
+- `npm run test:world-events`: **11/11 PASS**; storm salvage eventy mají správný coastal marker/low-slope placement, cooldown, nesmí se duplikovat před weather resetem, třetí cache vydá jeden Tech Part a stav zůstává zachovaný po save/reload. 0 browser/WebGL errors.
+- `npm run test:tech-tree`: **49/49 PASS**; běžné crafting UI až Workbench III, Field Medicine, armor, Tech Parts, trauma kit, weapon crafting/durability, cold/protection stats a research/inventory po reloadu a smrti. Console errors 0.
+- `npm run test:raiding`: **8/8 PASS**; alarm/generátor/Beacon, koordinovaný breach locked door, ally alert/entry a destroyed door persistence přes save/reload. Browser/WebGL errors 0.
+- Následné QA nezměnilo projektové soubory; artifacty zůstávají v ignorovaném `test-results/`. Aktuální code/build validace zůstává `npm test` **441/441**, `npm run build` PASS. Main ani produkční stránky nebyly dotčeny.
+
 ## Live update — čitelnější plochy Rev6 skal (2026-10-03)
 
 - `src/world/models.ts` a `src/rendering/environment.ts`: Generation 5 / world revision 6 skalám se změnil pouze crease angle při výpočtu normál (`0.85` → `0.54`); geometrie, triangulace, pozice, colliders a starší revize zůstaly beze změny. `tests/rock-geometry.test.ts` potvrzuje shodné pozice a odlišné faceted normals pouze pro volitelnou variantu.
