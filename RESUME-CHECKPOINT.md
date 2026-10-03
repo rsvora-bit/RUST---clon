@@ -983,3 +983,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Plné Chrome/Metal `test:world-art`: **45/45 PASS**, včetně archived v0.9.0/v0.9.1 saveů, world layoutu, biome/POI/vegetation/weather, camera sweepu a save/reloadu; browser/WebGL chyby **0**. `forest-interior.png` a `forest-pine-detail.png` byly vizuálně prohlédnuty.
 - Opakovaná HIGH 1280×720 performance QA: v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 792 ms startup**; Rev6 **60 FPS / 16.666 ms / 680 calls / 4 383 370 tris / 2 033 nodes / 3 084 ms startup / 375 grass chunks / 84 000 grass instances / 1 500 trees**, chyby 0. Materiálový pass nemění draw calls ani triangles; startup měření kolísá.
 - Po změně `npm test` **422/422 PASS / 41 souborů** a `npm run build` PASS se známým ~3.27 MB chunk upozorněním. Změna čeká na checkpoint commit/push na `codex/world-revision-6`; release/main/tag/Pages zůstávají nedotčené.
+
+## v0.10 pokračování — Čitelnější pěna na pobřeží — 2026-10-03
+
+- `src/world/atmosphere.ts`: rozšířen lokální procedural foam band a mírně zvýšen jeho směs do vody; pobřežní shader dál používá stejný terrain heightmap, noise, waves, materiál a jednu draw call cestu.
+- Chrome/Metal `test:world-art` **45/45 PASS**, včetně archived save compatibility, kamerového sweepu a save/reloadu, bez browser/WebGL chyb. `shoreline-water-detail.png` byl vizuálně zkontrolován: na záběru zátoky je nyní čitelný nepravidelný pěnový okraj; zůstává lokální a nepřekreslí vodní plochu. Falešně zavádějící starý `shoreline-detail` mířil přes pláž, správný close-water záběr je `shoreline-water-detail`.
+- Performance z posledního běhu beze změny render counts: archive v0.9.0 **612 calls / 3 390 261 tris**, Rev6 **680 calls / 4 383 370 tris**, oba 60 FPS, 16.666 ms, 0 errors. `npm run build` PASS se známým chunk upozorněním; následné `npm test` **422/422 PASS / 41 souborů**.
+- Aktuální změna čeká na checkpoint commit/push na `codex/world-revision-6`; main/release/tag/Pages se nemění. Netrackované iCloud duplikáty ` 2` zachovat.
