@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 
 const out=process.env.TIDELAND_QA_DIR||'test-results/world-art';fs.mkdirSync(out,{recursive:true});
 const currentVersion=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`,'--enable-unsafe-swiftshader']});
+const browserArgs=['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`,'--enable-unsafe-swiftshader'];if(process.env.TIDELAND_QA_UNCAPPED)browserArgs.push('--disable-frame-rate-limit','--disable-gpu-vsync');
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:browserArgs});
 const measure=async(url,label)=>{
   const context=await browser.newContext({viewport:{width:1280,height:720},deviceScaleFactor:1}),page=await context.newPage(),started=Date.now(),errors=[];console.log('START',label,url);
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR',label,e.message)});page.on('console',m=>{if(m.type()==='error'){errors.push(m.text());console.error('CONSOLE ERROR',label,m.text())}});

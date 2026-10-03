@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — ověření render headroomu Rev6 (2026-10-03)
+
+- `scripts/world-performance-qa.mjs`: přibyl pouze volitelný `TIDELAND_QA_UNCAPPED=1`, který před benchmarkem vypne Chrome frame-rate limit a GPU VSync. Bez této proměnné zůstává původní QA režim beze změny. `node --check` i výchozí Chrome/Metal benchmark prošly.
+- Matched HIGH / 1280×720 / seed 731942 / Chrome Metal, běžný capped harness: v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 881 ms start**; současný Rev6 **60,01 FPS / 16,664 ms / 702 calls / 4 605 504 tris / 2 033 nodes / 2 820 ms start**; obojí 0 errors. Oba jsou cap-limited, takže to neměří rezervu nad 60 Hz.
+- Dva uncapped Rev6 vzorky: **184,14 FPS / 5,431 ms** a **177,12 FPS / 5,646 ms** proti jednomu uncapped v0.9.0 vzorku **244,71 FPS / 4,086 ms**, při 702 vs. 612 calls a 4 605 504 vs. 3 390 261 tris. 0 errors; cold-start v uncapped režimu se rozpadl (34 708 a 120 376 ms), proto jej nelze porovnávat ani používat jako QA metriku. Uncapped série naznačuje nižší grafickou rezervu Rev6 při výrazně vyšším content workloadu, ale první zařízení běh měl jen jeden baseline vzorek a hra stále vykresluje >177 FPS na tomto stroji. Není to důkaz potvrzeného 60-FPS gameplay propadu; vhodné je před release zopakovat stabilní uncapped párové běhy/profilovat hlavní GPU náklady.
+- Změna přidává pouze měřicí přepínač v QA harnessu; samotné dva modelové checkpointy nemění počet světových meshů ani draw calls. Otevřený výkonový rozdíl připisuji workloadu nové Rev6 scény, nikoli konkrétně tváři prasete nebo pancíři stráže. Aktuální stav: **94 %** celkem; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **98 %**, G5 **86 %**, G6 **88 %**, G7 **96 %**. Release candidate ani 100% dokončení zatím nehlásím.
+- Pracovní větev `codex/world-revision-6`; úpravu harnessu/checkpointu je potřeba checkpointnout a pushnout. `main`, tagy, GitHub Release, PR a produkční Pages beze změny.
+
 ## Live update — vrstvenější pancíř scavenger stráže (2026-10-03)
 
 - `src/combat/wildlife.ts`: stráž má nyní plošší fazetované ramenní pláty a malé odpovídající chrániče kolen. Jejich dodekaedrické tvary dostávají sekvenční index buffer, aby šly spojit se zbytkem role do jedné geometrie. Mesh zůstává jeden na archetyp; draw calls, AI, hitboxy, armor hodnoty, loot a persistence se nemění. `tests/wildlife-combat.test.ts` hlídá nové barevné/vertikální rozsahy plátů a limit pod 18 000 trojúhelníků.
