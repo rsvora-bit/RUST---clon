@@ -181,6 +181,13 @@ export class WildlifeSystem {
       add(new THREE.SphereGeometry(.16,12,10),0x887c60,0,1.56,0,1,1,1);
       add(new THREE.CapsuleGeometry(.066,.12,3,8),0x766d58,0,1.405,0,1,1,1);
       add(new THREE.TorusGeometry(.132,.025,5,14),0x403f36,0,1.37,0,1,1,1);
+      // Layered field clothing breaks up the smooth mannequin silhouette while
+      // staying in the same shared, merged geometry for each scavenger role.
+      add(new THREE.BoxGeometry(.32,.17,.25),0x49463c,0,.59,-.015,1,1,1);
+      const collar=new THREE.TorusGeometry(.14,.035,5,12);collar.rotateX(Math.PI/2);add(collar,actor.archetype==='guard'?0x555b54:0x756449,0,1.40,0,1,1,1);
+      add(new THREE.BoxGeometry(.038,.53,.052),0xb2935d,-.092,1.08,-.235,1,1,1,-.12);
+      add(new THREE.BoxGeometry(.038,.53,.052),0xb2935d,.092,1.08,-.235,1,1,1,.12);
+      add(new THREE.BoxGeometry(.12,.10,.025),0x76705b,0,.91,-.255,1,1,1);
       add(new THREE.BoxGeometry(.30,.29,.075),0x393a34,0,1.02,-.14,1,1,1);
       add(new THREE.BoxGeometry(.29,.34,.15),0x51483a,0,1.05,.19,1,1,1);
       add(new THREE.BoxGeometry(.052,.52,.035),0x6b604a,-.105,1.105,-.202,1,1,1,-.16);
@@ -190,6 +197,19 @@ export class WildlifeSystem {
       add(new THREE.BoxGeometry(.115,.15,.075),0x635b47,.145,1.09,-.225,1,1,1);
       add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,-.13,.025,-.025,1,1,1);
       add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,.13,.025,-.025,1,1,1);
+      const headwear=actor.archetype==='guard'?0x414943:actor.archetype==='lookout'?0x4b5148:0x5c5545;
+      add(new THREE.SphereGeometry(.18,12,8,0,Math.PI*2,0,Math.PI*.55),headwear,0,1.64,.012,1,1,1);
+      add(new THREE.BoxGeometry(.34,.045,.22),headwear,0,1.625,-.075,1,1,1);
+      if(actor.archetype==='guard'){
+        add(new THREE.BoxGeometry(.23,.075,.028),0x343a38,0,1.565,-.149,1,1,1);
+        add(new THREE.BoxGeometry(.16,.018,.012),0xa48c61,0,1.57,-.168,1,1,1);
+      }else if(actor.archetype==='lookout'){
+        add(new THREE.BoxGeometry(.24,.065,.032),0x343a35,0,1.585,-.148,1,1,1);
+        add(new THREE.BoxGeometry(.075,.038,.012),0x879080,-.052,1.585,-.168,1,1,1);
+        add(new THREE.BoxGeometry(.075,.038,.012),0x879080,.052,1.585,-.168,1,1,1);
+      }else{
+        add(new THREE.BoxGeometry(.23,.105,.035),0x514c40,0,1.405,-.139,1,1,1);
+      }
       for(const side of [-1,1]){
         add(new THREE.CapsuleGeometry(.074,.40,4,8),coat,side*.34,1.00,0,1,1,1,side*-.08);
         add(new THREE.CapsuleGeometry(.09,.48,4,8),0x51483a,side*.13,.40,.015,1,1,1,side*-.025);
