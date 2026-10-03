@@ -179,8 +179,17 @@ export class WildlifeSystem {
     if(species==='islandScavenger'){
       add(new THREE.CapsuleGeometry(.235,.34,5,10),coat,0,1.03,0,1,1,1);
       add(new THREE.SphereGeometry(.16,12,10),0x887c60,0,1.56,0,1,1,1);
+      add(new THREE.CapsuleGeometry(.066,.12,3,8),0x766d58,0,1.405,0,1,1,1);
+      add(new THREE.TorusGeometry(.132,.025,5,14),0x403f36,0,1.37,0,1,1,1);
       add(new THREE.BoxGeometry(.30,.29,.075),0x393a34,0,1.02,-.14,1,1,1);
       add(new THREE.BoxGeometry(.29,.34,.15),0x51483a,0,1.05,.19,1,1,1);
+      add(new THREE.BoxGeometry(.052,.52,.035),0x6b604a,-.105,1.105,-.202,1,1,1,-.16);
+      add(new THREE.BoxGeometry(.052,.52,.035),0x6b604a,.105,1.105,-.202,1,1,1,.16);
+      add(new THREE.BoxGeometry(.31,.082,.04),0x302f2b,0,.82,-.204,1,1,1);
+      add(new THREE.BoxGeometry(.115,.15,.075),0x75634a,-.145,1.09,-.225,1,1,1);
+      add(new THREE.BoxGeometry(.115,.15,.075),0x635b47,.145,1.09,-.225,1,1,1);
+      add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,-.13,.025,-.025,1,1,1);
+      add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,.13,.025,-.025,1,1,1);
       for(const side of [-1,1]){
         add(new THREE.CapsuleGeometry(.074,.40,4,8),coat,side*.34,1.00,0,1,1,1,side*-.08);
         add(new THREE.CapsuleGeometry(.09,.48,4,8),0x51483a,side*.13,.40,.015,1,1,1,side*-.025);
