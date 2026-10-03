@@ -2,6 +2,15 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Live update — pobřežní prase a stabilní unit test runner (2026-10-03)
+
+- `src/combat/wildlife.ts`: pobřežní prase má světlejší hřbetní plášť, osm nízkých dozadu skloněných štětin a zahnutý ocas. Snímek `test-results/combat/coastal-boar-profile.png` byl po poslední úpravě ručně zkontrolován; tmavý plášť byl zesvětlen, aby nepůsobil jako černý pás. Model zůstává jednou sloučenou geometrií na druh a nemění pohyb, boj, loot, identitu ani save data. `tests/wildlife-combat.test.ts` zachovává limit geometrie a kontroluje nový detail/ocas.
+- `package.json`: `npm test` používá stejný jednovláknový Vitest pool `threads`, v němž celá sada spolehlivě prošla. Původní `forks` pool při dvou opakováních dokončil všechna tvrzení, ale poté končil 60s IPC timeoutem `onTaskUpdate`; nic v testech nebylo vynecháno ani zmírněno.
+- `npm test`: **436/436 PASS / 42 souborů**. `npm run build`: **PASS**, známý Vite warning na 3,297.52 kB minifikovaný JS chunk; `git diff --check`: PASS. Chrome/Metal `test:combat`: **25/25 PASS**, 0 browser/app/WebGL chyb.
+- Dva Chrome/Metal HIGH 1280×720 performance běhy proti archivní v0.9.0: archiv **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 triangles / 1,318 nodes**; aktuální Rev6 **56.19 FPS / 17.797 ms** a **55.32 FPS / 18.078 ms / 702 calls / 4,672,756 triangles / 2,033 nodes**, oba s 0 chyb. Čítače calls/triangles jsou stejné jako před touto změnou, ale nižší FPS se v těchto dvou vzorcích opakovalo. Dřívější Rev6 běhy měly 60 FPS; je třeba znovu ověřit výkon a určit, zda rozdíl způsobilo kolísání headless/hostu nebo širší Rev6 zátěž. To je otevřená QA otázka, ne potvrzená regrese způsobená modelem.
+- Nové commity: `ead5f02` (`Refine coastal boar silhouette`) a `ee54e21` (`Use threads for reliable unit test runs`). Připravená větev `codex/world-revision-6`; push ještě čeká po aktualizaci checkpointu. `main`, tagy, vydání a produkční Pages beze změny. Zachované iCloud kopie ` 2` zůstávají mimo staging.
+- Orientační postup: celek **92 %**; G1 **100 %**, G2 **79 %**, G3 **89 %**, G4 **93 %**, G5 **83 %**, G6 **82 %**, G7 **94 %**. Release candidate to není; zůstává výkonová nejistota a širší vizuální/regresní audit.
+
 ## Live update — pobřežní cesty a silueta Breakwateru (2026-10-03)
 
 - `src/terrain/roads.ts`: pouze Generation 5 / Revision 6 používá pobřežní cestu o šířce 3,9 m a vnitrozemskou 4,5 m; starší generace i Revision 5 zachovávají dosavadních 5 m. `tests/road-geometry.test.ts` pokrývá všechny tři případy. `scripts/world-art-qa.mjs` nyní snímá skutečný pobřežní úsek trasy.
