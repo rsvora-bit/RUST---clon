@@ -901,3 +901,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `scripts/firearm-qa.mjs` vytváří neblokovaný `viewmodel-detail.png`, poté obnoví aim na cíl před testem střelby. Snímek byl vizuálně zkontrolován.
 - Targeted `tests/held-item.test.ts` + `tests/firearms.test.ts`: **10/10 PASS**; Chrome/Metal `test:firearm`: PASS pro equip, critical hit, ammo/condition, alert, muzzle flash, reload a genuine save/reload; browser/WebGL errors **0**. `node --check scripts/firearm-qa.mjs` a `npm run build` PASS se známým ~3.27 MB bundle warningem.
 - Změna čeká na checkpoint commit; release/main/tag/Pages bez změny. Zachovat iCloud duplicates ` 2` mimo staging.
+
+## v0.10 pokračování — Měkčí vrstvené horské panorama — 2026-10-03
+
+- `src/world/horizon.ts`: deterministic distant massif ridges are broader and less needle-sharp; a restrained baked height tint differentiates ridge faces inside the same shared per-layer meshes. `src/world/atmosphere.ts` enables vertex colors for these Basic materials. Mountain groups/count, seed layout, horizon anchoring, collision/save state and triangle count stay unchanged.
+- `tests/world-art.test.ts` verifies deterministic ridge vertex colors, bounded color values, ridge-to-base tone separation, finite normals and the existing triangle budget. Horizon unit test PASS. Chrome/Metal `test:world-art` PASS with archive save reloads, Rev6, camera sweep, lightning and zero browser/WebGL errors; day and night horizon screenshots inspected. `npm run build` PASS with existing bundle warning.
+- Chrome/Metal performance unchanged: archived v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / startup 2 876 ms**; current Rev6 **60 FPS / 16.666 ms / 678 calls / 4 335 834 tris / 2 033 nodes / startup 3 109 ms**, errors 0. Same geometry counts; 60Hz capped.
+- Horizon visual change awaits checkpoint commit. Branch `codex/world-revision-6`; no main/tag/Release/Pages change.

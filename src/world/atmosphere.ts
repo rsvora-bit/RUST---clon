@@ -39,7 +39,7 @@ export class Atmosphere {
 
   private buildHorizon():void{
     for(let layer=2;layer>=0;layer--){
-      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,depthWrite:false,side:THREE.DoubleSide,fog:false});
+      const g=mountainLayer(this.seed,layer,this.terrainSize>720),m=new THREE.MeshBasicMaterial({color:0x8299a8,vertexColors:true,depthWrite:false,side:THREE.DoubleSide,fog:false});
       const mesh=new THREE.Mesh(g,m);mesh.name=`Distant massif layer ${layer}`;mesh.userData.layer=layer;mesh.renderOrder=-5;mesh.frustumCulled=false;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
     }
   }
