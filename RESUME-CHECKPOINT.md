@@ -7,6 +7,11 @@
 - Chrome/Metal `npm run test:world-art`: **76/76 PASS**, archivní v0.9.0 Rev1 a v0.9.1 Rev2 save/reload, Rev6 determinismus, všechny čtyři presety, počasí a kamera bez browser/WebGL/app chyb. Denní panorama screenshot `test-results/world-art/horizon-day.png` vizuálně zkontrolován; Rev6 vzdálené masivy se teď skutečně vykreslují. Benchmark nebyl v této iteraci opakován; změna nepřidává geometrii ani draw calls.
 - Změněno `src/world/atmosphere.ts`, `src/world/horizon.ts`, `tests/environment-visuals.test.ts` a tento checkpoint. Další práce pokračuje na `codex/world-revision-6`; žádná změna `main`, tagů/release ani Pages.
 
+### Performance recheck — stejná HIGH scéna, Chrome/Metal 1280×720
+
+- `npm run test:performance` proti živému archivnímu v0.9.0 a lokálnímu Rev6 buildu: archiv **242.81 FPS / 4.118 ms / 612 draw calls / 3,390,261 tris / 1,318 nodes**, Rev6 **199.92 FPS / 5.002 ms / 699 calls / 3,612,392 tris / 2,033 nodes**, oba 0 browser chyb. Druhý Rev6 průchod ve stejném sezení dal **193.44 FPS / 5.169 ms**, tedy výkon kolem 194–200 FPS. Oproti v0.9.0 jde o ~18–20% nižší FPS; Rev6 má o 87 calls, 222,131 tris a 715 nodes více. Cold startup archivní 67,999 ms/current 11,005 ms se kvůli vzdálenému archivnímu načítání/cache nepoužívá jako férové srovnání. Rev6 shader precompile timeout flag byl true, ale žádná chyba; prověřit jeho vztah k měření v další performance iteraci. Změna panoramatu nepřidává draw calls ani trojúhelníky.
+- `test-results/world-art/world-art-results.json`, `performance.json` a screenshoty zůstávají lokální QA artefakty. Release `main`/v0.9.3 beze změny.
+
 ## Live update — analytický sklon Rev6 oceánských vln — 2026-10-04
 
 - Před úpravou byla pracovní větev a origin shodné na `9868ef960eebb20fa31bc86e99275d4ae348db01`. Přímý ocean probe našel, že dlouhý swell přidával sinusové výpočty do každého ze dvoustranných diferencí normál. `src/world/atmosphere.ts` nyní vypočítá dlouhý swell analyticky a pouze v Rev6 uniform větvi; samotný vertex swell i vlnový vzhled se zachovávají. `tests/environment-visuals.test.ts` hlídá Rev6-only větev. Starší revize dál používají původní normálový výpočet.
