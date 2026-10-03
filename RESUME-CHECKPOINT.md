@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — mokřadní tůně a performance ověření (2026-10-03)
+
+- Na `wetland-pool-detail.png` byly tůně vidět jako ploché, pravidelné ovály s ostrým okrajem. `src/world/models.ts` nyní generuje hlubší mělkou mísu, nepravidelnější pobřežní obrys a několik barevných přechodových prstenců od tmavší vody po vlhké bahno. Vnitřní barevná interpolace je deterministická a bez radiálního artefaktu; záběr byl po opravě znovu vizuálně zkontrolován. Instancing, počet tůní a umístění zůstaly stejné.
+- `tests/environment-visuals.test.ts` ověřuje nový nízkonákladový rozměr geometrie, determinismus a platné normály. Cílený soubor: **10/10 PASS**. Plné `npm test`: **437/437, 42 souborů PASS**. `npm run build`: **PASS**, stávající Vite upozornění na ~3,298 kB JS chunk.
+- Chrome/Metal `npm run test:world-art`: **66/66 PASS**, archivní Rev1/Rev2 a Rev6 save/reload PASS, bez app/WebGL chyb; mokřadní screenshot vizuálně PASS. `npm run test:performance` (HIGH, 1280×720): v0.9.0 **60 FPS / 16.666 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 2,820 ms startup**; aktuální Rev6 **60 FPS / 16.666 ms / 702 calls / 4,697,156 tris / 2,033 nodes / 2,798 ms startup**, 0 chyb. Nárůst proti předchozímu Rev6 je přibližně 24 tisíc tris; žádná změna calls ani měřeného frame time. Startup je jednotlivý vzorek, ne robustní A/B.
+- Zatím upraveny jen `src/world/models.ts`, `tests/environment-visuals.test.ts` a tento checkpoint. Žádná změna save formátu, world layout, `main`, tagu/releasu ani Pages. Uživatelské soubory s příponou ` 2` zůstávají nedotčené. Další krok: commit a push těchto přesně vybraných souborů na `codex/world-revision-6`, potom pokračovat další oblastí vizuálního cíle. Celkový úkol zůstává aktivní, nejde o release candidate.
+
 Toto je nejnovější živý checkpoint; starší záznamy níže jsou historické.
 
 ## Live update — zjemnění vrcholů vzdáleného horizontu (2026-10-03)
