@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — Rev6 listnaté koruny, druhý průchod (2026-10-03)
+
+- Checkpoint `Separate Rev6 broadleaf canopy materials` je na `codex/world-revision-6`, commit `66432d63f980ef99f8cbb8d06165cd0937e019d9` a remote větev odpovídá. Cizí iCloud kopie `* 2.*` zůstaly nedotčené a nestagované.
+- Screenshotový detail ukázal, že po odstranění alpha děr byly listy Rev6 příliš světlé a opaque crown blobs příliš hranaté. Rev6-only broadleaf karty nyní mají slabší emissive intenzitu `0.025` (legacy materiály beze změny); solid korunní objemy používají hladce normálované nízkopolygonové koule a odstraněny jsou čtyři velké vnější bloky i duplicitní lobes. Sedm deterministických bough cores zůstává batched. Legacy broadleaf geometrie i staré world revisions se nemění.
+- `tests/foliage-geometry.test.ts`: **5/5 PASS**; plná `npm test`: **443/443, 43 souborů**; `npm run build`: **PASS**, stávající bundle advisory `3,303.52 kB`; `git diff --check`: PASS. `npm run test:tree-culling`: **PASS**, 766/1500 stromů kompaktně renderováno, instance zůstává po dobu pádu a pak se odstraní, 0 browser/WebGL errors. Čerstvý screenshot `test-results/tree-culling/falling-tree.png` vizuálně potvrzuje plnější, zakulacenější listnatý objem.
+- Kompletní `npm run test:world-art`: **76 kontrol PASS, 0 browser errors**; načetly se archivní v0.9.0/rev1 a v0.9.1/rev2 save, nová Rev6 mapa, biome, roads, quality LOW–ULTRA, počasí/horizont i save/reload. Tento dlouhý běh začal před poslední geometrií koruny, proto pro finální Rev6 vizuální gate zopakovat cílené screenshot/performance ověření.
+- `leafMass` separace přidává dva batched draw calls; její dřívější HIGH měření zůstává **4.936 ms / 699 calls / 3,650,020 tris** před zjednodušením korunní masy. Nová geometrie zmenšuje počet polygonů, ale aktuální FPS/frame-time po ní ještě nebyly změřeny.
+- Aktuální necommitnuté zdrojové změny: `src/rendering/environment.ts`, `src/world/models.ts`. Předchozí plný test/build a targeted browser tree QA jsou zelené; jako další krok zopakovat cílený forest screenshot + výkonový probe, potom checkpoint commit/push a pokračovat zbývajícím world-art/regression/performance auditem. Bez release/main/tag/Pages.
+
 ## Live update — Rev6 listnaté koruny bez alpha artefaktů (2026-10-03)
 
 - Při kontrole `forest-interior.png` a `forest-pine-detail.png` byly vidět velké roztrhané listové plochy a tmavé štěrbiny. Příčina: jedno alpha-test foliage material obsluhovalo současně neprůhledné fazetované masy koruny i cutout leaf cards. Alpha maska tak vyřezávala díry i do objemové geometrie.
