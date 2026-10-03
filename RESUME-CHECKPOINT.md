@@ -1,4 +1,14 @@
-# AKTUÁLNÍ CHECKPOINT — 2026-10-03
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04
+
+## Live update — tree readability A/B a world-art QA — 2026-10-04
+
+- Branch `codex/world-revision-6`, HEAD i `origin/codex/world-revision-6` byly před prací `5bfd84f958e92abb1aafc08095bb3a6776939802`; `main`, tagy, release ani Pages se neměnily.
+- Opakovatelný `scripts/visual-overhaul-capture.mjs` nyní přijímá seed (default 731942), pozastaví simulaci pro stabilní snímky, vybírá konkrétní listnatý strom a noční detail a vyhledá pobřeží s nepřerušeným směrem do otevřeného oceánu. Native Chrome/Metal vytvořil 16 záběrů včetně platného ocean/horizon; 0 JS/console errors. QA screenshoty jsou lokální v `artifacts/`, mimo commit.
+- V Rev6 jsem ponechal pouze malý brightness/readability uplift pro neprůhledná jádra listnatých korun: světlejší procedural leaf-mass paleta, mírně světlejší deterministic instance tint a slabé materiálové emissive fill; legacy revisions 1–5 zůstávají beze změn. Matched frozen screenshot měření zelené oblasti: luminance 0.3047 → 0.3137 (~3 %), bez změny draw calls/triangles v tree close-up. Je to skromné zlepšení čitelnosti, ne kompletní předělání lesů.
+- Změněno: `src/world/materials.ts`, `src/rendering/environment.ts`, `tests/terrain-materials.test.ts`, `scripts/visual-overhaul-capture.mjs`. Cílené testy **7/7 PASS**, plné `npm test` **444/444, 43 souborů PASS**, `npm run build` **PASS** (známý Vite advisory JS chunk 3,304.49 kB), `git diff --check` PASS.
+- První world-art běh na SwiftShader byl ručně ukončen kvůli nečinnému Node procesu a vysokému GPU vytížení; následné opakování s Chrome/Metal doběhlo úspěšně: `npm run test:world-art` **76/76 PASS**, **0 browser/WebGL errors**. Pokryty archivní v0.9.1 Revision-2 a v0.9.0 Revision-1 save, Rev6 POI/loot, road/tree/shore/vegetation, všechny čtyři quality presety, počasí, kamerový sweep a deterministický save/reload. Neúspěšný první report byl nahrazen kompletním úspěšným během.
+- `git diff --check` je čistý. Rozpracované změny jsou přesně výše uvedené čtyři tracked soubory; iCloud duplikáty `* 2.*` a QA artefakty `artifacts/` byly ponechány nedotčené a nesmí se stageovat. Další krok: odděleně zopakovat browser QA bez SwiftShader, pak review diff a checkpoint commit/push pouze na této pracovní větvi.
+- V0.10 dlouhodobý cíl zůstává aktivní a nedokončený; lesní polish je mírný, široká vizuální, performance a gameplay/save QA stále zbývá. Není release candidate.
 
 ## Live update — opakovaná vizuální kontrola a validace — 2026-10-04
 

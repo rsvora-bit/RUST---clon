@@ -100,8 +100,10 @@ export function leavesTexture(seed=667,revision6=false):THREE.CanvasTexture {
 }
 /** Opaque leaf breakup for the shaded volume behind Revision-6 cutout sprays. */
 export function leafMassTexture(seed=741):THREE.CanvasTexture {
-  const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#354d2d','#435d32','#526d39','#647a40','#75864a','#84914e'];
-  ctx.fillStyle='#50653a';ctx.fillRect(0,0,256,256);
+  const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#48623b','#5b7542','#70874a','#829653','#94a45e','#a2ad68'];
+  // Lift the shaded opaque core so its low-poly form remains legible under a
+  // canopy; leaf-card highlights retain the brighter, cooler accent.
+  ctx.fillStyle='#627749';ctx.fillRect(0,0,256,256);
   const leaf=(x:number,y:number,w:number,h:number,angle:number,color:string)=>{
     ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,w,h,angle,0,Math.PI*2);ctx.fill();
   };

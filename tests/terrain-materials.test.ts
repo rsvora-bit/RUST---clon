@@ -41,9 +41,11 @@ describe('revision-6 opaque canopy texture',()=>{
   it('creates deterministic leaf breakup with an opaque base and wrapped edge detail',()=>{
     const canvases=installCanvasStub(),first=leafMassTexture(741),repeat=leafMassTexture(741);
     try{
-      expect(canvases[0]!.rects).toEqual(['#50653a']);
+      expect(canvases[0]!.rects).toEqual(['#627749']);
       expect(canvases[0]!.fills.length).toBeGreaterThan(1050);
       expect(canvases[0]!.fills).toEqual(canvases[1]!.fills);
+      expect(canvases[0]!.fills).toContain('#48623b');
+      expect(canvases[0]!.fills).toContain('#a2ad68');
       expect(first.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(first.wrapS).toBe(THREE.RepeatWrapping);
     }finally{first.dispose();repeat.dispose();}
