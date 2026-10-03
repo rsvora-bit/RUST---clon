@@ -2,6 +2,14 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Live update — soudržnější bouřková obloha a jemnější déšť (2026-10-03)
+
+- `src/world/atmosphere.ts`: storm shader přidává jednu nízkofrekvenční noise vrstvu do již existujícího sky passu a používá ji pro širší souvislé bouřkové masy. Nepřidává mesh, render pass ani draw call. `src/survival/Weather.ts`: dešťové čáry mají seedově pravidelně proměnlivou délku 0.34–0.59 m, v bouřce 0.50–0.75 m, a nižší opacity; počet částic, quality tiers, weather state a simulace se nemění.
+- Chrome/Metal `horizon-storm-refined.png` i nový screenshot z kompletního world-art harnessu byly vizuálně zkontrolovány: nad obzorem vznikla soudržnější nízká bouřková oblačnost a déšť méně překrývá svět. Noční snímek zůstal čitelný a není měněn. Browser/app/WebGL chyby **0**.
+- `tests/environment-visuals.test.ts`: regresní kontrola storm coverage shaderu a délkového rozsahu dešťových čar. Plné `npm test`: **434/434 PASS / 41 souborů**; `npm run build`: **PASS**, známý warning na 3,294.54 kB minifikovaný JS chunk. Chrome/Metal `test:world-art`: **58/58 PASS**, archivní Rev1/Rev2 save data i Rev6 save/reload determinismus zachovány.
+- Chrome/Metal performance HIGH 1280×720: archiv v0.9.0 **60.01 FPS / 16.664 ms / 612 calls / 3,390,261 tris / 1,318 nodes / 3,104 ms startup**; Rev6 **60 FPS / 16.666 ms / 701 calls / 4,656,896 tris / 2,033 nodes / 5,759 ms startup / 375 grass chunks / 84,000 grass / 1,500 trees / 0 errors**. Frame rate, calls, triangles a nodes zůstaly na předchozích hodnotách; jednotlivý cold start Rev6 kolísá.
+- Změněny `src/world/atmosphere.ts`, `src/survival/Weather.ts`, `tests/environment-visuals.test.ts` a tento checkpoint; další checkpoint commit čeká na `codex/world-revision-6`. Poslední pushnutý commit před tímto krokem `0a82c80f07846f8da58bdd4b76c427204dabb06f`. Orientačně celkem **94%**, G5 **83%**, G7 **99%**; široké ověření dalších modelů a gameplay art passu stále zbývá, žádný release se nevytváří.
+
 ## Live update — výraznější vzdálená silueta Breakwateru (2026-10-03)
 
 - `src/survival/WorldSurvival.ts`: pouze Rev6 cargo derrick vraku dostal vyšší stožár (8.4 m), zvednuté rameno, delší závěs a přepočítanou vzpěru. Osmimetrový půdorys, POI/world/save identita, loot i oba stávající collidery se nemění; stejné typy geometrií a materiálové batchování zachovávají počet trojúhelníků i draw calls. Rev1–5 zůstávají beze změny.

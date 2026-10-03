@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
 import {fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
-import {Weather,stormLightningRoll} from '../src/survival/Weather';
+import {Weather,rainStreakLength,stormLightningRoll} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {ensureProgression} from '../src/survival/progression';
@@ -76,6 +76,15 @@ describe('environment visual building blocks',()=>{
       expect(rainMountain.equals(clearMountain)).toBe(true);expect(atmosphere.fog.color.equals(clearFog)).toBe(true);expect(atmosphere.fog.density).toBeGreaterThan(clearDensity);
       atmosphere.sky.material.uniforms.storm.value=1;atmosphere.update(0,10,camera);const stormMountain=(atmosphere.horizon.children[0] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color;
       expect(stormMountain.equals(clearMountain)).toBe(false);expect(stormMountain.r+stormMountain.g+stormMountain.b).toBeLessThan(clearMountain.r+clearMountain.g+clearMountain.b);expect(atmosphere.fog.color.equals(clearFog)).toBe(false);
+    }finally{atmosphere.dispose();height.dispose();}
+  });
+
+  it('adds broad storm cloud cover and shortens rain streaks under gusts',()=>{
+    const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height);
+    try{
+      expect(atmosphere.sky.material.fragmentShader).toContain('stormCover*.88*storm');
+      const clear=Array.from({length:11},(_,index)=>rainStreakLength(index,0)),gust=Array.from({length:11},(_,index)=>rainStreakLength(index,1));
+      expect(Math.min(...clear)).toBeCloseTo(.34);expect(Math.max(...clear)).toBeCloseTo(.59);expect(Math.min(...gust)).toBeCloseTo(.50);expect(Math.max(...gust)).toBeCloseTo(.75);
     }finally{atmosphere.dispose();height.dispose();}
   });
 
