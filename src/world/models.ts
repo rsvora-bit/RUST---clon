@@ -215,3 +215,26 @@ export function reedGeometry():THREE.BufferGeometry{
   }
   const geometry=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());geometry.computeVertexNormals();return geometry;
 }
+
+/** Shared, shallow-bowl water surface with an irregular silty edge for Rev6 marsh pools. */
+export function marshPoolGeometry(seed=88217):THREE.BufferGeometry {
+  const segments=32,rings=[.38,.72,1],rand=randomSource(seed),positions:number[]=[0,-.035,0],colors:number[]=[],indices:number[]=[];
+  const center=new THREE.Color(0x49645f),inner=new THREE.Color(0x52635a),mud=new THREE.Color(0x645e46);
+  colors.push(center.r,center.g,center.b);
+  const phases=[rand()*6.28,rand()*6.28,rand()*6.28];
+  for(let ring=0;ring<rings.length;ring++)for(let i=0;i<segments;i++){
+    const angle=i/segments*Math.PI*2,noise=Math.sin(angle*3+phases[0]!)*.055+Math.sin(angle*5+phases[1]!)*.035+Math.sin(angle*9+phases[2]!)*.018,radius=rings[ring]!*(1+noise),x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,y=-.035*(1-rings[ring]!);
+    positions.push(x,y,z);
+    const tint=ring===0?center.clone().lerp(inner,.35+rand()*.25):ring===1?inner.clone().lerp(mud,.32+rand()*.2):mud.clone().multiplyScalar(.94+rand()*.12);
+    colors.push(tint.r,tint.g,tint.b);
+  }
+  for(let i=0;i<segments;i++)indices.push(0,1+(i+1)%segments,1+i);
+  for(let ring=0;ring<rings.length-1;ring++){
+    const innerStart=1+ring*segments,outerStart=innerStart+segments;
+    for(let i=0;i<segments;i++){
+      const next=(i+1)%segments,a=innerStart+i,b=outerStart+i,c=outerStart+next,d=innerStart+next;
+      indices.push(a,d,c,a,c,b);
+    }
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}

@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
-import {fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry} from '../src/world/models';
+import {fernGeometry,forestShrubGeometry,twigGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
 import {Weather,stormLightningRoll} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
@@ -29,6 +29,20 @@ describe('environment visual building blocks',()=>{
       expect(shrub.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(.35);
       expect(shrub.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.65);
     }finally{shrub.dispose();}
+  });
+
+  it('builds a deterministic shallow marsh bowl with a silty vertex-color edge',()=>{
+    const a=marshPoolGeometry(88217),b=marshPoolGeometry(88217),other=marshPoolGeometry(88218);
+    try{
+      const positions=a.getAttribute('position'),colors=a.getAttribute('color'),normals=a.getAttribute('normal');
+      expect(a.index!.count/3).toBe(160);expect(positions.count).toBe(97);expect(colors.count).toBe(positions.count);
+      expect(Array.from(positions.array)).toEqual(Array.from(b.getAttribute('position').array));expect(Array.from(colors.array)).toEqual(Array.from(b.getAttribute('color').array));
+      expect(Array.from(positions.array)).not.toEqual(Array.from(other.getAttribute('position').array));
+      expect(Array.from(positions.array).every(Number.isFinite)&&Array.from(normals.array).every(Number.isFinite)).toBe(true);
+      expect(Math.min(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeCloseTo(-.035,4);
+      expect(Math.max(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeCloseTo(0,4);
+      expect(colors.getX(0)).not.toBeCloseTo(colors.getX(positions.count-1),2);
+    }finally{a.dispose();b.dispose();other.dispose();}
   });
 
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{
