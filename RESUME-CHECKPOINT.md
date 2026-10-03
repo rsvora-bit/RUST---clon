@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-03
 
+## Live update — skutečný pohled do kormidelny Breakwateru (2026-10-03)
+
+- `scripts/world-art-qa.mjs` nyní pořizuje snímek z vnitřku kabiny; dosavadní pojmenovaný „interior“ záběr byl ve skutečnosti zvenku a nad střechou. QA teleport používá výšku hráčových nohou, takže nová pozice správně zohledňuje eye height.
+- Skutečný záběr odhalil mapu ve výřezu čelního okna. V `src/survival/WorldSurvival.ts` je nyní pobřežní mapa na vodorovné ploše konzole, její linky leží na mapě, značky jsou nízké body a weather display je menší. Jde pouze o Rev6 světový art; POI pozice, kolize, looty, save identita i gameplay zůstávají beze změny. `tests/world-art.test.ts` hlídá, že mapová plocha leží pod oknem.
+- Ručně zkontrolován nový `test-results/world-art/breakwater-wheelhouse-interior.png`: čelní okno je volné, mapa je čitelná na stole a displej už nepřekrývá celý výhled. Chrome/Metal `test:world-art`: **66/66 PASS**, včetně starých Rev1/Rev2 save fixture a Rev6 determinismu/save-reload, bez browser/app/WebGL chyb. `tests/world-art.test.ts`: **127/127 PASS**; plné `npm test`: **438/438 PASS / 42 souborů**; `npm run build`: **PASS** se známým ~3,298 kB JS chunk upozorněním; `node --check scripts/world-art-qa.mjs`: PASS.
+- Čerstvé Chrome/Metal performance A/B, HIGH 1280×720, 60Hz: v0.9.0 **60 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 812 ms startup**; aktuální Rev6 **60,01 FPS / 16,664 ms / 702 calls / 4 605 504 tris / 2 033 nodes / 2 778 ms startup**, 0 chyb. Žádná měřená regrese; startup je jeden proměnlivý vzorek.
+- Změněno `src/survival/WorldSurvival.ts`, `tests/world-art.test.ts`, `scripts/world-art-qa.mjs` a tento checkpoint. Další krok je samostatný commit/push na `codex/world-revision-6`; production `main`, tag/release, PR a Pages se nemění. Zachované iCloud soubory s příponou ` 2` jsou mimo staging.
+- Orientační postup: celek **94 %**; G1 **100 %**, G2 **79 %**, G3 **90 %**, G4 **96 %**, G5 **86 %**, G6 **85 %**, G7 **100 %**. Zbývá výraznější viditelné leštění terrain/přírody/modelů a široký ruční pohybový/gameplay průchod; nejde o dokončený release candidate.
+
 ## Live update — stabilizace korun listnatých stromů Rev6 (2026-10-03)
 
 - `src/world/models.ts` nyní pro Rev6 drží širokolisté karty blíže větvím, zmenšuje jejich rozměr a počet na větev (16 → 12); objemové jádro koruny a varianty starších světů zůstávají zachované. `src/rendering/environment.ts` zapíná úpravu pouze pro Revision 6. Instancing, world generation, save data a gameplay identity se nemění.

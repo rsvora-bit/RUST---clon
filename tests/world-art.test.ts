@@ -67,8 +67,9 @@ describe('v0.9.1 world art stabilization',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
     try{
       world.populate(new GameSimulation(seed,terrain.spawn).state);
-      const mast=world.group.getObjectByName('Breakwater cargo derrick mast')!,boom=world.group.getObjectByName('Breakwater broken cargo boom')!,pennant=world.group.getObjectByName('Breakwater torn signal pennant')!,wreck=world.pois.find(poi=>poi.kind===5)!,wreckGroup=world.group.children.find(child=>child.name===wreck.id)!;
+      const mast=world.group.getObjectByName('Breakwater cargo derrick mast')!,boom=world.group.getObjectByName('Breakwater broken cargo boom')!,pennant=world.group.getObjectByName('Breakwater torn signal pennant')!,chart=world.group.getObjectByName('Breakwater charted coast map')!,wreck=world.pois.find(poi=>poi.kind===5)!,wreckGroup=world.group.children.find(child=>child.name===wreck.id)!;
       expect(mast.position.y).toBeCloseTo(6.75);expect(boom.position.y).toBeCloseTo(12.58);expect(pennant.position.y).toBeCloseTo(13.42);
+      expect(chart.position.y).toBeLessThan(1.70);expect(chart.position.z).toBeLessThan(.25);
       const bounds=new THREE.Box3().setFromObject(wreckGroup),size=bounds.getSize(new THREE.Vector3());expect(size.y).toBeGreaterThan(13.3);
       expect(world.collisionBoxes().filter(box=>Math.hypot(box.position.x-wreck.position.x,box.position.z-wreck.position.z)<5)).toHaveLength(2);
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}

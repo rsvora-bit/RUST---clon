@@ -166,12 +166,12 @@ export class WorldSurvival {
         for(const x of [-1.82,-1.18]){this.box(g,x,1.77,.535,.37,.34,.035,this.glass).name='Breakwater bridge window';this.box(g,x,1.98,.56,.40,.045,.045,this.rust);}
         this.box(g,-.86,1.78,.04,.035,.35,.62,this.glass).name='Breakwater side window';
         const chart=this.box(g,-1.48,1.56,.21,.70,.12,.34,this.metal);chart.name='Breakwater bridge chart console';
-        const instrument=this.box(g,-1.48,1.68,.32,.58,.12,.08,this.display);instrument.name='Breakwater weather instrument display';instrument.rotation.x=-.18;
-        for(let i=0;i<3;i++){const dial=this.box(g,-1.68+i*.20,1.725,.36,.055,.018,.014,i===1?this.rust:this.metal);dial.name='Breakwater bridge control dial';}
-        const chartMap=this.box(g,-1.55,1.86,.444,.48,.24,.018,this.chartPaper);chartMap.name='Breakwater charted coast map';
-        for(let line=0;line<4;line++){const contour=this.box(g,-1.55+(line%2?.025:-.02),1.775+line*.053,.456,.37-(line%2)*.045,.009,.008,this.wood);contour.name='Breakwater map contour line';contour.rotation.z=line%2?-.08:.06;}
-        const route=this.box(g,-1.50,1.875,.461,.25,.014,.009,this.rust);route.name='Breakwater marked evacuation route';route.rotation.z=.31;
-        for(const [x,y] of [[-1.70,1.91],[-1.41,1.80],[-1.45,1.93]] as const){const marker=new T.Mesh(new T.SphereGeometry(.018,6,4),this.display);marker.name='Breakwater coastal chart waypoint';marker.position.set(x,y,.466);g.add(marker);}
+        const instrument=this.box(g,-1.48,1.666,.30,.34,.075,.045,this.display);instrument.name='Breakwater weather instrument display';instrument.rotation.x=-.18;
+        for(let i=0;i<3;i++){const dial=this.box(g,-1.61+i*.13,1.708,.34,.04,.014,.012,i===1?this.rust:this.metal);dial.name='Breakwater bridge control dial';}
+        const chartMap=this.box(g,-1.55,1.646,.105,.38,.014,.20,this.chartPaper);chartMap.name='Breakwater charted coast map';
+        for(let line=0;line<4;line++){const contour=this.box(g,-1.55+(line%2?.025:-.02),1.658,.045+line*.039,.29-(line%2)*.035,.004,.006,this.rust);contour.name='Breakwater map contour line';contour.rotation.y=line%2?-.08:.06;}
+        const route=this.box(g,-1.50,1.661,.103,.20,.006,.008,this.rust);route.name='Breakwater marked evacuation route';route.rotation.y=.31;
+        for(const [x,z] of [[-1.70,.08],[-1.41,.13],[-1.45,.17]] as const){const marker=new T.Mesh(new T.CylinderGeometry(.009,.009,.006,6),this.display);marker.name='Breakwater coastal chart waypoint';marker.position.set(x,1.669,z);g.add(marker);}
         const seat=this.box(g,-1.48,1.50,-.08,.31,.08,.28,this.wood);seat.name='Breakwater bridge operator seat';
         const seatBack=this.box(g,-1.48,1.70,-.20,.31,.35,.07,this.wood);seatBack.name='Breakwater bridge operator seat';seatBack.rotation.x=-.10;
         const stack=new T.Mesh(new T.CylinderGeometry(.10,.14,.72,7),this.rust);stack.name='Breakwater exhaust stack';stack.position.set(-2.24,2.23,-.2);stack.castShadow=true;g.add(stack);
