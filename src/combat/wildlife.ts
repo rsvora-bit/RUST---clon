@@ -264,16 +264,16 @@ export class WildlifeSystem {
       const wolf=species==='islandWolf';
       // Give the two common animals distinct mass and posture while keeping one
       // shared merged mesh per species. Their gameplay capsules remain untouched.
-      ellipsoid(coat,0,.68,.015,wolf?.34:.39,wolf?.34:.39,wolf?.62:.66);
-      ellipsoid(wolf?0x62645f:0x684b39,0,.73,-.29,wolf?.31:.36,wolf?.35:.34,wolf?.36:.42);
+      ellipsoid(coat,0,wolf?.69:.68,.015,wolf?.31:.39,wolf?.31:.39,wolf?.76:.66);
+      ellipsoid(wolf?0x62645f:0x684b39,0,wolf?.77:.73,-.32,wolf?.27:.36,wolf?.30:.34,wolf?.32:.42);
       ellipsoid(wolf?0x77766e:0x765841,0,.70,.35,wolf?.30:.31,wolf?.32:.34,wolf?.32:.37);
-      ellipsoid(coat,0,.80,-.51,wolf?.255:.30,wolf?.25:.27,wolf?.30:.34);
-      ellipsoid(wolf?0xa4a096:0x80654e,0,.50,-.22,wolf?.23:.27,wolf?.15:.18,wolf?.42:.45);
+      ellipsoid(coat,0,.80,-.51,wolf?.235:.30,wolf?.23:.27,wolf?.27:.34);
+      ellipsoid(wolf?0xa4a096:0x80654e,0,.50,-.22,wolf?.215:.27,wolf?.15:.18,wolf?.42:.45);
       for(const x of [-.20,.20]){
         if(wolf){
           const ear=new THREE.ConeGeometry(.09,.23,7);add(ear,0x555650,x,1.075,-.49,1,1,1,x<0?-.10:.10);
-          ellipsoid(0x87857c,x*.70,.83,-.735,.045,.039,.025);
-          ellipsoid(dark,x*.70,.835,-.754,.019,.021,.012);
+          ellipsoid(0x87857c,x*.70,.83,-.595,.044,.038,.024);
+          ellipsoid(dark,x*.70,.835,-.614,.018,.020,.012);
         }else{
           ellipsoid(0x745541,x*1.14,1.005,-.49,.105,.14,.095);
           ellipsoid(0x8a6950,x*1.16,1.03,-.51,.062,.085,.045);
@@ -281,8 +281,9 @@ export class WildlifeSystem {
         }
       }
       if(wolf){
-        ellipsoid(0x555650,0,.73,-.735,.155,.095,.19);
-        ellipsoid(dark,0,.73,-.905,.052,.042,.045);
+        const muzzle=new THREE.CylinderGeometry(.07,.14,.28,8,1);muzzle.rotateX(-Math.PI/2);add(muzzle,0x62645f,0,.75,-.76,1,1,1);
+        ellipsoid(dark,0,.75,-.92,.064,.05,.062);
+        for(const x of [-.045,.045])ellipsoid(0x241f1b,x,.735,-.964,.014,.012,.008);
         ellipsoid(coat,0,.78,.66,.075,.08,.24);
         ellipsoid(0xb0aaa0,0,.48,-.43,.22,.16,.22);
       }else{
@@ -291,7 +292,7 @@ export class WildlifeSystem {
         for(const x of [-.055,.055])ellipsoid(0x241f1b,x,.68,-.96,.018,.016,.009);
       }
       for(const x of [-.23,.23])for(const z of [-.42,.42]){
-        add(new THREE.CapsuleGeometry(.072,.29,3,6),coat,x,.31,z,1,1,1);
+        add(new THREE.CapsuleGeometry(wolf?.064:.072,wolf?.38:.29,3,6),coat,x,wolf?.28:.31,z,1,1,1);
         ellipsoid(wolf?0x4b4d49:0x574336,x,.075,z-(z<0?.035:-.01),.084,.075,.12);
       }
     }
