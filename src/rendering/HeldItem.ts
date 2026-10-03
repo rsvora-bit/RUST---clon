@@ -43,6 +43,7 @@ export class HeldItem {
   private metal=new THREE.MeshStandardMaterial({color:'#6d726f',roughness:.8,metalness:.25});
   private shellCasing=new THREE.MeshStandardMaterial({color:'#a04d34',roughness:.78,metalness:.08});
   private brass=new THREE.MeshStandardMaterial({color:'#a88a4b',roughness:.56,metalness:.38});
+  private cylinderBore=new THREE.MeshStandardMaterial({color:'#252724',roughness:1});
   private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
 
@@ -61,7 +62,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.wrap,this.rust];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -173,8 +174,8 @@ export class HeldItem {
         this.addArm(-1,-.13,-.10,-.63,.18,true);
       }else{const frameShape=new THREE.Shape();frameShape.moveTo(-.08,-.045);frameShape.lineTo(-.058,-.063);frameShape.lineTo(.06,-.063);frameShape.lineTo(.08,-.038);frameShape.lineTo(.08,.035);frameShape.lineTo(.056,.063);frameShape.lineTo(-.06,.063);frameShape.lineTo(-.08,.04);frameShape.closePath();const frameGeometry=new THREE.ExtrudeGeometry(frameShape,{depth:.29,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.006,bevelThickness:.006});frameGeometry.translate(0,0,-.145);const frame=this.mesh(frameGeometry,this.metal,.27,.04,-.73,weapon);frame.rotation.x=-.05;
         const sidePlate=this.mesh(new THREE.BoxGeometry(.012,.076,.155),this.rust,.188,.04,-.755,weapon);sidePlate.rotation.x=-.05;const port=this.mesh(new THREE.BoxGeometry(.009,.028,.062),this.wrap,.178,.046,-.755,weapon);port.rotation.x=-.05;
-        const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;const muzzle=this.mesh(new THREE.CylinderGeometry(.038,.038,.035,10),this.wrap,.27,.07,-1.12,weapon);muzzle.rotation.x=Math.PI/2;const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.70,weapon);cylinder.rotation.x=Math.PI/2;
-        const chamberParts:THREE.BufferGeometry[]=[];for(let i=0;i<6;i++){const angle=i*Math.PI/3,disc=new THREE.CircleGeometry(.012,8);disc.rotateY(-Math.PI/2);disc.translate(-.067,Math.cos(angle)*.044,Math.sin(angle)*.044);chamberParts.push(disc);}const chamberGeometry=mergeGeometries(chamberParts,false);chamberParts.forEach(part=>part.dispose());if(!chamberGeometry)throw new Error('Could not assemble revolver cylinder chambers');this.mesh(chamberGeometry,this.wrap,.27,.035,-.70,weapon);
+        const barrel=this.mesh(new THREE.CylinderGeometry(.033,.037,.31,12),this.metal,.27,.07,-.96,weapon);barrel.rotation.x=Math.PI/2;const muzzle=this.mesh(new THREE.CylinderGeometry(.038,.038,.035,10),this.wrap,.27,.07,-1.12,weapon);muzzle.rotation.x=Math.PI/2;const cylinder=this.mesh(new THREE.CylinderGeometry(.066,.066,.14,12),this.metal,.27,.035,-.55,weapon);cylinder.rotation.x=Math.PI/2;cylinder.name='Revolver cylinder';
+        const chamberParts:THREE.BufferGeometry[]=[];for(let i=0;i<6;i++){const angle=i*Math.PI/3,disc=new THREE.CircleGeometry(.012,8);disc.translate(Math.cos(angle)*.044,Math.sin(angle)*.044,.071);chamberParts.push(disc);}const chamberGeometry=mergeGeometries(chamberParts,false);chamberParts.forEach(part=>part.dispose());if(!chamberGeometry)throw new Error('Could not assemble revolver cylinder chambers');const chamberFace=this.mesh(chamberGeometry,this.cylinderBore,.27,.035,-.55,weapon);chamberFace.name='Revolver six chamber face';
         const hammer=this.mesh(new THREE.BoxGeometry(.065,.085,.075),this.metal,.27,.15,-.59,weapon);hammer.rotation.x=-.25;const sight=this.mesh(new THREE.BoxGeometry(.035,.035,.045),this.rust,.27,.135,-1.08,weapon);const trigger=this.mesh(new THREE.TorusGeometry(.046,.007,6,14,Math.PI),this.wrap,.27,-.01,-.72,weapon);trigger.rotation.x=Math.PI/2;this.addArm(-1,-.13,-.13,-.59,.18,true);}
       const flashMaterial=new THREE.MeshBasicMaterial({color:shotgun?0xffa94c:0xffd17a,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});this.muzzleFlash=this.mesh(new THREE.ConeGeometry(.075,.24,7),flashMaterial,shotgun?.27:.27,.08,shotgun?-1.34:-1.18,weapon);this.muzzleFlash.rotation.x=-Math.PI/2;this.muzzleFlash.renderOrder=104;this.muzzleFlash.visible=false;
     }else if(item==='bow'){

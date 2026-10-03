@@ -1,4 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
+import * as THREE from 'three';
 import {HeldItem} from '../src/rendering/HeldItem';
 
 describe('first-person firearm presentation',()=>{
@@ -14,5 +15,10 @@ describe('first-person firearm presentation',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const held=new HeldItem();held.set('fieldShotgun');held.update(.2,0);const names:string[]=[];held.scene.traverse(object=>{if(object.name.startsWith('Shotgun stock shell')||object.name.startsWith('Shotgun shell brass'))names.push(object.name);});
     expect(names).toEqual(['Shotgun stock shell bodies','Shotgun shell brass bases']);
+  });
+  it('faces a single merged six-port dark chamber plate outward on the revolver',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const held=new HeldItem();held.set('salvageRevolver');held.update(.2,0);const cylinder=held.scene.getObjectByName('Revolver cylinder'),face=held.scene.getObjectByName('Revolver six chamber face');
+    expect(cylinder).toBeTruthy();expect(face).toBeTruthy();expect((cylinder as THREE.Mesh).rotation.x).toBeCloseTo(Math.PI/2);expect((cylinder as THREE.Mesh).position.z).toBeCloseTo(-.55);expect((face as THREE.Mesh).geometry.getAttribute('position').count).toBeGreaterThan(48);(face as THREE.Mesh).geometry.computeBoundingBox();expect((face as THREE.Mesh).geometry.boundingBox?.max.z).toBeCloseTo(.071);expect((face as THREE.Mesh).material).toBeInstanceOf(THREE.MeshStandardMaterial);
   });
 });
