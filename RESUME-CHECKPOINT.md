@@ -2,6 +2,13 @@
 
 Toto je živý checkpoint po obnovení práce. Starší Git stavy v historických oddílech níže nepopisují současnou větev.
 
+## Live update — čitelnější silueta jelena (2026-10-03)
+
+- `src/combat/wildlife.ts`: jelen má na každé straně parohu jeden rozšířený vnější fork; obě větve zůstávají v původní sloučené geometrii sdílené mezi jeleny. Pozice, populace, útěk, lov, loot i persistence se nemění. `tests/wildlife-combat.test.ts` kontroluje rozšířený bounding box modelu.
+- `scripts/deer-qa.mjs` pořizuje navíc přiblížený `deer-close-detail.png` během pozastavené simulace a potom vrací hráče do původní testovací pozice. Screenshot byl vizuálně zkontrolován; rozvětvení parohů je čitelné. Chrome/Metal `test:deer`: **5/5 PASS**, browser/app/WebGL chyby **0**.
+- Po této změně `npm test`: **436/436 PASS / 42 souborů**; `npm run build`: **PASS**, známý 3,297.59 kB Vite chunk advisory; `node --check scripts/deer-qa.mjs` a `git diff --check`: PASS.
+- Commit `89c83fd` (`Broaden island deer antler silhouette`) je lokálně hotový a čeká na push spolu s checkpointem. Celkový odhad zůstává **92 %**; G6 modely se posouvají zhruba na **83 %**. Výkonová nejistota uvedená v předchozí live aktualizaci stále platí. Žádný release/main/tag/Pages zásah.
+
 ## Live update — pobřežní prase a stabilní unit test runner (2026-10-03)
 
 - `src/combat/wildlife.ts`: pobřežní prase má světlejší hřbetní plášť, osm nízkých dozadu skloněných štětin a zahnutý ocas. Snímek `test-results/combat/coastal-boar-profile.png` byl po poslední úpravě ručně zkontrolován; tmavý plášť byl zesvětlen, aby nepůsobil jako černý pás. Model zůstává jednou sloučenou geometrií na druh a nemění pohyb, boj, loot, identitu ani save data. `tests/wildlife-combat.test.ts` zachovává limit geometrie a kontroluje nový detail/ocas.
