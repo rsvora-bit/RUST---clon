@@ -12,6 +12,12 @@ describe('environment visual building blocks',()=>{
     for(const geometry of [fernGeometry(),twigGeometry(),seaweedGeometry(),reedGeometry()]){expect(geometry.getAttribute('position').count).toBeGreaterThan(20);expect(Array.from(geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true);geometry.dispose();}
   });
 
+  it('keeps fuller revision-6 ferns broader without increasing their triangle count',()=>{
+    const legacy=fernGeometry(),fuller=fernGeometry(true);
+    try{legacy.computeBoundingBox();fuller.computeBoundingBox();const legacySize=legacy.boundingBox!.getSize(new THREE.Vector3()),fullerSize=fuller.boundingBox!.getSize(new THREE.Vector3());expect(Math.hypot(fullerSize.x,fullerSize.z)).toBeGreaterThan(Math.hypot(legacySize.x,legacySize.z)*1.1);expect(fullerSize.y).toBeGreaterThan(legacySize.y*1.1);expect(fuller.index!.count).toBe(legacy.index!.count);}
+    finally{legacy.dispose();fuller.dispose();}
+  });
+
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{
     const a=mountainLayer(731942,1,true),b=mountainLayer(731942,1,true),c=mountainLayer(731943,1,true);
     try {
