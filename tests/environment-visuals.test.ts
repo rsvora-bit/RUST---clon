@@ -53,13 +53,15 @@ describe('environment visual building blocks',()=>{
     const a=marshPoolGeometry(88217),b=marshPoolGeometry(88217),other=marshPoolGeometry(88218);
     try{
       const positions=a.getAttribute('position'),colors=a.getAttribute('color'),normals=a.getAttribute('normal');
-      expect(a.index!.count/3).toBe(440);expect(positions.count).toBe(241);expect(colors.count).toBe(positions.count);
+      expect(a.index!.count/3).toBe(600);expect(positions.count).toBe(321);expect(colors.count).toBe(positions.count);
       expect(Array.from(positions.array)).toEqual(Array.from(b.getAttribute('position').array));expect(Array.from(colors.array)).toEqual(Array.from(b.getAttribute('color').array));
       expect(Array.from(positions.array)).not.toEqual(Array.from(other.getAttribute('position').array));
       expect(Array.from(positions.array).every(Number.isFinite)&&Array.from(normals.array).every(Number.isFinite)).toBe(true);
-      expect(Math.min(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeGreaterThan(-.003);
-      expect(Math.max(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeCloseTo(.02,4);
+      expect(Math.min(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeCloseTo(-.029,3);
+      expect(Math.max(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeLessThanOrEqual(.002);
       expect(colors.getX(0)).not.toBeCloseTo(colors.getX(positions.count-1),2);
+      const ringColor=(ring:number)=>{const start=1+ring*40,mean=[0,0,0];for(let i=0;i<40;i++)for(let channel=0;channel<3;channel++)mean[channel]!+=colors.getComponent(start+i,channel)/40;return new THREE.Color().setRGB(mean[0]!,mean[1]!,mean[2]!);};
+      for(let ring=0;ring<7;ring++){const current=ringColor(ring),next=ringColor(ring+1);expect(Math.hypot(current.r-next.r,current.g-next.g,current.b-next.b)).toBeLessThan(.18);}
     }finally{a.dispose();b.dispose();other.dispose();}
   });
 
