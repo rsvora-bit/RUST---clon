@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {WORLD} from '../config/balance';
 import {generateWorldLayout,type WorldLayout} from '../survival/WorldSurvival';
-import {palmSuitability,surfaceClimate,vegetationCover} from '../world/climate';
+import {grassSurfaceCover,palmSuitability,surfaceClimate,vegetationCover} from '../world/climate';
 import type {ClimateSample} from '../terrain/island';
 import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
@@ -431,7 +431,7 @@ export class Environment {
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
       const near=count<(this.terrain.generation===5?(this.worldRevision>=6?18000:15000):2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*82:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*82:(rand()-.5)*span;
       const h=this.heightAt(x,z);if(h<2||h>48||this.terrain.slopeAt(x,z)>.55||!this.roadClear(x,z,3.1))continue;
-      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3),slope=this.terrain.slopeAt(x,z),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0;const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAtSample(x,z,h),h,slope,wetlandNoise):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94)*(1-climate.marsh*.52):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
+      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3),slope=this.terrain.slopeAt(x,z),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0,climateSample=this.terrain.generation===5?this.terrain.climateAtSample(x,z,h):null;const climate=climateSample?surfaceClimate(climateSample,h,slope,wetlandNoise):null;const legacyCover=climate?(1-climate.arid*.80)*(1-climate.snow*.94)*(1-climate.marsh*.52):1,cover=climateSample&&revision6?grassSurfaceCover(climateSample,h,slope,wetlandNoise):legacyCover;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
       const cx=Math.floor(x/chunkSize),cz=Math.floor(z/chunkSize),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=revision6?`${cx},${cz}`:`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){const variant=revision6?(((cx*73856093)^(cz*19349663)^this.seed)>>>0)%grassVariants.length:0;chunk={positions:[],x:cx*chunkSize+chunkSize/2,z:cz*chunkSize+chunkSize/2,type:revision6?0:type,variant};chunks.set(key,chunk);}
       chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2,dry:revision6&&type===1});count++;
     }

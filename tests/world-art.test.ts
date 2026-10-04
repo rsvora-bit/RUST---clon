@@ -5,7 +5,7 @@ import {IslandTerrain} from '../src/terrain/island';
 import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
-import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
+import {grassSurfaceCover,surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
 import {grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
@@ -138,6 +138,14 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(vegetationCover(climate(.65,.70),12,.1)).toBeGreaterThan(vegetationCover(climate(.75,.25),12,.1)*3);
     expect(vegetationCover(climate(.6),30,.85)).toBe(0);expect(vegetationCover(climate(.2),68,.1)).toBe(0);
     expect(surfaceClimate(climate(.7,.9),4,.04,.92).marsh).toBeGreaterThan(.7);expect(surfaceClimate(climate(.7,.9),4,.04,.37).marsh).toBe(0);expect(surfaceClimate(climate(.7,.3),4,.04,.92).marsh).toBe(0);
+  });
+  it('lets more grass show through open Revision-6 meadows than beneath dense canopy',()=>{
+    const meadow=grassSurfaceCover(climate(.50,.52),12,.1),forest=grassSurfaceCover(climate(.50,.82),12,.1);
+    expect(meadow).toBeGreaterThan(forest*1.2);
+    expect(grassSurfaceCover(climate(.50,.82),12,.1)).toBeCloseTo(.70,5);
+    const transition=Array.from({length:41},(_,i)=>grassSurfaceCover(climate(.50,.4+i*.01),12,.1));
+    expect(transition.every(value=>value>=0&&value<=1)).toBe(true);
+    expect(Math.max(...transition.slice(1).map((value,index)=>Math.abs(value-transition[index]!)))).toBeLessThan(.06);
   });
   it('groups revision-6 reeds into deterministic denser stands within the same total instance budget',()=>{
     expect([0,.25,.5,.75,.999].map(marshReedClumpSize)).toEqual([5,6,7,8,8]);

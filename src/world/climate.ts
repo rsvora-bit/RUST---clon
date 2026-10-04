@@ -17,3 +17,7 @@ export function palmSuitability(c:ClimateSample,elevation:number,biome:string){
 export function vegetationCover(c:ClimateSample,elevation:number,slope:number,wetlandNoise=0){
   const w=surfaceClimate(c,elevation,slope,wetlandNoise);return (.18+.70*w.forest)*(1-w.arid*.72)*(1-w.snow*.87)*(1-w.marsh*.82)*(1-smoothstep(.38,.72,slope))*(1-smoothstep(46,65,elevation));
 }
+/** Rev6 grass thins beneath dense canopy so forest floors read as shaded ground, not open meadow. */
+export function grassSurfaceCover(c:ClimateSample,elevation:number,slope:number,wetlandNoise=0){
+  const w=surfaceClimate(c,elevation,slope,wetlandNoise);return (1-w.forest*.30)*(1-w.arid*.80)*(1-w.snow*.94)*(1-w.marsh*.52);
+}
