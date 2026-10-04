@@ -181,13 +181,14 @@ export class Environment {
     const modern=this.terrain.generation===2,expanded=this.terrain.generation>=4,g5=this.terrain.generation===5;
     const treeLimit=g5?(this.worldRevision>=6?1500:this.worldRevision>=3?1180:900):expanded?620:modern?820:560,treeAttempts=g5?(this.worldRevision>=6?43000:this.worldRevision>=3?27000:18000):expanded?9000:modern?12000:7000;
     for(let i=0;i<treeAttempts&&treeNodes.length<treeLimit;i++){
-      const span=g5?this.terrain.size*.94:expanded?650:580,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAt(x,z),biome=this.biomeAt(x,z);
+      const span=g5?this.terrain.size*.94:expanded?650:580,x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),forest=this.terrain.forestAtSample(x,z,h);
       if(h<4||h>(g5?58:38)||slope>.68||Math.hypot(x-this.spawn.x,z-this.spawn.z)<30||!this.roadClear(x,z,4.4))continue;
-      const density=smoothstep(.32,.68,forest),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0,climateDensity=g5&&this.worldRevision>=2?revisionTreeCover(vegetationCover(this.terrain.climateAt(x,z),h,slope,wetlandNoise),forest,this.worldRevision):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
+      const climate=g5&&this.worldRevision>=2?this.terrain.climateAtSample(x,z,h):undefined,biome=this.terrain.biomeAtSample(x,z,h,slope,climate);
+      const density=smoothstep(.32,.68,forest),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0,climateDensity=climate?revisionTreeCover(vegetationCover(climate,h,slope,wetlandNoise),forest,this.worldRevision):treeDensityForBiome(biome,forest),clump=g5&&this.worldRevision>=3?.40+this.terrain.noise.fbm(x*.013+81,z*.013-47,3)*1.2:1,biomeDensity=g5?Math.min(.98,climateDensity*clump):.055+density*.79;if(rand()>biomeDensity)continue;
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
       let overlaps=false;if(useTreeGrid){for(let dz=-1;dz<=1&&!overlaps;dz++)for(let dx=-1;dx<=1&&!overlaps;dx++)for(const t of treeGrid.get(`${Math.floor(x/4)+dx},${Math.floor(z/4)+dz}`)??[])if(Math.hypot(t.x-x,t.z-z)<4){overlaps=true;break;}}else overlaps=treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4);if(overlaps)continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
-      const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,this.worldRevision>=2?this.terrain.climateAt(x,z):undefined,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
+      const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,climate,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
       rememberTree({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
     }
     for(let species=0;species<6;species++){

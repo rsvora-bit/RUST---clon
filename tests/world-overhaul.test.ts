@@ -10,6 +10,17 @@ import {validateGameState} from '../src/save/storage';
 const dispose=(...terrains:IslandTerrain[])=>terrains.forEach(t=>{t.geometry.dispose();t.heightTexture.dispose();});
 
 describe('generation 5 world overhaul',()=>{
+  it('reuses sampled elevation and climate without changing terrain query results across generations',()=>{
+    const terrains=[new IslandTerrain(731942,4),new IslandTerrain(731942,5,5),new IslandTerrain(731942,5,6)];
+    try{
+      for(const terrain of terrains)for(const [x,z] of [[-410,275],[terrain.spawn.x,terrain.spawn.z],[315,-188]] as const){
+        const height=terrain.heightAt(x,z),slope=terrain.slopeAt(x,z),climate=terrain.climateAt(x,z);
+        expect(terrain.forestAtSample(x,z,height)).toBe(terrain.forestAt(x,z));
+        expect(terrain.climateAtSample(x,z,height)).toEqual(climate);
+        expect(terrain.biomeAtSample(x,z,height,slope,climate)).toBe(terrain.biomeAt(x,z));
+      }
+    }finally{dispose(...terrains);}
+  });
   it('uses the larger dynamic terrain grid for new worlds',()=>{
     const terrain=new IslandTerrain(731942,5,5),sim=new GameSimulation(731942,terrain.spawn);
     expect(terrain.size).toBe(WORLD_GENERATION_5.SIZE);expect(terrain.resolution).toBe(WORLD_GENERATION_5.RESOLUTION);
