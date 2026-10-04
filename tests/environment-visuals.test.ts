@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
 import {fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
-import {Weather,rainStreakLength,stormLightningRoll} from '../src/survival/Weather';
+import {naturalWeatherKind,Weather,rainStreakLength,stormLightningRoll,WEATHER} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {ensureProgression} from '../src/survival/progression';
@@ -153,6 +153,13 @@ describe('environment visual building blocks',()=>{
         atmosphere.horizon.children.forEach((mesh,index)=>expect((mesh as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color.equals(clearColors[index])).toBe(true));
       }finally{weather.dispose();atmosphere.dispose();height.dispose();}
     }
+  });
+
+  it('balances deterministic natural weather across repeated transitions',()=>{
+    const counts=new Map(WEATHER.map(kind=>[kind,0])),seed=731942;let elapsed=240;
+    for(let transition=0;transition<100;transition++){const kind=naturalWeatherKind(seed,elapsed);counts.set(kind,counts.get(kind)!+1);elapsed+=180+Math.abs(Math.sin(elapsed))*180;}
+    expect(WEATHER.every(kind=>counts.get(kind)!>=15&&counts.get(kind)!<=35)).toBe(true);
+    expect(naturalWeatherKind(seed,240)).toBe(naturalWeatherKind(seed,240));
   });
 
   it('adds broad storm cloud cover and shortens rain streaks under gusts',()=>{

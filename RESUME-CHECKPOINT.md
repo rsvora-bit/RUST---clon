@@ -1,3 +1,10 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Přirozenější Rev6 počasí
+
+- Dokončena oprava výběru přirozených Rev6 weather transitions v `src/survival/Weather.ts`: místo sinusového mapování, které na seedu 731942 dávalo 50 % bouří ze 100 přechodů, se používá deterministický hash roll a typy clear/rain/fog/storm jsou rovnoměrněji zastoupené. Seed/save formát se nemění.
+- Přidán regresní test 100 deterministických přechodů v `tests/environment-visuals.test.ts`. Ověření: cílené environment testy **16/16 PASS**, `npm test` **474/474 PASS (45 files)**, `npm run build` **PASS**. Build ponechává existující upozornění na JS chunk >500 kB.
+- Odhad po tomto bloku: **87 % celkem / 13 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **85 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **82 %**. Zbývá praktická traversal/collision kontrola dalších POI, archivní v0.9.0/v0.9.1 save QA (Pages fetch blokuje HTTPS proxy 403) a reprezentativní HIGH/Metal performance profil. Není release candidate.
+- Další krok: pokračovat POI interior collision a čitelností podle existujících browser/runtime QA harnessů; znovu ověřit archived-save přístup, až bude síť dostupná. Pracovní větev `codex/world-revision-6`.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Průchozí Rev6 Stormwatch shelter
 
 - HIGH screenshot art review našel Stormwatch shelter s neprůchozí plnou čelní stěnou, nízkým stropem a nedostupným field log deskem. V `src/survival/WorldSurvival.ts` mají pouze Generation 5 / Revision 6 nové dvě čelní stěny s plnohodnotným prostředním vstupem, zvýšené rohové podpěry/střecha a odpovídajícím způsobem přesunutý solar array / weather panel. Denník zůstává viditelný a fyzicky dosažitelný. Rev1–5 zachovávají původní geometrii i původní jediný solid collider. Rev6 dostává čtyři oddělené collision boxes kolem vstupu a střechy.
