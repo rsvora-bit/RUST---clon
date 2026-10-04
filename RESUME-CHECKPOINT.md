@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0 save compatibility fallback
+
+- HTTPS fetch archivní GitHub Pages `v0.9.0`/`v0.9.1` opět selhal přes proxy **403**. Jako nezávislou částečnou validaci jsem v izolovaném worktree ze zdrojového commitu **`1fe7586` (package version 0.9.0)** spustil původní appku, vytvořil Generation 5 save se seedem **731942**, jednou foundation, 23 stanicemi a progressem a načetl ho současným buildu.
+- Současný build prošel **12 browser compatibility checks / 0 app errors**: zachoval Generation 5 / Revision 1, POIs/trails, všech 1 318 resource nodes/ID, inventory, structure, node changes, drops, craft queue, station/tech progress i player position; foundation collider se po loadu obnovil. Report a fixture jsou jen ignorované `test-results/v090-local/`.
+- Tohle je fixture vytvořený z původního v0.9.0 source commitu, **ne save stažený z produkční Pages**; v0.9.1 ani skutečný archived fixture proto stále nemají finální PASS. `npm test` naposledy **478/478 PASS (45 files)** a `npm run build` **PASS**; žádná tracked aplikační změna od tohoto běhu.
+- Odhad: **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **87 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **87 %**. Highland upper ladder stále není gameplay climb; skutečné archived saves, v0.9.1 fallback a reprezentativní HIGH/Metal výkonový profil zůstávají otevřené. Není release candidate.
+- Další krok: opakovat source-backed fixture/load test pro commit v0.9.1, potom zkusit produkční archive fetch znovu, až proxy povolí přístup. Metal profil vyžaduje odpovídající renderer/hardware.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Highland Relay access QA
 
 - Rapier test seedu **731942** vybere nejvyšší z 16 okolních ridge pozic, přejde skutečný Generation 5 / Revision 6 terrain mesh a dovede hráče do dosahu kontrolní skříňky Highland Relay. Tidal Pier zůstává ověřený předchozím checkpointem.
