@@ -182,7 +182,8 @@ export function grassGeometry(fuller=false):THREE.BufferGeometry {
     const cluster=Math.floor(blade/4),angle=fuller?cluster*Math.PI*2/3+(r()-.5)*.86:blade/12*Math.PI*2+r()*.42,
       radius=fuller?(blade%4===0?.035+r()*.11:.21+r()*.22):blade<4?.08+r()*.09:.16+r()*.12,
       x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
-    const height=(fuller?.36:.34)+Math.pow(r(),fuller ? .65 : .78)*(fuller ? .68 : .58),width=(fuller ? .027 : .018)+r()*(fuller ? .035 : .027),lean=(fuller ? .06 : .08)+r()*(fuller ? .24 : .20);
+    const height=fuller?(blade%4===0?.92+r()*.10:.25+Math.pow(r(),1.2)*.56):.34+Math.pow(r(),.78)*.58,
+      width=(fuller ? .027 : .018)+r()*(fuller ? .035 : .027),lean=(fuller ? .06 : .08)+r()*(fuller ? .24 : .20);
     const dx=Math.cos(angle),dz=Math.sin(angle),base=positions.length/3;
     const points=fuller?[[-width,0,0],[width,0,0],[0,height,lean]]:[[-width,0,0],[width,0,0],[-width*.55,height*.53,lean*.35],[width*.55,height*.53,lean*.35],[0,height,lean]];
     for(const [side,y,bend] of points){positions.push(x+dx*side-dz*bend,y,z+dz*side+dx*bend);const t=y/height;colors.push(.23+t*.22,.29+t*.23,.115+t*.13);}

@@ -45,6 +45,8 @@ describe('foliage geometry stability',()=>{
         const a=new THREE.Vector3().fromBufferAttribute(position,blade*3),b=new THREE.Vector3().fromBufferAttribute(position,blade*3+1),angle=Math.atan2((a.z+b.z)*.5,(a.x+b.x)*.5),center=cluster*Math.PI*2/3;
         const difference=Math.atan2(Math.sin(angle-center),Math.cos(angle-center));
         expect(Math.abs(difference)).toBeLessThan(.44);
+        const height=position.getY(blade*3+2);
+        if(blade%4===0)expect(height).toBeGreaterThan(.9);else expect(height).toBeLessThan(.82);
       }
       expect(geometry.index!.count/3).toBe(12);
     }finally{geometry.dispose();}
