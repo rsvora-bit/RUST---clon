@@ -1,3 +1,4 @@
+import {createTerrainRaycastMesh} from '../terrain/raycast';
 import {WorldSurvival,IslandMap} from '../survival/WorldSurvival';
 import {Weather,WEATHER} from '../survival/Weather';
 import {countPlayerStations,createStation,homesteadOwner,isPlaceableStationKind,MAX_PLAYER_STATIONS,STATIONS,STATION_KINDS,transfer,takeAll,poweredHomesteadIds,type Station,type StationKind} from '../survival/stations';
@@ -118,7 +119,7 @@ export class GameApp {
     await this.loadingStage(84,'Preparing map and stations','Building navigation, station renderers and interaction data');this.islandMap=new IslandMap(this.uiContainer,this.worldSurvival,this.environment,p=>{const progress=ensureProgression(this.simulation.state);if(p)progress.waypoint=p;else delete progress.waypoint;},()=>{this.islandMap.close();this.setScreen('playing');});
     this.stationRenderer=new StationRenderer(this.scene);this.syncStations();
     this.structures=new StructureRenderer(this.scene);this.worldItems=new WorldItems(this.scene);
-    this.groundMesh=new THREE.Mesh(this.environment.terrainGeometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));
+    this.groundMesh=createTerrainRaycastMesh(this.environment.terrain.geometry);
     this.registerNodes();this.registerWildlife();this.createWaterSources();this.syncStructures();this.syncWorldItems();this.syncHeld();this.applySettings(this.settings);this.player.tick(1/60,this.simulation.state,false);this.lastSafeGrounded={...this.simulation.state.player.position};this.accumulator=0;this.autoSave=0;this.building=false;this.candidate=null;
     await this.loadingStage(89,'Finalizing gameplay systems','Syncing structures, held items, saves and the first simulation frame');
   }
