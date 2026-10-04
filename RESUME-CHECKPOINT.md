@@ -1,5 +1,9 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0/v0.9.1 source save QA
 
+- Po předchozím checkpointu proběhla aktuální browser vizuální matice nad Revision 6: **15 screenshotů** (7 biomů, 8 POI), HIGH nastavení, správná Rev6 / 1664m identita a stavební preview; **0 browser/WebGL/application errors**. Chromium/SwiftShader potřebovalo přibližně 7 minut na start, proto se tento běh nepoužívá jako výkonový benchmark. Screenshoty/report jsou ignorované pod `test-results/rev6-world-review/`; obecné POI záběry doplňují samostatné cílené modelové a přístupové testy.
+- QA průběžně uzavřelo orientační vizuální sweep, ale plná release QA nadále čeká na skutečné archived Pages save fixtures a odpovídající HIGH/Metal hardware.
+- Odhad po vizuálním sweepe: **89 % celkem / 11 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **88 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **89 %**.
+
 - Proxy stále vrací **403** pro skutečné archivní GitHub Pages. V izolovaných worktrees z přesných historických zdrojových commitů `1fe7586` (v0.9.0) a `19cd35b` (v0.9.1) jsem vytvořil reprezentativní legacy save a načetl je současnou aplikací.
 - Každý source-backed fixture prošel **12 browser compatibility checks / 0 application errors**. v0.9.0 zachoval Gen5/Rev1; v0.9.1 Gen5/Rev2. Oba zachovaly POI/trails, 1 318 node IDs, inventory, structures, node changes, drops, craft queue, stanice, Tech Tree, pozici hráče a physics collider foundation stavby. Ignorované exporty/reporty jsou v `test-results/v090-local/` a `test-results/v091-local/`.
 - Jde o historické zdrojové buildy, **ne o přesné save fixtures stažené z produkčních archived Pages**. Produkční archivy tedy zůstávají neověřené. `npm test` naposledy **478/478 PASS (45 files)**; `npm run build` **PASS**. Od těchto běhů se měnil pouze checkpoint.
