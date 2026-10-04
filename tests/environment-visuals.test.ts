@@ -64,10 +64,11 @@ describe('environment visual building blocks',()=>{
   });
 
   it('keeps distant mountain silhouettes deterministic, irregular and low-cost',()=>{
-    const a=mountainLayer(731942,1,true),b=mountainLayer(731942,1,true),c=mountainLayer(731943,1,true),rev6=mountainLayer(731942,1,true,6),rev6b=mountainLayer(731942,1,true,6);
+    const a=mountainLayer(731942,1,true),b=mountainLayer(731942,1,true),c=mountainLayer(731943,1,true),rev4=mountainLayer(731942,1,true,4),rev5=mountainLayer(731942,1,true,5),rev6=mountainLayer(731942,1,true,6),rev6b=mountainLayer(731942,1,true,6);
     try {
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));
       expect(Array.from(a.getAttribute('position').array)).not.toEqual(Array.from(c.getAttribute('position').array));
+      expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(rev4.getAttribute('position').array));expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(rev5.getAttribute('position').array));
       expect(a.index!.count/3).toBe(5184);expect(a.boundingBox).toBeNull();a.computeBoundingBox();
       expect(a.boundingBox!.max.y).toBeGreaterThan(260);expect(a.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(260);expect(a.boundingSphere!.radius).toBeLessThan(1800);
       expect(rev6.index!.count).toBe(a.index!.count);expect(Array.from(rev6.getAttribute('position').array)).toEqual(Array.from(rev6b.getAttribute('position').array));expect(Array.from(rev6.getAttribute('position').array)).not.toEqual(Array.from(a.getAttribute('position').array));rev6.computeBoundingBox();rev6.computeBoundingSphere();expect(rev6.boundingBox!.max.y).toBeGreaterThan(a.boundingBox!.max.y*1.08);expect(rev6.boundingSphere!.radius).toBeLessThan(1800);
@@ -76,8 +77,9 @@ describe('environment visual building blocks',()=>{
       expect(peakCounts.some(count=>count>=3)).toBe(true);
       const steepestRidgeStep=Math.max(...ridges.flatMap(profile=>profile.slice(1).map((height,index)=>Math.abs(height-profile[index]))));expect(steepestRidgeStep).toBeLessThan(90);
       const rev6Ridges=Array.from({length:6},(_,group)=>Array.from({length:rowSize},(_,i)=>rev6.getAttribute('position').getY(group*groupSize+rowSize*3+i))),rev6PeakCounts=rev6Ridges.map(profile=>profile.slice(1,-1).filter((height,index)=>height>profile[index]&&height>=profile[index+2]).length);expect(rev6PeakCounts.some(count=>count>=2)).toBe(true);expect(rev6PeakCounts.reduce((sum,count)=>sum+count,0)).toBeGreaterThanOrEqual(8);const rev6SteepestStep=Math.max(...rev6Ridges.flatMap(profile=>profile.slice(1).map((height,index)=>Math.abs(height-profile[index]))));expect(rev6SteepestStep).toBeLessThan(90);
+      const widestAngularGap=(geometry:THREE.BufferGeometry)=>{const positions=geometry.getAttribute('position'),angles=Array.from({length:6},(_,group)=>{const i=group*groupSize+rowSize*3+36;return (Math.atan2(positions.getZ(i),positions.getX(i))+Math.PI*2)%(Math.PI*2);}).sort((x,y)=>x-y);return Math.max(...angles.map((angle,index)=>((angles[(index+1)%angles.length]!+(index===angles.length-1?Math.PI*2:0))-angle)));};expect(widestAngularGap(rev6)).toBeGreaterThan(widestAngularGap(a)+.25);
       for(let group=0;group<6;group++)for(let row=0;row<7;row++){expect(a.getAttribute('position').getY(group*groupSize+row*rowSize)).toBeLessThan(-50);expect(a.getAttribute('position').getY(group*groupSize+row*rowSize+rowSize-1)).toBeLessThan(-50);}
-    }finally{a.dispose();b.dispose();c.dispose();rev6.dispose();rev6b.dispose();}
+    }finally{a.dispose();b.dispose();c.dispose();rev4.dispose();rev5.dispose();rev6.dispose();rev6b.dispose();}
   });
 
   it('exposes upgraded sky/ocean uniforms and scales shadow quality through ultra',()=>{
