@@ -276,7 +276,7 @@ export function reedGeometry():THREE.BufferGeometry{
 /** Shared shallow water sheet with a broad, irregular silty edge for Rev6 marsh pools. */
 export function marshPoolGeometry(seed=88217):THREE.BufferGeometry {
   const segments=40,rings=[.18,.32,.45,.57,.68,.77,.87,1],depths=[0,-.001,-.004,-.009,-.015,-.021,-.026,-.029],rand=randomSource(seed),positions:number[]=[0,0,0],colors:number[]=[],indices:number[]=[];
-  const center=new THREE.Color(0x344740),inner=new THREE.Color(0x40564a),bank=new THREE.Color(0x59604b),mud=new THREE.Color(0x746b50),silt=new THREE.Color(0x7a7357);
+  const center=new THREE.Color(0x536e66),inner=new THREE.Color(0x668074),bank=new THREE.Color(0x7c876e),mud=new THREE.Color(0x877a5f),silt=new THREE.Color(0x90876a);
   const poolWater=center.clone().lerp(inner,.4);colors.push(poolWater.r,poolWater.g,poolWater.b);
   const phases=[rand()*6.28,rand()*6.28,rand()*6.28];
   for(let ring=0;ring<rings.length;ring++)for(let i=0;i<segments;i++){

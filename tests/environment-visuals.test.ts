@@ -56,6 +56,7 @@ describe('environment visual building blocks',()=>{
       expect(a.index!.count/3).toBe(600);expect(positions.count).toBe(321);expect(colors.count).toBe(positions.count);
       expect(Array.from(positions.array)).toEqual(Array.from(b.getAttribute('position').array));expect(Array.from(colors.array)).toEqual(Array.from(b.getAttribute('color').array));
       expect(Array.from(positions.array)).not.toEqual(Array.from(other.getAttribute('position').array));
+      expect(colors.getX(0)+colors.getY(0)+colors.getZ(0)).toBeGreaterThan(.35);
       expect(Array.from(positions.array).every(Number.isFinite)&&Array.from(normals.array).every(Number.isFinite)).toBe(true);
       expect(Math.min(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeCloseTo(-.029,3);
       expect(Math.max(...Array.from({length:positions.count},(_,i)=>positions.getY(i)))).toBeLessThanOrEqual(.002);
