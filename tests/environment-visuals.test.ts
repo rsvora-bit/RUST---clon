@@ -156,4 +156,16 @@ describe('environment visual building blocks',()=>{
     try{for(let frame=0;frame<20;frame++){atmosphere.update(1/60,10,camera);const output=weather.update(1/60,state,atmosphere,camera,'high');peak=Math.max(peak,output.lightning);state.elapsed+=1/60;}expect(peak).toBeGreaterThan(.35);expect(atmosphere.sky.material.uniforms.lightning.value).toBeGreaterThanOrEqual(0);expect(atmosphere.sky.material.uniforms.storm.value).toBe(weatherState.storm);expect(weatherState.storm).toBeGreaterThan(0);weatherState.kind='clear';expect(weather.update(1/60,state,atmosphere,camera,'high').lightning).toBe(0);}
     finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
+
+  it('does not upload hidden rain geometry during clear weather',()=>{
+    const state=new GameSimulation(731942,{x:0,y:4,z:0}).state,weatherState=ensureProgression(state).weather;weatherState.kind='clear';weatherState.remaining=3600;weatherState.blend=0;weatherState.rain=0;weatherState.storm=0;weatherState.mist=0;
+    const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3(),geometry=(weather as unknown as {geometry:THREE.BufferGeometry}).geometry,position=geometry.getAttribute('position') as THREE.BufferAttribute;
+    try{
+      atmosphere.update(1/60,10,camera);weather.update(1/60,state,atmosphere,camera,'high');
+      expect(scene.children.some(child=>child instanceof THREE.LineSegments&&child.visible)).toBe(false);expect(position.version).toBe(0);
+      weatherState.kind='storm';weatherState.remaining=3600;weatherState.rain=1;weatherState.storm=1;weatherState.blend=1;
+      atmosphere.update(1/60,10,camera);weather.update(1/60,state,atmosphere,camera,'high');
+      expect(scene.children.some(child=>child instanceof THREE.LineSegments&&child.visible)).toBe(true);expect(position.version).toBe(1);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
+  });
 });
