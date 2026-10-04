@@ -33,6 +33,16 @@ describe('v0.9.1 world art stabilization',()=>{
       expect(legacy.group.getObjectByName('Collapsed relay diagnostic screen')).toBeFalsy();expect(current.collisionBoxes()).toEqual(legacy.collisionBoxes());
     }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('dresses the Revision-6 Stormwatch shelter with a persistent-safe field log desk',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),poi={id:'poi-stormwatch',name:'Stormwatch Station',kind:4,position:{x:120,y:terrain.heightAt(120,80),z:80}},layout={pois:[poi],trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state;
+    try{
+      current.populate(state);legacy.populate(structuredClone(state));
+      for(const name of ['Stormwatch field log desk','Stormwatch field desk leg','Stormwatch rain log clipboard','Stormwatch rain log trace','Stormwatch clipboard clamp'])expect(current.group.getObjectByName(name)).toBeTruthy();
+      expect(legacy.group.getObjectByName('Stormwatch rain log clipboard')).toBeFalsy();
+      expect(current.collisionBoxes()).toEqual(legacy.collisionBoxes());
+      expect(validateGameState(state)).toBe(true);
+    }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('renders Stormwatch, gives it weather-survey salvage and guards a persistent cache',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,4),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:4,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state,poi=world.pois.find(entry=>entry.kind===4)!;
     try{

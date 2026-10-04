@@ -81,6 +81,15 @@ export class WorldSurvival {
       for(const x of [-1.13,-.79,-.45,-.11,.23]){const cell=this.box(g,x,1.846,-.78,.025,.012,.81,this.metal);cell.rotation.x=-.18;cell.name='Stormwatch solar cell divider';}
       for(const z of [-1.21,-.35]){const rail=this.box(g,-.45,1.85,z,1.43,.035,.045,this.rust);rail.rotation.x=-.18;rail.name='Stormwatch solar array frame';}
       this.box(g,.48,.88,-.96,.42,.72,.08,this.rust);
+      if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+        // The sheltered station gains a small field desk and rain log, all
+        // merged into its existing static material batches.
+        const desk=this.box(g,-.48,.66,.12,.92,.075,.46,this.wood);desk.name='Stormwatch field log desk';
+        for(const x of [-.86,-.10])for(const z of [-.04,.28]){const leg=this.box(g,x,.44,z,.055,.39,.055,this.wood);leg.name='Stormwatch field desk leg';}
+        const log=this.box(g,-.48,.701,.105,.48,.012,.31,this.chartPaper);log.name='Stormwatch rain log clipboard';
+        for(let line=0;line<5;line++){const mark=this.box(g,-.62+line*.07,.710,-.005+(line%2)*.13,.045,.003,.004,this.rust);mark.name='Stormwatch rain log trace';mark.rotation.y=(line%2?.08:-.06);}
+        const clip=this.box(g,-.48,.712,-.045,.09,.012,.025,this.metal);clip.name='Stormwatch clipboard clamp';
+      }
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===6){
       // A tidal instrument pier has visible structural bracing and a working gauge face.
