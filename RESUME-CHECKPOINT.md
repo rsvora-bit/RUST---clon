@@ -10,6 +10,12 @@
 6. **Models, Viewmodels & Character Visuals** — přírodní modely a herní výbava mají dílčí Rev6 polish; cílený pass na viewmodel/postavu zůstává otevřený.
 7. **Performance, QA & Final Validation** — test/build a světová browser QA jsou zelené; HIGH FPS gap vůči v0.9.0, ostatní regression QA a RC audit zůstávají otevřené.
 
+## Live update — výškové zabarvení Rev6 horských hřebenů — 2026-10-04
+
+- `src/world/horizon.ts`: Revision 6 dostala deterministické jemné výškové/grain tónování vrcholových oblastí, které odlišuje summit od tmavších svahů. Žádné nové vrcholy, indexy, trojúhelníky, draw calls ani kolize; Rev1–5 generují původní vertex barvy.
+- `tests/environment-visuals.test.ts` ověřuje barevný summit band, deterministic output i shodnou topologii. Cílený environment suite **13/13 PASS**; plný `npm test` **446/446, 43 souborů PASS**; `npm run build` PASS se známým chunk-size advisory. Chrome/Metal `test:world-art` **76/76 PASS**, 0 browser/WebGL/app errors. Denní, večerní a noční screenshoty horizontu byly znovu ručně zkontrolovány; společně s předchozím světelným krokem jsou uložené v ignorovaném `test-results/world-art/`.
+- Tento čistě vertex-color krok zachovává geometrii a workload. Změna musí dostat svůj samostatný checkpoint commit/push na pracovní branch; žádná main/release/Pages změna.
+
 ## Live update — světlo a čitelnost Rev6 horských masivů — 2026-10-04
 
 - `src/world/atmosphere.ts`: jen svět Revision 6 nyní používá pro vzdálené masivy `MeshLambertMaterial`, takže jejich tvary dostávají dynamické směrové/hemisférické světlo. Emisivní fill se zvyšuje v noci a při bouři; v0.9.x legacy světy zachovávají původní `MeshBasicMaterial`. Geometrie, tris, POI, kolize a save data se nemění.
