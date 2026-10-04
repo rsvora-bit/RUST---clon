@@ -26,6 +26,7 @@
     "test:ranged": "node scripts/ranged-qa.mjs",
     "test:salvage": "node scripts/salvage-recycler-qa.mjs",
     "test:world": "node scripts/world-overhaul-qa.mjs",
+    "test:highland-relay": "node scripts/highland-relay-qa.mjs",
     "test:world-art": "node scripts/world-art-qa.mjs",
     "test:tidal-pier": "node scripts/tidal-pier-qa.mjs",
     "test:tree-culling": "node scripts/tree-culling-qa.mjs",

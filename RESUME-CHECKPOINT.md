@@ -1,5 +1,8 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0/v0.9.1 source save QA
 
+- Nový `npm run test:highland-relay` ověřuje skutečnou GameApp interakci: Revision 6 vytvoří `secure-cache-poi-7` se salvage a zamčeným stavem, interakční systém ji zaregistruje a hráč uvidí `LOCKED`; po přidání relay card ji odemkne a otevře. **6/6 browser checks PASS, 0 errors**. Skript je `scripts/highland-relay-qa.mjs`; artefakt zůstává ignorovaný v `test-results/highland-relay/`.
+- Po tomto ověření odhad: **90 % celkem / 10 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **89 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **91 %**. Další Rev6 art/gameplay QA pro Relay cache je tím uzavřeno; horní žebříková plošina není herní cíl a zůstává dekorativní bez climb runtime.
+
 - Po předchozím checkpointu proběhla aktuální browser vizuální matice nad Revision 6: **15 screenshotů** (7 biomů, 8 POI), HIGH nastavení, správná Rev6 / 1664m identita a stavební preview; **0 browser/WebGL/application errors**. Chromium/SwiftShader potřebovalo přibližně 7 minut na start, proto se tento běh nepoužívá jako výkonový benchmark. Screenshoty/report jsou ignorované pod `test-results/rev6-world-review/`; obecné POI záběry doplňují samostatné cílené modelové a přístupové testy.
 - Následná plná `npm test` znovu prošla **478/478** včetně `tests/world-art.test.ts` **136/136**; `npm run build` **PASS**. Zůstává známé upozornění na minifikovaný JS chunk **3,320.36 kB** a deprecated Rapier init warnings; žádná tracked aplikační změna.
 - QA průběžně uzavřelo orientační vizuální sweep, ale plná release QA nadále čeká na skutečné archived Pages save fixtures a odpovídající HIGH/Metal hardware.
