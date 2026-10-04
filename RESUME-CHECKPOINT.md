@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — členitější Rev6 pás mokrého písku — 2026-10-04
+
+- `src/world/materials.ts`: Revision 6 pobřeží používá užší, makrošumem nepravidelný mokrý písek a vyšší, ale omezenou barevnou váhu; suchá pláž se oddělí od tmavší přílivové hrany bez kruhové hranice. Shader reuse-uje už vypočítaný `duneField`, nepřidává texture sample, geometrii ani draw call. Rev1–5 mají `revision6Moss=0`, takže jejich původní směs se zachová.
+- `tests/terrain-materials.test.ts`: kontrola legacy/Rev6 uniform gate, noise modulation a rozsahu mokré masky. Kompletní `npm test` **450/450 PASS / 43 souborů**; `npm run build` PASS se známým Vite upozorněním na ~3,3 MB JS chunk; targeted material tests **4/4 PASS**.
+- Chrome/Metal world-art QA **77/77 PASS**, 0 browser/WebGL/app errors; legacy Rev1/Rev2 save fixture a Rev6 world/save reload beze změny. Před/po `shoreline-detail` snímky `/tmp/tideland-shore-before-wetband.png` a `test-results/world-art/shoreline-detail.png` byly porovnány; mokrá přílivová hrana je viditelnější, ale zachovává měkký nepravidelný přechod.
+- Matched HIGH uncapped aktuální Rev6 sample: **207,70 FPS / 4,815 ms / 421 calls / 3 242 436 tris / 2 033 nodes**, oproti předchozímu uloženému Rev6 vzorku **207,72 / 4,814 / 421 / 3 242 436 / 2 033** — bez pozorovatelné změny v běhovém rozptylu. Archivní v0.9.0 přímý download při tomto pokusu opět neprošel GPU warm-upem a timeoutnul po 180 s; uložený srovnávací vzorek je **245,81 FPS / 4,068 ms / 612 calls / 3 390 261 tris / 1 318 nodes**, proto startup archivů není srovnatelný a Rev6/v0.9.0 FPS gap zůstává otevřený. Lokální menu-ready **4 478 ms**, New Game z připravené scény **263 ms**.
+- Změny `src/world/materials.ts`, `tests/terrain-materials.test.ts` a checkpoint jsou připravené na checkpoint commit/push. Větev zůstává `codex/world-revision-6`; žádné zásahy do iCloud `* 2`, `artifacts/`, `main`, tagů, release ani produkčních Pages.
+
 ## Live update — výraznější otevřené swelly Rev6 oceánu — 2026-10-04
 
 - `src/world/atmosphere.ts`: Revision 6 nyní přidává dvě nízkofrekvenční dlouhé vlny do oceánské geometrie i wave/normal shaderu; Rev1–5 zachovávají původní vlnění. Počet vrcholů, trojúhelníků, meshů a draw calls se nemění; přibývá jen několik aritmetických a sinusových operací v oceánském shaderu.
@@ -58,8 +66,8 @@
 ## Stav cíle v0.10 — sedm pracovních oblastí
 
 1. **World Revision 6 & Larger Map** — revize 6, 1664m mapa, seedované POI/trasy a deterministické savy implementované; dál ověřovat staré generace a save/reload při každé změně.
-2. **Terrain, Textures & Materials** — vrstvení terénu, alpský detail a skalní materiály existují; další viditelný terénní polish zůstává otevřený.
-3. **Vegetation, Water & Nature** — Rev6 les, tráva, pobřeží, mokřad a swelly jsou implementované; otevřená hladina má nově výraznější překrývající se dlouhé vlny, pokračovat v čitelnosti, variaci a screenshot review.
+2. **Terrain, Textures & Materials** — vrstvení terénu, alpský detail a skalní materiály existují; Rev6 pobřeží má členitější, čitelnější wet-sand transition, širší terrain art review zůstává otevřený.
+3. **Vegetation, Water & Nature** — Rev6 les, tráva, pobřeží, mokřad a swelly jsou implementované; otevřená hladina má výraznější dlouhé vlny a mokrý písek měkký nepravidelný přílivový okraj; pokračovat v čitelnosti, variaci a screenshot review.
 4. **POI Environment Art & Interiors** — Stormwatch/Breakwater a další landmarky jsou přítomné; výraznější interiéry a finishing art jsou otevřené.
 5. **Lighting, Weather, VFX & Atmosphere** — day/night/storm atmosféra existuje; tento checkpoint zlepšuje dynamické nasvícení horských masivů, oblast je stále otevřená.
 6. **Models, Viewmodels & Character Visuals** — přírodní modely a herní výbava mají dílčí Rev6 polish; cílený pass na viewmodel/postavu zůstává otevřený.

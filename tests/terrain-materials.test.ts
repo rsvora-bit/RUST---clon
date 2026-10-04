@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leavesTexture,leafMassTexture} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture,terrainMaterial} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -34,6 +34,29 @@ describe('revision-6 alpine snow texture',()=>{
       expect(canvases[0]!.fills).toHaveLength(2200);
       expect(canvases[2]!.fills).toHaveLength(6400);
     }finally{legacy.dispose();legacyRepeat.dispose();revision6.dispose();}
+  });
+});
+
+describe('revision-6 tidal terrain band',()=>{
+  it('breaks up a narrow wet-sand band while retaining legacy shoreline blending',()=>{
+    installCanvasStub();
+    const legacy=terrainMaterial(5),revision6=terrainMaterial(6);
+    const compile=(material:THREE.MeshStandardMaterial)=>{
+      const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <begin_vertex>',fragmentShader:'#include <common>\n#include <map_fragment>\n#include <normal_fragment_maps>\n#include <roughnessmap_fragment>'};
+      material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);
+      return shader;
+    };
+    try{
+      const oldShader=compile(legacy),newShader=compile(revision6);
+      expect(oldShader.uniforms.revision6Moss?.value).toBe(0);
+      expect(newShader.uniforms.revision6Moss?.value).toBe(1);
+      expect(newShader.fragmentShader).toContain('gp.y+(duneField-.5)*.85');
+      expect(newShader.fragmentShader).toContain('smoothstep(.08,1.35,wetHeight)');
+      expect(newShader.fragmentShader).toContain('mix(6.4,2.8,revision6Moss)');
+      expect(newShader.fragmentShader).toContain('clamp(max(wet*.86,tidalBand*1.10),0.,1.)');
+    }finally{
+      for(const material of [legacy,revision6])for(const tex of material.userData.textures as THREE.Texture[])tex.dispose();
+    }
   });
 });
 
