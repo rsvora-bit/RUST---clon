@@ -1,3 +1,10 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Plně přístupný Rev6 Breakwater
+
+- Rev6 Breakwater teď obsahuje průchozí wheelhouse dveře, zvednutou střechu, wall colliders a kolizní plochu paluby. Nový Rapier test nad skutečným Generation 5 / Revision 6 terrain mesh a seedem **731942** skočí z pobřeží na trup, z trupu na palubu a dojde na přístupovou pozici u dveří. Zvláštní fyzikální test ověřuje průchod dveřmi a blokaci boční stěnou. Rev5 si zachovává starou nízkou kabinu i dvě kolize.
+- `tests/world-art.test.ts`: **134/134 PASS**; kompletní `npm test`: **476/476 PASS (45 files)**; `npm run build`: **PASS**, existující Vite JS chunk upozornění >500 kB. Browser/SwiftShader aktuální model preview má **0 chyb**. Runtime ověření používá skutečný terrain mesh, ale izolovaný Rapier pohybový test, nikoli plnou GameApp/browser session.
+- Odhad: **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **87 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **84 %**. Další POI traversal, archivní v0.9.0/v0.9.1 save QA (Pages fetch blokuje HTTPS proxy 403) a reprezentativní HIGH/Metal performance profil zůstávají otevřené. Není release candidate.
+- Další krok: collision/access audit Tidal Survey Pier a Highland Relay, následně opakovat archived-save a výkonový profil, jakmile budou dostupné prostředí/fixtures.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Průchozí Rev6 Breakwater wheelhouse
 
 - Rev6 Breakwater dostal středový dveřní otvor wheelhouse, zvýšenou střechu a odpovídající Rev6-only stěnové kolize. Od Rev5 zpět zůstává původní uzavřená nízká geometrie a dvě původní kolize.
