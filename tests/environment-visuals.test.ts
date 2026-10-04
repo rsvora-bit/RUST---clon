@@ -139,6 +139,22 @@ describe('environment visual building blocks',()=>{
     }finally{atmosphere.dispose();height.dispose();}
   });
 
+  it('shares Rev6 mist across sky and opaque horizon, then restores clear weather without affecting legacy worlds',()=>{
+    for(const revision of [5,6]){
+      const scene=new THREE.Scene(),height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),atmosphere=new Atmosphere(scene,height,1664,731942,revision),weather=new Weather(scene),state=new GameSimulation(731942,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather,camera=new THREE.Vector3();
+      try{
+        atmosphere.update(0,10,camera);const clearColors=atmosphere.horizon.children.map(m=>(m as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color.clone());
+        Object.assign(w,{kind:'fog',blend:1,rain:0,storm:0,mist:.35,remaining:300});
+        weather.update(0,state,atmosphere,camera,'high');expect(atmosphere.sky.material.uniforms.mist.value).toBe(revision===6?.35:0);
+        w.mist=1;atmosphere.update(0,10,camera);weather.update(0,state,atmosphere,camera,'high');expect(atmosphere.sky.material.uniforms.mist.value).toBe(revision===6?1:0);
+        for(const mesh of atmosphere.horizon.children){const material=(mesh as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material;expect(material.transparent).toBe(false);expect(material.opacity).toBe(1);}
+        Object.assign(w,{kind:'clear',blend:0,mist:0});atmosphere.update(0,10,camera);weather.update(0,state,atmosphere,camera,'high');
+        expect(atmosphere.sky.material.uniforms.mist.value).toBe(0);expect(atmosphere.horizon.visible).toBe(true);
+        atmosphere.horizon.children.forEach((mesh,index)=>expect((mesh as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>).material.color.equals(clearColors[index])).toBe(true));
+      }finally{weather.dispose();atmosphere.dispose();height.dispose();}
+    }
+  });
+
   it('adds broad storm cloud cover and shortens rain streaks under gusts',()=>{
     const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height);
     try{

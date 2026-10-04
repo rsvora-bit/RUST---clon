@@ -12,18 +12,19 @@ export class Atmosphere {
   readonly sunDirection=new THREE.Vector3(-.5,.72,.4).normalize();
   private readonly illuminationDirection=new THREE.Vector3();
   private elapsed=0;private daylight=1;
+  private readonly mist={value:0};
   private readonly stormTint=new THREE.Color(.29,.27,.38);private readonly mountainTint=new THREE.Color();
   get daylightAmount(){return this.daylight;}
 
   constructor(readonly scene:THREE.Scene,heightTexture:THREE.DataTexture,readonly terrainSize=720,private readonly seed=731942,private readonly worldRevision=5){
-    this.sky=new THREE.Mesh(new THREE.SphereGeometry(1600,40,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{sunDir:{value:this.sunDirection},daylight:{value:1},clock:{value:0},weather:{value:0},storm:{value:0},lightning:{value:0}},vertexShader:`varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
-      varying vec3 vDirection;uniform vec3 sunDir;uniform float daylight;uniform float clock;uniform float weather;uniform float storm;uniform float lightning;
+    this.sky=new THREE.Mesh(new THREE.SphereGeometry(1600,40,20),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{sunDir:{value:this.sunDirection},daylight:{value:1},clock:{value:0},weather:{value:0},storm:{value:0},lightning:{value:0},mist:this.mist,mistTint:{value:this.fog.color}},vertexShader:`varying vec3 vDirection;void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
+      varying vec3 vDirection;uniform vec3 sunDir;uniform float daylight;uniform float clock;uniform float weather;uniform float storm;uniform float lightning;uniform float mist;uniform vec3 mistTint;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}float fbm(vec2 p){float f=0.;f+=.5*noise(p);p=p*2.03+17.2;f+=.25*noise(p);p=p*2.01-12.7;f+=.125*noise(p);p=p*2.04+8.2;f+=.0625*noise(p);return f;}
       void main(){vec3 d=normalize(vDirection);float altitude=max(d.y,0.);float horizonHaze=pow(1.-altitude,5.);vec3 horizon=mix(vec3(.045,.065,.115),vec3(.49,.70,.84),daylight);vec3 zenith=mix(vec3(.008,.015,.048),vec3(.075,.31,.69),daylight);horizon=mix(horizon,vec3(.35,.29,.46),weather*.62);zenith=mix(zenith,vec3(.12,.16,.29),weather*.50);vec3 col=mix(horizon,zenith,pow(altitude,.46));col=mix(col,vec3(.43,.42,.53),horizonHaze*weather*.42);vec3 stormSky=mix(vec3(.018,.026,.045),vec3(.12,.15,.19),daylight);col=mix(col,stormSky,storm*.70);
         float alignment=max(0.,dot(d,sunDir)),sunset=(1.-smoothstep(.04,.45,sunDir.y))*smoothstep(-.2,.1,sunDir.y);col+=vec3(.42,.12,.025)*pow(alignment,5.)*sunset;col+=vec3(1.,.84,.57)*pow(alignment,110.)*.38*daylight;col+=vec3(1.,.95,.80)*smoothstep(.99935,.99982,alignment)*daylight*5.;
         vec3 moonDir=-sunDir;float moon=max(0.,dot(d,moonDir));col+=vec3(.56,.67,.86)*smoothstep(.99945,.99982,moon)*(1.-daylight)*1.35;col+=vec3(.15,.20,.31)*pow(moon,55.)*(1.-daylight)*.22;
         vec2 baseUv=d.xz/max(.10,d.y+.075)*2.55,drift=vec2(clock*.0018,clock*.00045);float broad=fbm(baseUv*.58+drift),detail=fbm(baseUv*1.43+drift*1.7+11.),high=fbm(baseUv*2.4-drift*.8-23.);float cloudField=broad*.50+detail*.42+high*.15;float cloud=smoothstep(.52-weather*.07-storm*.10,.72-weather*.12-storm*.20,cloudField);float stormMass=noise(baseUv*.24+drift*.22+vec2(41.,-17.));float stormCover=smoothstep(.24,.76,stormMass)*smoothstep(.012,.16,d.y);cloud=max(cloud,stormCover*.88*storm);cloud*=smoothstep(.012,.16,d.y);float lining=pow(max(0.,dot(normalize(vec3(d.x,.16,d.z)),sunDir)),7.)*cloud;vec3 cloudDark=mix(vec3(.025,.035,.065),vec3(.58,.64,.67),daylight);vec3 cloudLight=mix(cloudDark,vec3(.98,.96,.86),daylight);vec3 cloudColor=mix(cloudDark,cloudLight,smoothstep(.44,.78,broad));cloudColor+=vec3(1.,.78,.48)*lining*sunset*.45;cloudColor=mix(cloudColor,vec3(.11,.13,.16),weather*.90);vec3 stormCloud=mix(vec3(.028,.038,.056),vec3(.052,.064,.082)+stormMass*vec3(.065,.07,.075),daylight);cloudColor=mix(cloudColor,stormCloud,storm*.94);col=mix(col,cloudColor,min(.97,cloud*(.77+weather*.20+storm*.12)));
-        float wisps=smoothstep(.57,.73,fbm(baseUv*.25-drift*.35+vec2(73.,-41.)))*smoothstep(.06,.35,d.y)*(1.-smoothstep(.62,.92,d.y));col=mix(col,vec3(.93,.97,1.),wisps*.19*daylight*(1.-weather*.55));col+=vec3(.62,.72,.90)*lightning*(.18+.82*cloud);float stars=step(.9942,hash(floor(d.xz/max(.055,d.y)*620.)))*smoothstep(.045,.4,d.y)*(1.-daylight)*(1.-cloud*.78);col+=stars*vec3(.88,.94,1.);gl_FragColor=vec4(col,1.);#include <tonemapping_fragment>\n#include <colorspace_fragment>}`.replace(';#include',';\n#include')}));
+        float wisps=smoothstep(.57,.73,fbm(baseUv*.25-drift*.35+vec2(73.,-41.)))*smoothstep(.06,.35,d.y)*(1.-smoothstep(.62,.92,d.y));col=mix(col,vec3(.93,.97,1.),wisps*.19*daylight*(1.-weather*.55));col+=vec3(.62,.72,.90)*lightning*(.18+.82*cloud);float stars=step(.9942,hash(floor(d.xz/max(.055,d.y)*620.)))*smoothstep(.045,.4,d.y)*(1.-daylight)*(1.-cloud*.78);col+=stars*vec3(.88,.94,1.);col=mix(col,mistTint,1.-exp(-mist*mist*48.*exp(-altitude*8.)));gl_FragColor=vec4(col,1.);#include <tonemapping_fragment>\n#include <colorspace_fragment>}`.replace(';#include',';\n#include')}));
     this.sky.frustumCulled=false;this.sky.renderOrder=-10;scene.add(this.sky);this.buildHorizon();scene.add(this.horizon);
 
     const oceanSize=terrainSize>720?4400:2600,oceanGeo=new THREE.PlaneGeometry(oceanSize,oceanSize,176,176);oceanGeo.rotateX(-Math.PI/2);
@@ -40,6 +41,15 @@ export class Atmosphere {
   private buildHorizon():void{
     for(let layer=2;layer>=0;layer--){
       const g=mountainLayer(this.seed,layer,this.terrainSize>720,this.worldRevision),material={color:0x8299a8,vertexColors:true,depthWrite:false,side:THREE.DoubleSide,fog:false},m=this.worldRevision>=6?new THREE.MeshLambertMaterial({...material,emissive:0x384755,emissiveIntensity:.22}):new THREE.MeshBasicMaterial(material);
+      if(this.worldRevision>=6){
+        // Blend opaque distant terrain into the same mist as the low sky;
+        // scene fog alone leaves bright cutouts against an unaffected sky.
+        m.onBeforeCompile=shader=>{
+          shader.uniforms.mist=this.mist;shader.uniforms.mistTint={value:this.fog.color};
+          shader.fragmentShader='uniform float mist;uniform vec3 mistTint;\n'+shader.fragmentShader.replace('#include <tonemapping_fragment>','gl_FragColor.rgb=mix(gl_FragColor.rgb,mistTint,1.-exp(-mist*mist*48.));\n#include <tonemapping_fragment>');
+        };
+        m.customProgramCacheKey=()=> 'rev6-horizon-mist-v1';
+      }
       const mesh=new THREE.Mesh(g,m);mesh.name=`Distant massif layer ${layer}`;mesh.userData.layer=layer;mesh.renderOrder=-5;mesh.frustumCulled=false;this.horizon.add(mesh);this.horizonGeometries.push(g);this.horizonMaterials.push(m);
     }
   }
@@ -51,6 +61,8 @@ export class Atmosphere {
     const sx=Math.round(camera.x/2)*2,sz=Math.round(camera.z/2)*2;this.sun.target.position.set(sx,camera.y-5,sz);this.illuminationDirection.copy(this.sunDirection).multiplyScalar(this.daylight).addScaledVector(this.sunDirection,-(1-this.daylight)).normalize();this.sun.position.copy(this.sun.target.position).addScaledVector(this.illuminationDirection,105);this.sky.position.copy(camera);this.horizon.position.set(camera.x,camera.y-28,camera.z);
     this.sky.material.uniforms.daylight.value=this.daylight;this.sky.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.clock.value=this.elapsed;this.ocean.material.uniforms.daylight.value=this.daylight;this.ocean.material.uniforms.cameraPos.value.copy(camera);this.ocean.material.uniforms.storm.value=storm;this.horizonMaterials.forEach((m,i)=>{const layer=2-i,basic=m as THREE.MeshBasicMaterial|THREE.MeshLambertMaterial;basic.color.setRGB(.055+this.daylight*(.22+layer*.065),.075+this.daylight*(.30+layer*.06),.12+this.daylight*(.35+layer*.055)).multiplyScalar(.68+layer*.12);this.mountainTint.setRGB(.07+this.daylight*.10,.08+this.daylight*.12,.12+this.daylight*.16);basic.color.lerp(this.mountainTint,storm*.78);const sunset=(1-this.daylight)*Math.max(0,this.sunDirection.y+.16);basic.color.r+=sunset*.2;if(basic instanceof THREE.MeshLambertMaterial)basic.emissiveIntensity=.16+(1-this.daylight)*.68+storm*.10;});
   }
+
+  setMist(amount:number):void{this.mist.value=this.worldRevision>=6?THREE.MathUtils.clamp(amount,0,1):0;}
 
   setQuality(q:GraphicsQuality):void{
     this.sun.castShadow=q!=='low';const size=q==='ultra'?3072:q==='high'?2048:q==='medium'?1024:768;this.sun.shadow.radius=q==='ultra'?4:q==='high'?3:2;
