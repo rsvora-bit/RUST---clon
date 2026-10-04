@@ -26,6 +26,14 @@
 - `npm run test:browser`: PASS — New Game + Gen1 fixture, movement/jump/crouch, gathering, kompletní inventory stack/drag flows, crafting queue, pause, building/doors, persistence/load/colliders a LOW/MEDIUM/HIGH settings; 0 console errors. FPS samples v legacy Gen1 flow: **LOW 59.0 / MEDIUM 59.6 / HIGH 55.3**; nejde o Rev6 FPS benchmark.
 - Tato validace navazuje na `npm test` 446/446, `npm run build` PASS a `test:world-art` 76/76 výše. Progression/death browser flow ještě ověřit před release-candidate checkpointem.
 
+### Rozšířené regression QA a zaoblení Rev6 horských profilů
+
+- `src/world/horizon.ts`: Rev6 ponechává dominantní vzdálený hero peak, ale snižuje hlavní vrcholy bližších vrstev, rozšiřuje sekundární hřebeny a tlumí kontrast profilu. Rev4/Rev5 zachovávají původní pozice; seed, vrstvy a topologie zůstávají deterministické.
+- Po poslední geometrii: environment test **13/13 PASS**, kompletní `npm test` **446/446 PASS / 43 souborů**, `npm run build` PASS (známý Vite warning na ~3.306 MB JS chunk), Chrome/Metal `test:world-art` **76/76 PASS**. Poslední `horizon-day.png` a samostatný hráčský záběr byly vizuálně zkontrolovány; browser/WebGL/app errors 0. Zůstávají dva úzké vzdálené hero peaks.
+- Browser gameplay: `test:world` **23/23 PASS**; `test:browser` PASS (movement, gather, inventory, crafting, building/doors/save); `test:tech-tree` **48 kontrol PASS** včetně persistentní výstroje, Workbench III, Trauma Kit, Quarry Maul a death/Lost Pack; `test:death` **22 kontrol PASS** bez duplicitního Lost Pack; `test:salvage` PASS (Recycler/Furnace/Lost Pack/building); `test:world-events` **11 kontrol PASS** včetně cooldown, storm cargo persistence a Tech Part; `test:deer` **5/5 PASS** včetně flee/hunting/save persistence. Browser/app errors 0.
+- HIGH 1280×720 Chrome/Metal Rev6 matched výkon zůstává **199.80 FPS / 5.005 ms / 699 draw calls / 3,612,392 tris / 2,033 nodes**, v0.9.0 archive **242.81 FPS / 4.118 ms / 612 calls / 3,390,261 tris / 1,318 nodes**. Siluetové úpravy nepřidávají draw calls ani tris. ~18% rozdíl FPS proti archivnímu v0.9.0 je stále otevřený pro další profilování/optimalizaci před release candidate.
+- Zdroj/test/checkpoint změny zatím čekají na checkpoint commit/push do `codex/world-revision-6`; `main`, v0.9.3 tag/release a produkční Pages jsou beze změny.
+
 ## Live update — analytický sklon Rev6 oceánských vln — 2026-10-04
 
 - Před úpravou byla pracovní větev a origin shodné na `9868ef960eebb20fa31bc86e99275d4ae348db01`. Přímý ocean probe našel, že dlouhý swell přidával sinusové výpočty do každého ze dvoustranných diferencí normál. `src/world/atmosphere.ts` nyní vypočítá dlouhý swell analyticky a pouze v Rev6 uniform větvi; samotný vertex swell i vlnový vzhled se zachovávají. `tests/environment-visuals.test.ts` hlídá Rev6-only větev. Starší revize dál používají původní normálový výpočet.
