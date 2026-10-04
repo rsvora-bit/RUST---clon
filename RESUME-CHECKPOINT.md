@@ -1,5 +1,22 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Stav cíle v0.10 — sedm pracovních oblastí
+
+1. **World Revision 6 & Larger Map** — revize 6, 1664m mapa, seedované POI/trasy a deterministické savy implementované; dál ověřovat staré generace a save/reload při každé změně.
+2. **Terrain, Textures & Materials** — vrstvení terénu, alpský detail a skalní materiály existují; další viditelný terénní polish zůstává otevřený.
+3. **Vegetation, Water & Nature** — Rev6 les, tráva, pobřeží, mokřad a swelly jsou implementované; pokračovat v čitelnosti, variaci a kvalitě snímků.
+4. **POI Environment Art & Interiors** — Stormwatch/Breakwater a další landmarky jsou přítomné; výraznější interiéry a finishing art jsou otevřené.
+5. **Lighting, Weather, VFX & Atmosphere** — day/night/storm atmosféra existuje; tento checkpoint zlepšuje dynamické nasvícení horských masivů, oblast je stále otevřená.
+6. **Models, Viewmodels & Character Visuals** — přírodní modely a herní výbava mají dílčí Rev6 polish; cílený pass na viewmodel/postavu zůstává otevřený.
+7. **Performance, QA & Final Validation** — test/build a světová browser QA jsou zelené; HIGH FPS gap vůči v0.9.0, ostatní regression QA a RC audit zůstávají otevřené.
+
+## Live update — světlo a čitelnost Rev6 horských masivů — 2026-10-04
+
+- `src/world/atmosphere.ts`: jen svět Revision 6 nyní používá pro vzdálené masivy `MeshLambertMaterial`, takže jejich tvary dostávají dynamické směrové/hemisférické světlo. Emisivní fill se zvyšuje v noci a při bouři; v0.9.x legacy světy zachovávají původní `MeshBasicMaterial`. Geometrie, tris, POI, kolize a save data se nemění.
+- Přímé screenshot QA `test-results/world-art/horizon-day.png`, `horizon-night.png`, `horizon-storm.png`: denní masivy mají nyní světelný objem, noční siluety zůstávají viditelné a bouře zachovává kontrast. První čistě Lambert pokus vytvořil příliš černé noční hory; byl upraven noční emisivní odraz a následné snímky už tento problém nemají.
+- `TIDELAND_QA_ANGLE=metal npm run test:world-art`: **76/76 PASS**, 0 browser/WebGL/app errors, včetně Rev1/Rev2 legacy save fixtures, determinismu, presetů a počasí. `npm test`: **446/446, 43 souborů PASS**; `npm run build`: PASS se stávajícím Vite chunk-size advisory. HIGH 1280×720 uncapped performance: před **207.61 FPS / 4.817 ms / 421 calls / 3,419,200 tris**, po **211.50 FPS / 4.728 ms / 421 calls / 3,419,200 tris**; rozdíl je v rozsahu běhového rozptylu, žádný měřitelný workload nárůst.
+- Změna je zatím lokální a musí projít checkpoint commitem/pushem na `codex/world-revision-6`. Sedm front zůstává nehotových; cíl není release candidate a `main`, tag/release ani Pages se nemění.
+
 ## Live update — párový post-processing benchmark — 2026-10-04
 
 - `scripts/world-performance-qa.mjs` nyní v jediném HIGH browser session porovnává post-processing ON → OFF → ON na téže scéně; QA-only bridge `settingsForTest` v `src/app/GameApp.ts` umožňuje přepnout nastavení přes skutečnou renderer pipeline. Nic z herních nastavení se nemění mimo testovací browser.

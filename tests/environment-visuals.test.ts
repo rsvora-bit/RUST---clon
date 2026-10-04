@@ -106,6 +106,11 @@ describe('environment visual building blocks',()=>{
     const pixels=new Uint8Array(64),legacyHeight=new THREE.DataTexture(pixels,4,4,THREE.RGBAFormat),rev6Height=new THREE.DataTexture(pixels,4,4,THREE.RGBAFormat),legacy=new Atmosphere(new THREE.Scene(),legacyHeight,1280,731942,5),rev6=new Atmosphere(new THREE.Scene(),rev6Height,1280,731942,6);
     try{
       const legacyRidge=(legacy.horizon.children[1] as THREE.Mesh).geometry,rev6Ridge=(rev6.horizon.children[1] as THREE.Mesh).geometry;
+      expect((legacy.horizon.children[1] as THREE.Mesh).material).toBeInstanceOf(THREE.MeshBasicMaterial);
+      expect((rev6.horizon.children[1] as THREE.Mesh).material).toBeInstanceOf(THREE.MeshLambertMaterial);
+      const litRidge=(rev6.horizon.children[1] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshLambertMaterial>).material;
+      rev6.update(0,12,new THREE.Vector3());const daytimeHorizonFill=litRidge.emissiveIntensity;
+      rev6.update(0,0,new THREE.Vector3());expect(litRidge.emissiveIntensity).toBeGreaterThan(daytimeHorizonFill);expect(litRidge.emissiveIntensity).toBeLessThan(1);
       legacyRidge.computeBoundingBox();rev6Ridge.computeBoundingBox();
       expect(legacyRidge.index!.count).toBe(rev6Ridge.index!.count);
       expect(rev6Ridge.boundingBox!.max.y).toBeGreaterThan(legacyRidge.boundingBox!.max.y*1.08);
