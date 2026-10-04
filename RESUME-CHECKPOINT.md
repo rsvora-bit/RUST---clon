@@ -1,5 +1,11 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — čitelnější kameny na pobřeží — 2026-10-04
+
+- `src/rendering/environment.ts`: pouze Generation 5 Revision 6 zvětšuje běžné pobřežní oblázky z rozsahu 0.12–0.50 na 0.16–0.68 m a kamínky u naplaveného dřeva z 0.075–0.215 na 0.09–0.29 m. Počet instancí, sdílené varianty, determinismus, kolize i starší revize zůstávají stejné. `src/app/GameApp.ts` vystavuje QA pouze min/max měřítko; `scripts/world-art-qa.mjs` hlídá přítomnost nového rozsahu.
+- Chrome/Metal `test:world-art`: **77/77 PASS**, žádné browser/WebGL/application errors; zachování archivních v0.9.0 Rev1 a v0.9.1 Rev2 saveů, Rev6 layout/save-reload a všech čtyř presetů ověřeno. Pobřežní screenshot `test-results/world-art/shoreline-detail.png` vizuálně zkontrolován: kameny jsou čitelnější, instance se nemnoží. Plný `npm test` **446/446, 43 souborů PASS**. `npm run build` PASS; zůstává známé upozornění Vite na ~3.3 MB JS chunk. `git diff --check` PASS. Protože se mění jen instance scale, počet kamenů/draw calls/vertices se nemění; nové samostatné FPS měření pro tento drobný krok neprováděno.
+- Změněny `src/rendering/environment.ts`, `src/app/GameApp.ts`, `scripts/world-art-qa.mjs` a checkpoint. Testovací screenshot/log zůstává v ignorovaném `test-results/`. Zrušený lokální summit-tone experiment byl vrácen beze změny větve. Změny se chystají jako samostatný checkpoint commit/push na `codex/world-revision-6`; main, tagy, GitHub Release a produkční Pages zůstávají nedotčené. ICloud kopie končící ` 2` a `artifacts/` ponechat nestagované.
+
 ## Stav cíle v0.10 — sedm pracovních oblastí
 
 1. **World Revision 6 & Larger Map** — revize 6, 1664m mapa, seedované POI/trasy a deterministické savy implementované; dál ověřovat staré generace a save/reload při každé změně.
