@@ -93,13 +93,22 @@ export class WorldSurvival {
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===6){
       // A tidal instrument pier has visible structural bracing and a working gauge face.
+      const revisionSixTidal=this.env.terrain.generation===5&&this.env.worldRevision>=6;
       for(const x of [-2.65,2.65])for(const z of [-.6,2.45]){const pile=this.box(g,x,-.28,z,.22,2.2,.22,this.wood);pile.name='Tidal pier timber pile';}
       for(const z of [-.6,2.45])for(const direction of [-1,1]){const brace=this.box(g,0,-.24,z,5.45,.105,.11,this.rust);brace.rotation.z=direction*.29;brace.name='Tidal pier under-deck crossbrace';}
       this.box(g,0,.82,.9,6.4,.2,4.4,this.wood).name='Tidal survey deck';
       for(let i=0;i<9;i++){const plank=this.box(g,-2.8+i*.7,.94,.9,.62,.06,4.25,i%3===0?this.rust:this.wood);plank.name='Salt-worn pier plank';}
       this.box(g,-1.45,1.44,.2,.8,.9,.72,this.metal).name='Tidal instrument housing';
       this.box(g,-1.45,1.45,.595,.56,.43,.055,this.paint).name='Tidal gauge faceplate';
-      this.box(g,-1.45,1.48,.631,.35,.23,.025,this.display).name='Tidal level display';
+      this.box(g,-1.45,1.48,.631,.35,.23,.025,revisionSixTidal?this.paint:this.display).name='Tidal level display';
+      if(revisionSixTidal){
+        // Mark the physical level readout without adding another material batch.
+        for(let mark=0;mark<5;mark++){
+          const graduation=this.box(g,-1.574,1.395+mark*.041,.651,.048-(mark%2)*.013,.006,.006,this.chartPaper);
+          graduation.name='Tidal level graduation';
+        }
+        const pointer=this.box(g,-1.425,1.475,.651,.018,.145,.006,this.rust);pointer.name='Tidal level pointer';
+      }
       for(let button=0;button<3;button++){const knob=new T.Mesh(new T.CylinderGeometry(.045,.045,.04,8),button===0?this.rust:this.metal);knob.name='Tidal instrument control';knob.position.set(-1.64+button*.19,1.19,.62);knob.rotation.x=Math.PI/2;knob.castShadow=true;g.add(knob);}
       const gauge=new T.Mesh(new T.CylinderGeometry(.045,.055,1.45,7),this.metal);gauge.name='Tidal height gauge';gauge.position.set(2.62,1.75,-1.08);gauge.castShadow=true;g.add(gauge);
       for(let mark=0;mark<8;mark++){const stripe=this.box(g,2.62,1.18+mark*.16,-1.03,.18,.035,.035,mark%2===0?this.rust:this.cloth);stripe.name='Tidal gauge calibration mark';}

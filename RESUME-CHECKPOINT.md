@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Rev6 Tidal Survey instrument face
+
+- Mlha/horizont je ověřený a pushnutý jako `7db5b4c`. Tidal Survey Pier nyní v nových Gen5 Rev6 světech používá tlumený panel s pěti stupnicovými značkami a ručičkou; původní mintový display i Rev1–5 ponechávají starý vzhled. Přístroj využívá už existující paint, chartPaper a rust batches; statický QA render měl **11 batch meshes / 1 303 triangles**.
+- `npm test -- tests/world-art.test.ts`: **132/132 PASS**; `npm run build`: **PASS**, Vite JS chunk **3 317.86 kB** se stávajícím >500kB advisory; `git diff --check`: PASS. Před tímto čistě statickým POI art blokem plná sada **473/473, 45 souborů PASS**.
+- Vite/Chromium 151 / SwiftShader asset preview načítá skutečný `WorldSurvival` z aktuálního Rev6 zdroje, explicitní seed `731942`: `test-results/tidal-pier-review/report.json` **PASS**, 5 graduations, pointer present, errors 0. `tidal-gauge-detail.png` prohlédnutý. Jde o statický modelový render, ne plný GameApp/weather/walking test.
+- Odhad **86 % celkem / 14 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **83 %**, Goal 5 **87 %**, Goal 6 **85 %**, Goal 7 **75 %**. Release-candidate readiness neměnit: matched HIGH/Metal výkonová mezera 16–20 %, přirozené weather přechody, interiérové collisions a plná gameplay/save QA jsou otevřené.
+- **Přesný další krok:** pokračovat POI/weather/model art sweepem z reportu; ponechat Tidal markery uvnitř existujících Rev6 batchů. Následují full gameplay/save compatibility regression a reprezentativní HIGH/Metal profil. Jen větev `codex/world-revision-6`; `main`, release/tag a production Pages beze změny.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Rev6 sky / horizon mist
 
 - Předchozí checkpoint borovic `9e5cc85` je pushnutý. Dokončena Rev6 oprava mlhy v `src/world/atmosphere.ts` a `src/survival/Weather.ts`: obloha i tři neprůhledné distant massif layers sdílejí aktuální mist a fog tint. Revize 1–5 mají `mist=0`; clear a storm zachovávají vlastní sky/horizon barvy. Bez transparentních hor, další geometrie či draw calls.
