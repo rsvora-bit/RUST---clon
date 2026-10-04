@@ -1,6 +1,7 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0/v0.9.1 source save QA
 
 - Po předchozím checkpointu proběhla aktuální browser vizuální matice nad Revision 6: **15 screenshotů** (7 biomů, 8 POI), HIGH nastavení, správná Rev6 / 1664m identita a stavební preview; **0 browser/WebGL/application errors**. Chromium/SwiftShader potřebovalo přibližně 7 minut na start, proto se tento běh nepoužívá jako výkonový benchmark. Screenshoty/report jsou ignorované pod `test-results/rev6-world-review/`; obecné POI záběry doplňují samostatné cílené modelové a přístupové testy.
+- Následná plná `npm test` znovu prošla **478/478** včetně `tests/world-art.test.ts` **136/136**; `npm run build` **PASS**. Zůstává známé upozornění na minifikovaný JS chunk **3,320.36 kB** a deprecated Rapier init warnings; žádná tracked aplikační změna.
 - QA průběžně uzavřelo orientační vizuální sweep, ale plná release QA nadále čeká na skutečné archived Pages save fixtures a odpovídající HIGH/Metal hardware.
 - Odhad po vizuálním sweepe: **89 % celkem / 11 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **88 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **89 %**.
 
