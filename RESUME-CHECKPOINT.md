@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Breakwater wheelhouse Rev6 art polish — 2026-10-04
+
+- Začátek: `codex/world-revision-6`, lokální HEAD i origin větev `663c54d85b18f357e7506d53b54e649f581d04ad`; `origin/main` zůstává `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Pracovní strom měl již existující iCloudové kopie `* 2` a `artifacts/`; nedotýkal jsem se jich.
+- `src/survival/WorldSurvival.ts`: pouze pro Generation 5 / world revision 6 má Breakwater vrstvený, tlumený přístrojový panel, indikátory, kormidelní kompas a slabou teplou lampu bez stínů. Nové statické mesh části zůstávají v existujícím batching systému; bodové světlo nepřidává draw call. Revize 1–5 si zachovávají původní panel i vzhled. Žádné gameplay, kolizní ani save/layout změny.
+- `tests/world-art.test.ts`: ověřuje novou rev-6 fascii, displej, kompas a lampu a nepřítomnost rev-6 prvků ve world revision 5.
+- Kompletní `npm test`: **450/450, 43 souborů PASS**. `npm run build`: **PASS**, existující Vite upozornění na přibližně 3,3 MB JS chunk. Chrome/Metal `TIDELAND_QA_ANGLE=metal npm run test:world-art`: **77/77 PASS**, 0 browser/WebGL chyb; skutečné v0.9.0 Rev1 a v0.9.1 Rev2 archive save fixture, Rev6 save/reload, všechny quality presety a storm/camera sweep PASS. `breakwater-wheelhouse-interior.png` vizuálně zkontrolován po dvou korekcích světla a materiálu.
+- HIGH Chrome/Metal uncapped performance QA: archiv v0.9.0 **227,47 FPS / 4,396 ms / 612 calls / 3 390 261 tris / 1 318 nodes**; aktuální Rev6 opakovaný vzorek **206,32 FPS / 4,847 ms / 425 calls / 3 242 808 tris / 2 033 nodes**, 0 errors. Předchozí Rev6 vzorek v checkpointu **207,70 / 4,815 / 421 / 3 242 436 / 2 033**; druhý běh po změně naměřil 195,10 FPS, takže FPS kolísá a rozdíl vůči dřívějším vzorkům nelze této lokální POI změně spolehlivě připsat. Aktuální shader precompile překročil 8s guard. První SwiftShader pokus byl přerušen a nahrazen úspěšným Metal během.
+- Rozpracovaný checkpoint obsahuje pouze `src/survival/WorldSurvival.ts`, `tests/world-art.test.ts` a tento soubor. Po review vytvořit checkpoint commit a push pouze na `codex/world-revision-6`. Žádný merge/main/tag/release/Pages. Cíl v0.10 zůstává aktivní a není release candidate.
+
 ## Live update — členitější Rev6 pás mokrého písku — 2026-10-04
 
 - `src/world/materials.ts`: Revision 6 pobřeží používá užší, makrošumem nepravidelný mokrý písek a vyšší, ale omezenou barevnou váhu; suchá pláž se oddělí od tmavší přílivové hrany bez kruhové hranice. Shader reuse-uje už vypočítaný `duneField`, nepřidává texture sample, geometrii ani draw call. Rev1–5 mají `revision6Moss=0`, takže jejich původní směs se zachová.
