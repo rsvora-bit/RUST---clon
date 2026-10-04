@@ -35,4 +35,9 @@ describe('first-person firearm presentation',()=>{
     const held=new HeldItem();held.set('quarryMaul');held.update(.2,0);const head=held.scene.getObjectByName('Quarry Maul forged head') as THREE.Mesh,face=held.scene.getObjectByName('Quarry Maul struck face') as THREE.Mesh;
     expect(head).toBeTruthy();expect(face).toBeTruthy();expect(head.material).toBe(face.material);expect((head.material as THREE.MeshStandardMaterial).map).toBeInstanceOf(THREE.DataTexture);
   });
+  it('uses a textured chipped stone head and one merged set of haft bindings on the pickaxe',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const held=new HeldItem();held.set('pickaxe');held.update(.2,0);const head=held.scene.getObjectByName('Stone pickaxe chipped head') as THREE.Mesh,binding=held.scene.getObjectByName('Stone pickaxe haft binding') as THREE.Mesh;
+    expect(head).toBeTruthy();expect(head.material).toBeInstanceOf(THREE.MeshStandardMaterial);expect((head.material as THREE.MeshStandardMaterial).map).toBeInstanceOf(THREE.CanvasTexture);expect((head.material as THREE.MeshStandardMaterial).side).toBe(THREE.DoubleSide);expect((head.material as THREE.MeshStandardMaterial).emissiveIntensity).toBeGreaterThan(0);expect(binding).toBeTruthy();expect(binding.material).toBeInstanceOf(THREE.MeshStandardMaterial);expect(binding.geometry.getAttribute('position').count).toBeGreaterThan(200);
+  });
 });

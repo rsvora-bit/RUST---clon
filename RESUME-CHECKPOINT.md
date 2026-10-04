@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — čitelnější first-person kamenný krumpáč — 2026-10-04
+
+- `src/rendering/HeldItem.ts`: hlava krumpáče nyní sdílí původní procedurální kámen, ale má vlastní světlejší, oboustranně nasvícený materiál s jemným emisivním fill, hlubší fazety a robustnější zkosení. Tři úvazy kopírují osu šikmé násady a jsou sloučené v jediném mesh; gathering, hit detection, animace, item data a save schema nemění.
+- `tests/held-item.test.ts` přidává kontrolu CanvasTexture, DoubleSide/emissive viewmodel materiálu a sloučené geometrie úvazů. Held-item suite **8/8 PASS**; kompletní `npm test` **451/451, 43 souborů PASS**; `npm run build` PASS se stávajícím Vite advisory na ~3,31 MB JS chunk; `git diff --check` PASS.
+- Chrome/Metal `npm run test:tech-tree`: **49/49 PASS**, včetně craft/persistence, Quarry Maul, death/Lost Pack a save/reload, bez browser console errors. Finální `test-results/tech-tree/08-pickaxe-held.png` byl vizuálně prohlédnut: hlava je světlejší, má čitelnější fazetu a větší objem; obrys zůstává záměrně stylizovaný. Změna přidává pouze malé first-person head/binding meshes, žádné world draw calls ani world triangles.
+- Změněny pouze `src/rendering/HeldItem.ts`, `tests/held-item.test.ts` a checkpoint; připraveno jako vlastní checkpoint commit/push na `codex/world-revision-6`. `main`, tagy, release a produkční Pages zůstávají nedotčeny; iCloud kopie `* 2` a `artifacts/` jsou mimo index.
+
 ## Live update — Rev6 výkonový A/B a post-FX izolace — 2026-10-04
 
 - Uncapped Chrome/Metal HIGH, 1280×720, seed 731942, dokončený A/B: archiv v0.9.0 **246,98 FPS / 4,049 ms / 612 draw calls / 3 390 261 tris / 1 318 nodes**; lokální Rev6 **206,57 FPS / 4,841 ms / 425 calls / 3 252 568 tris / 2 033 nodes**. Rev6 má o 187 méně callů a o 137 693 méně trojúhelníků, ale běžel o ~16,4 % pomaleji v tomto uncapped snímku; jde o měřenou systémovou mezeru, nikoli přičitatelnou poslední barevné změně panoramatu.

@@ -65,6 +65,7 @@ export class HeldItem {
   private gloveWear=new THREE.MeshStandardMaterial({color:'#71684f',roughness:1});
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
+  private pickaxeStone=this.stone.clone();
   private metal=new THREE.MeshStandardMaterial({color:'#8a8f89',map:weatheredMetalTexture(),roughness:.72,metalness:.32});
   private shellCasing=new THREE.MeshStandardMaterial({color:'#a04d34',roughness:.78,metalness:.08});
   private brass=new THREE.MeshStandardMaterial({color:'#a88a4b',roughness:.56,metalness:.38});
@@ -75,6 +76,7 @@ export class HeldItem {
   private quarrySteel=new THREE.MeshStandardMaterial({map:maulSurfaceTexture(),roughness:.72,metalness:.31});
 
   constructor(){
+    this.pickaxeStone.color.set('#d0cab5');this.pickaxeStone.emissive.set('#4b483a');this.pickaxeStone.emissiveIntensity=.48;this.pickaxeStone.side=THREE.DoubleSide;
     const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#817768';ctx.fillRect(0,0,128,128);
     for(let i=0;i<128;i++){ctx.strokeStyle=i%2?'rgba(30,26,21,.12)':'rgba(217,199,167,.12)';ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,128);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(128,i);ctx.stroke();}
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;this.skin.map=tex;this.skin.bumpMap=tex;this.skin.bumpScale=.001;
@@ -89,7 +91,7 @@ export class HeldItem {
   }
 
   private clearHand(){
-    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust,this.cleaverBlade,this.quarrySteel];
+    const shared=[this.skin,this.sleeve,this.glove,this.gloveWear,this.wood,this.stone,this.pickaxeStone,this.metal,this.shellCasing,this.brass,this.cylinderBore,this.wrap,this.rust,this.cleaverBlade,this.quarrySteel];
     this.hand.traverse(o=>{if(!(o instanceof THREE.Mesh))return;o.geometry.dispose();const materials=Array.isArray(o.material)?o.material:[o.material];for(const material of materials)if(!shared.includes(material as THREE.MeshStandardMaterial))material.dispose();});
     this.hand.clear();this.flameOuter=null;this.flameInner=null;this.bowString=null;this.bowArrow=null;this.muzzleFlash=null;this.muzzleFlashTime=0;
   }
@@ -133,7 +135,8 @@ export class HeldItem {
         for(let i=0;i<5;i++){const wrap=this.mesh(new THREE.TorusGeometry(.041,.004,5,14),this.wrap,.33,.26+i*.014,-.64);wrap.rotation.x=Math.PI/2;}
       }
       if(item==='pickaxe'){
-        const headShape=new THREE.Shape();headShape.moveTo(-.225,-.012);headShape.lineTo(-.135,-.046);headShape.lineTo(-.075,-.058);headShape.lineTo(.085,-.051);headShape.lineTo(.135,-.027);headShape.lineTo(.275,0);headShape.lineTo(.135,.027);headShape.lineTo(.085,.051);headShape.lineTo(-.075,.058);headShape.lineTo(-.135,.046);headShape.closePath();const headGeometry=new THREE.ExtrudeGeometry(headShape,{depth:.07,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.007,bevelThickness:.006});headGeometry.translate(0,0,-.035);const steel=new THREE.MeshStandardMaterial({color:'#999b90',roughness:.78,metalness:.16}),head=this.mesh(headGeometry,steel,.27,.30,-.64);head.rotation.z=-.08;
+        const headShape=new THREE.Shape();headShape.moveTo(-.225,-.016);headShape.lineTo(-.135,-.054);headShape.lineTo(-.075,-.076);headShape.lineTo(.085,-.067);headShape.lineTo(.135,-.034);headShape.lineTo(.275,0);headShape.lineTo(.135,.034);headShape.lineTo(.085,.067);headShape.lineTo(-.075,.076);headShape.lineTo(-.135,.054);headShape.closePath();const headGeometry=new THREE.ExtrudeGeometry(headShape,{depth:.10,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:.016,bevelThickness:.016});headGeometry.translate(0,0,-.05);const head=this.mesh(headGeometry,this.pickaxeStone,.27,.30,-.64);head.rotation.z=-.08;head.name='Stone pickaxe chipped head';
+        const bindings:THREE.BufferGeometry[]=[];for(let i=0;i<3;i++){const y=.25+i*.026,x=.29-.18*(y-.075),band=new THREE.TorusGeometry(.034,.0045,5,14);band.rotateX(Math.PI/2);band.rotateZ(-.18);band.translate(x,y,-.64);bindings.push(band);}const bindingGeometry=mergeGeometries(bindings,false);bindings.forEach(part=>part.dispose());if(!bindingGeometry)throw new Error('Could not assemble pickaxe haft binding');this.mesh(bindingGeometry,this.wrap,0,0,0).name='Stone pickaxe haft binding';
         this.addArm(-1,-.08,-.18,-.61,.2,true);
       }
       if(item==='hammer'){
