@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — CPU diagnostický harness
+
+- Terénní optimalizace je commitnutá a pushnutá jako `2a58e17` (`Optimize Rev6 terrain raycasting`); předchozí interakční blok je `67204e8`.
+- `scripts/world-cpu-profile.mjs` a `npm run test:cpu-profile`: lokální opt-in CPU diagnostika na Vite dev serveru, úplné LOW–ULTRA profily, konfigurovatelný boot/sample limit a rozlišení. Ověřuje zaměření TREE i vyčištění při odvrácení, zaznamenává reálný WebGL backend/settings a 3 paused/live/paused CPU profily + screenshots. Instrumentuje existující modul URL z PerformanceResourceTiming včetně HMR query; každý vzorek musí obsahovat skutečné InteractionSystem updates. README obsahuje použití a limity.
+- Finální runtime **PASS**: `test-results/world-cpu-terrain/profile.json`, 3/3 profily, interaction PASS, 0 errors, Chromium 151 / SwiftShader. `node --check` a `git diff --check` **PASS**. Současný herní checkout: **470/470 unit tests PASS**, build **PASS** (známý chunk advisory). Runtime snímky prohlédnuty.
+- Interpretace: 10s vzorky obsahovaly pouze 2–3 frames. Naměřené method timings jsou diagnostické, ne stabilní performance A/B. `stats.fps` má clamped dt, ne skutečný frame throughput. Nepoužívat SwiftShader k uzavření historické Metal regrese.
+- **První další úkol:** širší Rev6 biome / terrain / nature / POI runtime screenshotový průchod. Následují gameplay regression a reprezentativní performance recheck. Celkem odhad 84 %, Goal 7 72 %; ostatní goal odhady uvedené níže. V0.10 stále není RC.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — přesný terénní raycast
 
 - `67204e8` (`Optimize Rev6 interaction targeting`) je pushnutý na `codex/world-revision-6`. Nyní je ověřený další funkční blok: `src/terrain/raycast.ts` vytváří samostatnou raycast proxy nad sdílenými terrain buffery a pro konečný paprsek omezuje přesný Three.js triangle raycast na příslušné buňky pravidelné mřížky. `GameApp` ji používá pro terénní interakce / building / stations / LOS / projektily. Renderovací draw range se nemění; nekonečné a velmi široké paprsky používají původní průchod. Žádná změna terrain heights, kolizí, seed/layout/save schema.
