@@ -1,5 +1,14 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — optimalizace Rev6 podrostu a vzdáleného terrain detailu — 2026-10-04
+
+- `src/world/models.ts`: pouze Rev6 fern geometry snižuje vodorovnou tessellaci širokých instancovaných listů a ponechává výšku, středový ohyb, 9 listů, footprint i determinismus. Legacy geometrie zůstává nedotčená. `tests/environment-visuals.test.ts` nyní hlídá přesný 75% reduction per Rev6 tuft a zachování rozměrů. Ve HIGH scéně fern batch klesl z **247,968 na 82,656 tris** (−165,312); vizuální close-up `test-results/world-art/forest-understory-close.png` zkontrolován.
+- `src/world/materials.ts`: terrain normal relief šum se vyhodnocuje pouze do 72m, kde už má nenulový příspěvek; mimo dosah zůstává normál shodný a stará/revizní terrain appearance zůstává zachována. `terrain-ground-detail.png` i alpine, shoreline a biome screenshoty vytvořené světovou QA byly vizuálně zkontrolovány; WebGL shader běžel bez chyb.
+- Ověření: cílené geometrické/environment testy **18/18 PASS**; kompletní `npm test` **446/446 / 43 souborů PASS**; `npm run build` PASS s obvyklým upozorněním na ~3.3 MB JS chunk; Chrome/Metal `test:world-art` **77/77**, 0 browser/WebGL/app errors, včetně Rev1/Rev2 archivních saveů, Rev6 save/reload a všech presetů.
+- Matched uncapped HIGH 1280×720 A/B fern optimalizace: Rev6 před **212.56 FPS / 4.705 ms / 421 calls / 3,419,200 tris**; po **213.79 FPS / 4.677 ms / 421 calls / 3,253,888 tris**; změna FPS +0.6% je v rozptylu, ale 165,312 tris (4.8%) jsou odstraněny bez draw call navýšení. Pro širší srovnání z téhož benchmarkového kola v0.9.0 měl **246.67 FPS / 4.054 ms / 612 calls / 3,390,261 tris**. A/B pro vzdálený relief normal skip: před **213.79 FPS / 4.677 ms**, po **213.39 FPS / 4.686 ms**, oba 421 calls/3,253,888 tris a 0 errors; neprokázalo zrychlení, jen vynechání zbytečně nulového výpočtu. Rev6 stále zaostává uncapped proti archived v0.9.0 přibližně o 13.5%; performance gap není uzavřen.
+- Změny `src/world/models.ts`, `src/world/materials.ts`, `tests/environment-visuals.test.ts` a checkpoint. Nic z generated QA ani uživatelských iCloud ` 2` kopií se do Git nepřidává. Následuje checkpoint commit/push pouze do `codex/world-revision-6`; žádná main/release/Pages změna.
+
+
 ## Live update — čitelnější kameny na pobřeží — 2026-10-04
 
 - `src/rendering/environment.ts`: pouze Generation 5 Revision 6 zvětšuje běžné pobřežní oblázky z rozsahu 0.12–0.50 na 0.16–0.68 m a kamínky u naplaveného dřeva z 0.075–0.215 na 0.09–0.29 m. Počet instancí, sdílené varianty, determinismus, kolize i starší revize zůstávají stejné. `src/app/GameApp.ts` vystavuje QA pouze min/max měřítko; `scripts/world-art-qa.mjs` hlídá přítomnost nového rozsahu.
