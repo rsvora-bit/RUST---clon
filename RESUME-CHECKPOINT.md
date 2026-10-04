@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 výkonový A/B a post-FX izolace — 2026-10-04
+
+- Uncapped Chrome/Metal HIGH, 1280×720, seed 731942, dokončený A/B: archiv v0.9.0 **246,98 FPS / 4,049 ms / 612 draw calls / 3 390 261 tris / 1 318 nodes**; lokální Rev6 **206,57 FPS / 4,841 ms / 425 calls / 3 252 568 tris / 2 033 nodes**. Rev6 má o 187 méně callů a o 137 693 méně trojúhelníků, ale běžel o ~16,4 % pomaleji v tomto uncapped snímku; jde o měřenou systémovou mezeru, nikoli přičitatelnou poslední barevné změně panoramatu.
+- Na aktuálním Rev6 stejném prepared-world browser flow: post-FX ON A **207,58 FPS / 4,817 ms**, OFF **199,60 / 5,010**, ON B **207,83 / 4,812**. Tato A/B nepodporuje post-FX jako vysvětlení FPS mezery; krátké vzorky mají běhový rozptyl a nelze z nich tvrdit, že efekty FPS zrychlují. Vypnutí snížilo calls 425→408 a tris o 17, ale ne čas snímku.
+- Opakovaný pokus znovu stáhnout živý archiv v0.9.0 skončil po 180 s na GPU shader warm-upu; tentokrát z něj žádné měření nepoužívám. První dokončený matched vzorek zůstává referencí. Další práce má cílit CPU/render-loop profilování (aktuální scéna má 2 033 nodes, 375 grass chunks a 84 000 seedovaných grass instances), ne naslepo vypínat post-FX.
+- Kód/test/checkpoint z horského tónového kroku je commitnutý jako `a4524c2` (`Refine revision six mountain color breakup`) a pushnutý na `codex/world-revision-6`. `origin/main`, release/tag/Pages beze změny; cílový v0.10 zůstává aktivní a není RC.
+
 ## Live update — Rev6 tónová členitost vzdálených hor — 2026-10-04
 
 - Na `codex/world-revision-6` jsem upravil pouze procedurální vertex-color grain ve `src/world/horizon.ts`, a to jen pro Revision 6. Nízkofrekvenční odchylky nyní dávají dálkovým horským stěnám více barevných ploch; Rev1–5 barvy zůstávají přesně shodné. Počet vrcholů, indexů, trojúhelníků, meshů, draw calls, kolize a world/save identity se nemění.
