@@ -1,5 +1,6 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0/v0.9.1 source save QA
 
+- Read-only hledání přes GitHub historie potvrdilo, že remote nemá `gh-pages` větev ani statické `/versions/v0.9.x`/`dist` soubory; větev `archive/pre-tideland` je Unity projekt. Git tagy `v0.9.0` a `v0.9.1` míří na source commity `1fe7586` a `19cd35b`, které už byly otestované. Pages URL i GitHub Actions API vracejí proxy **403**, takže skutečný deploy artifact z tohoto prostředí není dostupný.
 - Nový `npm run test:highland-relay` ověřuje skutečnou GameApp interakci: Revision 6 vytvoří `secure-cache-poi-7` se salvage a zamčeným stavem, interakční systém ji zaregistruje a hráč uvidí `LOCKED`; po přidání relay card ji odemkne a otevře. **6/6 browser checks PASS, 0 errors**. Skript je `scripts/highland-relay-qa.mjs`; artefakt zůstává ignorovaný v `test-results/highland-relay/`.
 - Po tomto ověření odhad: **90 % celkem / 10 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **89 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **91 %**. Další Rev6 art/gameplay QA pro Relay cache je tím uzavřeno; horní žebříková plošina není herní cíl a zůstává dekorativní bez climb runtime.
 
