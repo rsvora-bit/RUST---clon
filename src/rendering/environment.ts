@@ -379,9 +379,9 @@ export class Environment {
       this.marshPoolLocations.push({x,y:h+.085,z});
     }
     if(!pools.length)return;
-    const geometry=this.own(marshPoolGeometry()),material=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.42,metalness:.025,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});this.materials.add(material);
+    const geometry=this.own(marshPoolGeometry()),material=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.30,metalness:.035,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});this.materials.add(material);
     const mesh=new THREE.InstancedMesh(geometry,material,pools.length);mesh.name='Marsh pools';mesh.receiveShadow=true;mesh.castShadow=false;
-    const up=new THREE.Vector3();pools.forEach((p,i)=>{const gradeX=(this.heightAt(p.x+2,p.z)-this.heightAt(p.x-2,p.z))*.25,gradeZ=(this.heightAt(p.x,p.z+2)-this.heightAt(p.x,p.z-2))*.25,normal=up.set(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(p.x,p.y+.035,p.z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,p.r));this.matrixDummy.scale.set(p.sx,1,p.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.49+rand()*.025,.12+rand()*.05,.78+rand()*.08));});
+    const up=new THREE.Vector3();pools.forEach((p,i)=>{const gradeX=(this.heightAt(p.x+2,p.z)-this.heightAt(p.x-2,p.z))*.25,gradeZ=(this.heightAt(p.x,p.z+2)-this.heightAt(p.x,p.z-2))*.25,normal=up.set(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(p.x,p.y-.055,p.z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,p.r));this.matrixDummy.scale.set(p.sx,1,p.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.47+rand()*.035,.12+rand()*.07,.64+rand()*.07));});
     if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:pools.length,minimum:'medium'});
   }
 

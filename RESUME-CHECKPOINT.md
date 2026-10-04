@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 mokřadní tůně bez tvrdého středu — 2026-10-04
+
+- Před změnou lokální HEAD i `origin/codex/world-revision-6` byly `26cf5014f6d7b4e8054db727bedc6b641f37e1f9`; `origin/main` zůstal `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Necommitnuté uživatelské `* 2` kopie a `artifacts/` jsou ponechané mimo index.
+- Screenshot `test-results/world-art/wetland-pool-detail.png` odhalil světlé dekorativní ovály a po prvním úzkém prohloubení prosvítající terrain uprostřed. Bez změny terrain heightfieldu je Rev6 `marshPoolGeometry()` upravena na 6 soustředných, seedovaně nepravidelných prstenců se širším bahnitým lemem a jen 2cm povrchovým profilem nad terénem; instance odstín je tmavší a materiál má mírně hladší odlesk. Zachováno jedno InstancedMesh, determinismus, placement i save/layout/colliders; při HIGH přibývá 9 760 viditelných tris a žádný draw call.
+- Test `tests/environment-visuals.test.ts` ověřuje determinismus i nízký vertex rozsah. Cílený environment test **13/13 PASS**, kompletní `npm test` **450/450 / 43 souborů PASS**, `npm run build` PASS (dosavadní Vite advisory pro ~3,3 MB JS bundle). Chrome/Metal `test:world-art` **77/77 PASS**, 0 browser/WebGL chyb; Rev1/Rev2 archivní save fixtures, Rev6 save/reload, preset matice, počasí a camera sweep PASS. Konečný mokřadní screenshot byl vizuálně prohlédnut; prosvítání zeminy odstraněno, tůně mají tmavší přirozený odstín a rozbitější okraj.
+- HIGH Chrome/Metal uncapped performance: archivní v0.9.0 **227,47 FPS / 4,396 ms / 612 calls / 3 390 261 tris / 1 318 nodes**; před změnou Rev6 **206,32 / 4,847 / 425 / 3 242 808 / 2 033**; po změně **207,23 / 4,826 / 425 / 3 252 568 / 2 033**, 0 errors. Změna FPS je v běhovém rozptylu; Rev6 versus v0.9.0 gap zůstává širší systémovou položkou. Menu-ready **4 131 ms**, New Game z připravené scény **267 ms**; shader precompile překročil 8s guard.
+- Změněno `src/world/models.ts`, `src/rendering/environment.ts`, `tests/environment-visuals.test.ts` a checkpoint. Zatím jde o validovaný pracovní diff; následuje samostatný checkpoint commit/push pouze na `codex/world-revision-6`. Bez zásahu do `main`, tagů, releasu nebo produkčních Pages. Celkový cíl v0.10 zůstává aktivní; ostatní world art, viewmodely, další regresní QA a RC audit jsou otevřené.
+
 ## Live update — Breakwater wheelhouse Rev6 art polish — 2026-10-04
 
 - Začátek: `codex/world-revision-6`, lokální HEAD i origin větev `663c54d85b18f357e7506d53b54e649f581d04ad`; `origin/main` zůstává `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Pracovní strom měl již existující iCloudové kopie `* 2` a `artifacts/`; nedotýkal jsem se jich.
