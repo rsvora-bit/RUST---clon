@@ -56,7 +56,7 @@ describe('foliage geometry stability',()=>{
       expect(masses.index!.count).toBeGreaterThan(0);
       expect(leaves.index!.count).toBeGreaterThan(0);
       masses.computeBoundingBox();leaves.computeBoundingBox();
-      expect(masses.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(2.8);
+      expect(masses.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(2.7);
       expect(leaves.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(4.5);
     }finally{whole.dispose();masses.dispose();leaves.dispose();}
   });

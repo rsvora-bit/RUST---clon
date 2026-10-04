@@ -59,7 +59,7 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
     // Let neighboring bough masses overlap slightly so the lower-camera
     // silhouette reads as one branching crown instead of seven detached
     // pom-poms. Geometry remains shared and the instance/draw budget is fixed.
-    foliageCore.scale(revision6?.48+variant*.035:1.02+variant*.12,revision6?.46+variant*.025:.78+variant*.08,revision6?.48+variant*.035:.96+variant*.1);
+    foliageCore.scale(revision6?.35+variant*.03:1.02+variant*.12,revision6?.34+variant*.025:.78+variant*.08,revision6?.35+variant*.03:.96+variant*.1);
     foliageCore.translate(cx,cy,cz);
     addMass(foliageCore);
     // A smaller offset mass rounds out the branch silhouette in profile.

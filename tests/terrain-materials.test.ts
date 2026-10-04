@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leafMassTexture} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -46,6 +46,21 @@ describe('revision-6 opaque canopy texture',()=>{
       expect(canvases[0]!.fills).toEqual(canvases[1]!.fills);
       expect(canvases[0]!.fills).toContain('#48623b');
       expect(canvases[0]!.fills).toContain('#a2ad68');
+      expect(first.colorSpace).toBe(THREE.SRGBColorSpace);
+      expect(first.wrapS).toBe(THREE.RepeatWrapping);
+    }finally{first.dispose();repeat.dispose();}
+  });
+});
+
+describe('revision-6 broadleaf sprig texture',()=>{
+  it('draws a deterministic branched canopy mask with paired leaf detail',()=>{
+    const canvases=installCanvasStub(),first=leavesTexture(667,true),repeat=leavesTexture(667,true);
+    try{
+      expect(canvases[0]!.fills.length).toBeGreaterThan(100);
+      expect(canvases[0]!.fills).toEqual(canvases[1]!.fills);
+      expect(canvases[0]!.strokes).toEqual(canvases[1]!.strokes);
+      expect(canvases[0]!.fills).toContain('#506b39');
+      expect(canvases[0]!.fills).toContain('#a0ae65');
       expect(first.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(first.wrapS).toBe(THREE.RepeatWrapping);
     }finally{first.dispose();repeat.dispose();}

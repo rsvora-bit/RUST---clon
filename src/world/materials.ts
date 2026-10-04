@@ -83,13 +83,20 @@ export function palmTexture(seed=905):THREE.CanvasTexture {
 export function leavesTexture(seed=667,revision6=false):THREE.CanvasTexture {
   if(revision6){
     const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#506b39','#648047','#78924d','#8da258','#a0ae65'];
-    ctx.lineCap='round';ctx.strokeStyle='#514c35';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(125,250);ctx.quadraticCurveTo(143,131,129,17);ctx.stroke();
-    for(let pair=0;pair<14;pair++){
-      const t=.1+pair*.058,y=243-t*218,x=128+Math.sin(t*8)*10,side=pair%2?1:-1,length=23+rand()*22;
-      for(const direction of [-1,1]){
-        const ex=x+side*length,ey=y-direction*(9+rand()*13),leafColor=palette[Math.floor(rand()*palette.length)]!;
-        ctx.fillStyle=leafColor;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+side*length*.48,y-direction*22,ex,ey);ctx.quadraticCurveTo(x+side*length*.46,y+direction*8,x,y);ctx.fill();
-        ctx.strokeStyle='rgba(188,190,119,.42)';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.lineCap='round';ctx.strokeStyle='#596044';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(127,249);ctx.quadraticCurveTo(115,138,129,20);ctx.stroke();
+    const drawLeaf=(x:number,y:number,dx:number,dy:number,width:number,color:string)=>{
+      const length=Math.hypot(dx,dy)||1,px=-dy/length*width,py=dx/length*width,mx=x+dx*.5,my=y+dy*.5;
+      ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(mx+px,my+py,x+dx,y+dy);ctx.quadraticCurveTo(mx-px,my-py,x,y);ctx.fill();
+      ctx.strokeStyle='rgba(190,197,132,.38)';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy);ctx.stroke();
+    };
+    // Broad, forked shoots form a loose oval crown on each instanced card;
+    // this avoids the narrow upright sprig silhouette at ordinary play distance.
+    for(let branch=0;branch<10;branch++){
+      const side=branch%2===0?-1:1,baseY=68+Math.floor(branch/2)*34+rand()*8,baseX=128+(rand()-.5)*12,reach=34+rand()*36,rise=22+rand()*28,endX=baseX+side*reach,endY=baseY-rise,controlX=baseX+side*reach*.52,controlY=baseY-rise*.12;
+      ctx.strokeStyle=branch%3===0?'#665d3e':'#596044';ctx.lineWidth=1.2+rand()*.65;ctx.beginPath();ctx.moveTo(baseX,baseY);ctx.quadraticCurveTo(controlX,controlY,endX,endY);ctx.stroke();
+      for(let leaf=0;leaf<6;leaf++){
+        const t=.14+leaf*.125,u=1-t,x=(u*u*baseX+2*u*t*controlX+t*t*endX),y=(u*u*baseY+2*u*t*controlY+t*t*endY),out=side*(10+rand()*12),riseLeaf=5+rand()*10,width=13+rand()*5;
+        const color=palette[Math.floor(rand()*palette.length)]!;drawLeaf(x,y,out,-riseLeaf,width,color);drawLeaf(x,y,out*.78,riseLeaf*.46,width*.88,palette[Math.floor(rand()*palette.length)]!);
       }
     }
     return texture(c);

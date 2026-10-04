@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 broadleaf leaf-mask refinement — 2026-10-04
+
+- Navazuje na commit `cad298f8b9d818af0def0d569ae902111dd56f76` na `codex/world-revision-6`. Z lokálního screenshotu bylo vidět, že dřívější listové sprigy zůstaly úzké a koruna působila jako jehličnatá. `src/world/materials.ts` nyní vytváří deterministické rozvětvené skupiny širších párových listů jen pro Rev6; legacy leaf texture zůstává beze změny. `src/world/models.ts` zmenšuje jen neprůhledná Rev6 bough jádra, aby listy více četly ve výsledné koruně. Žádná změna instancí, batchů, gameplay identity, colliderů ani save state.
+- Přidány cílené regresní testy pro stabilní listovou masku, siluetu a geometrii. `npm test`: **448/448 PASS (43 souborů)**; `npm run build`: PASS, známý Vite advisory na ~3.3 MB JS bundle; `git diff --check`: PASS. Browser vizuální záběr `test-results/world-art/current-v0.9.3.png` byl zkontrolován; koruna je plnější a čitelnější, stále záměrně stylizovaná.
+- `npm run test:performance` doběhl pro archivní v0.9.0 a lokální v0.9.3 se seedem 731942, HIGH, 1280×720, SwiftShader: v0.9.0 **612 draw calls / 3,390,261 tris / 2.348 s cold menu startup**; aktuální **430 calls / 3,290,312 tris / 4.392 s** (menu startup v témže běhu 54.484 s včetně environmentálního warm-up čekání, proto startup čas není přímo srovnatelný). Obě verze měly 0 browser errors. FPS není pro tento A/B spolehlivé kvůli jinému vsync/headless frame pacing; z předchozí uložené Rev6 uncapped probe má aktuální širší svět nižší draw-call count a méně tris než v0.9.0. Toto potvrzuje výkonový trend, nikoli FPS parity.
+- Plný `npm run test:world-art` nedoběhl: čekání na remote archivní `/versions/v0.9.1/` se zaseklo před samotným browser testem. Předchozí úspěšný běh z 04:54 zůstává 77/77, 0 errors, ale předchozí leaf-mask rozměry; nový foliage kód je pokryt unit/build a aktuálním browser screenshotem, ne celým world-art QA.
+- Změněné soubory: `src/world/materials.ts`, `src/world/models.ts`, `tests/foliage-geometry.test.ts`, `tests/terrain-materials.test.ts`, tento checkpoint. Tyto změny jsou lokální a čekají na checkpoint commit/push na pracovní větev. V0.10 goal zůstává aktivní; `main`, tagy, release a produkční Pages beze změny.
+
 ## Live update — Rev6 broadleaf canopy readability — 2026-10-04
 
 - Pracovní větev `codex/world-revision-6` začala na `7adcf9d45bc8384a58ebaf59e35d13b2b919adf1` a po `git fetch origin` odpovídala `origin/codex/world-revision-6`. Tracked working tree byl před úpravou čistý. Uživatelské iCloud `* 2` soubory a `artifacts/` zůstaly nedotčené/nestageované.
