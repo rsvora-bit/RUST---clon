@@ -20,6 +20,12 @@
 - Chrome/Metal HIGH 1280×720 performance po siluetové změně: v0.9.0 **242.81 FPS / 4.118 ms / 612 calls / 3,390,261 tris / 1,318 nodes**, Rev6 **199.80 FPS / 5.005 ms / 699 calls / 3,612,392 tris / 2,033 nodes**, 0 browser errors. Proti předešlým Rev6 vzorkům beze změny; geometrická změna nepřidává tris/calls. Vite precompile timeout marker Rev6 zůstává bez browser error.
 - Připravit a pushnout checkpoint na `codex/world-revision-6`; `main`, tagy/release, PR a produkční Pages zůstávají mimo scope. iCloud duplicitní `* 2.*` soubory a uživatelské `artifacts/` nechat nedotčené.
 
+### Regresní ověření po horské siluetě
+
+- `npm run test:world`: **23/23 PASS**, Rev6 map/roads/POIs/weather/fall/save reload i Gen4 legacy reload; 0 aplikačních console errors.
+- `npm run test:browser`: PASS — New Game + Gen1 fixture, movement/jump/crouch, gathering, kompletní inventory stack/drag flows, crafting queue, pause, building/doors, persistence/load/colliders a LOW/MEDIUM/HIGH settings; 0 console errors. FPS samples v legacy Gen1 flow: **LOW 59.0 / MEDIUM 59.6 / HIGH 55.3**; nejde o Rev6 FPS benchmark.
+- Tato validace navazuje na `npm test` 446/446, `npm run build` PASS a `test:world-art` 76/76 výše. Progression/death browser flow ještě ověřit před release-candidate checkpointem.
+
 ## Live update — analytický sklon Rev6 oceánských vln — 2026-10-04
 
 - Před úpravou byla pracovní větev a origin shodné na `9868ef960eebb20fa31bc86e99275d4ae348db01`. Přímý ocean probe našel, že dlouhý swell přidával sinusové výpočty do každého ze dvoustranných diferencí normál. `src/world/atmosphere.ts` nyní vypočítá dlouhý swell analyticky a pouze v Rev6 uniform větvi; samotný vertex swell i vlnový vzhled se zachovávají. `tests/environment-visuals.test.ts` hlídá Rev6-only větev. Starší revize dál používají původní normálový výpočet.
