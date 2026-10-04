@@ -10,6 +10,7 @@ import {grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
+import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
@@ -33,14 +34,20 @@ describe('v0.9.1 world art stabilization',()=>{
       expect(legacy.group.getObjectByName('Collapsed relay diagnostic screen')).toBeFalsy();expect(current.collisionBoxes()).toEqual(legacy.collisionBoxes());
     }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
-  it('dresses the Revision-6 Stormwatch shelter with a persistent-safe field log desk',()=>{
+  it('opens the Revision-6 Stormwatch shelter while preserving legacy collision and field-log saves',async()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),poi={id:'poi-stormwatch',name:'Stormwatch Station',kind:4,position:{x:120,y:terrain.heightAt(120,80),z:80}},layout={pois:[poi],trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed),state=new GameSimulation(seed,terrain.spawn).state;
     try{
       current.populate(state);legacy.populate(structuredClone(state));
       for(const name of ['Stormwatch field log desk','Stormwatch field desk leg','Stormwatch rain log clipboard','Stormwatch rain log trace','Stormwatch clipboard clamp'])expect(current.group.getObjectByName(name)).toBeTruthy();
+      for(const name of ['Stormwatch entry left wall','Stormwatch entry right wall','Stormwatch entry jamb'])expect(current.group.getObjectByName(name)).toBeTruthy();
       expect(legacy.group.getObjectByName('Stormwatch rain log clipboard')).toBeFalsy();
-      expect(current.collisionBoxes()).toEqual(legacy.collisionBoxes());
+      expect(legacy.collisionBoxes()).toHaveLength(1);expect(current.collisionBoxes()).toHaveLength(4);
       expect(validateGameState(state)).toBe(true);
+      await initPhysics();const floor=new THREE.PlaneGeometry(20,20,2,2);floor.rotateX(-Math.PI/2);floor.translate(poi.position.x,poi.position.y,poi.position.z);
+      const enter=(boxes:import('../src/physics/PhysicsWorld').CollisionBox[])=>{const physics=new PhysicsWorld(floor,boxes,{x:poi.position.x-.45,y:poi.position.y,z:poi.position.z+2.5});try{for(let step=0;step<20;step++)physics.move({x:0,y:0,z:-.12});return physics.position().z;}finally{physics.dispose();}};
+      expect(enter(current.collisionBoxes())).toBeLessThan(poi.position.z+.5);
+      expect(enter(legacy.collisionBoxes())).toBeGreaterThan(poi.position.z+1.3);
+      floor.dispose();
     }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('renders Stormwatch, gives it weather-survey salvage and guards a persistent cache',()=>{

@@ -66,20 +66,27 @@ export class WorldSurvival {
       }
     }else if(p.kind===4){
       // A compact, wind-battered field station gives the outer island a readable storm-survey landmark.
+      const revisionSixStormwatch=this.env.terrain.generation===5&&this.env.worldRevision>=6,roofLift=revisionSixStormwatch?.5:0;
       this.box(g,-.45,.14,.12,3.1,.22,2.65,this.metal);
-      for(const x of [-1.72,.82])for(const z of [-.92,1.16])this.box(g,x,.88,z,.13,1.45,.13,this.wood);
-      this.box(g,-.45,.78,-.89,2.45,1.23,.12,this.cloth);this.box(g,-.45,.78,1.13,2.45,1.23,.12,this.metal);
-      this.box(g,-1.67,1.48,.12,.15,.14,2.05,this.rust);this.box(g,.77,1.48,.12,.15,.14,2.05,this.rust);
-      this.box(g,-.45,1.61,.12,2.65,.17,2.85,this.metal).rotation.z=-.045;
+      for(const x of [-1.72,.82])for(const z of [-.92,1.16])this.box(g,x,revisionSixStormwatch?1.08:.88,z,.13,revisionSixStormwatch?1.85:1.45,.13,this.wood);
+      this.box(g,-.45,.78,-.89,2.45,1.23,.12,this.cloth);
+      if(revisionSixStormwatch){
+        // Leave a full-height central entry so the field log is reachable.
+        this.box(g,-1.30,.78,1.13,.75,1.23,.12,this.metal).name='Stormwatch entry left wall';
+        this.box(g,.40,.78,1.13,.75,1.23,.12,this.metal).name='Stormwatch entry right wall';
+        for(const x of [-.925,.025])this.box(g,x,.78,1.13,.07,1.23,.15,this.rust).name='Stormwatch entry jamb';
+      }else this.box(g,-.45,.78,1.13,2.45,1.23,.12,this.metal);
+      this.box(g,-1.67,1.48+roofLift,.12,.15,.14,2.05,this.rust);this.box(g,.77,1.48+roofLift,.12,.15,.14,2.05,this.rust);
+      this.box(g,-.45,1.61+roofLift,.12,2.65,.17,2.85,this.metal).rotation.z=-.045;
       const mast=new T.Mesh(new T.CylinderGeometry(.065,.11,4.2,7),this.metal);mast.name='Stormwatch wind mast';mast.position.set(1.72,2.25,.38);mast.castShadow=true;g.add(mast);
       if(this.env.terrain.generation===5&&this.env.worldRevision>=6){const windAngle=randomSource(this.seed+9004)()*Math.PI*2,windSock=new T.Mesh(new T.CylinderGeometry(.052,.125,.78,8,4,true),this.stormCloth);windSock.name='Stormwatch windsock';windSock.position.set(1.96,4.05,.38);windSock.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(Math.cos(windAngle),.04,Math.sin(windAngle)).normalize());windSock.castShadow=true;g.add(windSock);}
       const arm=this.box(g,1.72,4.29,.38,.86,.055,.055,this.rust);arm.name='Stormwatch vane arm';
       const vane=this.box(g,2.1,4.42,.38,.48,.06,.12,this.rust);vane.rotation.z=-.16;
       for(const [x,z] of [[1.48,.38],[1.96,.62],[1.96,.14]] as const){const cup=new T.Mesh(new T.SphereGeometry(.105,7,5),this.cloth);cup.name='Stormwatch anemometer cup';cup.position.set(x,4.1,z);g.add(cup);}
-      const panel=this.box(g,-.48,1.87,.36,1.05,.07,.72,this.metal);panel.name='Stormwatch weather instrument panel';panel.rotation.x=-.22;
-      const solar=this.box(g,-.45,1.81,-.78,1.36,.055,.88,this.paint);solar.name='Stormwatch solar array';solar.rotation.x=-.18;
-      for(const x of [-1.13,-.79,-.45,-.11,.23]){const cell=this.box(g,x,1.846,-.78,.025,.012,.81,this.metal);cell.rotation.x=-.18;cell.name='Stormwatch solar cell divider';}
-      for(const z of [-1.21,-.35]){const rail=this.box(g,-.45,1.85,z,1.43,.035,.045,this.rust);rail.rotation.x=-.18;rail.name='Stormwatch solar array frame';}
+      const panel=this.box(g,-.48,1.87+roofLift,.36,1.05,.07,.72,this.metal);panel.name='Stormwatch weather instrument panel';panel.rotation.x=-.22;
+      const solar=this.box(g,-.45,1.81+roofLift,-.78,1.36,.055,.88,this.paint);solar.name='Stormwatch solar array';solar.rotation.x=-.18;
+      for(const x of [-1.13,-.79,-.45,-.11,.23]){const cell=this.box(g,x,1.846+roofLift,-.78,.025,.012,.81,this.metal);cell.rotation.x=-.18;cell.name='Stormwatch solar cell divider';}
+      for(const z of [-1.21,-.35]){const rail=this.box(g,-.45,1.85+roofLift,z,1.43,.035,.045,this.rust);rail.rotation.x=-.18;rail.name='Stormwatch solar array frame';}
       this.box(g,.48,.88,-.96,.42,.72,.08,this.rust);
       if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
         // The sheltered station gains a small field desk and rain log, all
@@ -306,7 +313,7 @@ export class WorldSurvival {
     }
     this.eventSiteCache.set(sequence,best);return best;
   }
-  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
+  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});}else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.chartPaper,this.glass,this.display,this.bridgeDisplay,this.bridgeLamp,this.cloth,this.stormCloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
 
