@@ -6,7 +6,7 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {grassReceivesShadows,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
+import {grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
@@ -138,6 +138,10 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(vegetationCover(climate(.65,.70),12,.1)).toBeGreaterThan(vegetationCover(climate(.75,.25),12,.1)*3);
     expect(vegetationCover(climate(.6),30,.85)).toBe(0);expect(vegetationCover(climate(.2),68,.1)).toBe(0);
     expect(surfaceClimate(climate(.7,.9),4,.04,.92).marsh).toBeGreaterThan(.7);expect(surfaceClimate(climate(.7,.9),4,.04,.37).marsh).toBe(0);expect(surfaceClimate(climate(.7,.3),4,.04,.92).marsh).toBe(0);
+  });
+  it('groups revision-6 reeds into deterministic denser stands within the same total instance budget',()=>{
+    expect([0,.25,.5,.75,.999].map(marshReedClumpSize)).toEqual([5,6,7,8,8]);
+    expect(marshReedClumpSize(-1)).toBe(5);expect(marshReedClumpSize(1)).toBe(8);
   });
   it('adds a bounded marsh biome only to new revision-6 geography',()=>{
     const old=new IslandTerrain(731942,5,5),current=new IslandTerrain(731942,5,6);let marsh=0;

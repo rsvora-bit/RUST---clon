@@ -31,6 +31,8 @@ export function treeCrownTint(species:number,hueRoll:number,brightnessRoll:numbe
   if(species===1||species===4)return new THREE.Color().setHSL(.275+(hueRoll-.5)*(revision>=6?.10:.045),revision>=6?.23:.18,(revision>=6?.65:.58)+brightnessRoll*(revision>=6?.20:.13));
   return new THREE.Color().setHSL(.29+(hueRoll-.5)*(revision>=6?.075:.035),revision>=6?.27:.22,(revision>=6?.61:.62)+brightnessRoll*(revision>=6?.21:.14));
 }
+/** Revision-6 wetland reeds form fuller, tighter stands while keeping the total instance budget fixed. */
+export function marshReedClumpSize(roll:number):number{return 5+Math.floor(Math.max(0,Math.min(.999999,roll))*4);}
 export function treeSpeciesForBiome(biome:string,forest:number,palmRoll:number,broadRoll:number,variant:boolean,climate?:ClimateSample,elevation=0):number{if(climate){const suitability=palmSuitability(climate,elevation,biome);if(palmRoll<suitability*.68)return 5;if(climate.temperature<.42||elevation>40||biome==='SNOW / ALPINE')return variant?0:2;return broadRoll<(.20+smoothstep(.45,.68,climate.moisture)*.48)?(variant?1:4):(forest>.5?(variant?0:2):3);}const palm=(biome==='ARID'||biome==='COAST')&&palmRoll<.68,broad=!palm&&broadRoll<(.27+(biome==='COAST'?.18:0));return palm?5:broad?(variant?1:4):(biome==='SNOW / ALPINE'||forest>.5?(variant?0:2):3);}
 
 /** The render adapter for deterministic island data; gameplay mutations arrive through syncNodes. */
@@ -364,13 +366,13 @@ export class Environment {
 
   private populateMarshReeds():void {
     if(this.terrain.generation!==5||this.worldRevision<6)return;
-    const rand=randomSource(this.seed+78031),positions:{x:number;y:number;z:number;s:number;r:number}[]=[],target=1900,span=this.terrain.size*.94;
+    const rand=randomSource(this.seed+78031),positions:{x:number;y:number;z:number;s:number;r:number}[]=[],target=2700,span=this.terrain.size*.94;
     for(let tries=0;positions.length<target&&tries<target*18;tries++){
       const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<3.35||h>13.5||slope>.28||!this.roadClear(x,z,3.4))continue;
       const wetland=surfaceClimate(this.terrain.climateAtSample(x,z,h),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+17,z*.035-63,3);if(wetland<.39||patch<.39||rand()>.62)continue;
       // Each accepted marsh patch seeds a small, tightly grouped clump rather than isolated stalks.
-      for(let stalk=0;stalk<3+Math.floor(rand()*3)&&positions.length<target;stalk++){
-        const angle=rand()*Math.PI*2,radius=rand()*1.7,rx=x+Math.cos(angle)*radius,rz=z+Math.sin(angle)*radius,rh=this.heightAt(rx,rz);if(!this.roadClear(rx,rz,3.4))continue;
+      for(let stalk=0;stalk<marshReedClumpSize(rand())&&positions.length<target;stalk++){
+        const angle=rand()*Math.PI*2,radius=rand()*1.2,rx=x+Math.cos(angle)*radius,rz=z+Math.sin(angle)*radius,rh=this.heightAt(rx,rz);if(!this.roadClear(rx,rz,3.4))continue;
         positions.push({x:rx,y:rh-.025,z:rz,s:.78+rand()*.86,r:rand()*Math.PI*2});this.reedLocations.push({x:rx,y:rh,z:rz});
       }
     }
