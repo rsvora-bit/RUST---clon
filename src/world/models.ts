@@ -88,7 +88,9 @@ export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|
       addMass(lobe);}
     for(let i=0;i<(revision6?34:16);i++){
       const a=r()*6.28,rad=Math.sqrt(r())*(revision6 ? .94 : variant ? 2.1 : 1.65);
-      const leafWidth=revision6 ? 1.18+r()*.32 : 1.3+r()*.65,leafHeight=revision6 ? 1.25+r()*.32 : 1.3+r()*.7;
+      // Keep Rev6 broadleaf sprays small enough that overlapping alpha
+      // textures read as foliage clusters instead of oversized flat leaves.
+      const leafWidth=revision6 ? .82+r()*.38 : 1.3+r()*.65,leafHeight=revision6 ? .90+r()*.38 : 1.3+r()*.7;
       // Keep broadleaf sprays mostly upright. Fully random Euler tilts put
       // many planes nearly horizontal, which reads as flat umbrellas from
       // the player's low camera even though the cards are double-sided.

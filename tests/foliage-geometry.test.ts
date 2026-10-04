@@ -106,4 +106,12 @@ describe('foliage geometry stability',()=>{
       expect(whole.index!.count/3).toBeLessThanOrEqual(legacy.index!.count/3*1.1);
     }finally{whole.dispose();masses.dispose();leaves.dispose();legacy.dispose();}
   });
+  it('keeps revision-6 broadleaf sprays smaller than legacy cards with the same triangle budget',()=>{
+    const rev6=broadleafGeometry(0,true,'leaves'),legacy=broadleafGeometry(0,false,'leaves');
+    try{
+      const meanTriangleArea=(geometry:THREE.BufferGeometry)=>{const position=geometry.getAttribute('position'),index=geometry.index!,a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();let area=0;for(let i=0;i<index.count;i+=3){a.fromBufferAttribute(position,index.getX(i));b.fromBufferAttribute(position,index.getX(i+1));c.fromBufferAttribute(position,index.getX(i+2));area+=b.sub(a).cross(c.sub(a)).length()*.5;}return area/(index.count/3);};
+      expect(meanTriangleArea(rev6)).toBeLessThan(meanTriangleArea(legacy)*.9);
+      expect(rev6.index!.count).toBe(7*34*6);
+    }finally{rev6.dispose();legacy.dispose();}
+  });
 });
