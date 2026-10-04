@@ -340,13 +340,13 @@ export class Environment {
     for(let tries=0;tries<target*80&&positions.length<target;tries++){
       const ax=(rand()-.5)*span,az=(rand()-.5)*span,ah=this.heightAt(ax,az),aslope=this.terrain.slopeAt(ax,az);
       if(ah<3.6||ah>31||aslope>.36||Math.hypot(ax-this.spawn.x,az-this.spawn.z)<24||!this.roadClear(ax,az,6))continue;
-      const climate=surfaceClimate(this.terrain.climateAt(ax,az),ah,aslope,this.terrain.noise.at(ax*.0071+72,az*.0071-31));
+      const climate=surfaceClimate(this.terrain.climateAtSample(ax,az,ah),ah,aslope,this.terrain.noise.at(ax*.0071+72,az*.0071-31));
       if(climate.forest<.64||climate.arid>.46||climate.snow>.38||climate.marsh>.44||rand()>.72)continue;
       const clump=1+Math.floor(rand()*3);
       for(let j=0;j<clump&&positions.length<target;j++){
         const angle=rand()*Math.PI*2,radius=j===0?0:rand()*4.8,x=ax+Math.cos(angle)*radius,z=az+Math.sin(angle)*radius,y=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
         if(y<3.6||y>31||slope>.4||!this.roadClear(x,z,5.5))continue;
-        const local=surfaceClimate(this.terrain.climateAt(x,z),y,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31));
+        const local=surfaceClimate(this.terrain.climateAtSample(x,z,y),y,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31));
         if(local.forest<.56||local.arid>.52||local.snow>.44||local.marsh>.48)continue;
         positions.push({x,y:y+.035,z,s:.72+rand()*.62,r:rand()*Math.PI*2});
       }
@@ -361,7 +361,7 @@ export class Environment {
     const rand=randomSource(this.seed+78031),positions:{x:number;y:number;z:number;s:number;r:number}[]=[],target=1900,span=this.terrain.size*.94;
     for(let tries=0;positions.length<target&&tries<target*18;tries++){
       const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<3.35||h>13.5||slope>.28||!this.roadClear(x,z,3.4))continue;
-      const wetland=surfaceClimate(this.terrain.climateAt(x,z),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+17,z*.035-63,3);if(wetland<.39||patch<.39||rand()>.62)continue;
+      const wetland=surfaceClimate(this.terrain.climateAtSample(x,z,h),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+17,z*.035-63,3);if(wetland<.39||patch<.39||rand()>.62)continue;
       // Each accepted marsh patch seeds a small, tightly grouped clump rather than isolated stalks.
       for(let stalk=0;stalk<3+Math.floor(rand()*3)&&positions.length<target;stalk++){
         const angle=rand()*Math.PI*2,radius=rand()*1.7,rx=x+Math.cos(angle)*radius,rz=z+Math.sin(angle)*radius,rh=this.heightAt(rx,rz);if(!this.roadClear(rx,rz,3.4))continue;
@@ -378,7 +378,7 @@ export class Environment {
     const rand=randomSource(this.seed+88217),pools:{x:number;y:number;z:number;sx:number;sz:number;r:number}[]=[],target=150,span=this.terrain.size*.94;
     for(let tries=0;pools.length<target&&tries<target*110;tries++){
       const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);if(h<3.8||h>11.5||slope>.105||Math.hypot(x-this.spawn.x,z-this.spawn.z)<20||!this.roadClear(x,z,4))continue;
-      const wetland=surfaceClimate(this.terrain.climateAt(x,z),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+49,z*.035-23,3);if(wetland<.48||patch<.39||rand()>.78)continue;
+      const wetland=surfaceClimate(this.terrain.climateAtSample(x,z,h),h,slope,this.terrain.noise.at(x*.0071+72,z*.0071-31)).marsh,patch=this.terrain.noise.fbm(x*.035+49,z*.035-23,3);if(wetland<.48||patch<.39||rand()>.78)continue;
       pools.push({x,y:h+.085,z,sx:1.25+rand()*2.3,sz:.82+rand()*1.5,r:rand()*Math.PI});
       this.marshPoolLocations.push({x,y:h+.085,z});
     }
@@ -423,7 +423,7 @@ export class Environment {
     for(let attempt=0,count=0;attempt<total*8&&count<total;attempt++){
       const near=count<(this.terrain.generation===5?(this.worldRevision>=6?18000:15000):2800),span=this.terrain.generation===5?this.terrain.size*.94:this.terrain.generation>=4?650:560,x=near?this.spawn.x+(rand()-.5)*82:(rand()-.5)*span,z=near?this.spawn.z+(rand()-.5)*82:(rand()-.5)*span;
       const h=this.heightAt(x,z);if(h<2||h>48||this.terrain.slopeAt(x,z)>.55||!this.roadClear(x,z,3.1))continue;
-      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3),slope=this.terrain.slopeAt(x,z),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0;const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAt(x,z),h,slope,wetlandNoise):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94)*(1-climate.marsh*.52):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
+      const n=this.terrain.noise.at(x*.12,z*.12),patch=this.terrain.noise.fbm(x*.035+41,z*.035-17,3),slope=this.terrain.slopeAt(x,z),wetlandNoise=this.worldRevision>=6?this.terrain.noise.at(x*.0071+72,z*.0071-31):0;const climate=this.terrain.generation===5?surfaceClimate(this.terrain.climateAtSample(x,z,h),h,slope,wetlandNoise):null;const cover=climate?(1-climate.arid*.80)*(1-climate.snow*.94)*(1-climate.marsh*.52):1;if(rand()>(smoothstep(.2,.73,n)*smoothstep(.24,.68,patch)*.94+.035)*cover)continue;
       const cx=Math.floor(x/chunkSize),cz=Math.floor(z/chunkSize),type=rand()<Math.max(climate?.arid??0,smoothstep(.44,.7,patch)*.36)?1:0,key=revision6?`${cx},${cz}`:`${cx},${cz},${type}`;let chunk=chunks.get(key);if(!chunk){const variant=revision6?(((cx*73856093)^(cz*19349663)^this.seed)>>>0)%grassVariants.length:0;chunk={positions:[],x:cx*chunkSize+chunkSize/2,z:cz*chunkSize+chunkSize/2,type:revision6?0:type,variant};chunks.set(key,chunk);}
       chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2,dry:revision6&&type===1});count++;
     }
