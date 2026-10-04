@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — párový post-processing benchmark — 2026-10-04
+
+- `scripts/world-performance-qa.mjs` nyní v jediném HIGH browser session porovnává post-processing ON → OFF → ON na téže scéně; QA-only bridge `settingsForTest` v `src/app/GameApp.ts` umožňuje přepnout nastavení přes skutečnou renderer pipeline. Nic z herních nastavení se nemění mimo testovací browser.
+- Chrome/Metal uncapped, 1280×720, seed 731942: ON-A **215.71 FPS / 4.636 ms / 421 calls / 3,419,200 tris**; OFF **203.64 FPS / 4.911 ms / 404 calls / 3,419,183 tris**; ON-B **215.87 FPS / 4.632 ms / 421 calls / 3,419,200 tris**. Opakovaný ON vzorek je stabilní; post-FX nevysvětluje nižší Rev6 výkon a OFF se v tomto headless běhu paradoxně zpomalil. Jde o diagnostický SwiftShader/Metal benchmark, nikoliv reprezentativní uživatelské GPU absolutní FPS.
+- `npm run build`: PASS (známé Vite ~3.3 MB chunk advisory); `npm test`: **446/446, 43 souborů PASS**; `test:performance`: PASS, 0 browser errors. Precompile QA stále varuje, že 2s Rev6 GPU compile rozpočet vypršel; samotné menu je Ready asi za 4.6s po upload/stabilization. Tento limit je očekávaný po zkrácení a zůstává měřením, nikoli novým WebGL chybovým stavem.
+- Dosavadní HIGH baseline Rev6 ~207–213 FPS proti archivní v0.9.0 ~248 FPS zůstává otevřená výkonová mezera; post-FX zatím není její oprava. `main`, release, tag a produkční Pages beze změny. Tento diagnostický checkpoint bude commitnut a pushnut pouze do `codex/world-revision-6`; sedm cílů v0.10 zůstává rozpracováno a není release candidate.
+
 ## Live update — kratší Rev6 cold-start shader warm-up — 2026-10-04
 
 - `src/app/GameApp.ts`: experimentální Rev6-only `compileAsync` wait budget je **2 s**, zatímco world revisions 1–5 zachovávají původních 8 s. Osm směrových upload renderů a stabilizační smyčka zůstaly beze změny; prepared preview se po tomto init warm-upu při kliknutí na New Game znovu nezahřívá (úprava z `9a05042`). Ostatní seed a načtený save se dál kompletně sestaví a warm-upuje.
