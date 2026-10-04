@@ -213,7 +213,7 @@ export class Environment {
     }
   }
   private populateRocks():void {
-    const rand=randomSource(this.seed+283),sharperFacets=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,sharperFacets)),this.own(rockGeometry(114,sharperFacets)),this.own(rockGeometry(221,sharperFacets))];
+    const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];
     const boulders:{x:number;y:number;z:number;sx:number;sy:number;sz:number;rot:number;variant:number}[]=[];
     const anchors=this.terrain.generation>=4
       ? [[this.spawn.x-31,this.spawn.z-24,3.7,3.2,3.4],[this.spawn.x+34,this.spawn.z-27,4.1,3.6,3.9]] as const

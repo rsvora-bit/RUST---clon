@@ -39,6 +39,16 @@ describe('procedural rock geometry',()=>{
     }finally{legacy.dispose();rev6.dispose();}
   });
 
+  it('adds deterministic revision-6 outcrop silhouette breakup without increasing triangle count',()=>{
+    const legacy=rockGeometry(114,true),revision6=rockGeometry(114,true,true),repeat=rockGeometry(114,true,true);
+    try{
+      expect(Array.from(revision6.getAttribute('position').array)).not.toEqual(Array.from(legacy.getAttribute('position').array));
+      expect(Array.from(revision6.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
+      expect(revision6.getAttribute('position').count).toBe(legacy.getAttribute('position').count);
+      expect((revision6.index?.count??revision6.getAttribute('position').count)).toBe(legacy.index?.count??legacy.getAttribute('position').count);
+    }finally{legacy.dispose();revision6.dispose();repeat.dispose();}
+  });
+
   it('keeps facet colors optional for legacy rock materials',()=>{
     expect(rockMaterialStyle(1)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
     expect(rockMaterialStyle(5)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});

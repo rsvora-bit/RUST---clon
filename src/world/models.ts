@@ -132,7 +132,7 @@ export function trunkGeometry(broadleaf=false,variant=0):THREE.BufferGeometry {
   for(let i=0;i<5;i++){const a=i*1.257;branch(new THREE.Vector3(0,.38,0),new THREE.Vector3(Math.cos(a)*.65,.02,Math.sin(a)*.65),.13);}
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
-export function rockGeometry(seed:number,sharperFacets=false):THREE.BufferGeometry {
+export function rockGeometry(seed:number,sharperFacets=false,revision6Shape=false):THREE.BufferGeometry {
   const r=randomSource(seed),points:THREE.Vector3[]=[];
   // Broken, slightly slumped strata give the three shared batches distinct
   // silhouettes without adding meshes or changing any resource placement.
@@ -143,10 +143,10 @@ export function rockGeometry(seed:number,sharperFacets=false):THREE.BufferGeomet
     const offset=(ring-1.5)*skew,rotation=phase+(ring%2)*.11;
     for(let i=0;i<ringCount;i++){
       const a=i/ringCount*Math.PI*2+rotation;
-      const strata=Math.sin(a*2+phase)*.08+Math.sin(a*3-phase)*.045;
+      const strata=revision6Shape?Math.sin(a*2+phase)*.14+Math.sin(a*3-phase)*.075+Math.sin(a*5+phase*.7)*.035:Math.sin(a*2+phase)*.08+Math.sin(a*3-phase)*.045;
       const extent=radius*(.77+r()*.34+strata);
-      const slump=(ring===3?Math.max(0,Math.cos(a+phase))*.16:0);
-      points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*.16-slump,Math.sin(a)*extent*(.68+r()*.31)));
+      const slump=(ring===3?Math.max(0,Math.cos(a+phase))*(revision6Shape?.22:.16):0);
+      points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*(revision6Shape?.21:.16)-slump,Math.sin(a)*extent*(.68+r()*.31)));
     }
   }
   const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,sharperFacets?.54:.85);hull.dispose();
