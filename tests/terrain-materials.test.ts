@@ -54,6 +54,10 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('smoothstep(.08,1.35,wetHeight)');
       expect(newShader.fragmentShader).toContain('mix(6.4,2.8,revision6Moss)');
       expect(newShader.fragmentShader).toContain('clamp(max(wet*.86,tidalBand*1.10),0.,1.)');
+      expect(newShader.fragmentShader).toContain('mirePatch=macro*.62+micro*.38');
+      expect(newShader.fragmentShader).toContain('revision6Moss*smoothstep(.12,.46,vGroundClimate.w)*smoothstep(.34,.72,mirePatch)');
+      expect(newShader.fragmentShader).toContain('mireWetness*.45');
+      expect(revision6.userData.textures).toHaveLength(7);
     }finally{
       for(const material of [legacy,revision6])for(const tex of material.userData.textures as THREE.Texture[])tex.dispose();
     }
