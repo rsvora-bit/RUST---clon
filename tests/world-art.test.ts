@@ -6,13 +6,19 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {revisionTreeCover,treeSpeciesForBiome} from '../src/rendering/environment';
+import {grassReceivesShadows,revisionTreeCover,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
+  it('avoids per-blade shadow-map sampling for the dense revision-6 grass field while preserving legacy behavior',()=>{
+    expect(grassReceivesShadows(1)).toBe(true);
+    expect(grassReceivesShadows(5)).toBe(true);
+    expect(grassReceivesShadows(6)).toBe(false);
+    expect(grassReceivesShadows(7)).toBe(false);
+  });
   it('adds a distant relay landmark without adding colliders',()=>{
     const terrain=new IslandTerrain(731942,5),poi={id:'poi-1',name:'Collapsed relay site',kind:1,position:{x:120,y:12,z:80}};
     const env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:1,layout:{pois:[poi],trails:[]},heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment;

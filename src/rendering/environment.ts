@@ -16,6 +16,8 @@ type GrassChunk={mesh:THREE.InstancedMesh;center:THREE.Vector3;fullCount:number}
 type TreeFall={elapsed:number;duration:number;hold:number;fade:number;axis:THREE.Vector3;refs:InstanceRef[];node:ResourceNode};
 
 export function treeDensityForBiome(biome:string,forest:number):number{return biome==='TEMPERATE FOREST'?.88:biome==='TEMPERATE GRASSLAND'?.28:biome==='ARID'?.12:biome==='SNOW / ALPINE'?.20:biome==='COAST'?.08:.05+smoothstep(.32,.68,forest)*.79;}
+/** Revision-6 grass stays lit by the world/ground response without sampling the shadow map for every blade. */
+export function grassReceivesShadows(worldRevision:number):boolean{return worldRevision<6;}
 export function revisionTreeCover(cover:number,forest:number,revision:number):number{
   // Rev 6 gives its fixed tree budget to actual groves. Older saved worlds keep
   // their exact distribution, while open biomes become readable and forests
@@ -425,7 +427,7 @@ export class Environment {
       chunk.positions.push({x,y:h-.02,z,s:(.35+Math.pow(rand(),1.55)*.78)*(h<4?.82:1),r:rand()*Math.PI*2,dry:revision6&&type===1});count++;
     }
     for(const chunk of chunks.values()){
-      const mesh=new THREE.InstancedMesh(grassVariants[chunk.variant]!,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=true;
+      const mesh=new THREE.InstancedMesh(grassVariants[chunk.variant]!,this.grassMaterials[chunk.type]!,chunk.positions.length);mesh.name='Windblown meadow';mesh.receiveShadow=grassReceivesShadows(this.worldRevision);
       chunk.positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.set(p.s,p.s*(.55+rand()*.8),p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tint=new THREE.Color().setHSL(revision6 ? .18+rand()*.065 : .20+rand()*.035,revision6 ? .15+rand()*.09 : .10,revision6 ? .72+rand()*.18 : .84+rand()*.12);if(p.dry)tint.offsetHSL(.035,.07,-.12);mesh.setColorAt(i,tint);});mesh.computeBoundingSphere();this.root.add(mesh);this.grassChunks.push({mesh,center:new THREE.Vector3(chunk.x,this.heightAt(chunk.x,chunk.z),chunk.z),fullCount:chunk.positions.length});
     }
   }
