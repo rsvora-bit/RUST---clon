@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Highland Relay access QA
+
+- Rapier test seedu **731942** vybere nejvyšší z 16 okolních ridge pozic, přejde skutečný Generation 5 / Revision 6 terrain mesh a dovede hráče do dosahu kontrolní skříňky Highland Relay. Tidal Pier zůstává ověřený předchozím checkpointem.
+- Věžní žebřík se nyní používá jako vizuální landmark; hráčský runtime nemá lezeckou mechaniku a horní úroveň nemá gameplay platformu. Výstup na vrchol ani sestup tedy není ověřená interakce a zůstává otevřeným bodem POI/design auditu.
+- `tests/world-art.test.ts`: **136/136 PASS**; kompletní `npm test`: **478/478 PASS (45 files)**; `npm run build`: **PASS**, existující chunk advisory >500 kB. Testuje izolovaný Rapier controller a skutečnou terrain geometrii; plná GameApp/browser session nebyla součástí tohoto testu.
+- Odhad: **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **87 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **86 %**. Zbývá rozhodnout/ověřit horní Relay traversal, archived v0.9.0/v0.9.1 saves (Pages fetch blokuje HTTPS proxy 403) a reprezentativní HIGH/Metal profil. Není release candidate.
+- Další krok: dokončit Rev6 POI přístupový audit včetně scope horní Relay plošiny; pak znovu zkusit archived-save compatibility a HIGH/Metal benchmark.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Tidal Survey Pier access QA
 
 - Rapier přístupový test pro seed **731942** najde nejvyšší z 16 stran v okruhu 12 m od Tidal Survey Pier, přejde skutečný Gen5/Rev6 terrain mesh s kompletními POI kolizemi a dojde na palubu; hráč zůstane stát uvnitř platformy. Nebyla nutná změna herního modelu.
