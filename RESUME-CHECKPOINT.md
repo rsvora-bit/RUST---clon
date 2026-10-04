@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — shlukovější Rev6 silueta trávy — 2026-10-04
+
+- `src/world/models.ts`: pouze fuller/Revision-6 grass tuft nyní tvoří tři seedově deterministické volnější skupiny po čtyřech stéblech namísto pravidelného radiálního pinwheelu; legacy tuft zůstává beze změny. Počet geometrií zůstává 12 tris na trs, celosvětově 84 000 instancí / 375 sdílených chunks, tedy bez růstu triangle budgetu, meshů nebo draw calls. Tráva dál používá stávající climate weighting, distance fade, roads clearance a strukturový cover.
+- `tests/foliage-geometry.test.ts`: přidán test, který hlídá tři skupiny, deterministickou geometrii a původní triangle budget. `npm test`: **449/449 PASS / 43 souborů**; `npm run build`: PASS se známým Vite large-bundle advisory; `git diff --check`: PASS.
+- Chrome/Metal seed 731942 close-up z běžné kamery pořízen a ručně zkontrolován (`/tmp/tideland-grass-clumped-final.png`), **0 browser errors**; jednotlivé trsy mají méně pravidelnou radiální distribuci a zachovávají šířku. Kite-blade experiment byl vizuálně odmítnut a odstraněn, protože byl příliš řídký/špičatý.
+- `npm run test:tree-culling` po změně: PASS; 727/1500 stromů vykresleno, harvestovaný strom zůstává instancován po dobu pádu a po dopadu se odstraní, **0 browser/WebGL errors**. Žádná změna save/world generation identity, colliders, legacy revisions ani gameplay.
+- Zatím upravené soubory `src/world/models.ts`, `tests/foliage-geometry.test.ts` a checkpoint. Tento krok čeká na diff review, commit a push na `codex/world-revision-6`; `main`, tagy/release a produkční Pages se nemění. Dlouhý v0.10 cíl zůstává aktivní a je stále nutné pokračovat ve viditelných world-art prioritách i širší QA.
+
 ## Live update — Rev6 broadleaf leaf-mask refinement — 2026-10-04
 
 - Commit `16bce0ace7f70da9fa63a8277c955f870ac4c54b` (`Refine revision six broadleaf leaf silhouettes`) je pushnutý na `codex/world-revision-6`; ověřený remote HEAD se shoduje, `origin/main` zůstal `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Tracked working tree byl po pushi čistý. Do stavu není zahrnut žádný `* 2` ani `artifacts/` soubor.

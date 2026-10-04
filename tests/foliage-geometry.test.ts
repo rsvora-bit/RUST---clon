@@ -38,6 +38,17 @@ describe('foliage geometry stability',()=>{
       expect(fuller.index!.count/3).toBe(12);
     }finally{legacy.dispose();fuller.dispose();}
   });
+  it('groups the same revision-6 grass blade budget into three loose sprays',()=>{
+    const geometry=grassGeometry(true),position=geometry.getAttribute('position');
+    try{
+      for(let cluster=0;cluster<3;cluster++)for(let blade=cluster*4;blade<cluster*4+4;blade++){
+        const a=new THREE.Vector3().fromBufferAttribute(position,blade*3),b=new THREE.Vector3().fromBufferAttribute(position,blade*3+1),angle=Math.atan2((a.z+b.z)*.5,(a.x+b.x)*.5),center=cluster*Math.PI*2/3;
+        const difference=Math.atan2(Math.sin(angle-center),Math.cos(angle-center));
+        expect(Math.abs(difference)).toBeLessThan(.44);
+      }
+      expect(geometry.index!.count/3).toBe(12);
+    }finally{geometry.dispose();}
+  });
   it('keeps revision-6 broadleaf cards close to the branches without collapsing the crown',()=>{
     const legacy=broadleafGeometry(0),rev6=broadleafGeometry(0,true),repeat=broadleafGeometry(0,true);
     try{
