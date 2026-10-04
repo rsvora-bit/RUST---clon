@@ -1,3 +1,9 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Zrychlený a odolnější world QA startup
+
+- `scripts/world-overhaul-qa.mjs` nyní maže localStorage jednou přes `page.addInitScript` ještě před startem appky, místo načtení/generování světa a okamžitého zahazujícího reloadu. Session marker zachovává save data při následujících reload kontrolách. Start/reload limity jsou **360 s**, protože tento běhový Chromium/SwiftShader potřebuje několik minut na kompletní generaci; nejde o výkonový benchmark hry.
+- Stejný kompletní world-overhaul QA body proběhl v izolované ignored kopii před přenesením do tracked harnessu: **23/23 PASS**, 0 app errors, včetně Rev6 a Generation 4 reloadů. Opravený clean-start/persist-after-reload init script byl samostatně ověřen v Chromium proti skutečnému localStorage/sessionStorage: obě kontroly PASS. `node --check scripts/world-overhaul-qa.mjs` a `git diff --check`: PASS. Změna je pouze QA tooling; app/build výstup se nemění.
+- **Další krok:** pokračovat Rev6 POI/weather/model art sweepem; potom archivní v0.9.0/v0.9.1 save fixtures a reprezentativní HIGH/Metal profiling. Proxy 403 k GitHub Pages přetrvává. Přesun pouze na `codex/world-revision-6`; bez změn main/release/tag/Pages.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Rev6 gameplay / save runtime QA
 
 - Lokální Chromium **151.0.7922.173 / SwiftShader** ověřilo aktuální build bez application console errors: **23/23 runtime kontrol PASS**. New Game běžel jako Generation 5 / Revision 6, 1664m / 500 terrain, se seeded archipelago, POI, roads a starter resources. Prošlo otevření/zoom topografické mapy, bounded waypoint, road-to-terrain height, forest/arid/alpine/rocky-mountain regions, bouře → clear, malý i těžký pád včetně God Mode.
