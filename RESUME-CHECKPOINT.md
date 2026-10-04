@@ -6,7 +6,7 @@
 - `tests/environment-visuals.test.ts`: ověřuje Rev6-only uniform gate a to, že se stejné swelly používají v geometrii i fragment shaderu. Tato sada **13/13 PASS**, kompletní `npm test` **449/449 PASS / 43 souborů**, `npm run build` PASS (známé upozornění Vite na ~3,3 MB chunk). `git diff --check` PASS.
 - Chrome/Metal world-art browser QA po změně: **77/77 PASS**, 0 browser/WebGL/aplikačních chyb; staré v0.9.0 Rev1 a v0.9.1 Rev2 save fixture zachovaly inventář, stav hráče, stavba, POI a kolize; Rev6 determinismus/save reload, LOW/MEDIUM/HIGH/ULTRA, weather a camera sweep také PASS. Screenshot `test-results/world-art/shoreline-water-detail.png` ručně prohlédnut; otevřená hladina má výraznější překrývající se dlouhé swelly. QA výstupy jsou ignorované, necommitovat.
 - HIGH Chrome/Metal výkonový běh: Rev6 **207,72 FPS / 4,814 ms / 421 calls / 3 242 436 tris / 2 033 nodes**; archivní v0.9.0 **245,81 FPS / 4,068 ms / 612 calls / 3 390 261 tris / 1 318 nodes**. Rev6 zůstává v dříve pozorovaném rozmezí ~207–213 FPS, ale nebyl proveden bezprostřední matched pre-edit A/B, takže cenu nových shaderových výpočtů nelze izolovat. Archivní startup byl flaky (New Game 52,5 s); lokální menu-ready 4,44 s a New Game z připraveného světa 217 ms. Celkový runtime/startup gap zůstává otevřený.
-- Pracovní větev `codex/world-revision-6`; aktuální změny `src/world/atmosphere.ts`, `tests/environment-visuals.test.ts` a tento checkpoint se nyní checkpointují. Předchozí vrstvená výška trávy už je commitnutá a pushnutá v `433e05fa54029a34ce71c8f2537fa6a85abfb737`. iCloudové `* 2` kopie a `artifacts/` zůstávají zachované a nestageované. `main`, tagy, release a produkční Pages beze změny; v0.10 cíl zůstává aktivní, není RC.
+- Commit `1e5f9de7961470050a8294c87be840cda88ed8ab` (`Add broad revision six ocean swells`) je pushnutý na `codex/world-revision-6`; `HEAD` a remote pracovní větev souhlasí. `origin/main` zůstává `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Ověřená tracked změna je checkpointnutá; iCloudové `* 2` kopie a `artifacts/` zůstávají zachované a nestageované. `main`, tagy, release a produkční Pages beze změny; v0.10 cíl zůstává aktivní, není RC.
 
 ## Live update — vrstvená výška Rev6 trávy — 2026-10-04
 
@@ -59,7 +59,7 @@
 
 1. **World Revision 6 & Larger Map** — revize 6, 1664m mapa, seedované POI/trasy a deterministické savy implementované; dál ověřovat staré generace a save/reload při každé změně.
 2. **Terrain, Textures & Materials** — vrstvení terénu, alpský detail a skalní materiály existují; další viditelný terénní polish zůstává otevřený.
-3. **Vegetation, Water & Nature** — Rev6 les, tráva, pobřeží, mokřad a swelly jsou implementované; pokračovat v čitelnosti, variaci a kvalitě snímků.
+3. **Vegetation, Water & Nature** — Rev6 les, tráva, pobřeží, mokřad a swelly jsou implementované; otevřená hladina má nově výraznější překrývající se dlouhé vlny, pokračovat v čitelnosti, variaci a screenshot review.
 4. **POI Environment Art & Interiors** — Stormwatch/Breakwater a další landmarky jsou přítomné; výraznější interiéry a finishing art jsou otevřené.
 5. **Lighting, Weather, VFX & Atmosphere** — day/night/storm atmosféra existuje; tento checkpoint zlepšuje dynamické nasvícení horských masivů, oblast je stále otevřená.
 6. **Models, Viewmodels & Character Visuals** — přírodní modely a herní výbava mají dílčí Rev6 polish; cílený pass na viewmodel/postavu zůstává otevřený.
