@@ -82,7 +82,7 @@ export function palmTexture(seed=905):THREE.CanvasTexture {
 }
 export function leavesTexture(seed=667,revision6=false):THREE.CanvasTexture {
   if(revision6){
-    const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#3e582e','#526c37','#668043','#7b8d4b','#8a9954'];
+    const [c,ctx]=canvas(256),rand=randomSource(seed),palette=['#506b39','#648047','#78924d','#8da258','#a0ae65'];
     ctx.lineCap='round';ctx.strokeStyle='#514c35';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(125,250);ctx.quadraticCurveTo(143,131,129,17);ctx.stroke();
     for(let pair=0;pair<14;pair++){
       const t=.1+pair*.058,y=243-t*218,x=128+Math.sin(t*8)*10,side=pair%2?1:-1,length=23+rand()*22;

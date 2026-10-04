@@ -60,4 +60,13 @@ describe('foliage geometry stability',()=>{
       expect(leaves.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(4.5);
     }finally{whole.dispose();masses.dispose();leaves.dispose();}
   });
+  it('gives revision-6 broadleaf crowns a wider low-cost leaf silhouette around the solid core',()=>{
+    const whole=broadleafGeometry(0,true),masses=broadleafGeometry(0,true,'masses'),leaves=broadleafGeometry(0,true,'leaves'),legacy=broadleafGeometry(0);
+    try{
+      whole.computeBoundingBox();masses.computeBoundingBox();leaves.computeBoundingBox();
+      const width=(geometry:THREE.BufferGeometry)=>Math.hypot(geometry.boundingBox!.getSize(new THREE.Vector3()).x,geometry.boundingBox!.getSize(new THREE.Vector3()).z);
+      expect(width(leaves)).toBeGreaterThan(width(masses)*1.08);
+      expect(whole.index!.count/3).toBeLessThanOrEqual(legacy.index!.count/3*1.1);
+    }finally{whole.dispose();masses.dispose();leaves.dispose();legacy.dispose();}
+  });
 });
