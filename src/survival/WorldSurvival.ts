@@ -177,21 +177,32 @@ export class WorldSurvival {
         // Assemble the wheelhouse around real window openings so the exposed
         // bridge reads as a flooded, abandoned workspace rather than a box.
         this.box(g,-1.48,1.34,.04,1.2,.10,.96,this.paint).name='Breakwater weather station cabin';
-        this.box(g,-1.48,1.70,-.42,1.2,.82,.08,this.paint).name='Breakwater cabin aft bulkhead';
-        this.box(g,-2.04,1.70,.04,.08,.82,.96,this.paint).name='Breakwater cabin port bulkhead';
+        const revisionSixBridge=this.env.terrain.generation===5&&this.env.worldRevision>=6;
+        this.box(g,-1.48,revisionSixBridge?2.20:1.70,-.42,1.2,revisionSixBridge?1.82:.82,.08,this.paint).name='Breakwater cabin aft bulkhead';
+        this.box(g,-2.04,revisionSixBridge?2.20:1.70,.04,.08,revisionSixBridge?1.82:.82,.96,this.paint).name='Breakwater cabin port bulkhead';
         this.box(g,-.92,1.44,-.34,.08,.30,.24,this.paint).name='Breakwater cabin starboard lower bulkhead';
         this.box(g,-.92,1.96,-.34,.08,.30,.24,this.paint).name='Breakwater cabin starboard upper bulkhead';
-        this.box(g,-.92,1.70,-.005,.08,.82,.11,this.paint).name='Breakwater cabin starboard forward post';
-        this.box(g,-.92,1.70,.415,.08,.82,.13,this.paint).name='Breakwater cabin starboard aft post';
+        this.box(g,-.92,revisionSixBridge?2.20:1.70,-.005,.08,revisionSixBridge?1.82:.82,.11,this.paint).name='Breakwater cabin starboard forward post';
+        this.box(g,-.92,revisionSixBridge?2.20:1.70,.415,.08,revisionSixBridge?1.82:.82,.13,this.paint).name='Breakwater cabin starboard aft post';
         // Twin front panes span most of the forward wall; leave a center pier
         // and narrow outer posts to keep the sightline into the cabin open.
-        this.box(g,-1.48,1.44,.52,1.2,.30,.08,this.paint);
-        this.box(g,-1.48,2.06,.52,1.2,.24,.08,this.paint);
-        this.box(g,-1.48,2.15,.04,1.48,.13,1.18,this.rust).rotation.z=-.035;
-        for(const x of [-1.82,-1.18]){this.box(g,x,1.77,.535,.37,.34,.035,this.glass).name='Breakwater bridge window';this.box(g,x,1.98,.56,.40,.045,.045,this.rust);}
+        if(revisionSixBridge){
+          // Open a standing-height central doorway and lift the Rev6 wheelhouse roof.
+          // Older revisions retain the sealed, low cabin geometry below.
+          for(const x of [-1.955,-1.005]){
+            this.box(g,x,1.44,.52,.25,.30,.08,this.paint).name='Breakwater Rev6 doorway lower side';
+            this.box(g,x,2.60,.52,.25,1.08,.08,this.paint).name='Breakwater Rev6 doorway upper side';
+          }
+          this.box(g,-1.48,3.20,.04,1.48,.13,1.18,this.rust).name='Breakwater Rev6 raised wheelhouse roof';
+          for(const x of [-1.95,-1.01]){this.box(g,x,1.77,.535,.24,.34,.035,this.glass).name='Breakwater bridge window';this.box(g,x,1.98,.56,.40,.045,.045,this.rust);}
+        }else{
+          this.box(g,-1.48,1.44,.52,1.2,.30,.08,this.paint);
+          this.box(g,-1.48,2.06,.52,1.2,.24,.08,this.paint);
+          this.box(g,-1.48,2.15,.04,1.48,.13,1.18,this.rust).rotation.z=-.035;
+          for(const x of [-1.82,-1.18]){this.box(g,x,1.77,.535,.37,.34,.035,this.glass).name='Breakwater bridge window';this.box(g,x,1.98,.56,.40,.045,.045,this.rust);}
+        }
         this.box(g,-.86,1.78,.04,.035,.35,.62,this.glass).name='Breakwater side window';
         const chart=this.box(g,-1.48,1.56,.21,.70,.12,.34,this.metal);chart.name='Breakwater bridge chart console';
-        const revisionSixBridge=this.env.terrain.generation===5&&this.env.worldRevision>=6;
         if(revisionSixBridge){
           // The old high-emissive mint rectangle read like a modern arcade HUD.
           // Revision 6 gets a dim, layered marine instrument board while older
@@ -201,9 +212,9 @@ export class WorldSurvival {
           const instrument=this.box(g,-1.51,1.691,.237,.292,.061,.012,this.bridgeDisplay);instrument.name='Breakwater weather instrument display';
           for(let i=0;i<4;i++){const trace=this.box(g,-1.60+(i%2)*.18,1.681+Math.floor(i/2)*.023,.229,.10,.003,.004,i===0?this.bridgeLamp:this.bridgeDisplay);trace.name='Breakwater revision-6 instrument trace';}
           for(let i=0;i<3;i++){const indicator=new T.Mesh(new T.SphereGeometry(.018,6,4),i===1?this.bridgeLamp:this.bridgeDisplay);indicator.name='Breakwater revision-6 instrument indicator';indicator.position.set(-1.32+i*.075,1.744,.248);g.add(indicator);}
-          const lamp=this.box(g,-1.48,2.045,-.10,.25,.045,.15,this.metal);lamp.name='Breakwater revision-6 wheelhouse lamp housing';
-          const diffuser=this.box(g,-1.48,2.018,-.10,.17,.012,.085,this.bridgeLamp);diffuser.name='Breakwater revision-6 wheelhouse lamp diffuser';
-          const workLight=new T.PointLight(0xffd39a,.45,3.4,2);workLight.name='Breakwater revision-6 wheelhouse work light';workLight.position.set(-1.48,1.99,-.10);g.add(workLight);
+          const lamp=this.box(g,-1.48,3.05,-.10,.25,.045,.15,this.metal);lamp.name='Breakwater revision-6 wheelhouse lamp housing';
+          const diffuser=this.box(g,-1.48,3.018,-.10,.17,.012,.085,this.bridgeLamp);diffuser.name='Breakwater revision-6 wheelhouse lamp diffuser';
+          const workLight=new T.PointLight(0xffd39a,.45,3.4,2);workLight.name='Breakwater revision-6 wheelhouse work light';workLight.position.set(-1.48,2.99,-.10);g.add(workLight);
           const compassBase=new T.Mesh(new T.CylinderGeometry(.078,.086,.022,12),this.rust);compassBase.name='Breakwater revision-6 helm compass bezel';compassBase.position.set(-1.17,1.676,.247);compassBase.rotation.x=Math.PI/2;g.add(compassBase);
           const compassFace=new T.Mesh(new T.CircleGeometry(.061,12),this.chartPaper);compassFace.name='Breakwater revision-6 helm compass face';compassFace.position.set(-1.17,1.676,.232);g.add(compassFace);
           const compassNeedle=this.box(g,-1.17,1.676,.224,.009,.074,.004,this.rust);compassNeedle.name='Breakwater revision-6 helm compass needle';
@@ -313,7 +324,7 @@ export class WorldSurvival {
     }
     this.eventSiteCache.set(sequence,best);return best;
   }
-  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});}else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
+  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});}else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});if(this.env.terrain.generation===5&&this.env.worldRevision>=6){for(const x of [-1.955,-1.005]){result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});}result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});}}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.chartPaper,this.glass,this.display,this.bridgeDisplay,this.bridgeLamp,this.cloth,this.stormCloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
 

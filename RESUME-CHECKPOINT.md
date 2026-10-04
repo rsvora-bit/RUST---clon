@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Průchozí Rev6 Breakwater wheelhouse
+
+- Rev6 Breakwater dostal středový dveřní otvor wheelhouse, zvýšenou střechu a odpovídající Rev6-only stěnové kolize. Od Rev5 zpět zůstává původní uzavřená nízká geometrie a dvě původní kolize.
+- Nový Rapier `PhysicsWorld` test potvrzuje průchod hráče dveřmi na úrovni paluby a zablokování boční stěnou. Chromium/SwiftShader vyrenderovalo aktuální `WorldSurvival` bez browser/WebGL chyb (`test-results/breakwater-interior/report.json`). Jde o statický modelový náhled a izolovaný fyzikální test na rovině paluby; přístup na vrak ze skutečného břehu ani plný `GameApp` traversal ještě ověřen není.
+- `tests/world-art.test.ts`: **133/133 PASS**; kompletní `npm test`: **475/475 PASS (45 files)**; `npm run build`: **PASS**, existující Vite upozornění na JS chunk >500 kB. `git diff --check`: PASS.
+- Konzervativní odhad: **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **86 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **83 %**. Zbývá traversal dalších POI, archivní v0.9.0/v0.9.1 save QA (Pages fetch blokuje HTTPS proxy 403) a reprezentativní HIGH/Metal performance profil. Není release candidate.
+- Další krok: ověřit skutečné pobřežní nastoupení na vrak v GameApp a potom traversal Tidal Survey Pier / Highland Relay.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Přirozenější Rev6 počasí
 
 - Dokončena oprava výběru přirozených Rev6 weather transitions v `src/survival/Weather.ts`: místo sinusového mapování, které na seedu 731942 dávalo 50 % bouří ze 100 přechodů, se používá deterministický hash roll a typy clear/rain/fog/storm jsou rovnoměrněji zastoupené. Seed/save formát se nemění.
