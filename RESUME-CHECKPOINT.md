@@ -1,3 +1,16 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — interakční CPU filtr
+
+- Obnovení proběhlo z aktuálního `origin/codex/world-revision-6`, HEAD `7c36d800cfccbe2fb40da4ab703a0363d43b2522`, po fetch / checkout / pull --ff-only. Starší onboarding nebyl použit. Níže uvedená rozpracovaná dešťová změna je již obsažená v `7c36d80` (`Limit rain updates to visible particles`); není nutné ji znovu implementovat ani commitovat.
+- `src/entities/InteractionSystem.ts`: kandidátní horizontální vzdálenost se porovnává jako druhá mocnina místo `Math.hypot`; raycast a occlusion výsledky používají opakovaně vlastní vyprázdněná pole. Zachovaný dosah, výběr nejbližšího viditelného/povoleného objektu, blokování a trigger. Nové tři regresní testy ověřují i hraniční vzdálenost a izolaci výsledků mezi kandidáty/snímky.
+- Výchozí `npm test`: **462/462 PASS**. Po změně plné `npm test`: **465/465, 44 souborů PASS**; `npm run build`: **PASS**, stávající Vite advisory na JS chunk **3 315.63 kB**; `git diff --check`: **PASS**.
+- Střídavý Node CPU microbenchmark původního a upraveného zdroje: 2 033 povolených vzdálených entries, 2 000 warm-up a 4 × 10 000 update na každou verzi, medián **0,08318 → 0,02688 ms/update** (~67,7 %). Měří pouze kandidátní filtr bez ray hitů, nejde o world FPS ani vysvětlení historické Metal FPS mezery.
+- Runtime QA **zatím není PASS**: Chromium/SwiftShader LOW při 1280×720 / renderScale .5 překročil 180 s během GPU warm-upu (99 %, poslední frame 6 305,6 ms). Žádné CPU samples ani screenshot z tohoto pokusu nejsou použitelné. Probíhá druhý běh v menším okně s delším startup limitem. Rozpracovaný opt-in profilovací harness / package script nejsou součástí tohoto stabilního checkpointu; budou ověřeny samostatně.
+- Konzervativní pracovní odhad: celkem **84 %**, Goal 1 **95 %**, Goal 2 **82 %**, Goal 3 **91 %**, Goal 4 **80 %**, Goal 5 **85 %**, Goal 6 **85 %**, Goal 7 **70 %**. Nejde o časový ani historický „94 %“ údaj. Cíl není release candidate.
+- **První další nedokončený krok:** dokončit skutečné browser interaction / CPU profiling QA, podle měření pokračovat v optimalizaci Rev6 a širší world-art / gameplay regression. Historická Rev6 HIGH/Metal mezera 16–20 % FPS zůstává otevřená; SwiftShader ji nemůže reprezentativně uzavřít. Pokračovat checkpoint commity/pushi pouze na `codex/world-revision-6`.
+- `main`, tagy, Release a produkční Pages nebyly měněny; generované `test-results/`, `dist/` ani lokální uživatelské kopie nejsou součástí commitu.
+
+Níže je historický checkpoint a záznam dosavadní práce.
+
 # PAUSE CHECKPOINT — 2026-10-04
 
 ## Stav při výslovném pozastavení práce
