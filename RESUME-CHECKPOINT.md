@@ -1,3 +1,11 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0/v0.9.1 source save QA
+
+- Proxy stále vrací **403** pro skutečné archivní GitHub Pages. V izolovaných worktrees z přesných historických zdrojových commitů `1fe7586` (v0.9.0) a `19cd35b` (v0.9.1) jsem vytvořil reprezentativní legacy save a načetl je současnou aplikací.
+- Každý source-backed fixture prošel **12 browser compatibility checks / 0 application errors**. v0.9.0 zachoval Gen5/Rev1; v0.9.1 Gen5/Rev2. Oba zachovaly POI/trails, 1 318 node IDs, inventory, structures, node changes, drops, craft queue, stanice, Tech Tree, pozici hráče a physics collider foundation stavby. Ignorované exporty/reporty jsou v `test-results/v090-local/` a `test-results/v091-local/`.
+- Jde o historické zdrojové buildy, **ne o přesné save fixtures stažené z produkčních archived Pages**. Produkční archivy tedy zůstávají neověřené. `npm test` naposledy **478/478 PASS (45 files)**; `npm run build` **PASS**. Od těchto běhů se měnil pouze checkpoint.
+- Odhad: **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **87 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **88 %**. Horní Highland Relay nemá gameplay lezecký systém; reálný Pages fixture přístup/proxy a reprezentativní HIGH/Metal profil zůstávají otevřené. Není release candidate.
+- Další krok: při zpřístupnění sítě ověřit skutečné produkční archived save fixtures; při odpovídajícím hardware opakovat matched HIGH/Metal výkonový profil. Do té doby pokračovat posledními Rev6 art/gameplay QA položkami bez označení release candidate.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — v0.9.0 save compatibility fallback
 
 - HTTPS fetch archivní GitHub Pages `v0.9.0`/`v0.9.1` opět selhal přes proxy **403**. Jako nezávislou částečnou validaci jsem v izolovaném worktree ze zdrojového commitu **`1fe7586` (package version 0.9.0)** spustil původní appku, vytvořil Generation 5 save se seedem **731942**, jednou foundation, 23 stanicemi a progressem a načetl ho současným buildu.
