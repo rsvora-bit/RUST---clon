@@ -1,5 +1,12 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — Rev6 tónová členitost vzdálených hor — 2026-10-04
+
+- Na `codex/world-revision-6` jsem upravil pouze procedurální vertex-color grain ve `src/world/horizon.ts`, a to jen pro Revision 6. Nízkofrekvenční odchylky nyní dávají dálkovým horským stěnám více barevných ploch; Rev1–5 barvy zůstávají přesně shodné. Počet vrcholů, indexů, trojúhelníků, meshů, draw calls, kolize a world/save identity se nemění.
+- `tests/environment-visuals.test.ts` nyní kontroluje bitovou shodu legacy Rev5 barev a širší tonal range Rev6. Cílený test **13/13 PASS**; plné `npm test` **450/450 PASS, 43 souborů**; `npm run build` **PASS** se stávajícím upozorněním Vite na 3.3 MB JS chunk; `git diff --check` PASS.
+- Chrome/Metal `npm run test:world-art`: kompletní běh **PASS**, včetně starých Rev1/Rev2 uložených světů, Rev6 determinismu/save reload, presetů LOW–ULTRA, bouřky, horizontu a kamerového sweeupu; **0 browser/WebGL/aplikačních chyb**. `test-results/world-art/horizon-day.png` jsem po běhu vizuálně prohlédl. Zlepšení tónového rozbití je záměrně jemné; siluety zůstávají low-poly a tento krok sám o sobě není dramatickým přerodem světa ani RC.
+- Změny source/test/checkpoint budou checkpointnuty a pushnuty pouze na pracovní větev. `origin/main`, tagy, release a produkční Pages jsou beze změny. Uživatelovy `* 2` soubory a `artifacts/` nebyly upraveny ani stageovány.
+
 ## Live update — Rev6 mokřadní tůně bez tvrdého středu — 2026-10-04
 
 - Před změnou lokální HEAD i `origin/codex/world-revision-6` byly `26cf5014f6d7b4e8054db727bedc6b641f37e1f9`; `origin/main` zůstal `ba2cbda604d8b88ce85c498c104cbcd7451098a9`. Necommitnuté uživatelské `* 2` kopie a `artifacts/` jsou ponechané mimo index.
