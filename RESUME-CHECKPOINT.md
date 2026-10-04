@@ -1,5 +1,13 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — deterministické varianty Revision 6 trávy po chunkech — 2026-10-04
+
+- `src/world/models.ts` nyní vytváří čtyři stejně nízkopolygonové deterministické siluety grass tufts pro Rev6; `src/rendering/environment.ts` přiřazuje variantu podle seed + 64m chunk souřadnic. Každý chunk zůstává jediným InstancedMesh a používá jednu ze čtyř sdílených geometrií; počet instancí, geometrii na trs, draw calls ani collider/save/world layout rozhraní to nemění. Revision 1–5 ignoruje variant index a zachovává původní geometrii bitově shodnou.
+- `tests/foliage-geometry.test.ts` ověřuje přesnou legacy shodu, rozdílné rev6 varianty, deterministickou reprodukci i stejný vertex/index budget. Targeted world-art + geometry suites **135/135 PASS**, plné `npm test` **452/452 v 43 souborech PASS**, build PASS s existujícím Vite advisory na ~3,31 MB JS bundle, `git diff --check` PASS.
+- Chrome/Metal `npm run test:world-art`: **77/77 PASS**, 0 browser/WebGL/app errors; screenshoty lesního podrostu, vegetace, stromů a břehů vygenerované a prohlédnuté. Ověřeny archived Rev1/Rev2 saves, Rev6 deterministic placement/save reload a preset matrix LOW–ULTRA.
+- Párový HIGH 1280×720 `test:performance` (Vsync ON, proto FPS není uncapped): archived v0.9.0 **60,00 FPS / 16,666 ms / 612 calls / 3 390 261 tris / 1 318 nodes / 2 627 ms startup**; aktuální pracovní build **60,00 / 16,666 / 434 / 3 300 444 / 2 033 / 2 275 ms**, grass **375 chunks / 84 000 instances**, 0 chyby. Toto je celkový Rev6-vs-archive měřicí snapshot, ne izolované před/po porovnání geometry změny; variace nezvyšuje počet meshů ani topologii. QA artefakty zůstávají ignorované.
+- Změny `src/world/models.ts`, `src/rendering/environment.ts`, `tests/foliage-geometry.test.ts` a tento checkpoint jsou připravené pro vlastní commit/push na `codex/world-revision-6`. `main`, tagy, GitHub Release a produkční Pages zůstávají beze změny. Uživatelské iCloud kopie `* 2` a `artifacts/` jsou nedotčené.
+
 ## Live update — čitelnější first-person kamenný krumpáč — 2026-10-04
 
 - `src/rendering/HeldItem.ts`: hlava krumpáče nyní sdílí původní procedurální kámen, ale má vlastní světlejší, oboustranně nasvícený materiál s jemným emisivním fill, hlubší fazety a robustnější zkosení. Tři úvazy kopírují osu šikmé násady a jsou sloučené v jediném mesh; gathering, hit detection, animace, item data a save schema nemění.

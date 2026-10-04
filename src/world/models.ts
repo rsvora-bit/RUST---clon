@@ -174,8 +174,11 @@ export function forestShrubGeometry():THREE.BufferGeometry {
 }
 /** Small bent blades use real silhouettes, so distant alpha cards cannot turn
  * into dark quads. One shared 36-triangle tuft is instanced across the island. */
-export function grassGeometry(fuller=false):THREE.BufferGeometry {
-  const r=randomSource(615),positions:number[]=[],colors:number[]=[],indices:number[]=[];
+export function grassGeometry(fuller=false,variant=0):THREE.BufferGeometry {
+  // Four deterministic Rev6 silhouettes break up the tiled look without
+  // adding instances, materials, or triangles to a grass chunk. Legacy worlds
+  // deliberately keep their original geometry seed regardless of variant.
+  const r=randomSource(fuller?615+Math.trunc(variant)*7919:615),positions:number[]=[],colors:number[]=[],indices:number[]=[];
   for(let blade=0;blade<12;blade++){
     // Revision 6 forms three loose, offset sprays instead of a uniformly
     // radial pinwheel. Keep the legacy tuft deterministic and bit-identical.

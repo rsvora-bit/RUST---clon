@@ -51,6 +51,15 @@ describe('foliage geometry stability',()=>{
       expect(geometry.index!.count/3).toBe(12);
     }finally{geometry.dispose();}
   });
+  it('varies deterministic revision-6 grass silhouettes by chunk while preserving legacy geometry',()=>{
+    const legacy=grassGeometry(false,0),legacyOtherVariant=grassGeometry(false,3),a=grassGeometry(true,0),b=grassGeometry(true,1),repeat=grassGeometry(true,0);
+    try{
+      expect(Array.from(legacy.getAttribute('position').array)).toEqual(Array.from(legacyOtherVariant.getAttribute('position').array));
+      expect(Array.from(a.getAttribute('position').array)).not.toEqual(Array.from(b.getAttribute('position').array));
+      expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
+      expect(a.index!.count).toBe(b.index!.count);expect(a.getAttribute('position').count).toBe(b.getAttribute('position').count);
+    }finally{legacy.dispose();legacyOtherVariant.dispose();a.dispose();b.dispose();repeat.dispose();}
+  });
   it('keeps revision-6 broadleaf cards close to the branches without collapsing the crown',()=>{
     const legacy=broadleafGeometry(0),rev6=broadleafGeometry(0,true),repeat=broadleafGeometry(0,true);
     try{
