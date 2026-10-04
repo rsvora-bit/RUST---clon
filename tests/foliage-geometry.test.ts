@@ -4,7 +4,7 @@ import {grassGeometry,pineGeometry,pineMassGeometry,broadleafGeometry,bushGeomet
 
 describe('foliage geometry stability',()=>{
   it('has finite, unit-length normals and no degenerate triangles across variants',()=>{
-    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1,2].map(pineMassGeometry),...[0,1].map(variant=>broadleafGeometry(variant))];
+    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(variant=>pineGeometry(variant)),...[0,1,2].map(variant=>pineGeometry(variant,true)),...[0,1,2].map(pineMassGeometry),...[0,1].map(variant=>broadleafGeometry(variant))];
     const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
     try {
       for(let geometryIndex=0;geometryIndex<geometries.length;geometryIndex++){
@@ -60,6 +60,34 @@ describe('foliage geometry stability',()=>{
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
       expect(a.index!.count).toBe(b.index!.count);expect(a.getAttribute('position').count).toBe(b.getAttribute('position').count);
     }finally{legacy.dispose();legacyOtherVariant.dispose();a.dispose();b.dispose();repeat.dispose();}
+  });
+  it('preserves the original pine position, normal, UV and index buffers for legacy worlds',async()=>{
+    const digests=['f4bf8aa6a9ff604aebe3decaedbdc1c6c8f510f39f0d1747180eb263b6d44cd2','24f79365521bb25c0dcd7cb4e48ccc1a29b5f7952597e85e81b4ed9e86347411','9175815af44eef8d88e87683ae17afdef02d4283ee7549b6d1470974a715fd4c'];
+    for(const variant of [0,1,2]){
+      const geometry=pineGeometry(variant,false);
+      try{
+        const arrays=[...['position','normal','uv'].map(name=>geometry.getAttribute(name).array),geometry.index!.array];
+        const bytes=new Uint8Array(arrays.reduce((sum,array)=>sum+array.byteLength,0));let offset=0;
+        for(const array of arrays){bytes.set(new Uint8Array(array.buffer,array.byteOffset,array.byteLength),offset);offset+=array.byteLength;}
+        const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+        expect(Array.from(hash).map(byte=>byte.toString(16).padStart(2,'0')).join('')).toBe(digests[variant]);
+      }finally{geometry.dispose();}
+    }
+  });
+  it('directs revision-6 pine sprays outward on both axes with the existing triangle budget',()=>{
+    for(const variant of [0,1,2]){
+      const legacy=pineGeometry(variant),geometry=pineGeometry(variant,true),repeat=pineGeometry(variant,true),position=geometry.getAttribute('position');
+      try{
+        expect(geometry.index!.count).toBe(legacy.index!.count);expect(position.count).toBe(legacy.getAttribute('position').count);
+        expect(Array.from(position.array)).toEqual(Array.from(repeat.getAttribute('position').array));
+        for(let i=0;i<position.count;i+=6){
+          const x=(position.getX(i+4)+position.getX(i+5))/2,z=(position.getZ(i+4)+position.getZ(i+5))/2;if(Math.hypot(x,z)<.01)continue;
+          const dx=(position.getX(i)+position.getX(i+1))/2-x,dz=(position.getZ(i)+position.getZ(i+1))/2-z;
+          expect((x*dx+z*dz)/(Math.hypot(x,z)*Math.hypot(dx,dz))).toBeGreaterThan(.75);
+        }
+        geometry.computeBoundingBox();const span=geometry.boundingBox!.getSize(new THREE.Vector3());expect(Math.min(span.x,span.z)/Math.max(span.x,span.z)).toBeGreaterThan(.75);
+      }finally{legacy.dispose();geometry.dispose();repeat.dispose();}
+    }
   });
   it('builds deterministic low-polygon pine crown volumes for revision 6',()=>{
     for(const variant of [0,1,2]){

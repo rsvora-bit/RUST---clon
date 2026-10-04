@@ -17,7 +17,7 @@ function revision6CanopyMass(variant:number):THREE.SphereGeometry{
   geometry.computeVertexNormals();return geometry;
 }
 /** Branch sprays leave sky gaps and a broken silhouette instead of a solid cone. */
-export function pineGeometry(variant=0):THREE.BufferGeometry {
+export function pineGeometry(variant=0,revision6=false):THREE.BufferGeometry {
   const r=randomSource(81+variant*391),parts:THREE.BufferGeometry[]=[];
   const height=variant===1?15:variant===2?10.8:12.8;
   const base=variant===1?5:variant===2?2.2:3.2;
@@ -32,9 +32,11 @@ export function pineGeometry(variant=0):THREE.BufferGeometry {
       for(let k=0;k<2;k++){
         const along=.30+k*.40,x=Math.cos(angle)*length*along,z=Math.sin(angle)*length*along;
         const py=y+Math.sin(along*Math.PI)*.18-along*.35+r()*.22;
-        const w=length*(.68-k*.10),h=.95+length*.40;
-        parts.push(card(w,h,x,py,z,1.04+r()*.3,angle+Math.PI/2,r()*.3-.15));
-        parts.push(card(w*.8,h*.83,x,py+.08,z,.62+r()*.3,angle+Math.PI/2+.35,r()*.4-.2));
+        const w=length*(revision6?.54-k*.08:.68-k*.10),h=revision6?.62+length*.28:.95+length*.40;
+        // Tilted card +Y projects along +Z; align it with the radial branch.
+        const ry=revision6?Math.PI/2-angle:angle+Math.PI/2;
+        parts.push(card(w,h,x,py,z,1.04+r()*.3,ry,r()*.3-.15));
+        parts.push(card(w*.8,h*.83,x,py+.08,z,.62+r()*.3,ry+.35,r()*.4-.2));
       }
     }
   }
