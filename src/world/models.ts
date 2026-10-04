@@ -237,9 +237,9 @@ export function seaweedGeometry():THREE.BufferGeometry {
 export function reedGeometry():THREE.BufferGeometry{
   const parts:THREE.BufferGeometry[]=[];
   for(let stalk=0;stalk<7;stalk++){
-    const angle=stalk*2.399,height=1.05+((stalk*37)%7)*.105,x=Math.cos(angle)*(.06+(stalk%3)*.095),z=Math.sin(angle)*(.06+(stalk%3)*.095),stem=new THREE.CylinderGeometry(.014,.032,height,4,1);
+    const angle=stalk*2.399,height=1.05+((stalk*37)%7)*.105,x=Math.cos(angle)*(.06+(stalk%3)*.095),z=Math.sin(angle)*(.06+(stalk%3)*.095),stem=new THREE.CylinderGeometry(.014,.032,height,3,1);
     const p=stem.getAttribute('position');for(let i=0;i<p.count;i++){const y=p.getY(i),t=(y+height/2)/height;p.setX(i,p.getX(i)+t*t*Math.cos(angle)*.16);p.setZ(i,p.getZ(i)+t*t*Math.sin(angle)*.16);}stem.translate(x,height/2,z);stem.computeVertexNormals();parts.push(stem);
-    if(stalk%2===0){const seed=new THREE.SphereGeometry(.052,5,5);seed.scale(.72,1.7,.72);seed.translate(x+Math.cos(angle)*.16,height+.045,z+Math.sin(angle)*.16);parts.push(seed);}
+    if(stalk%2===0){const seed=new THREE.SphereGeometry(.052,4,3);seed.scale(.72,1.7,.72);seed.translate(x+Math.cos(angle)*.16,height+.045,z+Math.sin(angle)*.16);parts.push(seed);}
   }
   const geometry=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());geometry.computeVertexNormals();return geometry;
 }

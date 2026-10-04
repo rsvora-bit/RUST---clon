@@ -14,7 +14,7 @@ describe('environment visual building blocks',()=>{
 
   it('keeps the shared marsh reed tuft low-poly while retaining its tall clustered silhouette',()=>{
     const reeds=reedGeometry();
-    try{reeds.computeBoundingBox();expect(reeds.index!.count/3).toBeLessThanOrEqual(300);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(1.25);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.55);}
+    try{reeds.computeBoundingBox();expect(reeds.index!.count/3).toBeLessThanOrEqual(180);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).y).toBeGreaterThan(1.25);expect(reeds.boundingBox!.getSize(new THREE.Vector3()).x).toBeGreaterThan(.55);}
     finally{reeds.dispose();}
   });
 
