@@ -6,7 +6,7 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {grassReceivesShadows,revisionTreeCover,treeSpeciesForBiome} from '../src/rendering/environment';
+import {grassReceivesShadows,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
@@ -122,6 +122,16 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(revisionTreeCover(.7,.2,6)).toBeCloseTo(.294);
     expect(revisionTreeCover(.7,.8,5)).toBe(.7);
     expect(revisionTreeCover(.7,.2,4)).toBe(.7);
+  });
+  it('widens deterministic revision-6 canopy color variation without changing legacy tree palettes',()=>{
+    const legacyBroad=treeCrownTint(1,.25,.4,5),expectedLegacyBroad=new THREE.Color().setHSL(.275+(.25-.5)*.045,.18,.58+.4*.13);
+    expect(legacyBroad.toArray()).toEqual(expectedLegacyBroad.toArray());
+    const broadLow=treeCrownTint(1,0,0,6),broadHigh=treeCrownTint(1,1,1,6),pineLow=treeCrownTint(2,0,0,6),pineHigh=treeCrownTint(2,1,1,6),repeat=treeCrownTint(1,0,0,6);
+    expect(broadLow.toArray()).toEqual(repeat.toArray());
+    expect(broadHigh.getHSL({h:0,s:0,l:0}).h-broadLow.getHSL({h:0,s:0,l:0}).h).toBeGreaterThan(.095);
+    expect(broadHigh.getHSL({h:0,s:0,l:0}).l-broadLow.getHSL({h:0,s:0,l:0}).l).toBeGreaterThan(.19);
+    expect(pineHigh.getHSL({h:0,s:0,l:0}).h-pineLow.getHSL({h:0,s:0,l:0}).h).toBeGreaterThan(.07);
+    expect(pineHigh.getHSL({h:0,s:0,l:0}).l-pineLow.getHSL({h:0,s:0,l:0}).l).toBeGreaterThan(.20);
   });
   it('has gradual bounded arid, snow and forest transition bands',()=>{
     for(let t=.2;t<.8;t+=.005){const a=surfaceClimate(climate(t,.42),28,.1),b=surfaceClimate(climate(t+.005,.42),28,.1);for(const key of ['arid','snow','forest'] as const){expect(a[key]).toBeGreaterThanOrEqual(0);expect(a[key]).toBeLessThanOrEqual(1);expect(Math.abs(a[key]-b[key])).toBeLessThan(.055);}}

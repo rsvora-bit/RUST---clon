@@ -25,6 +25,12 @@ export function revisionTreeCover(cover:number,forest:number,revision:number):nu
   if(revision<6)return cover;
   return Math.min(.98,cover*(forest>.52?1.3:.42));
 }
+/** Stable per-tree foliage tones widen Rev6 forest variation without changing legacy palettes. */
+export function treeCrownTint(species:number,hueRoll:number,brightnessRoll:number,revision:number):THREE.Color {
+  if(species===5)return new THREE.Color().setHSL(.25+(hueRoll-.5)*.05,.24,.70+brightnessRoll*.12);
+  if(species===1||species===4)return new THREE.Color().setHSL(.275+(hueRoll-.5)*(revision>=6?.10:.045),revision>=6?.23:.18,(revision>=6?.65:.58)+brightnessRoll*(revision>=6?.20:.13));
+  return new THREE.Color().setHSL(.29+(hueRoll-.5)*(revision>=6?.075:.035),revision>=6?.27:.22,(revision>=6?.61:.62)+brightnessRoll*(revision>=6?.21:.14));
+}
 export function treeSpeciesForBiome(biome:string,forest:number,palmRoll:number,broadRoll:number,variant:boolean,climate?:ClimateSample,elevation=0):number{if(climate){const suitability=palmSuitability(climate,elevation,biome);if(palmRoll<suitability*.68)return 5;if(climate.temperature<.42||elevation>40||biome==='SNOW / ALPINE')return variant?0:2;return broadRoll<(.20+smoothstep(.45,.68,climate.moisture)*.48)?(variant?1:4):(forest>.5?(variant?0:2):3);}const palm=(biome==='ARID'||biome==='COAST')&&palmRoll<.68,broad=!palm&&broadRoll<(.27+(biome==='COAST'?.18:0));return palm?5:broad?(variant?1:4):(biome==='SNOW / ALPINE'||forest>.5?(variant?0:2):3);}
 
 /** The render adapter for deterministic island data; gameplay mutations arrive through syncNodes. */
@@ -204,7 +210,7 @@ export class Environment {
       const batchInstances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]=[];entries.forEach(({node},index)=>{
         this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);
         const crownVariation=this.worldRevision>=6,scaleX=crownVariation ? .90+Math.abs(Math.sin(node.position.x*12.9898+node.position.z*78.233))*.20:1,scaleY=crownVariation ? .94+Math.abs(Math.sin(node.position.x*39.346+node.position.z*11.135))*.12:1,scaleZ=crownVariation ? .90+Math.abs(Math.sin(node.position.x*73.156+node.position.z*23.789))*.20:1;this.matrixDummy.scale.set(node.scale*scaleX,node.scale*scaleY,node.scale*scaleZ);this.matrixDummy.updateMatrix();const crownMatrix=this.matrixDummy.matrix.clone();crowns.setMatrixAt(index,crownMatrix);masses?.setMatrixAt(index,crownMatrix);
-        const trunkColor=new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12),crownColor=palm?new THREE.Color().setHSL(.25+(rand()-.5)*.05,.24,.70+rand()*.12):species===1||species===4?new THREE.Color().setHSL(.275+(rand()-.5)*.045,crownVariation ? .21 : .18,(crownVariation ? .72 : .58)+rand()*(crownVariation ? .11 : .13)):new THREE.Color().setHSL(.29+(rand()-.5)*.035,crownVariation ? .25 : .22,(crownVariation ? .67 : .62)+rand()*(crownVariation ? .15 : .14));
+        const trunkColor=new THREE.Color().setHSL(.08+(rand()-.5)*.018,.18,.78+rand()*.12),crownColor=treeCrownTint(species,rand(),rand(),this.worldRevision);
         trunks.setColorAt(index,trunkColor);crowns.setColorAt(index,crownColor);masses?.setColorAt(index,crownColor);
         this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:crownMatrix},...(masses?[{mesh:masses,index,matrix:crownMatrix}]:[])]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,crownMatrix,active:true,visible:true,renderIndex:index,trunkColor,crownColor});
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
