@@ -104,6 +104,14 @@ describe('v0.9.1 world art stabilization',()=>{
       try{for(let frame=0;frame<600;frame++){if(grounded){if(!started||physics.position().y<poi.position.y+1.20){vertical=5.8;started=true;}else vertical=-1.2;}else vertical-=19/60;grounded=physics.move({x:0,y:vertical/60,z:-4.4/60});}expect(physics.position().z).toBeLessThan(poi.position.z+.72);expect(physics.position().y).toBeGreaterThan(poi.position.y+1.20);}finally{physics.dispose();}
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('reaches the Revision-6 Tidal Survey Pier from its generated coast',async()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),poi=layout.pois.find(entry=>entry.kind===6)!,env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
+    try{
+      const directions=Array.from({length:16},(_,i)=>({x:Math.cos(i*Math.PI/8),z:Math.sin(i*Math.PI/8)})).map(direction=>({...direction,height:terrain.heightAt(poi.position.x+direction.x*12,poi.position.z+direction.z*12)})).sort((a,b)=>b.height-a.height),approach=directions[0]!,x=poi.position.x+approach.x*12,z=poi.position.z+approach.z*12;
+      await initPhysics();const physics=new PhysicsWorld(terrain.geometry,world.collisionBoxes(),{x,y:terrain.heightAt(x,z),z});let vertical=0,grounded=false,started=false;
+      try{for(let frame=0;frame<600;frame++){const p=physics.position(),dx=poi.position.x-p.x,dz=poi.position.z-p.z,distance=Math.hypot(dx,dz);if(grounded){if(!started||p.y<poi.position.y+.82){vertical=5.8;started=true;}else vertical=-1.2;}else vertical-=19/60;const speed=distance>1?4.4:0;grounded=physics.move({x:distance>1?dx/distance*speed/60:0,y:vertical/60,z:distance>1?dz/distance*speed/60:0});}expect(Math.hypot(physics.position().x-poi.position.x,physics.position().z-poi.position.z)).toBeLessThan(2.5);expect(physics.position().y).toBeGreaterThan(poi.position.y+.82);}finally{physics.dispose();}
+    }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('keeps the revision-six Breakwater crane readable as a distant coastal landmark',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
     try{

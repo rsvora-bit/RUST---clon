@@ -1,3 +1,10 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Tidal Survey Pier access QA
+
+- Rapier přístupový test pro seed **731942** najde nejvyšší z 16 stran v okruhu 12 m od Tidal Survey Pier, přejde skutečný Gen5/Rev6 terrain mesh s kompletními POI kolizemi a dojde na palubu; hráč zůstane stát uvnitř platformy. Nebyla nutná změna herního modelu.
+- `tests/world-art.test.ts`: **135/135 PASS**; kompletní `npm test`: **477/477 PASS (45 files)**; `npm run build`: **PASS** s existujícím JS chunk advisory >500 kB. Ověření používá izolovaný Rapier simulátor a terrain mesh, ne plnou GameApp/browser session.
+- Odhad zůstává **88 % celkem / 12 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **87 %**, Goal 5 **89 %**, Goal 6 **85 %**, Goal 7 **85 %**. Highland Relay traversal, archivní v0.9.0/v0.9.1 save QA (HTTPS proxy 403) a reprezentativní HIGH/Metal výkonový profil zůstávají otevřené. Není release candidate.
+- Další krok: ověřit bezpečný výstup po žebříku Highland Relay a fyzický přístup k Rev6 kontrolní skříni.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — Plně přístupný Rev6 Breakwater
 
 - Rev6 Breakwater teď obsahuje průchozí wheelhouse dveře, zvednutou střechu, wall colliders a kolizní plochu paluby. Nový Rapier test nad skutečným Generation 5 / Revision 6 terrain mesh a seedem **731942** skočí z pobřeží na trup, z trupu na palubu a dojde na přístupovou pozici u dveří. Zvláštní fyzikální test ověřuje průchod dveřmi a blokaci boční stěnou. Rev5 si zachovává starou nízkou kabinu i dvě kolize.
