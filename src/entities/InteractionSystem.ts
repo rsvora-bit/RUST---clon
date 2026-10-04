@@ -7,7 +7,7 @@ export class InteractionSystem {
   private readonly blocking:THREE.Intersection[]=[];
   register(entry:Interactable){this.entries.set(entry.id,entry);}
   remove(id:string){this.entries.delete(id);if(this.current?.id===id)this.current=null;}
-  clear(){this.entries.clear();this.current=null;}
+  clear(){this.entries.clear();this.current=null;this.hits.length=0;this.blocking.length=0;}
   update(camera:THREE.PerspectiveCamera,maxDistance:number,occluders:THREE.Object3D[]=[]){
     this.ray.setFromCamera(this.center,camera);this.ray.far=maxDistance;let best=maxDistance;this.current=null;
     const candidateDistanceSq=(maxDistance+3)**2;

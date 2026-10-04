@@ -1,3 +1,13 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-04 — HIGH biome / POI review a world cleanup
+
+- Předchozí checkpointy jsou pushnuté: `67204e8` interakční targeting, `2a58e17` terénní raycast, `8603a0f` CPU diagnostika. Nyní dokončen širší runtime průchod Rev6, seed 731942, Chromium 151 / SwiftShader, **plný HIGH 1280×720 / renderScale 1 / shadows + AO + bloom ON**.
+- `test-results/rev6-world-review/review.json`: **PASS**, 7/7 biome regions (coast, forest, grassland, arid, alpine, rocky mountain, marsh), **8/8 POI exteriéry**, **15 screenshotů + ground-building-preview**, **0 browser/app errors**. Všechny snímky vizuálně prohlédnuty. Foundation preview byl zelený a READY TO PLACE. Toto není archivní save / plný gameplay / weather / interiér QA ani reprezentativní FPS benchmark. Generované důkazy zůstávají ignorované.
+- Konkrétní otevřené art položky: blízká borovice na `forest.png` má dlouhé ploché výběžky; `pineGeometry` používá natočení, které neodpovídá radiálnímu směru větví v obou X/Z osách. Následuje Rev6-only oprava natočení a kompaktnějších branch cards, se zachováním legacy geometry / vertex budget / colliders / instance identity. POI exteriéry jsou funkční, ale některé čelní stěny a interiéry stále potřebují čitelnost/polish; hladké vzdálené mountain layers jsou další kandidát pro vizuální review.
+- `InteractionSystem.clear()` nyní vyprázdní i opakovaně používané hit/occlusion buffery, aby při novém světě nedržely objekty staré scény. Reprodukce přes Raycaster optional target před opravou ponechávala **2** staré zásahy po clear(), nyní **0**, entries 0 / current null. Po cleanup cílené interaction + terrain tests **8/8 PASS**, build **PASS**, diff check **PASS**. Poslední plná sada před touto drobnou lifecycle opravou **470/470, 45 souborů PASS**.
+- Konzervativní odhad: celkem **85 % hotovo / 15 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **92 %**, Goal 4 **81 %**, Goal 5 **85 %**, Goal 6 **85 %**, Goal 7 **73 %**. Art opravy, weather, interiéry, viewmodels, gameplay regression a reprezentativní HIGH/Metal performance gap stále otevřené; cíl není RC.
+- **Přesný další úkol:** Rev6 pine branch-card orientation / silhouette polish podle prohlédnutého HIGH lesního snímku. Hotové CPU bloky ani širší denní biome/POI průchod znovu nezačínat. Průběžně relevantní testy/build/runtime QA, logické commity a push pouze `codex/world-revision-6`.
+- `main`, tagy, Release a produkční Pages nebyly upraveny; žádné generované artefakty nejsou stageované.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04 — CPU diagnostický harness
 
 - Terénní optimalizace je commitnutá a pushnutá jako `2a58e17` (`Optimize Rev6 terrain raycasting`); předchozí interakční blok je `67204e8`.
