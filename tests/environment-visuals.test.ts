@@ -63,6 +63,8 @@ describe('environment visual building blocks',()=>{
       expect(colors.getX(0)).not.toBeCloseTo(colors.getX(positions.count-1),2);
       const ringColor=(ring:number)=>{const start=1+ring*40,mean=[0,0,0];for(let i=0;i<40;i++)for(let channel=0;channel<3;channel++)mean[channel]!+=colors.getComponent(start+i,channel)/40;return new THREE.Color().setRGB(mean[0]!,mean[1]!,mean[2]!);};
       for(let ring=0;ring<7;ring++){const current=ringColor(ring),next=ringColor(ring+1);expect(Math.hypot(current.r-next.r,current.g-next.g,current.b-next.b)).toBeLessThan(.18);}
+      const center=new THREE.Color().setRGB(colors.getX(0),colors.getY(0),colors.getZ(0)),waterEdge=ringColor(2),siltEdge=ringColor(5),distance=(color:THREE.Color)=>Math.hypot(color.r-center.r,color.g-center.g,color.b-center.b);
+      expect(distance(waterEdge)).toBeLessThan(distance(siltEdge));
     }finally{a.dispose();b.dispose();other.dispose();}
   });
 

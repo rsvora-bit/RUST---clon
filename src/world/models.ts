@@ -276,13 +276,13 @@ export function reedGeometry():THREE.BufferGeometry{
 /** Shared shallow water sheet with a broad, irregular silty edge for Rev6 marsh pools. */
 export function marshPoolGeometry(seed=88217):THREE.BufferGeometry {
   const segments=40,rings=[.18,.32,.45,.57,.68,.77,.87,1],depths=[0,-.001,-.004,-.009,-.015,-.021,-.026,-.029],rand=randomSource(seed),positions:number[]=[0,0,0],colors:number[]=[],indices:number[]=[];
-  const center=new THREE.Color(0x536e66),inner=new THREE.Color(0x668074),bank=new THREE.Color(0x7c876e),mud=new THREE.Color(0x877a5f),silt=new THREE.Color(0x90876a);
+  const center=new THREE.Color(0x536e66),inner=new THREE.Color(0x5b7469),bank=new THREE.Color(0x64715e),mud=new THREE.Color(0x766b50),silt=new THREE.Color(0x7c7458);
   const poolWater=center.clone().lerp(inner,.4);colors.push(poolWater.r,poolWater.g,poolWater.b);
   const phases=[rand()*6.28,rand()*6.28,rand()*6.28];
   for(let ring=0;ring<rings.length;ring++)for(let i=0;i<segments;i++){
     const angle=i/segments*Math.PI*2,noise=Math.sin(angle*3+phases[0]!)*.14+Math.sin(angle*5+phases[1]!)*.075+Math.sin(angle*9+phases[2]!)*.035+Math.sin(angle*13+phases[0]!*.7)*.015,radius=rings[ring]!*(1+noise),x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,y=depths[ring]!+Math.sin(angle*2+phases[1]!)*.002*(ring<3?1:0);
     positions.push(x,y,z);
-    const tint=ring<2?poolWater.clone().lerp(inner,ring*.12):ring===2?inner.clone().lerp(bank,.12):ring===3?inner.clone().lerp(bank,.38):ring===4?bank.clone().lerp(mud,.22):ring===5?bank.clone().lerp(mud,.72):ring===6?mud.clone().lerp(silt,.42+rand()*.12):mud.clone().lerp(silt,.88+rand()*.08);
+    const tint=ring<3?poolWater.clone().lerp(inner,ring*.12):ring===3?inner.clone().lerp(bank,.18):ring===4?bank.clone().lerp(mud,.22):ring===5?bank.clone().lerp(mud,.72):ring===6?mud.clone().lerp(silt,.42+rand()*.12):mud.clone().lerp(silt,.88+rand()*.08);
     colors.push(tint.r,tint.g,tint.b);
   }
   for(let i=0;i<segments;i++)indices.push(0,1+(i+1)%segments,1+i);
