@@ -8,7 +8,7 @@ import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
-import {pineGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
+import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
 type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string};
@@ -62,6 +62,7 @@ export class Environment {
   private readonly hitRotation=new THREE.Matrix4();
   private readonly leaves:THREE.MeshLambertMaterial;
   private readonly leafMass:THREE.MeshLambertMaterial;
+  private readonly pineMass:THREE.MeshLambertMaterial;
   private readonly pine:THREE.MeshLambertMaterial;
   private readonly palm:THREE.MeshLambertMaterial;
   readonly layout?:WorldLayout;
@@ -107,10 +108,10 @@ export class Environment {
     const terrainMat=terrainMaterial(this.worldRevision);this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed,this.worldRevision);
     this.bark=new THREE.MeshStandardMaterial({map:barkTexture(this.worldRevision>=6),color:0xb6b4a4,roughness:.97});
-    this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
+    this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pineMass=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x080d06,emissiveIntensity:.04,flatShading:true,vertexColors:true});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
     const rockStyle=rockMaterialStyle(this.worldRevision);this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
-    [this.bark,this.leaves,this.leafMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
+    [this.bark,this.leaves,this.leafMass,this.pineMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
     if(!deferPopulation)this.populateNow();
   }
   private populateNow():void {
@@ -188,14 +189,14 @@ export class Environment {
       rememberTree({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
     }
     for(let species=0;species<6;species++){
-      const palm=species===5,broad=species===1||species===4||palm,leafMassTree=broad&&!palm,entries=treeNodes.filter(t=>t.species===species),variant=species===4?1:0,trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():broad?broadleafGeometry(variant,this.worldRevision>=6,this.worldRevision>=6?'leaves':'all'):pineGeometry(species===2?1:species===3?2:0)),massGeometry=leafMassTree&&this.worldRevision>=6?this.own(broadleafGeometry(variant,true,'masses')):undefined;
+      const palm=species===5,broad=species===1||species===4||palm,leafMassTree=broad&&!palm,pineVariant=species===2?1:species===3?2:0,entries=treeNodes.filter(t=>t.species===species),variant=species===4?1:0,trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():broad?broadleafGeometry(variant,this.worldRevision>=6,this.worldRevision>=6?'leaves':'all'):pineGeometry(pineVariant)),massGeometry=this.worldRevision>=6?(leafMassTree?this.own(broadleafGeometry(variant,true,'masses')):!palm?this.own(pineMassGeometry(pineVariant)):undefined):undefined;
       if(this.worldRevision>=6){const lateral=palm?1.08:broad?1.28:1.18;for(const geometry of [crown,massGeometry].filter((entry):entry is THREE.BufferGeometry=>!!entry)){const position=geometry.getAttribute('position');for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)*lateral,position.getY(i),position.getZ(i)*lateral);position.needsUpdate=true;geometry.computeVertexNormals();}}
       // Instanced canopy tinting needs a neutral per-vertex color channel;
       // without it Three.js multiplies the foliage texture by an undefined
       // attribute and the entire canopy falls to black.
       if(!crown.getAttribute('color')){const colors=new Float32Array(crown.getAttribute('position').count*3);colors.fill(1);crown.setAttribute('color',new THREE.BufferAttribute(colors,3));}
-      const trunks=new THREE.InstancedMesh(trunk,this.bark,entries.length),crowns=new THREE.InstancedMesh(crown,palm?this.palm:broad?this.leaves:this.pine,entries.length),masses=massGeometry?new THREE.InstancedMesh(massGeometry,this.leafMass,entries.length):undefined;
-      trunks.name=palm?'Palm trunks':broad?'Oak trunks':'Pine trunks';crowns.name=palm?'Palm canopy':broad?'Oak canopy':'Pine canopy';if(masses)masses.name='Oak canopy masses';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=this.worldRevision<6;crowns.receiveShadow=false;if(masses){masses.castShadow=false;masses.receiveShadow=false;this.root.add(masses);}this.root.add(trunks,crowns);
+      const trunks=new THREE.InstancedMesh(trunk,this.bark,entries.length),crowns=new THREE.InstancedMesh(crown,palm?this.palm:broad?this.leaves:this.pine,entries.length),masses=massGeometry?new THREE.InstancedMesh(massGeometry,leafMassTree?this.leafMass:this.pineMass,entries.length):undefined;
+      trunks.name=palm?'Palm trunks':broad?'Oak trunks':'Pine trunks';crowns.name=palm?'Palm canopy':broad?'Oak canopy':'Pine canopy';if(masses)masses.name=leafMassTree?'Oak canopy masses':'Pine canopy masses';trunks.castShadow=trunks.receiveShadow=true;crowns.castShadow=this.worldRevision<6;crowns.receiveShadow=false;if(masses){masses.castShadow=false;masses.receiveShadow=false;this.root.add(masses);}this.root.add(trunks,crowns);
       const hitGeometry=this.own(new THREE.CylinderGeometry(.37,.45,broad?7.7:12.8,6));hitGeometry.translate(0,broad?3.85:6.4,0);
       const batchInstances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]=[];entries.forEach(({node},index)=>{
         this.matrixDummy.position.set(node.position.x,node.position.y-.08,node.position.z);this.matrixDummy.rotation.set(0,node.rotation,0);this.matrixDummy.scale.setScalar(node.scale);this.matrixDummy.updateMatrix();const m=this.matrixDummy.matrix.clone();trunks.setMatrixAt(index,m);

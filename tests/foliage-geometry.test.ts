@@ -1,16 +1,17 @@
 import {describe,it,expect} from 'vitest';
 import * as THREE from 'three';
-import {grassGeometry,pineGeometry,broadleafGeometry,bushGeometry,palmGeometry,palmTrunkGeometry} from '../src/world/models';
+import {grassGeometry,pineGeometry,pineMassGeometry,broadleafGeometry,bushGeometry,palmGeometry,palmTrunkGeometry} from '../src/world/models';
 
 describe('foliage geometry stability',()=>{
   it('has finite, unit-length normals and no degenerate triangles across variants',()=>{
-    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1].map(variant=>broadleafGeometry(variant))];
+    const geometries=[grassGeometry(),bushGeometry(),palmGeometry(),palmTrunkGeometry(),...[0,1,2].map(pineGeometry),...[0,1,2].map(pineMassGeometry),...[0,1].map(variant=>broadleafGeometry(variant))];
     const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
     try {
-      for(const geometry of geometries){
+      for(let geometryIndex=0;geometryIndex<geometries.length;geometryIndex++){
+        const geometry=geometries[geometryIndex];
         const position=geometry.getAttribute('position'),normal=geometry.getAttribute('normal'),index=geometry.index;
         expect(Array.from(position.array).every(Number.isFinite)).toBe(true);
-        for(let i=0;i<normal.count;i++){a.fromBufferAttribute(normal,i);expect(a.length()).toBeCloseTo(1,4);}
+        for(let i=0;i<normal.count;i++){a.fromBufferAttribute(normal,i);expect(a.length(),`geometry ${geometryIndex}, normal ${i}`).toBeCloseTo(1,4);}
         const count=index?index.count:position.count;
         for(let i=0;i<count;i+=3){
           a.fromBufferAttribute(position,index?index.getX(i):i);b.fromBufferAttribute(position,index?index.getX(i+1):i+1);c.fromBufferAttribute(position,index?index.getX(i+2):i+2);
@@ -59,6 +60,20 @@ describe('foliage geometry stability',()=>{
       expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
       expect(a.index!.count).toBe(b.index!.count);expect(a.getAttribute('position').count).toBe(b.getAttribute('position').count);
     }finally{legacy.dispose();legacyOtherVariant.dispose();a.dispose();b.dispose();repeat.dispose();}
+  });
+  it('builds deterministic low-polygon pine crown volumes for revision 6',()=>{
+    for(const variant of [0,1,2]){
+      const a=pineMassGeometry(variant),b=pineMassGeometry(variant);
+      try{
+        a.computeBoundingBox();b.computeBoundingBox();
+        expect(Array.from(a.getAttribute('position').array)).toEqual(Array.from(b.getAttribute('position').array));
+        expect((a.index?.count??a.getAttribute('position').count)/3).toBeLessThanOrEqual(600);
+        expect(a.getAttribute('color').count).toBe(a.getAttribute('position').count);
+        expect(a.getAttribute('color').getY(0)).toBeGreaterThan(a.getAttribute('color').getX(0));
+        expect(a.boundingBox!.min.y).toBeGreaterThan(1.5);
+        expect(a.boundingBox!.max.y).toBeGreaterThan([12.8,15,10.8][variant]!-1.3);
+      }finally{a.dispose();b.dispose();}
+    }
   });
   it('keeps revision-6 broadleaf cards close to the branches without collapsing the crown',()=>{
     const legacy=broadleafGeometry(0),rev6=broadleafGeometry(0,true),repeat=broadleafGeometry(0,true);

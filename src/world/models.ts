@@ -41,6 +41,24 @@ export function pineGeometry(variant=0):THREE.BufferGeometry {
   for(let i=0;i<5;i++)parts.push(card(.7,1.4,0,height-1,0,0,i*Math.PI/5));
   const geo=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());return geo;
 }
+/** Low-poly branch volume behind the cutout needles, only used by revision 6. */
+export function pineMassGeometry(variant=0):THREE.BufferGeometry {
+  const parts:THREE.BufferGeometry[]=[],height=variant===1?15:variant===2?10.8:12.8,base=variant===1?5:variant===2?2.2:3.2,baseRadius=variant===2?3.4:2.8;
+  const lobe=new THREE.DodecahedronGeometry(1,0);
+  lobe.computeVertexNormals();
+  for(let tier=0;tier<3;tier++){
+    const t=(tier+.44)/3,radius=baseRadius*Math.pow(1-t,.8)+.15,count=tier===2?4:5;
+    for(let branch=0;branch<count;branch++){
+      const angle=branch/count*Math.PI*2+tier*2.399+variant*.61,reach=radius*(.23+.10*Math.sin(branch*2.17+tier*.8)),y=base+(height-base)*t+Math.sin(branch*4.13+tier*1.7)*.24,piece=lobe.clone();
+      const tint=new THREE.Color().setHSL(.29+tier*.004,.28,.29+((branch+tier)%3)*.025),colors=new Float32Array(piece.getAttribute('position').count*3);
+      for(let vertex=0;vertex<colors.length/3;vertex++)tint.toArray(colors,vertex*3);piece.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+      piece.scale(radius*(.25+.025*Math.sin(branch*3+tier)),.30+radius*.052,radius*(.21+.018*Math.cos(branch*2+tier)));
+      piece.rotateY(-angle);piece.translate(Math.cos(angle)*reach,y,Math.sin(angle)*reach);parts.push(piece);
+    }
+  }
+  const tip=lobe.clone(),tipColor=new THREE.Color().setHSL(.29,.28,.34),tipColors=new Float32Array(tip.getAttribute('position').count*3);for(let vertex=0;vertex<tipColors.length/3;vertex++)tipColor.toArray(tipColors,vertex*3);tip.setAttribute('color',new THREE.Float32BufferAttribute(tipColors,3));tip.scale(.12,.42,.12);tip.translate(0,height-.42,0);parts.push(tip);
+  lobe.dispose();const geometry=mergeGeometries(parts)!;parts.forEach(part=>part.dispose());geometry.computeVertexNormals();return geometry;
+}
 export function broadleafGeometry(variant=0,revision6=false,part:'all'|'masses'|'leaves'='all'):THREE.BufferGeometry {
   const r=randomSource(372+variant*517),parts:THREE.BufferGeometry[]=[],massParts:THREE.BufferGeometry[]=[],leafParts:THREE.BufferGeometry[]=[];
   const addMass=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);massParts.push(geometry);},addLeaves=(geometry:THREE.BufferGeometry)=>{parts.push(geometry);leafParts.push(geometry);};
