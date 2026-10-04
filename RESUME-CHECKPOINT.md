@@ -1,4 +1,33 @@
-# AKTUÁLNÍ CHECKPOINT — 2026-10-04
+# PAUSE CHECKPOINT — 2026-10-04
+
+## Stav při výslovném pozastavení práce
+
+- **Cíl:** Tideland v0.10 — World Revision 6 & Visual Overhaul. Cíl není dokončený ani release candidate.
+- **Pracovní větev:** `codex/world-revision-6`. Výchozí `main` je `ba2cbda604d8b88ce85c498c104cbcd7451098a9`; `main`, tagy, GitHub Release ani produkční Pages nebyly měněny.
+- **Naposledy ověřený push před tímto checkpointem:** `9afe8e9b3cba22a5f3dbdd0c53cdd75f05ceca65` (`Skip hidden rain particle updates`). Jeho zdrojová změna přestává každé herní políčko přepisovat 1 800 dešťových částic, pokud je déšť skrytý.
+- **Poslední rozpracovaná změna:** LOW aktualizuje 350 a MEDIUM 900 viditelných dešťových částic; HIGH/ULTRA 1 800. `tests/environment-visuals.test.ts` ověřuje, že za sucha zůstane buffer beze změny a LOW nepřepisuje skrytou část. Plný `npm test` **462/462 v 43 souborech PASS**, `npm run build` **PASS**, `git diff --check` **PASS**. Build má stávající Vite upozornění na velký JS chunk **3 315.50 kB**. Tato poslední změna ještě musí být commitnuta a pushnuta.
+- **Poslední vizuální kontrola:** Stormwatch Station, seed `731942`; screenshot `/tmp/tideland-rev6-stormwatch-interior.png` ukazuje čitelný polní stůl a záznamník. Browser errors **0**. Gameplay/colliders/save data se nezměnily. Další screenshotová série v poslední iteraci neběžela.
+- **Uživatelská pracovní data:** iCloud kopie souborů s příponou ` 2` a `artifacts/` jsou untracked; nebyly upraveny, stageovány ani mazány. Generované `dist/` není součástí commitu.
+
+### Původních sedm oblastí — skutečný zbývající rozsah
+
+1. **World Revision 6 & Larger Map:** Gen5 Rev6, 1664m mapa, seedované rozložení a legacy generace 1–4 jsou implementované. Zachovat testy determinismu a save compatibility; finální celosvětová regression QA zbývá.
+2. **Terrain, Textures & Materials:** climate blending, alpský sníh, marsh mud a členitý mokrý písek už existují. Širší viditelný review terénu a případné cílené opravy ještě nejsou uzavřené.
+3. **Vegetation, Water & Nature:** Rev6 varianty trávy/korun, podrost, marsh, pobřeží a dlouhé oceánské swelly jsou implementované. Široký průchod všemi biomy a vizuální konzistence zůstávají otevřené.
+4. **POI Environment Art & Interiors:** landmarky včetně Stormwatch a Breakwater mají dílčí environment art. Interiéry a dokončovací art pass zbývají.
+5. **Lighting, Weather, VFX & Atmosphere:** day/night/storm rendering existuje. Vizuální průchod všemi počasími i tuning atmosféry zbývá.
+6. **Models, Viewmodels & Character Visuals:** jsou hotové dílčí kroky na korunách, výstroji stráží a viewmodelu krumpáče. Souvislý model/viewmodel/character polish pass zbývá.
+7. **Performance, QA & Final Validation:** unit testy/build a některá world/browser QA jsou zelené. Historické matched HIGH uncapped výsledky ukazovaly Rev6 přibližně o **16–20 % nižší FPS** než archive v0.9.0; tato mezera není vysvětlená/uzavřená. Zbývá reprezentativní výkonový recheck, kompletní gameplay regression, RC audit a čistý release-candidate checkpoint.
+
+### První kroky po obnovení
+
+1. Ověřit `git status`, `git branch --show-current`, `git log --oneline -n 10`, `git diff`, následně `git fetch origin`; nezasahovat do iCloud ` 2` kopií ani `artifacts/`.
+2. Potvrdit, že checkout je stále `codex/world-revision-6` a pracovní strom odpovídá tomuto checkpointu; dokončit push aktuální commitnuté práce jen na tuto větev.
+3. Pokračovat v podstatném profilování/optimalizaci Rev6 workloadu a širším world-art/regression QA. Verzi v0.10 nevydávat a neměnit `main`, tagy, Release ani Pages bez samostatného dokončení a následného schválení uživatelem.
+
+**Pokračování:** navázat od bodu 1 po pokynu uživatele. Tento checkpoint není žádost o merge ani release.
+
+# HISTORICKÝ PRŮBĚŽNÝ CHECKPOINT — 2026-10-04
 
 ## Live update — Rev6 jehličnaté koruny s nízkopolygonovým objemem — 2026-10-04
 
