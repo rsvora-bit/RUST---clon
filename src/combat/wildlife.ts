@@ -173,7 +173,7 @@ export class WildlifeSystem {
   private geometryKey(actor:WildlifeActor){return `${actor.species}:${actor.archetype??'default'}`;}
   private geometryFor(actor:WildlifeActor){
     const key=this.geometryKey(actor),species=actor.species,cached=this.geometries.get(key);if(cached)return cached;
-    const parts:THREE.BufferGeometry[]=[],coat=actor.archetype==='lookout'?0x635d4c:actor.archetype==='guard'?0x505650:SPECIES[species].color,bone=0xd0c2a2,dark=0x272a27;
+    const parts:THREE.BufferGeometry[]=[],coat=actor.archetype==='lookout'?0x635d4c:actor.archetype==='guard'?0x626a60:SPECIES[species].color,bone=0xd0c2a2,dark=0x272a27;
     const add=(geometry:THREE.BufferGeometry,color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,rotationZ=0)=>{const matrix=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,rotationZ)),new THREE.Vector3(sx,sy,sz));geometry.applyMatrix4(matrix);const base=new THREE.Color(color),position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);for(let i=0;i<position.count;i++){colors[i*3]=base.r;colors[i*3+1]=base.g;colors[i*3+2]=base.b;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);};
     const ellipsoid=(color:number,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>add(new THREE.SphereGeometry(1,16,12),color,x,y,z,sx,sy,sz);
     const tube=(points:THREE.Vector3[],radius:number,color:number)=>add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),8,radius,5,false),color,0,0,0,1,1,1);
@@ -190,20 +190,20 @@ export class WildlifeSystem {
       add(new THREE.BoxGeometry(.038,.53,.052),0xb2935d,-.092,1.08,-.235,1,1,1,-.12);
       add(new THREE.BoxGeometry(.038,.53,.052),0xb2935d,.092,1.08,-.235,1,1,1,.12);
       add(new THREE.BoxGeometry(.12,.10,.025),0x76705b,0,.91,-.255,1,1,1);
-      add(new THREE.BoxGeometry(.30,.29,.075),0x393a34,0,1.02,-.14,1,1,1);
-      add(new THREE.BoxGeometry(.29,.34,.15),0x51483a,0,1.05,.19,1,1,1);
+      add(new THREE.BoxGeometry(.30,.29,.075),actor.archetype==='guard'?0x4b5048:0x393a34,0,1.02,-.14,1,1,1);
+      add(new THREE.BoxGeometry(.29,.34,.15),actor.archetype==='guard'?0x605b4c:0x51483a,0,1.05,.19,1,1,1);
       add(new THREE.BoxGeometry(.052,.52,.035),0x6b604a,-.105,1.105,-.202,1,1,1,-.16);
       add(new THREE.BoxGeometry(.052,.52,.035),0x6b604a,.105,1.105,-.202,1,1,1,.16);
       add(new THREE.BoxGeometry(.31,.082,.04),0x302f2b,0,.82,-.204,1,1,1);
       add(new THREE.BoxGeometry(.115,.15,.075),0x75634a,-.145,1.09,-.225,1,1,1);
       add(new THREE.BoxGeometry(.115,.15,.075),0x635b47,.145,1.09,-.225,1,1,1);
-      add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,-.13,.025,-.025,1,1,1);
-      add(new THREE.BoxGeometry(.12,.035,.26),0x282a27,.13,.025,-.025,1,1,1);
-      const headwear=actor.archetype==='guard'?0x414943:actor.archetype==='lookout'?0x4b5148:0x5c5545;
+      add(new THREE.BoxGeometry(.12,.035,.26),actor.archetype==='guard'?0x3f4640:0x282a27,-.13,.025,-.025,1,1,1);
+      add(new THREE.BoxGeometry(.12,.035,.26),actor.archetype==='guard'?0x3f4640:0x282a27,.13,.025,-.025,1,1,1);
+      const headwear=actor.archetype==='guard'?0x535e54:actor.archetype==='lookout'?0x4b5148:0x5c5545;
       add(new THREE.SphereGeometry(.18,12,8,0,Math.PI*2,0,Math.PI*.55),headwear,0,1.64,.012,1,1,1);
       add(new THREE.BoxGeometry(.34,.045,.22),headwear,0,1.625,-.075,1,1,1);
       if(actor.archetype==='guard'){
-        add(new THREE.BoxGeometry(.23,.075,.028),0x343a38,0,1.565,-.149,1,1,1);
+        add(new THREE.BoxGeometry(.23,.075,.028),0x46504a,0,1.565,-.149,1,1,1);
         add(new THREE.BoxGeometry(.16,.018,.012),0xa48c61,0,1.57,-.168,1,1,1);
       }else if(actor.archetype==='lookout'){
         add(new THREE.BoxGeometry(.24,.065,.032),0x343a35,0,1.585,-.148,1,1,1);
@@ -232,10 +232,10 @@ export class WildlifeSystem {
         add(new THREE.CylinderGeometry(1,1,1,8,1),0x73796d,0,1.055,-.235,.17,.185,.065);
         add(new THREE.BoxGeometry(.30,.075,.055),0x515950,0,.91,-.255,1,1,1);
         for(const side of [-1,1]){
-          add(facetedDodecahedron(),0x62695f,side*.245,1.30,-.045,.145,.11,.15,side*-.16);
+          add(facetedDodecahedron(),0x7a8275,side*.245,1.30,-.045,.145,.11,.15,side*-.16);
           add(new THREE.BoxGeometry(.09,.105,.065),side<0?0x514c40:0x625a48,side*.13,.925,-.275,1,1,1);
           add(new THREE.BoxGeometry(.075,.17,.045),0x555d55,side*.13,.43,-.14,1,1,1);
-          add(facetedDodecahedron(),0x656b61,side*.13,.38,-.16,.09,.09,.045,side*-.08);
+          add(facetedDodecahedron(),0x747c70,side*.13,.38,-.16,.09,.09,.045,side*-.08);
         }
         add(new THREE.BoxGeometry(.06,.06,.035),0xb08a4b,0,1.19,-.297,1,1,1);
         add(new THREE.BoxGeometry(.055,.31,.09),0x3e4642,-.12,1.05,-.23,1,1,1);

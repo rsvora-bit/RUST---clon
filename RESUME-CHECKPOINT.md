@@ -1,5 +1,11 @@
 # AKTUÁLNÍ CHECKPOINT — 2026-10-04
 
+## Live update — čitelnější zbroj POI strážců — 2026-10-04
+
+- `src/combat/wildlife.ts`: tmavá paleta seediovaných guard archetypů je posunutá k čitelným weathered olive/green tónům na kabátu, vestě, batohu, helmě, ramenních a kolenních plátech. Mění se pouze vertex colors modelu; geometrie, sdílené batching, AI, combat/damage, LOS, loot/cache identity, colliders a saves zůstávají beze změny.
+- `tests/wildlife-combat.test.ts`: guard palette fixture ověřuje nové tónování při zachování stávajícího vertex budgetu a model identity. Cílená wildlife suite **29/29 PASS**; Chrome/Metal `test:scavenger` **24/24 PASS**, včetně POI role, stealth/LOS, boje, relay salvage a save/reload, 0 browser/app/WebGL errors. Denní `test-results/scavenger/guard-model-close.png` vizuálně zkontrolován: armor a batoh se oddělují od siluety, tmavé kalhoty zůstávají kontrastní.
+- Kompletní `npm test` **452/452 / 43 souborů PASS**, build PASS se známým Vite advisory na ~3,31 MB JS bundle, `git diff --check` PASS. Jen source/test/checkpoint změny připravené pro vlastní checkpoint commit/push do `codex/world-revision-6`; `main`, tagy, release a produkční Pages beze změny.
+
 ## Live update — deterministické varianty Revision 6 trávy po chunkech — 2026-10-04
 
 - `src/world/models.ts` nyní vytváří čtyři stejně nízkopolygonové deterministické siluety grass tufts pro Rev6; `src/rendering/environment.ts` přiřazuje variantu podle seed + 64m chunk souřadnic. Každý chunk zůstává jediným InstancedMesh a používá jednu ze čtyř sdílených geometrií; počet instancí, geometrii na trs, draw calls ani collider/save/world layout rozhraní to nemění. Revision 1–5 ignoruje variant index a zachovává původní geometrii bitově shodnou.
