@@ -97,6 +97,7 @@
 .tide-ui :is(.item-slot,.recipe-item,.queue-item) { border-radius: var(--tide-radius-sm); }
 .tide-ui .inventory-screen { background: radial-gradient(ellipse at 45% 5%,rgb(83 129 117 / 18%),transparent 42%),linear-gradient(132deg,rgb(10 19 17 / 97%),rgb(17 29 25 / 96%) 54%,rgb(10 19 17 / 98%)); }
 .tide-ui .inventory-layout { grid-template-columns: minmax(145px,.82fr) minmax(330px,1.55fr) minmax(270px,1.12fr); gap: clamp(18px,2.5vw,38px); }
+.tide-ui .inventory-layout { align-items: stretch; }
 .tide-ui :is(.survivor-panel,.inventory-main,.crafting-panel) { min-width: 0; padding: 18px; border: 1px solid var(--tide-line); background: linear-gradient(145deg,rgb(24 38 33 / 52%),rgb(12 23 20 / 58%)); }
 .tide-ui .survivor-panel { display: flex; flex-direction: column; }
 .tide-ui .survivor-figure { flex: 1; min-height: 210px; }
@@ -112,6 +113,7 @@
 .tide-ui .item-actions button { border: 1px solid var(--tide-line-strong); background: rgb(255 255 255 / 3%); }
 .tide-ui .item-actions button:hover { border-color: var(--tide-sea); background: rgb(131 185 178 / 8%); }
 .tide-ui .crafting-panel { padding-left: 18px; }
+.tide-ui .crafting-panel { min-height: 0; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--tide-line-strong) transparent; }
 .tide-ui .recipe-grid { grid-template-columns: repeat(auto-fill,minmax(62px,1fr)); gap: 6px; }
 .tide-ui .recipe-item { min-width: 0; min-height: 72px; padding: 6px 4px 8px; background: linear-gradient(145deg,rgb(141 170 151 / 9%),rgb(9 17 15 / 42%)); }
 .tide-ui .recipe-item .item-art { height: 43px; }
@@ -209,6 +211,12 @@
 @media (max-height: 560px) and (min-width: 701px) {
   .tide-ui .settings-v3-shell { max-height: 82vh; overflow: auto; }
   .tide-ui .inventory-layout { max-height: 78vh; overflow: auto; }
+}
+
+@media (max-height: 760px) and (min-width: 701px) {
+  .tide-ui .inventory-layout { grid-template-rows: minmax(0,1fr); min-height: 0; }
+  .tide-ui :is(.survivor-panel,.inventory-main,.crafting-panel) { min-height: 0; max-height: 100%; }
+  .tide-ui .inventory-main { overflow-y: auto; overscroll-behavior: contain; }
 }
 
 @media (prefers-reduced-motion: reduce) {
