@@ -1,11 +1,12 @@
-# RELEASE CHECKPOINT — 2026-10-05 — v0.10.0 publication in progress
+# RELEASE CHECKPOINT — 2026-10-05 — v0.10.0 published; archive deployment in progress
 
-- The user explicitly requested publishing the finished Revision 6 work as a playable new release. Release identity: `v0.10.0 / EA-10.0`, title `World Revision 6 — Visual & Survival Expansion`.
-- Release metadata is updated in `package.json`, `package-lock.json`, `src/config/version.ts`, `CHANGELOG.md`, and `README.md`. Versioned validation reports **478/478 unit tests** and a passing production build; the existing Vite large-chunk advisory remains.
-- Matched Chrome/Metal M5 HIGH uncapped profile still shows a performance cost vs v0.9.0 (about 14–16% lower FPS, with fewer draw calls). This limitation is disclosed in release notes; it has not been hidden.
-- Current commit before publication: `3e17790336c22ae5d5e0596ae4b82e8f86e3c53a`; current base `origin/main`: `ba2cbda604d8b88ce85c498c104cbcd7451098a9`; the main tip is an ancestor of the release branch. Tag `v0.10.0` did not exist when checked.
-- `gh` CLI is not installed. Repository workflow `.github/workflows/tideland-release.yml` creates the GitHub Release automatically after the annotated tag is pushed. The main Pages workflow publishes latest and all version archives after main push.
-- Next: commit only tracked release metadata/docs, push branch, fast-forward and push `main`, create/push annotated `v0.10.0`, then verify Actions, Release, latest Pages, and `/versions/v0.10.0/`. Leave all untracked iCloud ` 2` duplicates and `artifacts/` untouched.
+- Release: `v0.10.0 / EA-10.0`, `World Revision 6 — Visual & Survival Expansion`.
+- Release commit / tag target: `ff32de0a3ddcc490f7e488f68ff680f91b8ca044`; `origin/main` contains it. Annotated tag object: `8e6a62b9b0ffca980dfe97a9290327e855e8be23`; tag is pushed and immutable.
+- GitHub Release exists at `https://github.com/rsvora-bit/RUST---clon/releases/tag/v0.10.0`.
+- Local and GitHub Actions tests/build passed: **478/478 tests**; TypeScript/production build passed with the existing Vite large-chunk advisory. Tagged Release workflow run `37348412464` succeeded. Main CI run `37348391415` succeeded. Main Pages run `37348391496` succeeded and the latest root site returns HTTP 200 with the v0.10.0 bundle.
+- Matched Chrome/Metal M5 HIGH uncapped profile remains about 14–16% below v0.9.0 FPS, with fewer draw calls; this limitation is disclosed in the release notes.
+- Tag Pages build run `37348412494` is validating the archive. It cannot deploy by design; the first `main` Pages deployment completed before the new tag existed, so `/versions/v0.10.0/` was still returning 404 at the last check.
+- Next: commit this deployment checkpoint to `main` and push it to trigger the configured Pages deployment with the new tag present; verify the archived URL returns HTTP 200 and includes the tagged build. Keep user iCloud ` 2` copies and untracked `artifacts/` untouched.
 
 # RESUME CHECKPOINT — 2026-10-05 — door lock and homestead security QA
 
