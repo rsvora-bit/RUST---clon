@@ -1,3 +1,10 @@
+# RESUME CHECKPOINT — 2026-10-05 — door lock and homestead security QA
+
+- Branch: `codex/world-revision-6`; previous pushed checkpoint `93af64b57efef7e45836fbc4bbec69979b9a12c4`.
+- `TIDELAND_QA_SCREENSHOTS=0 npm run test:door-lock` passed field-hammer lock through UI, locked-door open rejection, firearm damage/ammo use without lock bypass, locked-state persistence, normal state after manual unlock, Homestead Beacon claim and automatic door security, claimed-area overview, and claim/door save-reload. Browser/application/WebGL errors: 0.
+- No code changed in this QA-only step. `test:door-lock` currently lacks screenshot suppression, so it wrote two ignored QA images under `test-results/door-lock`; neither is tracked.
+- Next: commit/push this verification checkpoint, then continue a focused gameplay or performance task. Continue to avoid main/tag/Pages publication.
+
 # RESUME CHECKPOINT — 2026-10-05 — station UI stability and power flow
 
 - Branch: `codex/world-revision-6`; previous pushed checkpoint `e1ee18a900d9944eb682e622924e75a434dd0205`.
