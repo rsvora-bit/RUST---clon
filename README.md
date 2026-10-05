@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.10.0%20%7C%20EA--10.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.11.0%20%7C%20EA--11.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.10.0 / EA-10.0` · **5 October 2026**
+**Current release:** `v0.11.0 / EA-11.0` · **5 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.10.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.10.0/)
+Latest stable: [▶ PLAY v0.11.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.11.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -286,6 +286,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.11.0` | Original item-icon pipeline, cohesive responsive interface, EN/CZ research, station and map localization |
 | `v0.10.0` | World Revision 6, expanded archipelago, forests, marsh, terrain, atmosphere and landmark polish |
 | `v0.9.3` | Combat and armor progression, raiding/security, relay and storm events, Breakwater wreck and campfire cooking |
 | `v0.9.2` | Forest and terrain polish, combat, equipment, hostile scavengers, relay cache progression and Homestead ownership |
@@ -348,9 +349,15 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.10.0 / EA-10.0`
+`EARLY ACCESS DEVELOPMENT · v0.11.0 / EA-11.0`
 
 </div>
+
+### v0.11.0 validation and compatibility
+
+This is a presentation and localization update. It does not change world generation, gameplay state, or the save schema. Existing saves continue to use the same item IDs and persistence paths.
+
+Validation: `npm test` **481/481 passed in 49 files** and `npm run build` passed. A 1280×720 browser smoke test verified visible inventory icons, short-viewport panel bounds and scrolling, Czech map/station/Tech Tree copy, and no browser console errors. Icon generation is documented under the repository tooling and uses original procedural Blender scenes.
 
 ### v0.10.0 validation and save compatibility
 

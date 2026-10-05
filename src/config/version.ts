@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.10.0';
-export const GAME_BUILD='EA-10.0';
+export const GAME_VERSION='0.11.0';
+export const GAME_BUILD='EA-11.0';
 export const GAME_RELEASE_DATE='2026-10-05';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.11.0',date:'2026-10-05',title:'UI, Icons & Visual Identity Overhaul',changes:[
+    'Introduced a cohesive original coastal-industrial interface system with refined inventory, equipment, crafting, HUD, main menu, pause, settings, history and save surfaces.',
+    'Created 53 original transparent item icons with a reproducible Blender-to-WebP pipeline and compact runtime assets; no external asset packs were added.',
+    'Expanded English/Czech item names and descriptions and localized research, station and island-map interfaces while preserving their existing interactions and save data.',
+    'Improved short-viewport inventory and crafting scrolling, keyboard focus, reduced-motion behavior and responsive UI presentation.',
+    'Validated with 481 unit tests, a production build, and browser smoke coverage for inventory icons, Czech map/station/research UI and console errors.'
+  ]},
   {version:'0.10.0',date:'2026-10-05',title:'World Revision 6 — Visual & Survival Expansion',changes:[
     'Expanded the deterministic Generation 5 archipelago to 1664 m and added a new marsh region while preserving legacy world generators and saved layouts.',
     'Refined forests, varied grass and understory, faceted biome-aware rocks, alpine snow, wet shoreline, ocean swells, storm clouds, rain, lightning and distant mountain layers.',

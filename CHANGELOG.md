@@ -1,3 +1,11 @@
+## v0.11.0 / EA-11.0 — UI, Icons & Visual Identity Overhaul (2026-10-05)
+
+- Added an original coastal-industrial UI design system across inventory, crafting, equipment, HUD, menus, settings, history and save management.
+- Added 53 custom transparent item icons and a deterministic Blender render pipeline that produces optimized WebP runtime assets.
+- Improved Czech and English item details and localized Tech Tree, station and island-map interfaces without changing game state or save format.
+- Kept inventory and crafting panels usable at short viewport heights, with responsive scrolling, clear focus states and reduced-motion support.
+- Validated with 481 unit tests, production TypeScript/Vite build and a 1280×720 browser smoke test for UI, icons, localization and console errors.
+
 ## v0.10.0 / EA-10.0 — World Revision 6: Visual & Survival Expansion (2026-10-05)
 
 - Expanded the deterministic Generation 5 archipelago to 1664 m and introduced a marsh region without changing legacy generators or existing saved layouts.
