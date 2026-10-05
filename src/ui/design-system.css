@@ -65,6 +65,31 @@
 .tide-ui .vital :is(i,.vital-symbol) { filter: drop-shadow(0 1px 4px rgb(0 0 0 / 45%)); }
 .tide-ui :is(.history-panel,.help-panel) { background: var(--tide-glass); border-color: var(--tide-line-strong); }
 .tide-ui :is(.station-panel,.container-panel,.tech-tree-panel) { background-color: var(--tide-glass); border-color: var(--tide-line-strong); }
+.tide-ui .survival-panel { padding: clamp(22px,4vh,54px) clamp(24px,5vw,80px); color: var(--tide-text); background: radial-gradient(ellipse at 72% 0%,rgb(72 123 109 / 18%),transparent 45%),linear-gradient(140deg,rgb(12 22 19 / 98%),rgb(18 31 27 / 98%)); }
+.tide-ui .survival-panel header { align-items: center; border-bottom-color: var(--tide-line-strong); letter-spacing: .12em; font: 600 12px var(--title-font); }
+.tide-ui .survival-panel h1 { font-size: clamp(36px,5vw,62px); letter-spacing: .04em; }
+.tide-ui .survival-panel h2 { color: var(--tide-sea); letter-spacing: .09em; }
+.tide-ui .survival-panel p { color: var(--tide-text-soft); line-height: 1.55; }
+.tide-ui .survival-panel button { border-color: var(--tide-line-strong); background: rgb(131 185 178 / 8%); }
+.tide-ui .survival-panel button:hover { border-color: var(--tide-sea); background: rgb(131 185 178 / 17%); }
+.tide-ui .station-columns { max-width: 1380px; gap: clamp(24px,4vw,60px); }
+.tide-ui .station-columns>section { min-width: 0; padding: clamp(12px,2vw,24px); border: 1px solid var(--tide-line); background: rgb(255 255 255 / 2%); }
+.tide-ui .station-slot { border: 1px solid var(--tide-line); background: linear-gradient(145deg,rgb(189 210 192 / 9%),rgb(5 13 11 / 42%)); }
+.tide-ui .station-slot.station-output { border-color: rgb(131 185 178 / 35%); background: rgb(131 185 178 / 8%); }
+.tide-ui .station-slot img { filter: drop-shadow(0 4px 6px rgb(0 0 0 / 45%)); }
+.tide-ui .world-map { background: radial-gradient(ellipse at 50% 35%,rgb(45 85 77 / 52%),rgb(8 17 16 / 98%) 76%); }
+.tide-ui .world-map canvas { border-color: rgb(131 185 178 / 45%); box-shadow: 0 20px 65px rgb(0 0 0 / 55%),0 0 0 5px rgb(202 219 202 / 3%); }
+.tide-ui .tech-tree-overlay { color: var(--tide-text); background: rgb(4 10 9 / 82%); }
+.tide-ui .tech-tree-shell { width: min(1240px,calc(100vw - 48px)); padding: clamp(18px,3vw,36px); border-color: var(--tide-line-strong); background: radial-gradient(ellipse at 88% 0%,rgb(66 109 99 / 19%),transparent 42%),linear-gradient(145deg,#172621,#0c1512); box-shadow: var(--tide-shadow-panel); }
+.tide-ui .tech-tree-header { border-color: var(--tide-line-strong); }
+.tide-ui .tech-tree-header h2 { letter-spacing: .08em; }
+.tide-ui .tech-tree-header p,.tide-ui .tech-node p { color: var(--tide-text-soft); }
+.tide-ui .tech-tree-header button,.tide-ui .tech-node button { border-color: var(--tide-line-strong); background: rgb(131 185 178 / 9%); }
+.tide-ui .tech-tree-header button:hover,.tide-ui .tech-node button:hover { border-color: var(--tide-sea); background: rgb(131 185 178 / 19%); }
+.tide-ui .tech-node { border-color: var(--tide-line); background: linear-gradient(145deg,rgb(32 49 42 / 90%),rgb(11 20 17 / 86%)); }
+.tide-ui .tech-node.unlocked { border-color: rgb(154 185 146 / 58%); background: linear-gradient(145deg,rgb(56 82 60 / 76%),rgb(17 29 22 / 93%)); }
+.tide-ui .tech-node.available { border-color: rgb(131 185 178 / 50%); }
+.tide-ui .tech-node.resources { border-color: rgb(213 181 119 / 52%); }
 .tide-ui .loading-shell { background: linear-gradient(145deg,rgb(18 32 27 / 96%),rgb(7 16 14 / 96%)); border-color: var(--tide-line-strong); }
 .tide-ui .loading-bar { background-color: rgb(131 185 178 / 15%); }
 .tide-ui .loading-bar-fill { background: linear-gradient(90deg,var(--tide-sea),var(--tide-copper)); }

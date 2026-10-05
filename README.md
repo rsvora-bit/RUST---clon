@@ -250,6 +250,14 @@ Browser gameplay QA:
 npm run test:browser
 ```
 
+Regenerate the original procedural Blender-rendered inventory icons:
+
+```bash
+npm run icons:render
+```
+
+This runs Blender in background mode and writes the catalogued transparent WebP assets to `public/assets/items/`. Blender must be installed locally; when it is not on `PATH`, set `BLENDER_BIN` to its executable. The renderer uses only project-authored geometry and materials.
+
 ---
 
 ## 🧪 Development workflow
