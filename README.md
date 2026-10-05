@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.9.3%20%7C%20EA--09.3-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.10.0%20%7C%20EA--10.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.9.3 / EA-09.3` · **2 October 2026**
+**Current release:** `v0.10.0 / EA-10.0` · **5 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.9.3](https://rsvora-bit.github.io/RUST---clon/versions/v0.9.3/)
+Latest stable: [▶ PLAY v0.10.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.10.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -278,6 +278,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.10.0` | World Revision 6, expanded archipelago, forests, marsh, terrain, atmosphere and landmark polish |
 | `v0.9.3` | Combat and armor progression, raiding/security, relay and storm events, Breakwater wreck and campfire cooking |
 | `v0.9.2` | Forest and terrain polish, combat, equipment, hostile scavengers, relay cache progression and Homestead ownership |
 | `v0.9.1` | Terrain-aware roads, climate-correct vegetation, continuous biome bands, distant massifs and save-safe stabilization |
@@ -339,9 +340,15 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.9.3 / EA-09.3`
+`EARLY ACCESS DEVELOPMENT · v0.10.0 / EA-10.0`
 
 </div>
+
+### v0.10.0 validation and save compatibility
+
+Generation 1–4 saves retain their legacy generators. Existing Generation 5 saves keep their stored world revision, player state, structures, stations, inventory, progression and Lost Packs; the Revision 6 geography is used for new Revision 6 worlds. No save schema replacement is required.
+
+Validation: `npm test` **478/478 passed in 48 files** and `npm run build` passed. Browser probes covered Revision 6 world generation and legacy saves, world art, combat, Tech Tree, death/respawn, salvage, hazards, door security, raids, wildlife, events, ranged weapons and cooking. Matched Chrome/Metal M5 HIGH uncapped view: v0.9.0 **271.28 FPS / 3.686 ms / 386 draw calls / 3.35M triangles**; Revision 6 **226.67–232.25 FPS / 4.31–4.41 ms / 271 draw calls / 3.48M triangles**. This measured scene remains approximately 14–16% lower in FPS; compare hardware/view details in [RESUME-CHECKPOINT.md](./RESUME-CHECKPOINT.md).
 
 ### v0.9.3 validation and save compatibility
 

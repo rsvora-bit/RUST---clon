@@ -1,3 +1,11 @@
+## v0.10.0 / EA-10.0 — World Revision 6: Visual & Survival Expansion (2026-10-05)
+
+- Expanded the deterministic Generation 5 archipelago to 1664 m and introduced a marsh region without changing legacy generators or existing saved layouts.
+- Refined forest canopies and understory, clustered biome-aware grass, rocks, alpine snow, wet shoreline, ocean swells, storm clouds, rain, lightning and atmospheric mountain layers.
+- Added original landmark and POI detail to Breakwater, Tidal Survey Pier, Highland Relay and Stormwatch, with clearer silhouettes, interiors and exploration routes.
+- Reduced repeated terrain sampling and unnecessary interaction, foliage and weather work; added targeted geometry, terrain, world-generation and browser QA coverage.
+- Preserved the existing save schema and historical world layouts. Validation: 478 unit tests, production build and gameplay/world browser probes passed. On the matched M5/Metal HIGH view, uncapped performance remains about 14–16% below the v0.9.0 reference.
+
 ## v0.9.3 / EA-09.3 — Combat & Endgame Expansion (2026-10-02)
 
 - Expanded combat progression with the Tidal Salvage Shotgun, Dockside Cleaver, Quarry Maul, armor tiers, trauma care, weapon condition, clearer hit feedback and coordinated scavenger threats.

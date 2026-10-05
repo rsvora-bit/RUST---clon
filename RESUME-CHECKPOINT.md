@@ -1,3 +1,12 @@
+# RELEASE CHECKPOINT — 2026-10-05 — v0.10.0 publication in progress
+
+- The user explicitly requested publishing the finished Revision 6 work as a playable new release. Release identity: `v0.10.0 / EA-10.0`, title `World Revision 6 — Visual & Survival Expansion`.
+- Release metadata is updated in `package.json`, `package-lock.json`, `src/config/version.ts`, `CHANGELOG.md`, and `README.md`. Versioned validation reports **478/478 unit tests** and a passing production build; the existing Vite large-chunk advisory remains.
+- Matched Chrome/Metal M5 HIGH uncapped profile still shows a performance cost vs v0.9.0 (about 14–16% lower FPS, with fewer draw calls). This limitation is disclosed in release notes; it has not been hidden.
+- Current commit before publication: `3e17790336c22ae5d5e0596ae4b82e8f86e3c53a`; current base `origin/main`: `ba2cbda604d8b88ce85c498c104cbcd7451098a9`; the main tip is an ancestor of the release branch. Tag `v0.10.0` did not exist when checked.
+- `gh` CLI is not installed. Repository workflow `.github/workflows/tideland-release.yml` creates the GitHub Release automatically after the annotated tag is pushed. The main Pages workflow publishes latest and all version archives after main push.
+- Next: commit only tracked release metadata/docs, push branch, fast-forward and push `main`, create/push annotated `v0.10.0`, then verify Actions, Release, latest Pages, and `/versions/v0.10.0/`. Leave all untracked iCloud ` 2` duplicates and `artifacts/` untouched.
+
 # RESUME CHECKPOINT — 2026-10-05 — door lock and homestead security QA
 
 - Branch: `codex/world-revision-6`; previous pushed checkpoint `93af64b57efef7e45836fbc4bbec69979b9a12c4`.

@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.9.3';
-export const GAME_BUILD='EA-09.3';
-export const GAME_RELEASE_DATE='2026-10-02';
+export const GAME_VERSION='0.10.0';
+export const GAME_BUILD='EA-10.0';
+export const GAME_RELEASE_DATE='2026-10-05';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.10.0',date:'2026-10-05',title:'World Revision 6 — Visual & Survival Expansion',changes:[
+    'Expanded the deterministic Generation 5 archipelago to 1664 m and added a new marsh region while preserving legacy world generators and saved layouts.',
+    'Refined forests, varied grass and understory, faceted biome-aware rocks, alpine snow, wet shoreline, ocean swells, storm clouds, rain, lightning and distant mountain layers.',
+    'Added original landmark and POI detail across Breakwater, Tidal Survey Pier, Highland Relay and Stormwatch, including readable interiors and location-specific exploration routes.',
+    'Improved world-generation sampling, terrain raycasts, vegetation/weather updates and QA tooling while preserving save data and gameplay systems.',
+    'Validated with 478 unit tests, production build, world/save compatibility probes and browser gameplay QA; HIGH uncapped performance remains below the v0.9.0 reference on the measured M5 view.'
+  ]},
   {version:'0.9.3',date:'2026-10-02',title:'Combat & Endgame Expansion',changes:[
     'Expanded combat progression with the Tidal Salvage Shotgun, Dockside Cleaver, Quarry Maul, armor tiers, trauma care, weapon condition, readable hit feedback and coordinated hostile scavengers.',
     'Added deterministic relay signals and repeatable storm salvage, powered Homestead alarms, structure raiding, passive deer, and a coastal Breakwater Cargo Wreck with guarded, location-specific rewards.',
