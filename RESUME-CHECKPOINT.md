@@ -1,3 +1,9 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-05 — plně zelená Rev6 seed matice
+
+- Dřívější interní Vitest `onTaskUpdate` timeout vznikal tím, že `tests/world-art.test.ts` držel 105 pobřežních Rev6 seed případů v jednom přibližně 97sekundovém workeru. Stejných 105 seedů a stejná tvrzení jsou nyní rozdělené do tří `tests/world-route-seeds-*.test.ts` souborů přes sdílený helper; každá část trvá přibližně 27 sekund. Aplikační kód a testovací pokrytí se nezměnily.
+- Po rozdělení celé `npm test` **478/478 PASS, 48/48 souborů**, bez interních Vitest chyb; `npm run build` **PASS** se stávajícím upozorněním na JS chunk 3 322.85 kB; `git diff --check` **PASS**. Předchozí selhání celého `world-art` běhu v commitu `db80515` je tímto opraveno. Browser QA obou přístřešků zůstává platné: Rev6, 0 errors, dva prohlédnuté snímky.
+- Konzervativní odhad **91 % celkem / 9 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **90 %**, Goal 5 **90 %**, Goal 6 **86 %**, Goal 7 **93 %**. Další je praktická širší gameplay/visual QA a zbývající art polish. Skutečné archivní Pages save fixtures a reprezentativní HIGH/Metal profil stále blokuje přístup/prostředí; cíl zatím není release candidate.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-05 — odlišení přístřešků POI
 
 - `Coastal utility shack` v Rev6 má vodní pumpu, pracovní stůl, sací potrubí a tlakoměr; `Quarry outpost` má vzorkovací stůl, jádrové vzorky, polní záznam a nástrojovou stěnu. Detaily se sloučí do existujících materiálových batchů; půdorys, kolize, POI rozložení, loot a save data se nemění. Legacy revize zachovávají původní modely.
