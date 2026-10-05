@@ -50,6 +50,17 @@ describe('revision-6 tidal terrain band',()=>{
       const oldShader=compile(legacy),newShader=compile(revision6);
       expect(oldShader.uniforms.revision6Moss?.value).toBe(0);
       expect(newShader.uniforms.revision6Moss?.value).toBe(1);
+      expect(oldShader.fragmentShader).toContain('groundNoise(gp.xz*.12+warp*.35)');
+      expect(oldShader.fragmentShader).toContain('groundNoise(gp.xz*.47+vec2(29.,-13.))');
+      expect(oldShader.fragmentShader).toContain('groundNoise(vGroundPosition.xz*21.)');
+      expect(newShader.fragmentShader).toContain('float snowDrift=macro*.62+micro*.38');
+      expect(newShader.fragmentShader).toContain('float duneField=macro*.72+micro*.28');
+      expect(newShader.fragmentShader).toContain('float strata=macro*.42+micro*.58');
+      expect(newShader.fragmentShader).toContain('float mossNoise=macro*.68+micro*.32');
+      expect(newShader.fragmentShader).toContain('float relief=(micro-.5)*.10');
+      expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.12+warp*.35)');
+      expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.47+vec2(29.,-13.))');
+      expect(newShader.fragmentShader).not.toContain('groundNoise(vGroundPosition.xz*21.)');
       expect(newShader.fragmentShader).toContain('gp.y+(duneField-.5)*.85');
       expect(newShader.fragmentShader).toContain('smoothstep(.08,1.35,wetHeight)');
       expect(newShader.fragmentShader).toContain('mix(6.4,2.8,revision6Moss)');
