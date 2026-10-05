@@ -1,6 +1,7 @@
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
 const pass=(label,condition)=>{assert.ok(condition,label);console.log('PASS',label);};

@@ -1,6 +1,7 @@
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const outputDir=process.env.TIDELAND_QA_DIR||'test-results/ranged';fs.mkdirSync(outputDir,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[],checks=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
@@ -9,7 +10,7 @@ try{
   await page.goto(process.env.TIDELAND_QA_URL||'http://127.0.0.1:5173');await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:150000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:150000});
   await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});
   const shot=await page.evaluate(()=>{const a=window.__TIDELAND,g=a.sim(),actor=a.wildlife().find(x=>x.species==='islandScavenger'&&x.state!=='dead');if(!actor)throw Error('No scavenger target available');a.setCapturePaused(true);g.state.inventory[0]={itemId:'bow',count:1};g.state.inventory[1]={itemId:'arrow',count:5};a.selectSlot(0);const x=actor.position.x-4,z=actor.position.z,p={x,y:actor.position.y-.06,z};a.teleport(p);a.lookAt({x:actor.position.x,y:actor.position.y+1.56,z:actor.position.z});return {actor,arrows:g.count('arrow')};});
-  pass('Crafted bow and arrow ammo available to player',shot.arrows===5);await page.waitForTimeout(200);await page.evaluate(()=>window.__TIDELAND.drawBow());await page.waitForTimeout(160);const draw=await page.evaluate(()=>window.__TIDELAND.cameraState().viewmodel.bowDraw);pass('Bow viewmodel visibly responds while the string is drawn',draw>.25);await page.screenshot({path:`${outputDir}/bow-drawn.png`});await page.evaluate(()=>{window.__TIDELAND.setCapturePaused(false);window.__TIDELAND.releaseBow();});
+  pass('Crafted bow and arrow ammo available to player',shot.arrows===5);await page.waitForTimeout(200);await page.evaluate(()=>window.__TIDELAND.drawBow());await page.waitForTimeout(160);const draw=await page.evaluate(()=>window.__TIDELAND.cameraState().viewmodel.bowDraw);pass('Bow viewmodel visibly responds while the string is drawn',draw>.25);if(captureScreenshots)await page.screenshot({path:`${outputDir}/bow-drawn.png`});await page.evaluate(()=>{window.__TIDELAND.setCapturePaused(false);window.__TIDELAND.releaseBow();});
   const released=await page.evaluate(()=>({count:window.__TIDELAND.sim().count('arrow'),projectiles:window.__TIDELAND.projectileCount(),bow:window.__TIDELAND.bowState()}));
   pass(`Bow release consumes exactly one arrow and spawns a projectile ${JSON.stringify(released)}`,released.count===4&&released.projectiles===1);
   await page.waitForFunction(id=>{const a=window.__TIDELAND;return a.wildlife().find(actor=>actor.id===id)?.health<78;},shot.actor.id,{timeout:10000});
@@ -22,5 +23,5 @@ try{
   pass(`Inventory repair action spends materials and restores tool condition ${JSON.stringify(repaired)}`,repaired.stack?.condition===65&&repaired.stone===repairSetup.stone-12&&repaired.wood===repairSetup.wood-6&&repaired.saved);
   await page.reload();await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:150000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:150000});await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});
   pass('Repaired tool condition and workbench state survive save/reload',await page.evaluate(()=>window.__TIDELAND.snapshot().inventory[0]?.condition===65));
-  pass('No browser application or WebGL console errors',errors.length===0);await page.screenshot({path:`${outputDir}/bow-impact.png`});fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({checks,errors,actorId:shot.actor.id,impact},null,2));
+  pass('No browser application or WebGL console errors',errors.length===0);if(captureScreenshots)await page.screenshot({path:`${outputDir}/bow-impact.png`});fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({checks,errors,actorId:shot.actor.id,impact},null,2));
 }finally{await browser.close();}

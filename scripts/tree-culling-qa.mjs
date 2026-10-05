@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const out=process.env.TIDELAND_QA_DIR||'test-results/tree-culling';fs.mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`,'--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];
@@ -29,7 +30,7 @@ try{
   const falling=await page.evaluate(()=>window.__TIDELAND.worldArt());
   assert.equal(falling.renderedTreeInstances,falling.renderedTrees,'depleted tree must keep its compact instance index during the fall');
   assert.ok(falling.renderedTreeIds.includes(ready.id),'falling tree must remain visible through culling');
-  await page.screenshot({path:`${out}/falling-tree.png`});console.log('PASS harvested tree remains instanced throughout fall');
+  if(captureScreenshots)await page.screenshot({path:`${out}/falling-tree.png`});console.log('PASS harvested tree remains instanced throughout fall');
 
   await page.waitForFunction(()=>window.__TIDELAND.worldArt().fallingTrees===0,null,{timeout:30000});await page.waitForTimeout(350);
   const settled=await page.evaluate(()=>window.__TIDELAND.worldArt());

@@ -1,6 +1,7 @@
 import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const outputDir=process.env.TIDELAND_QA_DIR||'test-results/hazard';fs.mkdirSync(outputDir,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
@@ -15,5 +16,5 @@ try{
   const alpine=await page.evaluate(()=>{const a=window.__TIDELAND,s=a.sim().state;s.timeOfDay=2;s.progression.weather.kind='storm';s.progression.weather.remaining=300;let target=null;for(let z=-600;z<=600;z+=24)for(let x=-600;x<=600;x+=24){if(a.biome(x,z)!=='SNOW / ALPINE')continue;const y=a.height(x,z);if(y>12&&(!target||y>target.y))target={x,y,z};}if(!target)throw Error('No alpine terrain sample found');a.teleport({x:target.x,y:target.y+.06,z:target.z});a.setCapturePaused(false);return {target,health:s.player.stats.health,condition:{...s.player.equipmentCondition}};});
   await page.waitForFunction(()=>/Severe alpine cold/i.test(document.querySelector('.notifications')?.textContent??''),null,{timeout:10000});await page.waitForFunction(health=>window.__TIDELAND.snapshot().player.stats.health<health,alpine.health,{timeout:15000});
   const cold=await page.evaluate(()=>{const a=window.__TIDELAND,s=a.snapshot();a.setCapturePaused(true);return {health:s.player.stats.health,position:s.player.position,screen:a.getScreen(),condition:s.player.equipmentCondition};});assert.ok(cold.health<alpine.health,'alpine storm exposure must damage player through cold mitigation');assert.ok(cold.condition.body<alpine.condition.body,'alpine exposure must wear the insulated jacket');assert.ok(cold.condition.head<alpine.condition.head,'alpine exposure must also wear cold-protective headgear');assert.equal(errors.length,0,errors.join('\n'));
-  await page.screenshot({path:`${outputDir}/relay-and-alpine-hazards.png`});fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({before,...result,alpine,cold,errors},null,2));console.log('PASS Toxic relay and alpine storm exposure cause damage, display warnings and render without browser errors');
+  if(captureScreenshots)await page.screenshot({path:`${outputDir}/relay-and-alpine-hazards.png`});fs.writeFileSync(`${outputDir}/results.json`,JSON.stringify({before,...result,alpine,cold,errors},null,2));console.log('PASS Toxic relay and alpine storm exposure cause damage, display warnings and render without browser errors');
 }finally{await browser.close();}

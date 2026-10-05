@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const outputDir='test-results/raiding';fs.mkdirSync(outputDir,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN,args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];
@@ -36,5 +37,5 @@ try{
   pass('Raid alarm alerts a nearby ally and directs it to the same blocked door',result.supportAlerted);
   assert.equal(result.saveValid,true,'breached base should remain save-compatible');await page.reload();await page.waitForFunction(()=>window.__TIDELAND,null,{timeout:180000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:180000});await page.locator('[data-action="continue"]').click();await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing',null,{timeout:180000});
   const doorPresentAfterReload=await page.evaluate(id=>window.__TIDELAND.sim().state.structures.some(s=>s.id===id),setup.door);pass('Destroyed door remains absent after save and reload',!doorPresentAfterReload);
-  pass('No browser application or WebGL errors',errors.length===0);await page.screenshot({path:`${outputDir}/door-raid.png`});console.log(JSON.stringify({passed:true,setup,result,doorPresentAfterReload,errors}));
+  pass('No browser application or WebGL errors',errors.length===0);if(captureScreenshots)await page.screenshot({path:`${outputDir}/door-raid.png`});console.log(JSON.stringify({passed:true,setup,result,doorPresentAfterReload,errors}));
 }finally{await browser.close();}
