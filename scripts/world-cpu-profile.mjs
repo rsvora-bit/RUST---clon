@@ -7,6 +7,7 @@ const out=process.env.TIDELAND_QA_DIR||'test-results/world-cpu-profile';
 const seed=Number(process.env.TIDELAND_QA_SEED||731942);
 const preset=process.env.TIDELAND_QA_PRESET||'high';
 const duration=Number(process.env.TIDELAND_QA_PROFILE_MS||6000);
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const bootTimeout=Number(process.env.TIDELAND_QA_BOOT_MS||180000);
 const width=Number(process.env.TIDELAND_QA_WIDTH||1280),height=Number(process.env.TIDELAND_QA_HEIGHT||720);
 // Match the complete UI profiles; a quality label alone leaves HIGH shadows on.
@@ -53,7 +54,7 @@ try {
   await page.waitForFunction(()=>!!window.__TIDELAND.interaction(),null,{timeout:60000});
   report.interaction={nodeId:target.id,info:await page.evaluate(()=>window.__TIDELAND.interaction())};
   assert.equal(report.interaction.info.title,'Tree');
-  await page.screenshot({path:`${out}/interaction-target.png`,timeout:60000});
+  if(captureScreenshots)await page.screenshot({path:`${out}/interaction-target.png`,timeout:60000});
   await page.evaluate(()=>{const a=window.__TIDELAND,p=a.cameraState().world.position;a.lookAt({x:p[0]+100,y:p[1]+100,z:p[2]+100});});
   await page.waitForFunction(()=>window.__TIDELAND.interaction()===null,null,{timeout:60000});
   report.interaction.clearedWhenLookingAway=true;
@@ -108,14 +109,14 @@ try {
     assert.equal(sample.world.revision,6,'Expected the current Rev6 world');
     sample.timings=Object.fromEntries(Object.entries(sample.timings).map(([key,row])=>[key,{...row,meanMs:row.totalMs/row.calls}]));
     sample.hotspots=profile.nodes.filter(n=>n.hitCount).sort((a,b)=>b.hitCount-a.hitCount).slice(0,20).map(n=>({function:n.callFrame.functionName,url:n.callFrame.url,line:n.callFrame.lineNumber+1,hits:n.hitCount}));
-    await page.screenshot({path:`${out}/${label}.png`,timeout:60000});
+    if(captureScreenshots)await page.screenshot({path:`${out}/${label}.png`,timeout:60000});
     console.log(JSON.stringify({label,renderer:report.renderer,stats:sample.stats,timings:sample.timings,hotspots:sample.hotspots},null,2));
   }
   assert.equal(report.errors.length,0,report.errors.join('\n'));
   report.passed=true;
 } catch(error){
   report.passed=false;report.error=error.message;
-  if(page){report.boot=await page.evaluate(()=>({loading:document.querySelector('.loading-screen')?.innerText,screen:window.__TIDELAND?.getScreen?.()})).catch(()=>null);await page.screenshot({path:`${out}/failure.png`,timeout:10000}).catch(()=>{});}
+  if(page){report.boot=await page.evaluate(()=>({loading:document.querySelector('.loading-screen')?.innerText,screen:window.__TIDELAND?.getScreen?.()})).catch(()=>null);if(captureScreenshots)await page.screenshot({path:`${out}/failure.png`,timeout:10000}).catch(()=>{});}
   throw error;
 }
 finally {fs.writeFileSync(`${out}/profile.json`,JSON.stringify(report,null,2));await browser.close();}
