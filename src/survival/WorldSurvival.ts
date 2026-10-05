@@ -261,7 +261,25 @@ export class WorldSurvival {
       }
       this.mergeStaticLandmarkMeshes(g);
     }else if(p.kind===3){const tent=new T.Mesh(new T.ConeGeometry(1.8,2.3,4,1,true),this.cloth);tent.position.y=1.15;tent.rotation.y=Math.PI/4;g.add(tent);this.box(g,-2,.18,0,.3,.3,2,this.wood);
-    }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);this.mergeStaticLandmarkMeshes(g);}
+    }else{for(const x of [-2,2])for(const z of [-1.6,1.6])this.box(g,x,1.4,z,.18,2.8,.18,this.wood);for(let i=0;i<12;i++)this.box(g,-2+i*.35,1.2,-1.6,.32,2.4,.12,this.wood);this.box(g,0,2.8,0,4.5,.13,3.8,this.metal).rotation.z=.08;if(p.kind===2)for(let i=0;i<3;i++)this.box(g,3,.35,i*.7,1,.7,.5,this.metal);
+      if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+        if(p.kind===0){
+          this.box(g,1.05,.78,-.55,1.18,.12,.72,this.metal).name='Utility shack pump bench';
+          for(const x of [.60,1.50])for(const z of [-.84,-.26])this.box(g,x,.39,z,.09,.78,.09,this.rust).name='Utility shack bench leg';
+          const pump=new T.Mesh(new T.CylinderGeometry(.23,.29,.48,10),this.paint);pump.name='Utility shack water pump';pump.position.set(.94,1.08,-.55);pump.castShadow=true;g.add(pump);
+          this.box(g,.94,1.37,-.55,.65,.055,.07,this.rust).name='Utility shack pump handle';
+          this.box(g,1.39,.46,.18,.07,.07,1.08,this.rust).name='Utility shack intake pipe';
+          const gauge=new T.Mesh(new T.CylinderGeometry(.16,.16,.035,12),this.chartPaper);gauge.name='Utility shack pressure gauge';gauge.position.set(1.45,1.14,-.55);gauge.rotation.z=Math.PI/2;g.add(gauge);
+        }else if(p.kind===2){
+          this.box(g,.55,.88,-.43,1.55,.10,.85,this.wood).name='Quarry sample table';
+          for(const x of [-.12,1.22])for(const z of [-.75,-.1])this.box(g,x,.44,z,.08,.88,.08,this.metal).name='Quarry table leg';
+          for(let i=0;i<4;i++){const core=new T.Mesh(new T.CylinderGeometry(.085,.085,.48,7),i%2?this.rust:this.metal);core.name='Quarry core sample';core.position.set(.12+i*.29,1.17,-.45);core.rotation.z=Math.PI/2;core.castShadow=true;g.add(core);}
+          this.box(g,.52,1.00,.15,.52,.018,.38,this.chartPaper).name='Quarry sample field chart';
+          this.box(g,-1.35,.55,.62,.86,1.05,.14,this.rust).name='Quarry tool rack';
+          for(const x of [-1.65,-1.34,-1.03])this.box(g,x,.68,.75,.035,.72,.035,this.metal).name='Quarry hanging tool';
+        }
+      }
+      this.mergeStaticLandmarkMeshes(g);}
   }
   private mergeStaticLandmarkMeshes(group:T.Group){
     type Batch={material:T.Material;castShadow:boolean;receiveShadow:boolean;geometries:T.BufferGeometry[];markers:{name:string;position:T.Vector3}[]};

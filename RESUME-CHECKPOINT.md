@@ -1,3 +1,10 @@
+# AKTUÁLNÍ CHECKPOINT — 2026-10-05 — odlišení přístřešků POI
+
+- `Coastal utility shack` v Rev6 má vodní pumpu, pracovní stůl, sací potrubí a tlakoměr; `Quarry outpost` má vzorkovací stůl, jádrové vzorky, polní záznam a nástrojovou stěnu. Detaily se sloučí do existujících materiálových batchů; půdorys, kolize, POI rozložení, loot a save data se nemění. Legacy revize zachovávají původní modely.
+- Cílený world-layout test **1/1 PASS**; `npm run build` **PASS** (stávající upozornění na JS chunk 3 322.85 kB); `git diff --check` **PASS**. Chromium/SwiftShader Rev6 pořídilo a umožnilo prohlédnout snímky `test-results/rev6-world-review/utility-quarry-0.png` a `utility-quarry-2.png`: obě lokality čitelné, otevřený čelní vstup, **0 browser errors**.
+- Celý `tests/world-art.test.ts` označil **136/136 jednotlivých testů PASS**, ale proces skončil kódem **1** kvůli internímu Vitest `onTaskUpdate` worker timeoutu. Stejné se stalo bez Chromium i s `--pool=forks`; soubor proto není zelený jako celek a runner problém zůstává otevřeným QA bodem. Naposledy kompletní `npm test` před touto art změnou prošel **478/478**.
+- Konzervativní odhad: **90 % celkem / 10 % zbývá**; Goal 1 **95 %**, Goal 2 **83 %**, Goal 3 **93 %**, Goal 4 **90 %**, Goal 5 **90 %**, Goal 6 **86 %**, Goal 7 **92 %**. Další je uzavření Vitest runner problému a pokračování Rev6 QA. Archivní Pages save fixtures a HIGH/Metal profil stále nejsou v tomto prostředí dostupné; cíl není RC.
+
 # AKTUÁLNÍ CHECKPOINT — 2026-10-05 — viditelná výstroj postavy
 
 - Inventářová SVG ilustrace v `src/ui/UI.ts` nyní při skutečném vybavení vykreslí `protectiveHood`, `pants` a `boots` vedle již existujících variant trupu. Stav vychází z aktuálního `PlayerEquipment`; herní statistiky, equip logika a save formát se nemění.
