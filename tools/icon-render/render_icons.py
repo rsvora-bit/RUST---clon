@@ -77,6 +77,15 @@ def rod(name, a, b, radius, mat, vertices=12):
     o=bpy.context.object;o.name=name;o.rotation_euler=delta.to_track_quat("Z","Y").to_euler();assign(o,mat)
     return bevel(o, radius*.18, 2)
 
+def poly_prism(name, outline, depth, mat, bevel_width=0.025):
+    count=len(outline)
+    verts=[(x,-depth/2,z) for x,z in outline]+[(x,depth/2,z) for x,z in outline]
+    faces=[tuple(range(count)),tuple(range(count,2*count))]
+    faces.extend((i,(i+1)%count,(i+1)%count+count,i+count) for i in range(count))
+    mesh=bpy.data.meshes.new(name+" mesh");mesh.from_pydata(verts,[],faces);mesh.materials.append(mat);mesh.update()
+    obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj)
+    return bevel(obj,bevel_width,2)
+
 def torus(name, loc, major, minor, mat, rotation=None):
     bpy.ops.mesh.primitive_torus_add(major_radius=major,minor_radius=minor,major_segments=20,minor_segments=8,location=loc)
     o=bpy.context.object;o.name=name
@@ -100,7 +109,8 @@ def build(item):
     if item in ("hatchet","pickaxe","hammer","quarryMaul","spear","torch","arrow","docksideCleaver"):
         rod("haft",(-.26,-.02,-.62),(.28,.02,.58),.075,wood)
         if item=="hatchet":
-            cube("forged hatchet head",(.34,0,.48),(.48,.15,.27),steel,.08);cube("edge",(.51,0,.48),(.12,.18,.3),iron,.03)
+            poly_prism("forged hatchet head",[(.22,.54),(.29,.7),(.57,.65),(.73,.5),(.61,.35),(.29,.32)],.19,steel,.035)
+            poly_prism("sharpened cutting edge",[(.57,.65),(.73,.5),(.61,.35)],.2,iron,.018)
         elif item in ("pickaxe","quarryMaul"):
             cube("mining head",(.33,0,.53),(.53,.18,.2),steel,.08);cube("striking face",(.61,0,.53),(.12,.22,.25),iron,.035)
             if item=="pickaxe":
@@ -248,8 +258,16 @@ def setup():
 
 def render(item):
     clear_scene();scene=bpy.context.scene;setup();build(item)
-    # Keep the model visually grounded in its tile. A transparent background means the game owns the slot surface.
-    scene.camera.location.z += .12
+    # Fit each silhouette consistently to the same visual occupancy while keeping the render background transparent.
+    bpy.context.view_layer.update()
+    meshes=[obj for obj in scene.objects if obj.type=='MESH']
+    corners=[obj.matrix_world @ Vector(corner) for obj in meshes for corner in obj.bound_box]
+    camera=scene.camera;inverse=camera.matrix_world.inverted();projected=[inverse @ point for point in corners]
+    min_x,max_x=min(p.x for p in projected),max(p.x for p in projected)
+    min_y,max_y=min(p.y for p in projected),max(p.y for p in projected)
+    center=(min_x+max_x)/2,(min_y+max_y)/2
+    camera.location += camera.matrix_world.to_3x3() @ Vector((center[0],center[1],0))
+    camera.data.ortho_scale=max((max_x-min_x)/.79,(max_y-min_y)/.79,1.2)
     scene.render.filepath=os.path.join(OUTPUT,item+".webp")
     bpy.ops.render.render(write_still=True)
 
