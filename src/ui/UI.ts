@@ -4,6 +4,7 @@ import {INVENTORY} from '../config/gameplay';
 import { DEFAULT_SETTINGS } from '../config/balance';
 import {CHANGELOG,GAME_BUILD,GAME_RELEASE_DATE,GAME_VERSION} from '../config/version';
 import { ITEMS } from '../items/definitions';
+import {itemDescription,itemName} from '../items/localization';
 import {FIREARMS,isFirearm,loadedRounds} from '../combat/firearms';
 import { RECIPES } from '../crafting/recipes';
 import {ensureTech,TECH_NODES} from '../crafting/techTree';
@@ -12,9 +13,10 @@ import {canEquip,EQUIPMENT} from '../combat/equipment';
 import {itemCondition,maxDurability} from '../combat/durability';
 import {keyLabel,t,type TranslationKey} from './i18n';
 import './style.css';
+import './design-system.css';
 
 const esc = (value: unknown): string => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
-const icon = (id: ItemId, cls = ''): string => `<img class="item-art ${cls}" src="${ITEMS[id].icon}" alt="${esc(ITEMS[id].displayName)}" draggable="false">`;
+const icon = (id: ItemId, cls = '', language:Settings['language']='en'): string => `<img class="item-art ${cls}" src="${ITEMS[id].icon}" alt="${esc(itemName(id,language))}" draggable="false">`;
 const mark = '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 9h16v9H4zM28 9h16v9H28zM4 30h16v9H4zM28 30h16v9H28z"/><path d="m24 3 5 21-5 21-5-21z"/><path d="m3 24 21-5 21 5-21 5z"/></svg>';
 const chevron = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 4 6 6-6 6"/></svg>';
 const labels: Record<PieceType, string> = { foundation:'Foundation',wall:'Wall',doorway:'Doorway',floor:'Floor',roof:'Roof',door:'Door' };
@@ -204,7 +206,7 @@ export class UI {
     }
     item.className = `notification${pickup?' pickup':''}`;
     item.innerHTML = pickup && match
-      ? `${icon(pickup,'notification-art')}<span class="notification-copy"><b>+${esc(match[1])}</b><small>${esc(ITEMS[pickup].displayName)}</small></span>`
+      ? `${icon(pickup,'notification-art',this.settings.language)}<span class="notification-copy"><b>+${esc(match[1])}</b><small>${esc(itemName(pickup,this.settings.language))}</small></span>`
       : `<span class="notification-mark"></span><span class="notification-message">${esc(message)}</span>`;
     const notifications = this.find('.notifications');
     notifications.append(item);
@@ -309,7 +311,7 @@ export class UI {
     const queue=this.find<HTMLElement>('.hud-craft-queue');
     queue.hidden=state.craftQueue.length===0;
     if(!state.craftQueue.length){queue.innerHTML='';return;}
-    queue.innerHTML=`<div class="hud-craft-title"><span>${this.tx('crafting')}</span><b>${state.craftQueue.length}</b></div><div class="hud-craft-items">${state.craftQueue.slice(0,4).map(job=>{const recipe=RECIPES[job.recipeId];if(!recipe)return '';const progress=Math.max(0,Math.min(100,(1-job.remaining/job.total)*100));return `<div class="hud-craft-item" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span><b>${esc(ITEMS[recipe.resultItemId].displayName)}</b><small>${job.remaining<=0?this.tx('ready'):`${Math.ceil(job.remaining)}s`}</small></span><i style="width:${progress}%"></i></div>`;}).join('')}</div>`;
+    queue.innerHTML=`<div class="hud-craft-title"><span>${this.tx('crafting')}</span><b>${state.craftQueue.length}</b></div><div class="hud-craft-items">${state.craftQueue.slice(0,4).map(job=>{const recipe=RECIPES[job.recipeId];if(!recipe)return '';const progress=Math.max(0,Math.min(100,(1-job.remaining/job.total)*100)),name=itemName(recipe.resultItemId,this.settings.language);return `<div class="hud-craft-item" title="${esc(name)}">${icon(recipe.resultItemId,'',this.settings.language)}<span><b>${esc(name)}</b><small>${job.remaining<=0?this.tx('ready'):`${Math.ceil(job.remaining)}s`}</small></span><i style="width:${progress}%"></i></div>`;}).join('')}</div>`;
   }
 
   private updateEnvironmentStatus(state:GameState,hud:HUDData):void {
@@ -328,7 +330,7 @@ export class UI {
     this.hotbarHash = hash;
     this.find('.hotbar').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(hud.inventory[index] ?? null,index,index === hud.activeSlot,true)).join('');
     const active = hud.inventory[hud.activeSlot];
-    const name=active?ITEMS[active.itemId].displayName:this.tx('emptyHands');
+    const name=active?itemName(active.itemId,this.settings.language):this.tx('emptyHands');
     if(active&&isFirearm(active.itemId)){const weapon=FIREARMS[active.itemId],reserve=hud.inventory.reduce((n,s)=>n+(s?.itemId===weapon.ammoItemId?s.count:0),0);this.find('.active-item-name').textContent=`${name} · ${loadedRounds(active,weapon)}/${weapon.magazineSize} · ${reserve} ${weapon.ammoItemId==='shotgunShells'?'SHELLS':'RESERVE'} · R RELOAD`;}
     else this.find('.active-item-name').textContent=name;
   }
@@ -336,7 +338,7 @@ export class UI {
   private slotHTML(stack: ItemStack | null, index: number, selected: boolean, hotbar = false): string {
     const item = stack && ITEMS[stack.itemId];
     const max=stack?maxDurability(stack.itemId):0,condition=stack&&max?itemCondition(stack):0,durable=max>0;
-    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${durable?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${item.displayName} · ${stack!.count}${durable?` · ${condition}/${max} condition`:''}`):'Empty slot'}" aria-label="${item?esc(item.displayName):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${durable?`<i class="slot-condition" style="--condition:${condition/max*100}%" title="Condition ${condition} / ${max}"></i>`:''}`:''}</button>`;
+    return `<button class="item-slot ${selected?'selected':''} ${stack?'occupied':''} ${durable?'tool-slot':''}" data-slot="${index}" ${hotbar?'data-hotbar="true"':''} draggable="${Boolean(stack)}" title="${item?esc(`${itemName(stack!.itemId,this.settings.language)} · ${stack!.count}${durable?` · ${condition}/${max} condition`:''}`):'Empty slot'}" aria-label="${item?esc(itemName(stack!.itemId,this.settings.language)):'Empty slot'}${index < 6?` · quick slot ${index+1}`:''}">${index<6?`<span class="slot-key">${index+1}</span>`:''}${stack?`${icon(stack.itemId,'',this.settings.language)}<span class="stack-count">${stack.count > 1 ? `×${stack.count}` : ''}</span>${durable?`<i class="slot-condition" style="--condition:${condition/max*100}%" title="Condition ${condition} / ${max}"></i>`:''}`:''}</button>`;
   }
 
   private renderInventory(state: GameState): void {
@@ -345,15 +347,14 @@ export class UI {
     this.find('.inventory-belt').innerHTML = Array.from({length:6},(_,index) => this.slotHTML(state.inventory[index] ?? null,index,this.selectedSlot === index)).join('');
     this.find('.slot-usage').textContent = `${state.inventory.filter(Boolean).length} / 30 SLOTS`;
     this.find('.survivor-vitals').innerHTML = `<div><span>HEALTH</span><b>${Math.ceil(state.player.stats.health)}</b><i style="--value:${state.player.stats.health}%;--color:var(--health)"></i></div><div><span>HYDRATION</span><b>${Math.ceil(state.player.stats.thirst)}</b><i style="--value:${state.player.stats.thirst}%;--color:var(--water)"></i></div><div><span>NOURISHMENT</span><b>${Math.ceil(state.player.stats.hunger)}</b><i style="--value:${state.player.stats.hunger}%;--color:var(--food)"></i></div>`;
-    const gearName:Partial<Record<ItemId,string>>={shirt:'Shirt',pants:'Pants',boots:'Boots',warmJacket:'Jacket',protectiveHood:'Hood',salvageVest:'Vest',yardPlate:'Plate'};
-    const worn=Object.entries(state.player.equipment??{}).map(([slot,id])=>{const max=maxDurability(id),condition=Math.max(0,Math.min(max,state.player.equipmentCondition?.[slot as EquipmentSlot]??max));return `${slot[0]!.toUpperCase()}:${gearName[id]??ITEMS[id].displayName}${max?` ${Math.floor(condition)}/${max}`:''}`;}).join(' · ');
+    const worn=Object.entries(state.player.equipment??{}).map(([slot,id])=>{const max=maxDurability(id),condition=Math.max(0,Math.min(max,state.player.equipmentCondition?.[slot as EquipmentSlot]??max));return `${slot[0]!.toUpperCase()}:${itemName(id,this.settings.language)}${max?` ${Math.floor(condition)}/${max}`:''}`;}).join(' · ');
     this.find('.inventory-world-info').textContent = `SEED ${state.seed} · ${this.hud?.biome.toUpperCase() ?? 'WESTERN SHORE'}${worn?` · ${worn}`:''}`;
     const selected = state.inventory[this.selectedSlot];
     const detail = this.find('.item-detail');
     if(selected) {
       const definition = ITEMS[selected.itemId];
       const max=maxDurability(selected.itemId),condition=max?itemCondition(selected):0,canRepair=max>0&&condition<max;
-      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(definition.displayName)}</h3><p>${esc(definition.description)}${max?` <b>CONDITION ${condition} / ${max}</b>`:''}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${canEquip(selected.itemId)?`<button data-action="wear">WEAR · ${EQUIPMENT[selected.itemId]!.slot.toUpperCase()}</button>`:this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${canRepair?'<button data-action="repairTool">REPAIR AT WORKBENCH</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
+      detail.innerHTML = `<div class="detail-art">${icon(selected.itemId,'',this.settings.language)}</div><div class="detail-copy"><span class="eyebrow">${definition.category.toUpperCase()} <i>·</i> ${selected.count} CARRIED</span><h3>${esc(itemName(selected.itemId,this.settings.language))}</h3><p>${esc(itemDescription(selected.itemId,this.settings.language,definition.description))}${max?` <b>CONDITION ${condition} / ${max}</b>`:''}</p><div class="item-actions">${definition.consumable?'<button class="primary-button small" data-action="consume">USE ITEM</button>':''}${canEquip(selected.itemId)?`<button data-action="wear">WEAR · ${EQUIPMENT[selected.itemId]!.slot.toUpperCase()}</button>`:this.selectedSlot<6?'<button data-action="equip">EQUIP</button>':''}${canRepair?'<button data-action="repairTool">REPAIR AT WORKBENCH</button>':''}${selected.count>1?'<button data-action="split">SPLIT STACK</button>':''}<button data-action="drop">DROP ITEM</button></div></div>`;
     } else detail.innerHTML = '<div class="empty-detail"><span>+</span><h3>ROOM FOR POSSIBILITY</h3><p>Select an item to inspect, use or drop it.</p></div>';
     this.renderRecipes(state);
   }
@@ -369,7 +370,8 @@ export class UI {
     this.find('.recipe-grid').innerHTML = filtered.map(recipe => {
       const possible = Object.entries(recipe.ingredients).every(([id,count]) => this.owned(id as ItemId,state) >= count!);
       const locked=Boolean(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech));
-      return `<button class="recipe-item ${recipe.id === this.selectedRecipe?'selected':''} ${possible&&!locked?'available':''} ${locked?'locked':''}" data-recipe="${esc(recipe.id)}" title="${esc(ITEMS[recipe.resultItemId].displayName)}">${icon(recipe.resultItemId)}<span>${esc(ITEMS[recipe.resultItemId].displayName)}</span>${locked?'<b>LOCKED</b>':possible?'<i></i>':''}</button>`;
+      const resultName=itemName(recipe.resultItemId,this.settings.language);
+      return `<button class="recipe-item ${recipe.id === this.selectedRecipe?'selected':''} ${possible&&!locked?'available':''} ${locked?'locked':''}" data-recipe="${esc(recipe.id)}" title="${esc(resultName)}">${icon(recipe.resultItemId,'',this.settings.language)}<span>${esc(resultName)}</span>${locked?'<b>LOCKED</b>':possible?'<i></i>':''}</button>`;
     }).join('');
     const recipe = RECIPES[this.selectedRecipe];
     if(!recipe) {this.find('.recipe-detail').innerHTML = '<p class="no-recipes">No recipes in this category.</p>';return;}
@@ -377,8 +379,8 @@ export class UI {
     const result = ITEMS[recipe.resultItemId];
     const craftable=this.actions.canCraft(recipe.id),locked=Boolean(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech)),techName=recipe.requiredTech?TECH_NODES[recipe.requiredTech].displayName:'';
     const blockedLabel=locked?`RESEARCH: ${techName}`:(recipe.requiredWorkbenchLevel??0)>nearbyWorkbench(state.progression?.stations??[],state.player.position)?`REQUIRES WORKBENCH LEVEL ${recipe.requiredWorkbenchLevel}`:!possible?'MISSING RESOURCES':state.craftQueue.length>=INVENTORY.MAX_CRAFT_QUEUE?'QUEUE FULL':'MAKE ROOM IN INVENTORY';
-    this.find('.recipe-detail').innerHTML = `<div class="recipe-result"><div>${icon(recipe.resultItemId)}</div><span><small>${esc(recipe.category.toUpperCase())} <i>·</i> ${recipe.craftTime} SEC${locked?' · LOCKED':''}</small><h3>${esc(result.displayName)}</h3><p>${esc(result.description)}</p>${locked?`<em class="recipe-tech-lock">Research ${esc(techName)} at a Workbench.</em>`:''}</span></div><div class="ingredients-heading"><span>REQUIRES</span><span>HAVE / NEED</span></div><div class="ingredients">${Object.entries(recipe.ingredients).map(([id,count]) => {const owned=this.owned(id as ItemId,state);return `<div class="ingredient ${owned<count!?'missing':''}">${icon(id as ItemId)}<span>${esc(ITEMS[id as ItemId].displayName)}</span><b>${owned}<i> / ${count}</i></b></div>`;}).join('')}</div><button class="primary-button craft-button" data-action="craft" ${craftable?'':'disabled'}>${craftable?`CRAFT ${recipe.resultCount>1?`×${recipe.resultCount}`:''}`:blockedLabel} ${craftable?chevron:'<span>⊖</span>'}</button>`;
-    this.find('.craft-queue').innerHTML = `<div class="section-heading"><h3>CRAFTING QUEUE</h3><span>${state.craftQueue.length?state.craftQueue[0]?.remaining===0?'MAKE ROOM':`${state.craftQueue.length} IN PROGRESS`:'READY'}</span></div>${state.craftQueue.length?`<div class="queue-items">${state.craftQueue.map(job=>{const queuedRecipe=RECIPES[job.recipeId];return queuedRecipe?`<div class="queue-item" title="${esc(ITEMS[queuedRecipe.resultItemId].displayName)}">${icon(queuedRecipe.resultItemId)}<span>${job.remaining===0?'READY':`${Math.ceil(job.remaining)}s`}</span><i style="width:${Math.min(100,(1-job.remaining/job.total)*100)}%"></i></div>`:'';}).join('')}</div>`:'<p>Your next idea starts here.</p>'}`;
+    this.find('.recipe-detail').innerHTML = `<div class="recipe-result"><div>${icon(recipe.resultItemId,'',this.settings.language)}</div><span><small>${esc(recipe.category.toUpperCase())} <i>·</i> ${recipe.craftTime} SEC${locked?' · LOCKED':''}</small><h3>${esc(itemName(recipe.resultItemId,this.settings.language))}</h3><p>${esc(itemDescription(recipe.resultItemId,this.settings.language,result.description))}</p>${locked?`<em class="recipe-tech-lock">Research ${esc(techName)} at a Workbench.</em>`:''}</span></div><div class="ingredients-heading"><span>REQUIRES</span><span>HAVE / NEED</span></div><div class="ingredients">${Object.entries(recipe.ingredients).map(([id,count]) => {const itemId=id as ItemId,owned=this.owned(itemId,state);return `<div class="ingredient ${owned<count!?'missing':''}">${icon(itemId,'',this.settings.language)}<span>${esc(itemName(itemId,this.settings.language))}</span><b>${owned}<i> / ${count}</i></b></div>`;}).join('')}</div><button class="primary-button craft-button" data-action="craft" ${craftable?'':'disabled'}>${craftable?`CRAFT ${recipe.resultCount>1?`×${recipe.resultCount}`:''}`:blockedLabel} ${craftable?chevron:'<span>⊖</span>'}</button>`;
+    this.find('.craft-queue').innerHTML = `<div class="section-heading"><h3>CRAFTING QUEUE</h3><span>${state.craftQueue.length?state.craftQueue[0]?.remaining===0?'MAKE ROOM':`${state.craftQueue.length} IN PROGRESS`:'READY'}</span></div>${state.craftQueue.length?`<div class="queue-items">${state.craftQueue.map(job=>{const queuedRecipe=RECIPES[job.recipeId];return queuedRecipe?`<div class="queue-item" title="${esc(itemName(queuedRecipe.resultItemId,this.settings.language))}">${icon(queuedRecipe.resultItemId,'',this.settings.language)}<span>${job.remaining===0?'READY':`${Math.ceil(job.remaining)}s`}</span><i style="width:${Math.min(100,(1-job.remaining/job.total)*100)}%"></i></div>`:'';}).join('')}</div>`:'<p>Your next idea starts here.</p>'}`;
   }
 
   private renderBuild(hud: HUDData): void {

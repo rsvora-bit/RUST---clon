@@ -1,0 +1,138 @@
+:root {
+  --tide-ink: #091310;
+  --tide-surface: #101c19;
+  --tide-surface-raised: #172521;
+  --tide-surface-solid: #1b2924;
+  --tide-glass: rgb(13 24 21 / 92%);
+  --tide-line: rgb(202 219 202 / 14%);
+  --tide-line-strong: rgb(202 219 202 / 27%);
+  --tide-text: #e8e7d8;
+  --tide-text-soft: #b7c1b2;
+  --tide-text-muted: #829286;
+  --tide-sea: #83b9b2;
+  --tide-copper: #d18b61;
+  --tide-copper-soft: #a86d4d;
+  --tide-danger: #df796c;
+  --tide-success: #9ab992;
+  --tide-warning: #d5b577;
+  --tide-radius-sm: 2px;
+  --tide-radius-md: 4px;
+  --tide-shadow-panel: 0 22px 70px rgb(0 0 0 / 36%);
+  --tide-shadow-inset: inset 0 1px rgb(255 255 255 / 3%);
+  --tide-motion-fast: 130ms;
+  --tide-motion: 190ms;
+  --tide-layer-hud: 4;
+  --tide-layer-overlay: 10;
+  --tide-layer-modal: 30;
+}
+
+.tide-ui { color: var(--tide-text); color-scheme: dark; }
+.tide-ui :is(button, input, select) { font: inherit; }
+.tide-ui button { transition: color var(--tide-motion-fast) ease, background-color var(--tide-motion-fast) ease, border-color var(--tide-motion-fast) ease, transform var(--tide-motion-fast) ease, box-shadow var(--tide-motion-fast) ease; }
+.tide-ui button:focus-visible, .tide-ui :is(input,select):focus-visible { outline: 2px solid var(--tide-sea); outline-offset: 3px; }
+.tide-ui button:disabled { cursor: not-allowed; filter: saturate(.45); }
+.tide-ui :is(.inventory-screen,.settings-screen,.history-panel,.help-panel,.save-browser,.station-panel,.tech-tree-panel) { color: var(--tide-text); }
+.tide-ui :is(.overlay-header,.section-heading,.settings-page-title,.settings-subheading,.quickbelt-heading,.ingredients-heading) { border-color: var(--tide-line); }
+.tide-ui :is(.inventory-screen,.settings-screen) :is(.section-heading h2,.settings-page-title h3,.quickbelt-heading h3) { color: var(--tide-text); letter-spacing: .075em; }
+.tide-ui :is(.survivor-panel,.inventory-main,.crafting-panel,.settings-sidebar,.settings-page,.pause-v4-panel,.history-panel,.help-panel,.loading-shell) { box-shadow: var(--tide-shadow-panel),var(--tide-shadow-inset); }
+.tide-ui :is(.item-slot,.recipe-item,.queue-item,.ingredient,.keybind-row,.setting-row,.save-slot,.history-entry) { border-color: var(--tide-line); }
+.tide-ui :is(.item-slot,.recipe-item,.queue-item) { background-color: rgb(19 31 27 / 74%); }
+.tide-ui :is(.item-slot:hover,.recipe-item:hover,.recipe-item.selected,.item-slot.selected) { border-color: rgb(131 185 178 / 68%); box-shadow: inset 0 0 0 1px rgb(131 185 178 / 12%),0 0 18px rgb(69 135 126 / 12%); }
+.tide-ui :is(.primary-button,.craft-button) { background: linear-gradient(110deg,#986046,#b87955); color: #fff0df; border: 1px solid rgb(229 173 130 / 38%); }
+.tide-ui :is(.primary-button,.craft-button):hover:not(:disabled) { background: linear-gradient(110deg,#ae7253,#cf9068); box-shadow: 0 5px 20px rgb(173 105 69 / 24%); transform: translateY(-1px); }
+.tide-ui :is(.danger-button,[data-action="drop"],[data-action="resetConfirm"]) { color: var(--tide-danger); }
+.tide-ui :is(.eyebrow,.settings-page-title>span,.nav-index,.menu-meta,.slot-usage,.inventory-world-info) { color: var(--tide-text-muted); }
+.tide-ui :is(.menu-masthead,.menu-footer,.overlay-header,.inventory-footer,.pause-v4-footer) { border-color: var(--tide-line); }
+.tide-ui .menu-screen { background-color: var(--tide-ink); }
+.tide-ui .menu-screen:before { opacity: .42; }
+.tide-ui .menu-content h1 { text-shadow: 0 8px 40px rgb(0 0 0 / 34%); }
+.tide-ui .menu-link { border-bottom-color: var(--tide-line); }
+.tide-ui .menu-link:hover { background: linear-gradient(90deg,rgb(131 185 178 / 9%),transparent); border-bottom-color: var(--tide-sea); }
+.tide-ui .menu-link:hover strong { color: var(--tide-text); }
+.tide-ui .seed-control input { color: var(--tide-text); border-color: var(--tide-line-strong); background: rgb(5 13 11 / 56%); }
+.tide-ui .pause-v4-panel { background: linear-gradient(145deg,rgb(20 32 28 / 97%),rgb(10 18 16 / 96%)); border-color: var(--tide-line-strong); }
+.tide-ui .pause-nav>button { border-color: var(--tide-line); background: rgb(255 255 255 / 2%); }
+.tide-ui .pause-nav>button:hover { border-color: var(--tide-sea); background: rgb(131 185 178 / 8%); }
+.tide-ui .settings-v3-shell { border: 1px solid var(--tide-line); background: var(--tide-glass); box-shadow: var(--tide-shadow-panel); }
+.tide-ui .settings-sidebar nav button.active,.tide-ui .settings-sidebar nav button:hover { color: var(--tide-text); background: rgb(131 185 178 / 9%); }
+.tide-ui .setting-row :is(label,span),.tide-ui .keybind-row>span { color: var(--tide-text-soft); }
+.tide-ui input[type="range"] { accent-color: var(--tide-sea); }
+.tide-ui :is(.craft-tabs button,.language-options button,.quality-options button,.shadow-quality-options button) { color: var(--tide-text-muted); }
+.tide-ui :is(.craft-tabs button.active,.language-options button.active,.quality-options button.active,.shadow-quality-options button.active) { color: var(--tide-sea); border-color: var(--tide-sea); }
+.tide-ui :is(.recipe-item.available>i,.local-save-status i,.pause-v4-status i) { background-color: var(--tide-success); }
+.tide-ui :is(.recipe-item.locked,.ingredient.missing) { color: var(--tide-text-muted); }
+.tide-ui .hotbar .item-slot.selected { border-color: var(--tide-copper); box-shadow: 0 0 0 1px rgb(209 139 97 / 36%),0 0 22px rgb(209 139 97 / 22%); }
+.tide-ui .vital :is(i,.vital-symbol) { filter: drop-shadow(0 1px 4px rgb(0 0 0 / 45%)); }
+.tide-ui :is(.history-panel,.help-panel) { background: var(--tide-glass); border-color: var(--tide-line-strong); }
+.tide-ui :is(.station-panel,.container-panel,.tech-tree-panel) { background-color: var(--tide-glass); border-color: var(--tide-line-strong); }
+.tide-ui .loading-shell { background: linear-gradient(145deg,rgb(18 32 27 / 96%),rgb(7 16 14 / 96%)); border-color: var(--tide-line-strong); }
+.tide-ui .loading-bar { background-color: rgb(131 185 178 / 15%); }
+.tide-ui .loading-bar-fill { background: linear-gradient(90deg,var(--tide-sea),var(--tide-copper)); }
+.tide-ui :is(.item-art,.detail-art img) { object-fit: contain; image-rendering: auto; }
+.tide-ui :is(.item-slot,.recipe-item,.queue-item) { border-radius: var(--tide-radius-sm); }
+.tide-ui .inventory-screen { background: radial-gradient(ellipse at 45% 5%,rgb(83 129 117 / 18%),transparent 42%),linear-gradient(132deg,rgb(10 19 17 / 97%),rgb(17 29 25 / 96%) 54%,rgb(10 19 17 / 98%)); }
+.tide-ui .inventory-layout { grid-template-columns: minmax(145px,.82fr) minmax(330px,1.55fr) minmax(270px,1.12fr); gap: clamp(18px,2.5vw,38px); }
+.tide-ui :is(.survivor-panel,.inventory-main,.crafting-panel) { min-width: 0; padding: 18px; border: 1px solid var(--tide-line); background: linear-gradient(145deg,rgb(24 38 33 / 52%),rgb(12 23 20 / 58%)); }
+.tide-ui .survivor-panel { display: flex; flex-direction: column; }
+.tide-ui .survivor-figure { flex: 1; min-height: 210px; }
+.tide-ui .inventory-main { display: flex; flex-direction: column; }
+.tide-ui .inventory-grid { gap: clamp(4px,.45vw,8px); }
+.tide-ui .item-slot { border-color: rgb(184 205 188 / 15%); background: linear-gradient(145deg,rgb(185 207 190 / 8%),rgb(7 15 13 / 38%)); box-shadow: inset 0 1px rgb(255 255 255 / 3%); }
+.tide-ui .item-slot.occupied { background: linear-gradient(145deg,rgb(93 131 117 / 15%),rgb(9 18 16 / 52%)); }
+.tide-ui .item-slot.selected { background: linear-gradient(145deg,rgb(190 129 82 / 25%),rgb(55 55 38 / 42%)); }
+.tide-ui .item-slot .item-art { padding: 5%; filter: drop-shadow(0 5px 6px rgb(0 0 0 / 45%)); }
+.tide-ui .item-detail { border-top-color: var(--tide-line-strong); }
+.tide-ui .detail-art { border: 1px solid var(--tide-line); background: radial-gradient(circle,rgb(130 177 160 / 14%),rgb(5 12 10 / 25%)); }
+.tide-ui .detail-copy p { max-width: 58ch; color: var(--tide-text-soft); }
+.tide-ui .item-actions button { border: 1px solid var(--tide-line-strong); background: rgb(255 255 255 / 3%); }
+.tide-ui .item-actions button:hover { border-color: var(--tide-sea); background: rgb(131 185 178 / 8%); }
+.tide-ui .crafting-panel { padding-left: 18px; }
+.tide-ui .recipe-grid { grid-template-columns: repeat(auto-fill,minmax(62px,1fr)); gap: 6px; }
+.tide-ui .recipe-item { min-width: 0; min-height: 72px; padding: 6px 4px 8px; background: linear-gradient(145deg,rgb(141 170 151 / 9%),rgb(9 17 15 / 42%)); }
+.tide-ui .recipe-item .item-art { height: 43px; }
+.tide-ui .recipe-item>span { overflow: hidden; text-overflow: ellipsis; font-size: clamp(8px,.62vw,11px); }
+.tide-ui .recipe-item.locked { opacity: .58; }
+.tide-ui .recipe-result { padding: 10px; border: 1px solid var(--tide-line); background: rgb(5 13 11 / 24%); }
+.tide-ui .ingredients { display: grid; gap: 4px; }
+.tide-ui .ingredient { background: rgb(5 13 11 / 20%); }
+.tide-ui .quickbelt-heading { margin-top: 20px; }
+.tide-ui .inventory-instructions { color: var(--tide-text-muted); }
+.tide-ui .hotbar .item-slot { backdrop-filter: blur(8px); background: linear-gradient(145deg,rgb(25 39 34 / 93%),rgb(8 16 14 / 91%)); border-color: rgb(202 219 202 / 24%); }
+.tide-ui .hotbar .item-slot.selected { background: linear-gradient(145deg,rgb(142 92 61 / 95%),rgb(69 51 38 / 96%)); }
+.tide-ui .slot-key { color: var(--tide-text-soft); }
+.tide-ui .stack-count { color: #fff7e8; text-shadow: 0 1px 3px #000; }
+.tide-ui .settings-screen { background: radial-gradient(ellipse at 65% 0%,rgb(62 104 94 / 17%),transparent 46%),linear-gradient(140deg,#0b1512,#14211d 56%,#0b1512); }
+.tide-ui .settings-v3-shell { grid-template-columns: minmax(220px,270px) minmax(0,1fr); gap: clamp(18px,3vw,42px); }
+.tide-ui .settings-sidebar { background: linear-gradient(155deg,rgb(29 44 38 / 82%),rgb(12 21 18 / 86%)); }
+.tide-ui .settings-pages { min-width: 0; }
+.tide-ui .settings-page { padding: clamp(16px,2vw,28px); border: 1px solid var(--tide-line); background: rgb(12 21 18 / 66%); }
+.tide-ui :is(.save-slot-card,.save-browser-shell) { border-color: var(--tide-line-strong); background: linear-gradient(145deg,rgb(22 36 31 / 95%),rgb(10 18 16 / 96%)); }
+.tide-ui .save-slot-primary { background: rgb(131 185 178 / 12%); border: 1px solid rgb(131 185 178 / 32%); color: var(--tide-text); }
+.tide-ui .history-entry { background: rgb(255 255 255 / 2%); }
+.tide-ui .history-entry[open] { border-left: 2px solid var(--tide-copper); background: rgb(255 255 255 / 4%); }
+.tide-ui ::selection { background: rgb(131 185 178 / 34%); color: white; }
+.tide-ui :is(.modal-screen,.inventory-screen,.settings-screen) { z-index: var(--tide-layer-modal); }
+
+@media (max-width: 700px) {
+  .tide-ui .inventory-layout { background: linear-gradient(180deg,transparent 0%,rgb(8 16 14 / 22%) 100%); }
+  .tide-ui .settings-v3-shell { overflow: auto; }
+  .tide-ui .settings-sidebar nav { position: sticky; top: 0; z-index: 2; background: var(--tide-surface); }
+  .tide-ui :is(.inventory-screen,.settings-screen) { font-size: clamp(12px,3vw,16px); }
+  .tide-ui :is(.inventory-main,.crafting-panel) { padding: 14px; }
+}
+
+@media (min-width: 701px) and (max-width: 1050px) {
+  .tide-ui .inventory-layout { grid-template-columns: minmax(0,1fr) minmax(290px,1.7fr); }
+  .tide-ui .survivor-panel { display: none; }
+  .tide-ui .crafting-panel { grid-column: 1 / -1; }
+  .tide-ui .recipe-grid { grid-template-columns: repeat(8,minmax(0,1fr)); }
+}
+
+@media (max-height: 560px) and (min-width: 701px) {
+  .tide-ui .settings-v3-shell { max-height: 82vh; overflow: auto; }
+  .tide-ui .inventory-layout { max-height: 78vh; overflow: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tide-ui *, .tide-ui *::before, .tide-ui *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
