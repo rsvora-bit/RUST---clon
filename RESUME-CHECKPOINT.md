@@ -1,3 +1,12 @@
+# RESUME CHECKPOINT — 2026-10-05 — station UI stability and power flow
+
+- Branch: `codex/world-revision-6`; previous pushed checkpoint `e1ee18a900d9944eb682e622924e75a434dd0205`.
+- Power QA originally timed out closing a live Generator panel. `StationUI.update()` rebuilt the entire DOM every 0.1 seconds while its visible countdown only changes by whole seconds. Hashing `Math.ceil(job.remaining)` now matches displayed precision and avoids needless DOM replacement. Fuel simulation timing is untouched.
+- Added screenshot suppression to `scripts/power-network-qa.mjs`. `TIDELAND_QA_SCREENSHOTS=0 npm run test:power` then passed real UI fuel transfer/start, timer/payload consumption, switch state, generator+switch powered lamp, power/fuel persistence across save/reload, lamp-off behavior, and zero browser/application/WebGL console errors.
+- After the StationUI code change: targeted Vitest (`station-renderer`, `power-network`, `salvage-recycler`) 55/55 passed; `npm run build` passed with the existing Vite bundle-size advisory; QA script syntax check passed. Full npm suite had previously passed 478/478 before this one-value DOM refresh-cadence change.
+- Changed files: `src/survival/StationUI.ts`, `scripts/power-network-qa.mjs`, this checkpoint. No save format, power rates, gameplay balance, or production content changes.
+- Next: checkpoint and push this unit, then continue remaining focused branch QA/performance work. Main, release tags and production Pages remain untouched.
+
 # RESUME CHECKPOINT — 2026-10-05 — gameplay regression QA extension
 
 - Branch: `codex/world-revision-6`; previous pushed checkpoint `db07cc809b093d68815fe3443c59d40aa6e490f8`.
