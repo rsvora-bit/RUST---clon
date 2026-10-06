@@ -149,6 +149,8 @@ function normalizeSettings(value: unknown): Settings {
   if (!record(value)) return defaultSettings();
   const legacySensitivity=finite(value.sensitivity,0.05,3)?value.sensitivity:1;
   const source=record(value.keybinds)?value.keybinds:{};
+  const graphicsQuality=['low','medium','high','ultra'].includes(String(value.quality))?value.quality as Settings['quality']:DEFAULT_SETTINGS.quality;
+  const presetEffectQuality=graphicsQuality==='low'?'low':graphicsQuality==='medium'?'medium':'high';
   const keybinds={...DEFAULT_KEYBINDS} as Settings['keybinds'];
   for(const action of Object.keys(DEFAULT_KEYBINDS) as (keyof Settings['keybinds'])[]){
     const code=source[action];
@@ -168,13 +170,15 @@ function normalizeSettings(value: unknown): Settings {
     musicVolume: finite(value.musicVolume, 0, 1) ? value.musicVolume : DEFAULT_SETTINGS.musicVolume,
     effectsVolume: finite(value.effectsVolume, 0, 1) ? value.effectsVolume : DEFAULT_SETTINGS.effectsVolume,
     ambientVolume: finite(value.ambientVolume, 0, 1) ? value.ambientVolume : DEFAULT_SETTINGS.ambientVolume,
-    quality: ['low','medium','high','ultra'].includes(String(value.quality)) ? value.quality as Settings['quality'] : DEFAULT_SETTINGS.quality,
+    quality: graphicsQuality,
     renderScale: finite(value.renderScale, 0.5, 1) ? value.renderScale : DEFAULT_SETTINGS.renderScale,
     vsync: typeof value.vsync === 'boolean' ? value.vsync : DEFAULT_SETTINGS.vsync,
     shadows: typeof value.shadows === 'boolean' ? value.shadows : DEFAULT_SETTINGS.shadows,
     shadowQuality: value.shadowQuality === 'low' || value.shadowQuality === 'medium' || value.shadowQuality === 'high' ? value.shadowQuality : DEFAULT_SETTINGS.shadowQuality,
     shadowDistance: finite(value.shadowDistance, 35, 120) ? value.shadowDistance : DEFAULT_SETTINGS.shadowDistance,
     foliageDensity: finite(value.foliageDensity, 0.25, 1) ? value.foliageDensity : DEFAULT_SETTINGS.foliageDensity,
+    waterQuality: value.waterQuality === 'low' || value.waterQuality === 'medium' || value.waterQuality === 'high' ? value.waterQuality : presetEffectQuality,
+    weatherEffectsQuality: value.weatherEffectsQuality === 'low' || value.weatherEffectsQuality === 'medium' || value.weatherEffectsQuality === 'high' ? value.weatherEffectsQuality : presetEffectQuality,
     postProcessing: typeof value.postProcessing === 'boolean' ? value.postProcessing : DEFAULT_SETTINGS.postProcessing,
     ambientOcclusion: typeof value.ambientOcclusion === 'boolean' ? value.ambientOcclusion : DEFAULT_SETTINGS.ambientOcclusion,
     bloom: typeof value.bloom === 'boolean' ? value.bloom : DEFAULT_SETTINGS.bloom,

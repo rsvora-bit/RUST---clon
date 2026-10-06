@@ -28,11 +28,20 @@ try{
   const compassOff=page.locator('[data-toggle="showCompass"][data-value="false"]');
   await compassOff.click();
   pass('Toggle state and settings persistence update immediately',await compassOff.getAttribute('aria-pressed')==='true'&&await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1'))?.showCompass===false));
+  await page.locator('[data-settings-tab="graphics"]').click();
+  await page.locator('[data-preset="low"]').click();
+  const lowPreset=await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('tideland:settings:v1'));return{water:value.waterQuality,weather:value.weatherEffectsQuality};});
+  pass('LOW preset selects genuinely reduced water and weather effects',lowPreset.water==='low'&&lowPreset.weather==='low');
+  await page.locator('[data-effect-quality="waterQuality"][data-value="high"]').click();
+  await page.locator('[data-effect-quality="weatherEffectsQuality"][data-value="medium"]').click();
+  const independent=await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('tideland:settings:v1'));return{water:value.waterQuality,weather:value.weatherEffectsQuality,waterSelected:document.querySelector('[data-effect-quality="waterQuality"][data-value="high"]').classList.contains('active'),weatherSelected:document.querySelector('[data-effect-quality="weatherEffectsQuality"][data-value="medium"]').classList.contains('active'),custom:document.querySelector('[data-preset-state]').textContent.trim(),activePresets:document.querySelectorAll('[data-preset].active').length};});
+  pass('Water and weather effect quality can be customized independently and persist',independent.water==='high'&&independent.weather==='medium'&&independent.waterSelected&&independent.weatherSelected);
+  pass('Preset row reports CUSTOM when individual values differ',independent.custom==='VLASTNÍ'&&independent.activePresets===0);
   await page.locator('[data-action="settingsBack"]').click();await waitForMenu();
   pass('Returning from Settings restores the live menu environment',(await menuRenderState()).drawCalls>0);
 
   await page.setViewportSize({width:1600,height:900});
-  await page.waitForFunction(()=>{const canvas=document.querySelector('#game-canvas');return canvas.width===1600&&canvas.height===900;});
+  await page.waitForFunction(()=>{const canvas=document.querySelector('#game-canvas'),rect=canvas.getBoundingClientRect(),scale=window.devicePixelRatio*window.__TIDELAND.cameraState().settings.renderScale;return Math.abs(rect.width-window.innerWidth)<1&&Math.abs(rect.height-window.innerHeight)<1&&Math.abs(canvas.width-window.innerWidth*scale)<2&&Math.abs(canvas.height-window.innerHeight*scale)<2;});
   pass('Menu world remains rendered after resize',(await menuRenderState()).drawCalls>0);
 
   await page.locator('[data-action="new"]').click();await page.locator('.save-browser:not([hidden])').waitFor({state:'visible'});
@@ -42,7 +51,7 @@ try{
   pass('Returning to Main Menu from gameplay retains a rendered world',(await menuRenderState()).drawCalls>0);
 
   await page.reload();await page.waitForFunction(()=>window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden'});await waitForMenu();
-  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass}));
-  pass('Language and boolean Settings survive reload',persisted.language==='cs'&&persisted.compass===false);
+  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass,water:window.__TIDELAND.cameraState().settings.waterQuality,weather:window.__TIDELAND.cameraState().settings.weatherEffectsQuality}));
+  pass('Language and gameplay/effect Settings survive reload',persisted.language==='cs'&&persisted.compass===false&&persisted.water==='high'&&persisted.weather==='medium');
   assert.deepEqual(errors,[],`Browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
 }finally{await context.close();await browser.close();}

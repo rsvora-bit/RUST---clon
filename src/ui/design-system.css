@@ -223,3 +223,4 @@
 @media (prefers-reduced-motion: reduce) {
   .tide-ui *, .tide-ui *::before, .tide-ui *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+.tide-ui [data-preset-state] { color: var(--tide-sea); font-size: 9px; letter-spacing: .14em; font-weight: 700; }
