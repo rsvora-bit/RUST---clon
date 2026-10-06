@@ -329,15 +329,51 @@ def build(item):
         cube("sight",(.3,0,.23),(.12,.06,.05),copper,.01)
         cube("rear sight",(-.30,0,.23),(.10,.08,.045),steel,.012)
     elif item in ("shirt","pants","boots","warmJacket","protectiveHood","salvageVest","yardPlate"):
-        mat=steel if item=="yardPlate" else cloth
         if item in ("shirt","warmJacket","salvageVest","yardPlate"):
-            cube("garment body",(0,0,0),(.68,.25,.72),mat,.11)
-            for x in (-.43,.43): cube("sleeve",(x,0,.1),(.23,.22,.47),leather if item=="salvageVest" else mat,.08)
-            if item in ("salvageVest","yardPlate"):
-                for x in (-.19,.19): cube("armor plate",(x,-.15,.02),(.27,.06,.38),iron if item=="salvageVest" else steel,.035)
-                for z in (-.2,.23): cube("plate strap",(0,-.19,z),(.55,.035,.035),copper,.01)
-            if item=="warmJacket":
-                for z in (-.22,.22):cube("jacket seam",(0,-.137,z),(.53,.018,.025),copper,.008)
+            field_canvas=material("weathered olive field canvas",(.20,.285,.218,1),0,.88)
+            jacket_canvas=material("waxed storm jacket cloth",(.275,.335,.285,1),0,.82)
+            liner=material("dark garment lining",(.105,.145,.122,1),0,.91)
+            armor=material("scuffed salvage armor",(.32,.385,.37,1),.52,.57)
+            base_mat=field_canvas if item in ("shirt","salvageVest") else jacket_canvas if item=="warmJacket" else liner
+            torso_outline=[(-.31,-.37),(-.29,.18),(-.43,.30),(-.39,.43),(-.20,.49),(-.085,.405),(.085,.405),(.20,.49),(.39,.43),(.43,.30),(.29,.18),(.31,-.37),(.20,-.43),(0,-.37),(-.20,-.43)]
+            torso=poly_prism("tailored garment torso",torso_outline,.22,base_mat,.025);torso.location.y=.015
+            for side in (-1,1):
+                sleeve_outline=[(side*x,z) for x,z in ((.13,.28),(.27,.34),(.39,.26),(.47,.045),(.41,-.24),(.30,-.30),(.20,-.18),(.20,.06))]
+                sleeve=poly_prism("tapered set-in sleeve",sleeve_outline,.19,base_mat,.024);sleeve.location.y=.018;sleeve.rotation_euler[1]=side*-.14
+                cuff_outline=[(side*x,z) for x,z in ((.39,-.23),(.31,-.29),(.20,-.18),(.205,-.105),(.34,-.12))]
+                cuff=poly_prism("reinforced sleeve cuff",cuff_outline,.205,liner if item=="warmJacket" else leather,.012);cuff.location.y=-.005
+            collar=poly_prism("raised shaped collar",[(-.13,.405),(-.10,.49),(0,.445),(.10,.49),(.13,.405),(.06,.335),(0,.36),(-.06,.335)],.255,liner if item=="warmJacket" else field_canvas,.014);collar.location.y=-.005
+            if item=="shirt":
+                poly_prism("open shirt placket",[(-.035,.39),(.035,.39),(.025,-.35),(-.025,-.35)],.018,wl,.006).location.y=-.125
+                for z in (.26,.10,-.06,-.22):ico("shirt placket button",(0,-.145,z),(.014,.009,.014),copper,1)
+                pocket=poly_prism("stitched chest pocket",[(-.115,.18),(.115,.18),(.105,-.015),(-.10,-.015)],.026,field_canvas,.01);pocket.location=(.145,-.134,.02)
+                rod("pocket flap seam",(.04,-.154,.115),(.25,-.154,.115),.006,wl,6)
+            elif item=="warmJacket":
+                poly_prism("storm jacket storm flap",[(-.075,.37),(.075,.37),(.065,-.35),(-.065,-.35)],.035,liner,.01).location.y=-.137
+                curve_tube("jacket front zipper",[(0,-.16,.34),(0,-.16,.16),(.008,-.16,-.08),(0,-.16,-.34)],.009,gold)
+                for z in (.27,.17,.07,-.03,-.13,-.23):ico("storm flap snap",(.047,-.169,z),(.014,.009,.014),copper,1)
+                for side in (-1,1):
+                    pocket=poly_prism("bellows cargo chest pocket",[(-.12,.12),(.12,.12),(.105,-.10),(-.105,-.10)],.035,jacket_canvas,.012);pocket.location=(side*.17,-.14,-.05)
+                    flap=poly_prism("snapped jacket pocket flap",[(-.13,.035),(.13,.035),(.11,-.035),(-.11,-.035)],.018,liner,.006);flap.location=(side*.17,-.164,.035)
+            elif item in ("salvageVest","yardPlate"):
+                for side in (-1,1):
+                    strap_outline=[(side*x,z) for x,z in ((-.055,.39),(.055,.39),(.12,.15),(.055,.10),(-.11,.34))]
+                    strap=poly_prism("crossed load-bearing shoulder webbing",strap_outline,.032,leather,.009);strap.location=(side*.18,-.148,0)
+                for side in (-1,1):
+                    if item=="salvageVest":
+                        plate_outline=[(-.13,.15),(-.09,.23),(.08,.22),(.14,.13),(.11,-.16),(.02,-.24),(-.12,-.16)]
+                        plate=poly_prism("asymmetric salvaged chest plate",plate_outline,.055,armor,.015);plate.location=(side*.16,-.153,-.015);plate.rotation_euler[1]=side*.08
+                        pocket=poly_prism("vest utility pouch",[(-.10,.08),(.10,.08),(.095,-.12),(-.095,-.12)],.065,leather,.012);pocket.location=(side*.17,-.178,-.21)
+                        for z in (-.17,.015):ico("vest plate rivet",(side*.16,-.19,z),(.018,.01,.018),gold,1)
+                    else:
+                        plate_outline=[(-.14,.18),(-.10,.27),(.085,.25),(.15,.15),(.12,-.18),(.04,-.26),(-.12,-.18)]
+                        plate=poly_prism("forged torso armor segment",plate_outline,.065,armor,.018);plate.location=(side*.16,-.15,-.015);plate.rotation_euler[1]=side*.08
+                        for z in (-.21,.18):
+                            rod("armor plate retaining strap",(side*.04,-.192,z),(side*.29,-.192,z-.015),.014,copper,8)
+                        for x,z in ((side*.08,-.18),(side*.24,-.18),(side*.08,.15),(side*.24,.15)):ico("armor plate rivet",(x,-.197,z),(.016,.01,.016),gold,1)
+                if item=="yardPlate":
+                    poly_prism("raised center breastplate ridge",[(-.018,-.20),(0,.20),(.035,.20),(.025,-.20)],.014,steel,.004).location.y=-.194
+                    poly_prism("scratched unit marking",[(-.075,.10),(.075,.10),(.065,.065),(-.065,.065)],.012,red,.003).location.y=-.202
         elif item=="pants":
             cube("waist",(0,0,.25),(.56,.24,.25),cloth,.06)
             for x in (-.15,.15):cube("trouser leg",(x,0,-.16),(.23,.23,.58),leather,.06)
