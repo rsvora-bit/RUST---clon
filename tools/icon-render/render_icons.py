@@ -148,6 +148,7 @@ def build(item):
     red=material("signal red",PALETTE["red"],.1,.4);berry=material("berry skin",PALETTE["berry"],.05,.33)
     meat=material("fresh meat",PALETTE["meat"],0,.45);fiber=material("plant fiber",PALETTE["fiber"],0,.85)
     white=material("aged ceramic",PALETTE["white"],.03,.63);green=material("wild leaf",PALETTE["green"],0,.82)
+    yellow=material("hot flame",PALETTE["yellow"],.02,.36)
     dark=material("charcoal rubber",PALETTE["dark"],.12,.65)
     # Long-handled tools and weapons are framed diagonally for quick recognition.
     if item=="bow":
@@ -209,7 +210,15 @@ def build(item):
             rod("arrow shaft",(-.2,0,-.5),(.2,0,.5),.035,wl)
             bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.09,radius2=0,depth=.22,location=(.25,0,.63));assign(bpy.context.object,steel)
         elif item=="torch":
-            cyl("resin bundle",(.32,0,.63),.13,.33,leather,10);ico("ember",(.32,0,.82),(.11,.11,.14),gold)
+            # An irregular resin-soaked rag crown and sculpted flame read as a
+            # crafted torch rather than a smooth cylinder with a glowing bead.
+            poly_prism("charred torch crown",[(.20,.48),(.31,.51),(.40,.60),(.40,.77),(.34,.84),(.27,.79),(.22,.68)],.17,dark,.018)
+            poly_prism("resin-bound rag wrapping",[(.19,.55),(.25,.50),(.34,.54),(.41,.62),(.39,.71),(.32,.75),(.24,.69)],.19,leather,.014)
+            for points in (((.21,.55),(.27,.60),(.34,.62)),((.24,.66),(.31,.64),(.39,.69)),((.25,.73),(.30,.70),(.35,.76))):
+                curve_tube("twisted torch binding",[(x,-.105,z) for x,z in points],.014,wl)
+            poly_prism("outer torch flame",[(.22,.76),(.16,.85),(.20,.94),(.25,.91),(.28,1.08),(.34,.99),(.39,1.13),(.46,1.00),(.48,.89),(.43,.79),(.34,.74)],.085,red,.012)
+            poly_prism("golden flame core",[(.27,.77),(.23,.86),(.27,.93),(.30,.90),(.34,1.02),(.38,.96),(.42,1.02),(.43,.90),(.39,.82),(.34,.77)],.096,gold,.008)
+            poly_prism("hot flame tongue",[(.31,.78),(.30,.86),(.33,.91),(.35,.98),(.39,.90),(.38,.83),(.35,.78)],.105,yellow,.005)
         elif item=="docksideCleaver":
             # A broad, repaired cargo-clearing blade with a flared nose and a
             # hand-ground belly; the irregular silhouette reads at inventory scale.
