@@ -10,6 +10,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run --pool=threads --maxWorkers=1 --minWorkers=1",
     "test:browser": "node scripts/polish-qa.mjs",
+    "test:menu-settings": "node scripts/menu-settings-qa.mjs",
     "test:death": "node scripts/death-respawn-qa.mjs",
     "test:combat": "node scripts/combat-qa.mjs",
     "test:deer": "node scripts/deer-qa.mjs",
