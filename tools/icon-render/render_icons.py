@@ -34,7 +34,6 @@ def material(name, color, metallic=0.0, roughness=0.6):
     if name in MATS: return MATS[name]
     m = bpy.data.materials.new(name)
     m.diffuse_color = color
-    m.use_nodes = True
     bs = m.node_tree.nodes.get("Principled BSDF")
     bs.inputs["Base Color"].default_value = color
     bs.inputs["Metallic"].default_value = metallic
@@ -124,17 +123,56 @@ def build(item):
         elif item=="torch":
             cyl("resin bundle",(.32,0,.63),.13,.33,leather,10);ico("ember",(.32,0,.82),(.11,.11,.14),gold)
         elif item=="docksideCleaver": cube("salvage blade",(.4,0,.57),(.38,.08,.22),steel,.035)
+        # A few contrasting ferrules and grip wraps break up the long, otherwise
+        # uninterrupted procedural silhouette and remain legible at icon size.
+        for x,z in ((-.17,-.42),(-.02,-.10),(.12,.20)):
+            band=cube("tool haft ferrule",(x,-.005,z),(.19,.17,.045),copper,.012);band.rotation_euler[1]=-.43
+        if item in ("hatchet","pickaxe","hammer","quarryMaul"):
+            cyl("reinforced tool eye",(.31,0,.48),.14,.23,iron,10,"Y")
+            for x,z in ((.22,.60),(.43,.60)):
+                ico("forged rivet",(x,-.13,z),(.035,.02,.035),copper,1)
+        if item=="hammer":
+            cube("hammer claw",(.48,0,.63),(.23,.18,.11),steel,.035).rotation_euler[1]=-.30
+            cube("hammer face cap",(.57,-.10,.56),(.12,.035,.19),copper,.018)
+        if item=="docksideCleaver":
+            cube("cleaver tang",(.18,-.09,.50),(.25,.025,.07),iron,.01)
+            for x in (.18,.33):ico("handle pin",(x,-.105,.49),(.025,.012,.025),copper,1)
     elif item in ("salvageRevolver","fieldShotgun"):
         long=item=="fieldShotgun";scale=1.22 if long else 1
         cube("receiver",(-.04,0,.08),(.68*scale,.19,.22),iron,.055)
         cube("grip",(-.29,0,-.16),(.22,.16,.48),leather,.045).rotation_euler[1]=-.2
-        cyl("barrel",(.37*scale,0,.12),.065,.66*scale,steel,16,"X")
         if long:
-            cube("wood stock",(-.46,0,.05),(.48,.15,.18),wood,.05);cyl("under barrel",(.37,0,-.03),.045,.64,iron,12,"X")
+            cube("wood stock",(-.46,0,.05),(.48,.15,.18),wood,.05)
+            cube("stock shoulder pad",(-.72,-.01,.05),(.10,.18,.24),dark,.035)
+            cube("stock cheek riser",(-.48,-.09,.14),(.28,.035,.07),wl,.018)
+            for z in (.045,.185):
+                cyl("side by side shotgun barrel",(.37*scale,-.012,z),.052,.68*scale,steel,16,"X")
+                torus("shotgun muzzle rim",(.72*scale,-.012,z),.052,.012,copper,(0,math.pi/2,0))
+                cyl("dark muzzle bore",(.735*scale,-.012,z),.029,.018,dark,12,"X",.004)
+            rod("raised barrel rib",(.04,-.02,.24),(.70*scale,-.02,.24),.018,steel,8)
             cube("foregrip",(.2,0,-.11),(.31,.17,.12),wood,.035)
+            cube("forend nose cap",(.36,-.015,-.11),(.06,.19,.15),iron,.02)
+            for x in (-.60,-.34,.08,.32):ico("shotgun receiver pin",(x,-.108,.085),(.025,.016,.025),copper,1)
+            torus("trigger guard",(-.04,-.105,-.095),.125,.014,iron,(math.pi/2,0,0))
+            rod("shotgun trigger",(-.015,-.12,-.02),(.01,-.12,-.12),.018,copper,8)
+            cube("receiver hinge",(.10,-.11,.01),(.22,.04,.10),copper,.018)
         else:
+            cyl("revolver barrel",(.37,0,.12),.064,.62,steel,16,"X")
+            torus("revolver muzzle rim",(.69,0,.12),.064,.014,copper,(0,math.pi/2,0))
+            cyl("revolver barrel bore",(.707,0,.12),.034,.018,dark,12,"X",.004)
             cyl("six chamber cylinder",(.03,-.02,.08),.15,.25,steel,16,"Y");torus("cylinder rim",(.03,-.16,.08),.12,.018,copper,(math.pi/2,0,0))
+            for chamber in range(6):
+                angle=chamber*math.tau/6
+                cx=.03+math.cos(angle)*.094;cz=.08+math.sin(angle)*.094
+                torus("individual cylinder chamber rim",(cx,-.157,cz),.026,.006,copper,(math.pi/2,0,0))
+                cyl("dark cylinder chamber",(cx,-.158,cz),.018,.012,dark,10,"Y",.003)
+            torus("curved trigger guard",(-.13,-.105,-.13),.115,.016,iron,(math.pi/2,0,0))
+            rod("revolver trigger",(-.035,-.125,-.02),(-.015,-.125,-.12),.018,copper,8)
+            cube("revolver hammer spur",(-.34,-.035,.25),(.13,.12,.10),copper,.025).rotation_euler[1]=-.28
+            cube("grip side panel",(-.30,-.092,-.16),(.16,.035,.34),wl,.035).rotation_euler[1]=-.2
+            for z in (-.23,-.08):ico("grip screw",(-.30,-.116,z),(.018,.012,.018),steel,1)
         cube("sight",(.3,0,.23),(.12,.06,.05),copper,.01)
+        cube("rear sight",(-.30,0,.23),(.10,.08,.045),steel,.012)
     elif item in ("shirt","pants","boots","warmJacket","protectiveHood","salvageVest","yardPlate"):
         mat=steel if item=="yardPlate" else cloth
         if item in ("shirt","warmJacket","salvageVest","yardPlate"):
@@ -210,8 +248,17 @@ def build(item):
         if item=="bandage":
             cube("folded dressing",(0,0,0),(.62,.18,.22),white,.07);cube("cross stripe",(0,-.1,0),(.1,.025,.22),red,.01)
         elif item=="traumaKit":
-            cube("medical field case",(0,0,0),(.65,.4,.43),red,.08);cube("medical cross",(0,-.22,.02),(.23,.025,.23),white,.025)
+            cube("medical case lower tray",(0,0,-.045),(.68,.43,.29),red,.065)
+            cube("raised hinged lid",(0,-.005,.15),(.68,.43,.16),red,.055)
+            cube("lid inset panel",(0,-.226,.15),(.52,.025,.095),wl,.018)
+            cube("medical cross vertical",(0,-.247,.145),(.075,.018,.15),white,.012)
+            cube("medical cross horizontal",(0,-.25,.145),(.18,.018,.06),white,.012)
             cube("case handle",(0,-.03,.29),(.3,.08,.06),iron,.02)
+            for x in (-.24,.24):
+                cube("brass case hinge",(x,.22,.105),(.10,.04,.07),copper,.012)
+                cube("case latch",(x,-.244,-.055),(.085,.035,.10),steel,.014)
+                for z in (-.13,.02):ico("case seam rivet",(x,-.245,z),(.018,.012,.018),copper,1)
+            for x in (-.29,.29):cube("stitched case seam",(x,-.225,.02),(.018,.016,.23),wl,.006)
         elif item=="canteen":
             cyl("canteen body",(0,0,0),.27,.5,sea,12);cube("shoulder",(0,0,.28),(.25,.25,.13),sea,.05)
             cyl("cap",(0,0,.39),.11,.1,copper,12);rod("strap",(-.21,.12,.17),(.21,.12,.17),.025,leather)
@@ -225,6 +272,11 @@ def build(item):
         if item=="gears":
             for pos,r in (((-.15,0,.05),.2),((.2,0,-.12),.14)):
                 cyl("salvaged gear",pos,r,.09,steel,12,"Y");cyl("gear bore",(pos[0],-.06,pos[2]),r*.38,.02,dark,12,"Y")
+                for tooth in range(10):
+                    angle=tooth*math.tau/10
+                    tooth_obj=cube("individual gear tooth",(pos[0]+math.cos(angle)*(r+.018),pos[1],pos[2]+math.sin(angle)*(r+.018)),(.065,.10,.045),steel,.008)
+                    tooth_obj.rotation_euler[1]=-angle
+                torus("machined gear hub",(pos[0],-.058,pos[2]),r*.48,.018,copper,(math.pi/2,0,0))
         elif item=="wiring":
             torus("coiled cable",(0,0,0),.28,.045,copper,(math.pi/2,0,0));torus("coiled cable",(0,.04,.02),.2,.025,sea,(math.pi/2,0,0))
         elif item in ("pistolAmmo","shotgunShells"):
@@ -236,7 +288,12 @@ def build(item):
         else:
             for i,(pos,sz) in enumerate([((-.19,0,.05),(.28,.2,.23)),((.1,.02,-.12),(.34,.24,.2)),((.18,0,.19),(.2,.17,.2))]):cube("salvaged component",pos,sz,steel if i%2 else copper,.045)
             if item=="techParts":cube("sealed module",(0,-.13,.04),(.32,.06,.23),sea,.025)
-            if item=="machineParts":cyl("bearing",(0,-.14,-.07),.12,.04,iron,16,"Y")
+            if item=="machineParts":
+                cyl("bearing",(0,-.14,-.07),.12,.04,iron,16,"Y")
+                cyl("bearing race",(0,-.166,-.07),.082,.018,copper,16,"Y")
+                cyl("bearing spindle",(0,-.18,-.07),.039,.045,dark,12,"Y")
+                rod("bent steel shaft",(-.28,-.06,.16),(.32,-.06,.16),.055,steel,10)
+                for x in (-.25,.28):cyl("shaft collar",(x,-.06,.16),.078,.07,copper,10,"X")
     else:
         cube("salvage object",(0,0,0),(.55,.36,.42),iron,.06)
 

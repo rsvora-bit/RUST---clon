@@ -33,7 +33,9 @@
     "test:tree-culling": "node scripts/tree-culling-qa.mjs",
     "test:performance": "node scripts/world-performance-qa.mjs",
     "test:cpu-profile": "node scripts/world-cpu-profile.mjs",
-    "test:cooking": "node scripts/cooking-qa.mjs"
+    "test:cooking": "node scripts/cooking-qa.mjs",
+    "assets:world": "node scripts/export-world-assets.mjs",
+    "test:assets:world": "node scripts/verify-world-assets.mjs"
   },
   "dependencies": {
     "three": "^0.180.0",

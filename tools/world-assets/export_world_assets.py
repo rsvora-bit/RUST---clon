@@ -1,0 +1,238 @@
+"""Build original, meter-scale Tideland GLB environment assets and three LODs.
+
+Run through `npm run assets:world`. All meshes and materials are authored here;
+no external or commercial assets are read. Blender exports Y-up glTF 2.0.
+"""
+import bpy
+import json
+import math
+import os
+import random
+from mathutils import Vector
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+OUT = os.path.join(ROOT, "public/assets/world")
+CATALOG = json.load(open(os.path.join(os.path.dirname(__file__), "catalog.json"), encoding="utf8"))
+
+def reset():
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.delete(use_global=False)
+    # Keep the shared authored material datablocks alive across catalog entries.
+    for datablocks in (bpy.data.meshes, bpy.data.curves):
+        for block in list(datablocks):
+            if block.users == 0:
+                datablocks.remove(block)
+
+def mat(name, color, metallic=0.0, roughness=.85):
+    material = bpy.data.materials.new(name)
+    material.diffuse_color = (*color, 1)
+    shader = material.node_tree.nodes.get("Principled BSDF")
+    shader.inputs["Base Color"].default_value = (*color, 1)
+    shader.inputs["Metallic"].default_value = metallic
+    shader.inputs["Roughness"].default_value = roughness
+    return material
+
+WOOD = mat("Tideland salt-worn timber", (.22, .16, .105))
+WOOD_LIGHT = mat("Tideland exposed timber", (.39, .29, .18))
+WOOD_DARK = mat("Tideland soaked end grain", (.12, .105, .075))
+RUST = mat("Tideland oxidized steel", (.24, .20, .15), .42, .9)
+BARK = mat("Tideland furrowed bark", (.20, .15, .095))
+LEAF = mat("Tideland coastal leaf", (.20, .30, .16))
+NEEDLE = mat("Tideland alpine needle", (.105, .19, .15))
+STONE = mat("Tideland fractured granite", (.34, .34, .31), .03, .96)
+MOSS = mat("Tideland rock moss", (.18, .23, .14), .0, .98)
+
+def box(name, loc, scale, material, bevel_width=0):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
+    obj = bpy.context.object
+    obj.name = name
+    obj.dimensions = scale
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    obj.data.materials.append(material)
+    if bevel_width:
+        bevel = obj.modifiers.new("worn edge bevel", "BEVEL")
+        bevel.width = bevel_width
+        bevel.segments = 1
+        obj.modifiers.new("weighted corner normals", "WEIGHTED_NORMAL")
+    return obj
+
+def rod(name, a, b, radius, material, sides=8):
+    start, end = Vector(a), Vector(b)
+    direction = end - start
+    bpy.ops.mesh.primitive_cone_add(vertices=sides, radius1=radius, radius2=radius*.88,
+                                    depth=direction.length, location=(start+end)*.5)
+    obj = bpy.context.object
+    obj.name = name
+    obj.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+    obj.data.materials.append(material)
+    return obj
+
+def plank(name, xs, lower, upper, width, sign, material, seed):
+    rng = random.Random(seed)
+    verts = []
+    for x in xs:
+        taper = max(.15, 1 - (abs(x)/4.35)**2)
+        jitter = rng.uniform(-.035, .035)
+        for z in (lower+jitter, upper+jitter):
+            edge_width = width * taper
+            verts.extend(((x, sign*edge_width, z), (x, sign*(edge_width*.70), z+.055)))
+    faces=[]
+    for i in range(len(xs)-1):
+        a=i*4; b=a+4
+        faces.extend(((a,a+1,b+1,b),(a+1,a+3,b+3,b+1),(a+2,a,b,b+2)))
+    mesh=bpy.data.meshes.new(name+" mesh"); mesh.from_pydata(verts,[],faces);mesh.materials.append(material);mesh.update()
+    obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj)
+    return obj
+
+def shipwreck(variant=0):
+    rng=random.Random(1703+variant)
+    # Open-topped, curved shell made from broken timber courses and exposed ribs.
+    for side in (-1,1):
+        for row in range(4):
+            z0=.12+row*.31
+            cuts=11 if variant==0 else 9
+            xs=[-4.0+i*8.0/cuts for i in range(cuts+1)]
+            gap_index=(3+variant*2+row)%cuts
+            if row in (1,3):
+                xs=[x for i,x in enumerate(xs) if not (gap_index<=i<=gap_index+1)]
+            plank("split hull plank",xs,z0,z0+.235,.68-row*.06,side,
+                  (WOOD_DARK,WOOD,WOOD_LIGHT)[(row+variant)%3],variant*51+side*5+row)
+        for rib in range(9):
+            x=-3.65+rib*.91
+            arch=math.sqrt(max(.08,1-(x/4.2)**2))
+            top=.28+arch*.93+rng.uniform(-.14,.15)
+            rod("exposed bent hull rib",(x,side*.08,.12),(x,side*(.62*arch),top),.065 if rib%3 else .085,RUST if rib%3==0 else WOOD_LIGHT,7)
+    rod("keel beam",(-3.9,0,.12),(3.8,0,.18),.11,WOOD_DARK,9)
+    # Broken bow and stern stakes give a readable irregular silhouette.
+    for x,h,lean in ((-3.85,1.2,-.24),(3.65,.72,.18),(-3.35,.82,.14)):
+        obj=rod("splintered stem",(x,0,.12),(x+lean,.04,h),.095,WOOD_LIGHT,7)
+    for i in range(12):
+        x=rng.uniform(-3.2,3.2); z=rng.uniform(.55,1.28); y=rng.choice((-1,1))*rng.uniform(.28,.63)
+        end=(x+rng.uniform(-.38,.38),y+rng.uniform(-.16,.16),z+rng.uniform(.12,.48))
+        rod("fractured deck spar",(x,y,z),end,rng.uniform(.035,.075),WOOD_LIGHT if i%3 else RUST,6)
+    for x in (-2.75,-1.15,.55,2.25):
+        box("corroded hull patch",(x,-.635,.52),(.50,.032,.22),RUST,.025)
+    # Welded eyelets and short mooring line fragments.
+    for x in (-3.4,2.95):
+        bpy.ops.mesh.primitive_torus_add(major_radius=.10,minor_radius=.022,major_segments=12,minor_segments=5,location=(x,-.70,.49),rotation=(math.pi/2,0,0))
+        bpy.context.object.name="rusted mooring eye";bpy.context.object.data.materials.append(RUST)
+
+def tree(kind):
+    rng=random.Random(8101 if kind=="broadleaf_a" else 8102)
+    h=9.3 if kind=="broadleaf_a" else 11.6
+    # Tapered trunk with a slight lean and six buttress roots.
+    rings=[]
+    for z,radius,offset in ((0,.47,0),(.35,.38,0),(1.8,.29,.08),(4.6,.205,.17),(h*.72,.15,.24)):
+        rings.append((z,radius,offset))
+    verts=[]; sides=9
+    for z,radius,offset in rings:
+        for i in range(sides):
+            angle=2*math.pi*i/sides
+            variation=1+.09*math.sin(i*4.2+z)
+            verts.append((offset+math.cos(angle)*radius*variation,math.sin(angle)*radius*variation,z))
+    faces=[]
+    for row in range(len(rings)-1):
+        for i in range(sides): faces.append((row*sides+i,row*sides+(i+1)%sides,(row+1)*sides+(i+1)%sides,(row+1)*sides+i))
+    faces.append(tuple(range((len(rings)-1)*sides,len(rings)*sides)))
+    mesh=bpy.data.meshes.new("tapered irregular trunk mesh");mesh.from_pydata(verts,[],faces);mesh.materials.append(BARK);mesh.update()
+    trunk=bpy.data.objects.new("tapered trunk with root flare",mesh);bpy.context.collection.objects.link(trunk)
+    for i in range(6):
+        a=i*math.tau/6;end=(math.cos(a)*1.15,math.sin(a)*.92,.04)
+        rod("root flare",(0,0,.52),end,.19,BARK,7)
+    branch_count=10 if kind=="broadleaf_a" else 8
+    for i in range(branch_count):
+        angle=i*math.tau/branch_count+rng.uniform(-.24,.24)
+        start_z=h*(.49+rng.random()*.27); reach=rng.uniform(1.5,2.55)
+        start=(.2*start_z/h,0,start_z); end=(start[0]+math.cos(angle)*reach,math.sin(angle)*reach*.72,start_z+rng.uniform(.7,1.7))
+        rod("primary branch",start,end,rng.uniform(.075,.13),BARK,7)
+        for split in range(2):
+            t=.56+split*.16; base=tuple(start[j]*(1-t)+end[j]*t for j in range(3))
+            side=angle+(-1 if split==0 else 1)*rng.uniform(.45,.9)
+            twig=(base[0]+math.cos(side)*.85,base[1]+math.sin(side)*.6,base[2]+.55)
+            rod("secondary branch",base,twig,.045,BARK,6)
+    cluster_count=11 if kind=="broadleaf_a" else 0
+    for i in range(cluster_count):
+        angle=i*math.tau/cluster_count+rng.uniform(-.28,.28); radius=rng.uniform(1.1,2.2)
+        z=h*rng.uniform(.62,.94); loc=(.2*z/h+math.cos(angle)*radius,math.sin(angle)*radius*.72,z)
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2 if i%3==0 else 1,radius=1,location=loc)
+        crown=bpy.context.object;crown.name="layered broadleaf crown mass";crown.scale=(rng.uniform(1.15,1.75),rng.uniform(1.05,1.6),rng.uniform(.9,1.35));crown.data.materials.append(LEAF)
+    if kind=="conifer_a":
+        for tier in range(7):
+            z=2.0+tier*1.25; radius=(1-tier/8)*2.7
+            bpy.ops.mesh.primitive_cone_add(vertices=9,radius1=radius,radius2=.06,depth=3.2,location=(.15,.05,z))
+            crown=bpy.context.object;crown.name="layered alpine bough whorl";crown.data.materials.append(NEEDLE)
+            crown.rotation_euler[0]=rng.uniform(-.04,.04)
+
+def boulder():
+    rng=random.Random(994)
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1,location=(0,0,.78))
+    obj=bpy.context.object;obj.name="fractured coastal granite"
+    for v in obj.data.vertices:
+        noise=1+.14*math.sin(v.co.x*8+v.co.y*3)*math.sin(v.co.z*6)+rng.uniform(-.055,.055)
+        v.co.x*=1.8*noise;v.co.y*=1.38*noise;v.co.z*=1.05*noise
+    obj.data.materials.append(STONE);obj.data.materials.append(MOSS)
+    for p in obj.data.polygons:
+        if p.normal.z>.45 and rng.random()<.16:p.material_index=1
+    obj.data.update();return obj
+
+def driftwood():
+    rng=random.Random(123)
+    for i in range(3):
+        offset=(i-1)*.17
+        start=(-1.65,offset,.18+abs(offset)*.3);end=(1.55+rng.uniform(-.2,.2),offset+rng.uniform(-.14,.14),.08+rng.uniform(-.03,.08))
+        rod("salt-split driftwood",start,end,.15-i*.025,WOOD_LIGHT if i==1 else WOOD,7)
+        for j in range(4):
+            t=.18+j*.2;x=start[0]*(1-t)+end[0]*t;y=start[1]*(1-t)+end[1]*t;z=start[2]*(1-t)+end[2]*t
+            rod("ragged branch stub",(x,y,z),(x+rng.uniform(-.28,.28),y+rng.uniform(-.18,.18),z+rng.uniform(.12,.38)),.055,WOOD_DARK,6)
+
+def crate():
+    box("weathered salvage crate core",(0,0,.38),(.92,.78,.72),WOOD,.08)
+    for z in (.1,.30,.50,.69):
+        box("separate crate board",(0,-.405,z),(.90,.035,.13),WOOD_LIGHT,.012)
+    for x in (-.4,.4):
+        box("corner iron strap",(x,-.432,.39),(.055,.025,.68),RUST,.01)
+        for z in (.12,.64):
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.028,location=(x,-.45,z));bpy.context.object.name="crate strap rivet";bpy.context.object.data.materials.append(WOOD_DARK)
+
+def create(name):
+    reset()
+    if name=="shipwreck_hull_a":shipwreck(0)
+    elif name=="shipwreck_hull_b":shipwreck(1)
+    elif name in ("broadleaf_a","conifer_a"):tree(name)
+    elif name=="coastal_boulder_a":boulder()
+    elif name=="driftwood_a":driftwood()
+    elif name=="salvage_crate_a":crate()
+    # Normalize transforms and combine each asset into one mesh per LOD while preserving material slots.
+    meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in meshes:o.select_set(True)
+    bpy.context.view_layer.objects.active=meshes[0]
+    if len(meshes)>1:bpy.ops.object.join()
+    source=bpy.context.object;source.name=name+" LOD0 mesh"
+    source.data.validate(verbose=False,clean_customdata=True)
+    source.data.update()
+    for poly in source.data.polygons:poly.use_smooth=False
+    root=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(root)
+    levels=(1.0,.48,.16)
+    for index,ratio in enumerate(levels):
+        obj=source if index==0 else source.copy()
+        if index:obj.data=source.data.copy();bpy.context.scene.collection.objects.link(obj)
+        group=bpy.data.objects.new("LOD"+str(index),None);bpy.context.scene.collection.objects.link(group);group.parent=root
+        obj.name=name+" LOD"+str(index);obj.parent=group
+        if ratio<1:
+            # Bake bevel/normal modifiers first so decimation operates on the evaluated mesh.
+            bpy.context.view_layer.objects.active=obj;obj.select_set(True)
+            for existing in list(obj.modifiers):bpy.ops.object.modifier_apply(modifier=existing.name)
+            mod=obj.modifiers.new("browser LOD reduction","DECIMATE");mod.ratio=ratio
+            bpy.ops.object.modifier_apply(modifier=mod.name);obj.select_set(False)
+            obj.data.validate(verbose=False,clean_customdata=True);obj.data.update()
+        obj.location=(0,0,0);obj.rotation_euler=(0,0,0);obj.scale=(1,1,1)
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in [root]+[o for o in bpy.context.scene.objects if o.parent==root or (o.parent and o.parent.parent==root)]:obj.select_set(True)
+    bpy.context.view_layer.objects.active=root
+    path=os.path.join(OUT,name+".glb")
+    bpy.ops.export_scene.gltf(filepath=path,export_format="GLB",use_selection=True,export_apply=True,export_yup=True,export_materials="EXPORT")
+    print("Exported",name,path,os.path.getsize(path),"bytes",flush=True)
+
+os.makedirs(OUT,exist_ok=True)
+for asset in CATALOG:create(asset)

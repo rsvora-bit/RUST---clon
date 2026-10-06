@@ -33,6 +33,7 @@ export function generateWorldLayout(terrain:IslandTerrain,spawn:Vec3,colliders:C
 
 export class WorldSurvival {
   readonly pois:Landmark[]=[];readonly recyclers:Vec3[]=[];readonly group=new T.Group();readonly trails:Vec3[][]=[];
+  private readonly generatedAssetMaterials=new Set<T.Material>();
   private readonly eventSiteCache=new Map<number,Vec3|null>();
   private wood=woodMaterial('#696858');private metal=new T.MeshStandardMaterial({color:0x64706b,roughness:.88,metalness:.3});private rust=new T.MeshStandardMaterial({color:0x91694d,roughness:.92,metalness:.18});private paint=new T.MeshStandardMaterial({color:0x52645c,roughness:.78,metalness:.36});private chartPaper=new T.MeshStandardMaterial({color:0xb3a77f,roughness:1,emissive:0x655a37,emissiveIntensity:.45});private glass=new T.MeshStandardMaterial({color:0x77979a,roughness:.28,metalness:.12,transparent:true,opacity:.38,depthWrite:false,emissive:0x162426,emissiveIntensity:.16});private display=new T.MeshStandardMaterial({color:0x588879,roughness:.4,metalness:.12,emissive:0x42b98c,emissiveIntensity:.72});private bridgeDisplay=new T.MeshStandardMaterial({color:0x34443d,roughness:.62,metalness:.12,emissive:0x17251c,emissiveIntensity:.22});private bridgeLamp=new T.MeshStandardMaterial({color:0xb28a50,roughness:.75,emissive:0x9b6830,emissiveIntensity:.32});private cloth=new T.MeshStandardMaterial({color:0x6b755d,roughness:1,side:T.DoubleSide});private stormCloth=new T.MeshStandardMaterial({color:0xb56c43,roughness:.96,side:T.DoubleSide});private sludge=new T.MeshStandardMaterial({color:0x4d5941,roughness:.38,metalness:.04,transparent:true,opacity:.73,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,emissive:0x0d1209,emissiveIntensity:.12,side:T.DoubleSide});private road=new T.MeshStandardMaterial({color:0x725f43,roughness:1,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
   private readonly relayMast=new T.CylinderGeometry(.08,.2,8.4,6,5);private readonly relayDish=new T.SphereGeometry(.48,9,6,0,Math.PI*2,0,Math.PI*.58);
@@ -315,6 +316,32 @@ export class WorldSurvival {
     }
     this.recyclers.splice(0,this.recyclers.length,...initializeWorldEconomy(state,this.pois,(x,z)=>this.env.heightAt(x,z),this.seed,createStation,legacyEconomy));
   }
+  /** Replaces only the render shell of the Revision-6 Breakwater; saved POI IDs and colliders stay authoritative. */
+  useGeneratedWreckHull(asset:T.Object3D):boolean{
+    if(this.env.terrain.generation!==5||this.env.worldRevision<6)return false;
+    const poi=this.pois.find(item=>item.kind===5),poiRoot=poi?this.group.getObjectByName(poi.id):null;
+    const legacyHull=poiRoot?.getObjectByName('Breakwater split cargo hull');
+    if(!poiRoot||!legacyHull)return false;
+    const levels=[0,1,2].map(index=>asset.getObjectByName(`LOD${index}`)).filter((item):item is T.Object3D=>item!==undefined);
+    if(levels.length!==3)return false;
+    legacyHull.visible=false;
+    return this.attachLodAsset(asset,poiRoot,'Breakwater Blender shipwreck hull LOD',{x:0,y:.20,z:0},1,0,[0,48,118]);
+  }
+  /** Adds authored visual debris around the same POI without changing physics or saved stations. */
+  useGeneratedWreckDetails(fragment:T.Object3D,driftwood:T.Object3D,crate:T.Object3D):boolean{
+    if(this.env.terrain.generation!==5||this.env.worldRevision<6)return false;
+    const poi=this.pois.find(item=>item.kind===5),root=poi?this.group.getObjectByName(poi.id):null;if(!root)return false;
+    return this.attachLodAsset(fragment,root,'Breakwater detached wreck section',{x:4.1,y:.08,z:-.1},.42,-.24,[0,34,82])
+      &&this.attachLodAsset(driftwood,root,'Breakwater Blender driftwood',{x:-4.35,y:.02,z:1.12},.82,.46,[0,24,58])
+      &&this.attachLodAsset(crate,root,'Breakwater Blender salvage crate',{x:2.65,y:.02,z:1.30},.82,-.18,[0,30,72]);
+  }
+  private attachLodAsset(asset:T.Object3D,parent:T.Object3D,name:string,position:Vec3,scale:number,yaw:number,distances:number[]):boolean{
+    const levels=[0,1,2].map(index=>asset.getObjectByName(`LOD${index}`)).filter((item):item is T.Object3D=>item!==undefined);if(levels.length!==3)return false;
+    asset.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])this.generatedAssetMaterials.add(material);});
+    const lod=new T.LOD();lod.name=name;lod.position.set(position.x,position.y,position.z);lod.scale.setScalar(scale);lod.rotation.y=yaw;
+    for(const [index,level] of levels.entries()){level.traverse(object=>{if(object instanceof T.Mesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=true;}});lod.addLevel(level,distances[index]!);}
+    parent.add(lod);return true;
+  }
   advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,sequence=>this.findEventCoast(state,sequence));}
   triggerRadioSignal(state:GameState,source:Vec3){
     if(this.env.terrain.generation!==5||state.progression?.radioSignal)return false;
@@ -343,7 +370,7 @@ export class WorldSurvival {
     this.eventSiteCache.set(sequence,best);return best;
   }
   collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});}else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.25,y:p.position.y+1.23,z:p.position.z},halfExtents:{x:2.55,y:.06,z:.725}});for(const x of [-1.955,-1.005]){result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});}result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});}}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
-  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.chartPaper,this.glass,this.display,this.bridgeDisplay,this.bridgeLamp,this.cloth,this.stormCloth,this.sludge,this.road].forEach(m=>m.dispose());}
+  dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});for(const material of this.generatedAssetMaterials)material.dispose();this.generatedAssetMaterials.clear();this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();this.road.map?.dispose();[this.wood,this.metal,this.rust,this.paint,this.chartPaper,this.glass,this.display,this.bridgeDisplay,this.bridgeLamp,this.cloth,this.stormCloth,this.sludge,this.road].forEach(m=>m.dispose());}
 }
 
 export class IslandMap {
