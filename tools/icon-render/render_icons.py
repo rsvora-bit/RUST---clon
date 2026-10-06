@@ -591,7 +591,27 @@ def build(item):
         else:
             cyl("sleeping roll",(0,0,0),.22,.74,cloth,12,"X");torus("roll strap",(-.2,0,0),.23,.025,copper,(0,math.pi/2,0));torus("roll strap",(.2,0,0),.23,.025,copper,(0,math.pi/2,0))
     elif item in ("scrap","gears","wiring","machineParts","techParts","pistolAmmo","shotgunShells","relayAccessCard"):
-        if item=="gears":
+        if item=="scrap":
+            # Mixed hand-sorted salvage: torn sheet, a bent channel section,
+            # a punched washer and short lengths of twisted wire. Each plate
+            # has an authored, asymmetric cut profile rather than a box stack.
+            plate=poly_prism("torn galvanized sheet cutoff",[(-.43,-.18),(-.37,.14),(-.20,.26),(-.12,.19),(.05,.24),(.13,.10),(.31,.13),(.39,-.07),(.29,-.25),(.11,-.20),(-.04,-.29),(-.21,-.20),(-.34,-.27)],.075,steel,.012)
+            plate.location=(.02,.055,-.02);plate.rotation_euler[1]=-.12
+            rusted=poly_prism("oxidized folded plate fragment",[(-.25,-.12),(-.20,.10),(-.10,.17),(.12,.13),(.18,.04),(.11,-.03),(.14,-.18),(.02,-.23),(-.12,-.15)],.09,copper,.009)
+            rusted.location=(-.12,-.018,.025);rusted.rotation_euler[1]=.34
+            angle=poly_prism("bent angle iron offcut",[(-.12,-.28),(.02,-.30),(.22,.18),(.14,.25)],.10,iron,.008)
+            angle.location=(.20,-.045,-.005);angle.rotation_euler[1]=-.27
+            # Flattened washer with a real center opening and a peened bolt.
+            torus("salvage punched washer",(-.31,-.13,.26),.064,.016,gold,(math.pi/2,0,0))
+            cyl("washer dark bore",(-.31,-.13,.26),.034,.012,dark,12,"Y",.003)
+            profile_mesh("short threaded shaft",(.27,.08,-.22),[(-.16,.025),(-.13,.042),(.08,.042),(.12,.024)],steel,"X",12)
+            for index in range(4):
+                x=.18+index*.047
+                rod("shaft thread crest",(x,.035,-.22),(x+.022,.035,-.18),.006,copper,6)
+            curve_tube("twisted salvage wire",[(-.38,-.20,-.22),(-.23,-.20,-.33),(-.02,-.20,-.31),(.08,-.20,-.18)],.014,dark)
+            for x,z in ((-.30,-.08),(.26,.06),(-.06,.18)):
+                cyl("salvage plate rivet",(x,-.115,z),.018,.012,copper,8,"Y",.003)
+        elif item=="gears":
             for index,(pos,r,teeth) in enumerate((((-.15,0,.05),.2,12),((.2,0,-.12),.14,10))):
                 toothed_gear("salvaged profile gear",pos,r,.09,teeth,steel if index==0 else copper)
                 torus("worn gear hub ring",(pos[0],-.053,pos[2]),r*.31,.014,iron,(math.pi/2,0,0))
