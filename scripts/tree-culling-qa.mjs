@@ -15,6 +15,13 @@ try{
   const initial=await page.evaluate(()=>window.__TIDELAND.worldArt());
   assert.equal(await page.evaluate(()=>window.__TIDELAND.snapshot().worldRevision),6,'new test world must use revision 6');
   assert.equal(initial.trees.length,1500,'revision 6 must retain its expected deterministic tree set');
+  assert.ok(initial.generatedTreeModels.trees>0,'original Blender tree geometry should replace procedural silhouettes in runtime instanced batches');
+  assert.ok(initial.generatedTreeModels.batches>=3,'multiple original broadleaf and conifer variants should be active');
+  assert.ok(initial.generatedTreeModels.meshes<=initial.generatedTreeModels.batches*2,'tree model integration must stay within two instanced meshes per asset batch');
+  const lods=await page.evaluate(()=>{const app=window.__TIDELAND,previous=app.cameraState().settings.quality,out={};for(const preset of ['low','medium','high','ultra']){app.settingsForTest({quality:preset});out[preset]=app.worldArt().generatedTreeModels;}app.settingsForTest({quality:previous});return out;});
+  assert.equal(lods.low.lod,2);assert.equal(lods.medium.lod,2);assert.equal(lods.high.lod,1);assert.equal(lods.ultra.lod,0);
+  assert.ok(lods.ultra.triangles>lods.high.triangles&&lods.high.triangles>lods.medium.triangles,'graphics presets should select progressively lighter original tree LOD geometry');
+  console.log(`PASS original tree library integrated · ${initial.generatedTreeModels.trees} visible trees · ${initial.generatedTreeModels.batches} asset variants · ${Math.round(lods.high.triangles).toLocaleString()} HIGH / ${Math.round(lods.ultra.triangles).toLocaleString()} ULTRA triangles`);
   assert.ok(initial.renderedTrees>0&&initial.renderedTrees<initial.trees.length,'distance culling should trim remote trees');
   assert.equal(initial.renderedTreeInstances,initial.renderedTrees,'InstancedMesh count must match actual visible tree instances');
   console.log(`PASS compact tree instances ${initial.renderedTrees}/${initial.trees.length}`);

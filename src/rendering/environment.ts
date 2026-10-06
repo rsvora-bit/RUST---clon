@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD} from '../config/balance';
 import {generateWorldLayout,type WorldLayout} from '../survival/WorldSurvival';
 import {grassSurfaceCover,palmSuitability,surfaceClimate,vegetationCover} from '../world/climate';
@@ -51,7 +52,7 @@ export class Environment {
   private readonly grassChunks:GrassChunk[]=[];
   private readonly reedLocations:Vec3[]=[];
   private readonly marshPoolLocations:Vec3[]=[];
-  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;masses?:THREE.InstancedMesh;fullCount:number;instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
+  private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;masses?:THREE.InstancedMesh;species:number;fullCount:number;generatedLods?:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[];instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
   private readonly surfaceWetness:{value:number};
@@ -91,6 +92,7 @@ export class Environment {
   private foliageDensity=.72;
   get renderedTreeCount():number{return this.treeBatches.reduce((n,b)=>n+b.instances.filter(t=>t.visible).length,0);}
   get renderedTreeInstanceCount():number{return this.treeBatches.reduce((n,b)=>n+b.trunks.count,0);}
+  get generatedTreeModelStats():{trees:number;batches:number;meshes:number;triangles:number;lod:number}{const meshes=this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&typeof object.userData.generatedWorldAsset==='string');return{trees:meshes.filter(mesh=>mesh.name.endsWith('trunks')).reduce((sum,mesh)=>sum+mesh.count,0),batches:new Set(meshes.map(mesh=>mesh.userData.generatedWorldAsset as string)).size,meshes:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='ultra'?0:this.quality==='high'?1:2};}
   get treeCrownScales():[number,number,number][]{const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();return this.treeBatches.flatMap(batch=>Array.from({length:batch.crowns.count},(_,index)=>{batch.crowns.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return[scale.x,scale.y,scale.z] as [number,number,number];}));}
   get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
   get fallingTreeCount():number{return this.fallingTrees.size;}
@@ -217,8 +219,29 @@ export class Environment {
         this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:crownMatrix},...(masses?[{mesh:masses,index,matrix:crownMatrix}]:[])]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,crownMatrix,active:true,visible:true,renderIndex:index,trunkColor,crownColor});
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
         this.colliders.push({nodeId:node.id,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
-      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(masses?.instanceColor)masses.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();masses?.computeBoundingSphere();this.treeBatches.push({trunks,crowns,masses,fullCount:entries.length,instances:batchInstances});for(const tree of batchInstances)this.treeInstancesById.set(tree.id,tree);
+      });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(masses?.instanceColor)masses.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();masses?.computeBoundingSphere();this.treeBatches.push({trunks,crowns,masses,species,fullCount:entries.length,instances:batchInstances});for(const tree of batchInstances)this.treeInstancesById.set(tree.id,tree);
     }
+  }
+
+  /** Replace procedural tree silhouettes with the original Blender LOD0 meshes while retaining one instanced batch per surface. */
+  useGeneratedTreeModels(models:Record<string,THREE.Object3D>):number {
+    if(this.terrain.generation!==5||this.worldRevision<6)return 0;
+    const assetBySpecies:Record<number,string>={0:'conifer_a',1:'broadleaf_a',2:'conifer_b',3:'conifer_c',4:'broadleaf_c'};let integrated=0;
+    for(const batch of this.treeBatches){
+      const assetId=assetBySpecies[batch.species],asset=models[assetId],lod=asset?.getObjectByName('LOD0');if(!asset||!lod||batch.species===5)continue;
+      asset.updateMatrixWorld(true);const generatedLods:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[]=[],foliageMaterials=new Map<string,THREE.Material>();let trunkMaterial:THREE.Material|undefined,valid=true;
+      for(const lodName of ['LOD0','LOD1','LOD2']){const level=asset.getObjectByName(lodName);if(!level){valid=false;break;}level.updateMatrixWorld(true);const inverseLod=level.matrixWorld.clone().invert(),trunkGeometries:THREE.BufferGeometry[]=[],foliageGeometries:THREE.BufferGeometry[]=[];
+        level.traverse(object=>{if(!(object instanceof THREE.Mesh))return;const material=Array.isArray(object.material)?object.material[0]:object.material;if(!material)return;const geometry=object.geometry.clone(),relative=inverseLod.clone().multiply(object.matrixWorld);geometry.applyMatrix4(relative);geometry.clearGroups();geometry.addGroup(0,geometry.index?.count??geometry.getAttribute('position').count,0);if(material.name.toLowerCase().includes('bark')){trunkGeometries.push(geometry);trunkMaterial??=material;}else{foliageGeometries.push(geometry);foliageMaterials.set(material.name,material);}});
+        const trunk=trunkGeometries.length?mergeGeometries(trunkGeometries,false):null,foliage=foliageGeometries.length?mergeGeometries(foliageGeometries,true):null;[...trunkGeometries,...foliageGeometries].forEach(geometry=>geometry.dispose());if(!trunk||!foliage){trunk?.dispose();foliage?.dispose();valid=false;break;}trunk.computeBoundingSphere();foliage.computeBoundingSphere();generatedLods.push({trunk,foliage});
+      }
+      if(!valid||generatedLods.length!==3||!trunkMaterial){generatedLods.forEach(level=>{level.trunk.dispose();level.foliage.dispose();});continue;}
+      for(const level of generatedLods){this.geometries.add(level.trunk);this.geometries.add(level.foliage);}const sharedFoliageMaterials=[...foliageMaterials.values()];for(const material of sharedFoliageMaterials){material.side=THREE.DoubleSide;if(material instanceof THREE.MeshStandardMaterial)material.roughness=Math.max(material.roughness,.78);this.materials.add(material);}this.materials.add(trunkMaterial);
+      batch.generatedLods=generatedLods;const lodIndex=this.quality==='ultra'?0:this.quality==='high'?1:2;batch.trunks.geometry=generatedLods[lodIndex]!.trunk;batch.trunks.material=trunkMaterial;batch.crowns.geometry=generatedLods[lodIndex]!.foliage;batch.crowns.material=sharedFoliageMaterials;batch.crowns.visible=true;batch.trunks.visible=true;batch.trunks.userData.generatedWorldAsset=assetId;batch.crowns.userData.generatedWorldAsset=assetId;batch.trunks.name=batch.species===1||batch.species===4?'Oak trunks':'Pine trunks';batch.crowns.name=batch.species===1||batch.species===4?'Oak canopy':'Pine canopy';batch.trunks.castShadow=batch.trunks.receiveShadow=true;batch.crowns.castShadow=false;batch.crowns.receiveShadow=false;
+      for(const tree of batch.instances){tree.crownMatrix.copy(tree.matrix);batch.crowns.setMatrixAt(tree.renderIndex,tree.matrix);const refs=this.instances.get(tree.id);if(refs){const crownRef=refs.find(reference=>reference.mesh===batch.crowns);if(crownRef)crownRef.matrix=tree.matrix;}}
+      batch.trunks.computeBoundingSphere();batch.crowns.computeBoundingSphere();batch.crowns.instanceMatrix.needsUpdate=true;if(batch.masses){batch.masses.visible=false;batch.masses.count=0;}
+      integrated+=batch.fullCount;
+    }
+    this.cullClock=0;return integrated;
   }
   private populateRocks():void {
     const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];
@@ -454,6 +477,7 @@ export class Environment {
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=quality==='low'?62:quality==='medium'?86:quality==='high'?112:128;
+    const treeLod=quality==='ultra'?0:quality==='high'?1:2;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;}}
     const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'||o.name==='Oak canopy masses'))o.castShadow=quality==='ultra'||(this.worldRevision<6&&quality==='high');});this.cullClock=0;
