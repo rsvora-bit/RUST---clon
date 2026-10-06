@@ -194,7 +194,17 @@ def build(item):
             poly_prism("replaceable poll cap",[(.605,.50),(.655,.54),(.655,.60),(.615,.65),(.59,.61),(.59,.54)],.214,copper,.006)
             poly_prism("forged cheek reinforcement",[(.32,.49),(.39,.46),(.48,.48),(.51,.55),(.49,.62),(.41,.65),(.33,.61)],.205,steel,.01)
         elif item=="spear":
-            bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.17,radius2=0,depth=.48,location=(.31,0,.75));assign(bpy.context.object,steel)
+            # A leaf-shaped forged head follows the haft axis and has a raised
+            # center ridge, ground cutting bevels, and a fitted socket.
+            poly_prism("forged leaf spearhead",[(.16,.59),(.24,.62),(.30,.74),(.39,.91),(.47,1.10),(.405,1.045),(.29,.91),(.20,.76)],.095,steel,.012)
+            poly_prism("spearhead cutting bevel",[(.16,.59),(.24,.62),(.30,.74),(.39,.91),(.47,1.10),(.405,1.045),(.32,.82),(.21,.65)],.104,iron,.006)
+            poly_prism("raised spearhead spine",[(.24,.62),(.32,.82),(.405,1.045),(.47,1.10),(.39,.91),(.29,.73)],.114,steel,.004)
+            poly_prism("spearhead fuller",[(.273,.70),(.30,.75),(.367,.91),(.385,.95),(.325,.82)],.119,dark,.002)
+            # A narrow transverse band seats the blade on the wooden haft;
+            # the generic lathed profile reads too much like a spherical socket at icon scale.
+            socket_band=cube("spear socket binding",(.245,-.01,.615),(.19,.16,.045),iron,.012);socket_band.rotation_euler[1]=-.43
+            for x,z in ((.22,.625),(.28,.67)):
+                ico("spear socket peened pin",(x,-.105,z),(.014,.01,.014),copper,1)
         elif item=="arrow":
             rod("arrow shaft",(-.2,0,-.5),(.2,0,.5),.035,wl)
             bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.09,radius2=0,depth=.22,location=(.25,0,.63));assign(bpy.context.object,steel)
