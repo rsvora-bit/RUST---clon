@@ -377,9 +377,41 @@ def build(item):
             cube("fire door",(0,-.34,-.1),(.31,.04,.25),dark,.025);ico("pilot glow",(0,-.37,-.1),(.1,.025,.07),red)
             cyl("exhaust",(.15,.12,.53),.1,.55,steel,10)
         elif item=="generator":
-            cube("generator shell",(0,0,0),(.72,.42,.47),iron,.075);cube("enamel cover",(0,-.23,.06),(.5,.03,.29),sea,.035)
-            cyl("recoil hub",(0,.24,0),.17,.08,steel,16,"Y");torus("guard",(0,.29,0),.24,.025,copper,(math.pi/2,0,0))
-            for x in (-.25,.25):rod("carry frame",(x,-.28,-.25),(x,.28,-.25),.035,steel)
+            # Stamped engine casing with a separate service panel, ventilation,
+            # recoil starter and real control hardware; retain the portable
+            # frame silhouette while avoiding a plain box-and-cylinder stack.
+            casing=poly_prism("stamped generator engine housing",[(-.34,-.22),(-.38,-.12),(-.35,.16),(-.27,.23),(.22,.23),(.34,.14),(.37,-.16),(.27,-.23),(-.22,-.25)],.43,iron,.032)
+            casing.location.y=.035
+            panel=poly_prism("pressed enamel service cover",[(-.245,-.14),(-.26,.105),(-.19,.17),(.12,.17),(.25,.09),(.25,-.12),(.16,-.17),(-.17,-.18)],.035,sea,.018);panel.location.y=-.205
+            # Offset vents catch a highlight across the louvered cooling panel.
+            for index in range(5):
+                z=-.105+index*.047
+                rod("cooling louver",(-.14,-.232,z),(.105,-.232,z+.018),.012,steel,7)
+            for x,z in ((-.205,-.115),(.205,-.115),(-.19,.115),(.19,.115)):
+                cyl("service panel screw",(x,-.239,z),.018,.014,copper,8,"Y",.003)
+                cube("screw slot",(x,-.248,z),(.018,.004,.003),dark,.001)
+            # Fuel tank, cap, exhaust and pull-start are separate fitted parts.
+            tank=poly_prism("rounded portable fuel tank",[(-.19,.22),(-.16,.34),(-.08,.38),(.17,.36),(.23,.30),(.20,.23)],.30,steel,.024);tank.location.y=.025
+            cyl("fuel filler neck",(.105,-.01,.38),.052,.055,iron,12,"Z",.006)
+            cyl("knurled fuel cap",(.105,-.01,.415),.063,.028,copper,12,"Z",.005)
+            profile_mesh("compact exhaust muffler",(.31,.03,.055),[(-.13,.065),(-.105,.09),(.075,.09),(.11,.064)],steel,"X",12)
+            cyl("exhaust outlet",(.43,.03,.055),.043,.13,dark,10,"X",.005)
+            for z in (-.02,.045,.11):rod("muffler heat slot",(.346,-.063,z),(.386,-.063,z),.008,dark,6)
+            cyl("recoil starter hub",(-.01,.26,-.005),.16,.07,steel,16,"Y",.012)
+            torus("recoil starter guard",(-.01,.302,-.005),.225,.022,copper,(math.pi/2,0,0))
+            torus("recoil starter face ring",(-.01,-.245,-.005),.128,.012,iron,(math.pi/2,0,0))
+            for index in range(8):
+                angle=index*math.tau/8
+                x=-.01+math.cos(angle)*.095;z=-.005+math.sin(angle)*.095
+                rod("starter fan cutout",(x,-.248,z),(x+math.cos(angle+.4)*.045,-.248,z+math.sin(angle+.4)*.045),.008,dark,6)
+            rod("starter pull cord",(-.22,.28,-.12),(-.36,.30,-.22),.012,leather,7)
+            ico("starter pull grip",(-.38,.30,-.235),(.055,.06,.09),wood,1)
+            cube("weatherproof switch bezel",(.205,-.25,.015),(.105,.035,.12),iron,.025)
+            cube("engine stop toggle",(.205,-.275,.022),(.028,.025,.072),copper,.009)
+            ico("generator status indicator",(.10,-.25,.115),(.025,.012,.025),green,1)
+            for x in (-.29,.29):
+                rod("tubular carry frame",(x,-.28,-.22),(x,.28,-.22),.033,steel,8)
+                rod("rubber isolation foot",(x,-.20,-.30),(x,.20,-.30),.04,dark,8)
         elif item=="powerSwitch":
             cube("switch case",(0,0,0),(.64,.2,.52),sea,.07);cube("switch face",(0,-.12,.02),(.47,.04,.35),dark,.025)
             cube("toggle",(.02,-.17,.08),(.1,.06,.23),copper,.025);ico("status lamp",(.17,-.16,-.07),(.045,.025,.045),green)
