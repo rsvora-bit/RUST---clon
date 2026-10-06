@@ -85,6 +85,42 @@ def poly_prism(name, outline, depth, mat, bevel_width=0.025):
     obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj)
     return bevel(obj,bevel_width,2)
 
+def profile_mesh(name, loc, profile, mat, axis="Y", sides=24):
+    """Lathed, faceted metal part with an authored stepped cross-section."""
+    verts=[]
+    for along,radius in profile:
+        for i in range(sides):
+            angle=math.tau*i/sides
+            if axis=="X": verts.append((loc[0]+along,loc[1]+radius*math.cos(angle),loc[2]+radius*math.sin(angle)))
+            else: verts.append((loc[0]+radius*math.cos(angle),loc[1]+along,loc[2]+radius*math.sin(angle)))
+    faces=[]
+    for row in range(len(profile)-1):
+        for i in range(sides):
+            a=row*sides+i;b=row*sides+(i+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+    faces.extend((tuple(range(sides-1,-1,-1)),tuple((len(profile)-1)*sides+i for i in range(sides))))
+    mesh=bpy.data.meshes.new(name+" precision profile");mesh.from_pydata(verts,[],faces);mesh.materials.append(mat);mesh.update()
+    obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj)
+    for face in mesh.polygons: face.use_smooth=True
+    return obj
+
+def toothed_gear(name, center, radius, thickness, teeth, mat):
+    """Extruded involute-like tooth silhouette with a true open center bore."""
+    offsets=(-.48,-.31,-.23,.23,.31,.48);scales=(.82,.82,1.08,1.08,.82,.82);outer=[]
+    for tooth in range(teeth):
+        for offset,scale in zip(offsets,scales):
+            angle=(tooth+offset)*math.tau/teeth;outer.append((center[0]+math.cos(angle)*radius*scale,center[2]+math.sin(angle)*radius*scale))
+    count=len(outer);bore=radius*.31;verts=[]
+    for y in (center[1]-thickness/2,center[1]+thickness/2):
+        verts.extend((x,y,z) for x,z in outer)
+        verts.extend((center[0]+math.cos(i*math.tau/count)*bore,y,center[2]+math.sin(i*math.tau/count)*bore) for i in range(count))
+    faces=[]
+    for i in range(count):
+        j=(i+1)%count
+        faces.extend(((i,j,count+j,count+i),(2*count+i,3*count+i,3*count+j,2*count+j),(i,2*count+i,2*count+j,j),(count+i,count+j,3*count+j,3*count+i)))
+    mesh=bpy.data.meshes.new(name+" toothed annular mesh");mesh.from_pydata(verts,[],faces);mesh.materials.append(mat);mesh.update()
+    obj=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(obj);bevel(obj,.008,1);return obj
+
 def torus(name, loc, major, minor, mat, rotation=None):
     bpy.ops.mesh.primitive_torus_add(major_radius=major,minor_radius=minor,major_segments=20,minor_segments=8,location=loc)
     o=bpy.context.object;o.name=name
@@ -289,11 +325,31 @@ def build(item):
             for i,(pos,sz) in enumerate([((-.19,0,.05),(.28,.2,.23)),((.1,.02,-.12),(.34,.24,.2)),((.18,0,.19),(.2,.17,.2))]):cube("salvaged component",pos,sz,steel if i%2 else copper,.045)
             if item=="techParts":cube("sealed module",(0,-.13,.04),(.32,.06,.23),sea,.025)
             if item=="machineParts":
-                cyl("bearing",(0,-.14,-.07),.12,.04,iron,16,"Y")
-                cyl("bearing race",(0,-.166,-.07),.082,.018,copper,16,"Y")
-                cyl("bearing spindle",(0,-.18,-.07),.039,.045,dark,12,"Y")
-                rod("bent steel shaft",(-.28,-.06,.16),(.32,-.06,.16),.055,steel,10)
-                for x in (-.25,.28):cyl("shaft collar",(x,-.06,.16),.078,.07,copper,10,"X")
+                # Broken motor casing: a hand-shaped irregular cast shell with a
+                # torn lower edge, vent ribs and a deep rotor aperture.
+                poly_prism("fractured motor housing",[(-.35,-.16),(-.30,.11),(-.18,.25),(.15,.28),(.34,.17),(.29,-.10),(.13,-.25),(-.12,-.23)],.25,steel,.025).location=(-.08,.105,.025)
+                poly_prism("missing casing section",[(-.30,-.12),(-.21,.08),(-.08,.13),(-.02,-.10)],.018,dark,.008).location=(-.08,-.035,.025)
+                for x in (-.31,.12):
+                    rod("cast housing cooling rib",(x,-.045,-.12),(x-.035,-.045,.13),.018,iron,8)
+                # Bearing cartridge, machined race, spindle and a flange with
+                # open bore; the stepped profiles are authored meshes, not boxes.
+                profile_mesh("motor bearing cartridge",(-.20,-.11,.04),[(-.09,.18),(-.075,.23),(.06,.23),(.085,.18)],iron,"Y",24)
+                torus("bearing polished race",(-.20,-.205,.04),.15,.022,copper,(math.pi/2,0,0))
+                cyl("bearing shadowed bore",(-.20,-.214,.04),.095,.018,dark,20,"Y",.004)
+                profile_mesh("stepped rotor spindle",(-.20,-.235,.04),[(-.025,.052),(.02,.052),(.045,.084),(.105,.084),(.13,.048),(.26,.048)],steel,"Y",16)
+                # Two visibly different gear profiles make the loose salvage
+                # assembly recognizable even at small inventory-icon scale.
+                toothed_gear("eight-tooth drive gear",(.22,-.17,-.12),.235,.075,8,steel)
+                toothed_gear("small idler gear",(-.29,-.07,.27),.145,.065,9,copper)
+                profile_mesh("idler hub",(-.29,-.115,.27),[(-.025,.047),(.018,.066),(.045,.047)],iron,"Y",16)
+                # A bent shaft, flanged coupling and staggered fasteners add a
+                # silhouette that reads as collected mechanical parts.
+                profile_mesh("bent shaft section",(.18,.12,.23),[(-.28,.044),(-.24,.068),(-.19,.044),(.15,.044),(.20,.076),(.25,.076)],steel,"X",16)
+                profile_mesh("shaft end flange",(.40,.12,.23),[(-.025,.082),(-.014,.115),(.014,.115),(.030,.078)],copper,"X",20)
+                for x,z in ((-.31,-.18),(.11,-.23),(.33,.18)):
+                    profile_mesh("salvage housing bolt",(x,-.073,z),[(-.018,.026),(0,.041),(.032,.041),(.05,.024)],gold,"Y",6)
+                rod("snapped wire lead",(.22,-.04,-.21),(.34,-.02,-.29),.018,copper,8)
+                rod("snapped wire return",(.34,-.02,-.29),(.43,.00,-.23),.014,dark,8)
     else:
         cube("salvage object",(0,0,0),(.55,.36,.42),iron,.06)
 
