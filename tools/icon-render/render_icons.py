@@ -397,8 +397,9 @@ def build(item):
             cube("access card",(0,0,0),(.65,.04,.42),sea,.035);cube("chip",(-.16,-.03,.04),(.14,.02,.13),gold,.018)
             cube("stripe",(.18,-.03,-.1),(.18,.015,.045),steel,.006)
         else:
-            for i,(pos,sz) in enumerate([((-.19,0,.05),(.28,.2,.23)),((.1,.02,-.12),(.34,.24,.2)),((.18,0,.19),(.2,.17,.2))]):cube("salvaged component",pos,sz,steel if i%2 else copper,.045)
-            if item=="techParts":cube("sealed module",(0,-.13,.04),(.32,.06,.23),sea,.025)
+            if item!="machineParts":
+                for i,(pos,sz) in enumerate([((-.19,0,.05),(.28,.2,.23)),((.1,.02,-.12),(.34,.24,.2)),((.18,0,.19),(.2,.17,.2))]):cube("salvaged component",pos,sz,steel if i%2 else copper,.045)
+                if item=="techParts":cube("sealed module",(0,-.13,.04),(.32,.06,.23),sea,.025)
             if item=="machineParts":
                 # Broken motor casing: a hand-shaped irregular cast shell with a
                 # torn lower edge, vent ribs and a deep rotor aperture.
