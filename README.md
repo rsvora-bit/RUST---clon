@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.11.0%20%7C%20EA--11.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.12.0%20%7C%20EA--12.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.11.0 / EA-11.0` · **5 October 2026**
+**Current release:** `v0.12.0 / EA-12.0` · **7 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.11.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.11.0/)
+Latest stable: [▶ PLAY v0.12.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.12.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -74,7 +74,7 @@ The main idea is simple:
 ## ⚙️ Current gameplay systems
 
 ### 🌍 World
-- Generation-5 1280-m procedural archipelago with irregular coasts, satellite islands, ridges, valleys and a safe starter shore
+- Generation-5 1664-m procedural archipelago with irregular coasts, satellite islands, ridges, valleys and a safe starter shore
 - Regional temperate forest, grassland, arid, alpine, rocky-mountain and coastal biomes
 - Terrain-following roads connecting established POIs
 - Cached topographic island map with hillshade, biome colors, grid coordinates, pan/zoom and persistent markers
@@ -117,72 +117,17 @@ The main idea is simple:
 - Map, waypoints, diagnostics and developer telemetry with fly/god/vitals controls
 
 ### 💾 Persistence
-The browser locally persists world generation, settings, inventory, crafting, research, structure grades/health, doors, stations, drops, depleted resource nodes and survival progression. Historical generation 1–4 worlds continue on their original 720-m terrain; worlds created since v0.9.0 use generation 5. Existing v0.9.0 gen5 saves keep their historical revision-1 layout, while new v0.9.1 gen5 worlds explicitly store `worldRevision: 2` for improved roads and vegetation. Terrain heights and saved player/world state are preserved.
+The browser locally persists world generation, settings, inventory, crafting, research, structure grades/health, doors, stations, drops, depleted resource nodes and survival progression. Historical generation 1–4 worlds continue on their original 720-m terrain. Generation-5 save revisions keep their own deterministic layout: v0.9.0 saves without `worldRevision` remain revision 1, v0.9.1 revision-2 saves keep their roads and resources, and v0.10.0+ worlds use the 1664-m revision-6 archipelago. Loading a save does not reset its terrain, player, inventory, structures, stations, research or Lost Packs.
 
 ---
 
-## 🚀 Current development focus
+## 🚀 Current release
 
-**v0.9.3 / EA-09.3 — Combat & Endgame Expansion** builds on the Generation 5 world with deeper weapon and armor progression, guarded endgame POIs, repeatable world events, base raids, wildlife and campfire cooking.
+**v0.12.0 / EA-12.0 — Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul** adds an original Blender world-asset pipeline, refined item icons, batched tree/rock/shore props, clearer rain and exposure feedback, and a save-locked developer Testing Mode. Historical world layouts and gameplay saves remain supported.
 
-- ✅ Tuned acceleration/deceleration, air control, crouch transitions and landing response
-- ✅ Frame-rate independent mouse-look accumulation and burst protection
-- ✅ Subtle sprint FOV response and movement camera sway
-- ✅ Auto-run plus survival-FPS crouch/sprint restrictions
-- ✅ Animated hands/tools with swing, recoil, sway, sprint pose and inspect
-- ✅ Speed- and surface-aware procedural footsteps
-- ✅ Tree X weak spots, rock sparkle targets and per-hit bonus yields
-- ✅ Tool-specific gathering audio and material impact particles
-- ✅ Rich terrain blending, understory vegetation, decals and shoreline detail
-- ✅ Improved ocean, layered sky/clouds and distance fog
-- ✅ High/Ultra SSAO, subtle bloom and color grading with Low/Medium performance fallback
-- ✅ Detailed staged world loading and GPU warm-up
-- ✅ Expanded settings, localization and diagnostics
-- ✅ Reliable multi-save confirmation controls, explicit Back navigation and auto-closing History overlays
-- ✅ Seed-driven generation 3 spawns, scattered rain collectors and tiered salvage crates
-- ✅ Stone, metal, sulfur and high-quality metal mineral node variants with seeded random distribution
-- ✅ Optional V-Sync/frame pacing with an uncapped OFF scheduler plus F3 fly/god/vitals tools
-- ✅ Denser gatherable loose wood/berry resources
-- ✅ Current rendering-stability foundation with depth-based AO and reduced vegetation render cost
-- ✅ Automated CI validation and GitHub Pages deployment
-- ✅ Wood → Stone → Metal building upgrades with persistent durability
-- ✅ Craftable first-person Builder's Hammer with upgrade, repair, rotate and hold-demolish actions
-- ✅ Safe v0.7.6 save migration and future-facing structure damage lifecycle API
-- ✅ Persistent death lifecycle with dead-save/reload protection and a reusable player damage API
-- ✅ Recoverable Lost Packs, Sleeping Roll respawn, shore fallback and Rock + Torch respawn kit
-- ✅ Lost Pack map markers and shared disposable-container cleanup with salvage caches
-- ✅ Scrap, Wiring, Gears, Machine Parts and rare Tech Parts from tiered salvage caches
-- ✅ Two persistent world Salvage Recyclers with atomic, timed Scrap/Metal processing
-- ✅ One-time v0.7.8 economy bootstrap without overwriting existing loot
-- ✅ Persistent Scrap-funded Tech Tree with Workbench I–III recipe progression
-- ✅ Generation-5 1280-m archipelago with regional climate, satellite islands and safe legacy-world loading
-- ✅ Biome-aware procedural terrain, palms, alpine conifers and bounded resource distribution
-- ✅ Terrain-following POI roads and cached topographic map with hillshade, grid, pan and zoom
-- ✅ Three-layer distant mountain backdrop, expanded ocean and coordinated storm atmosphere
-- ✅ Landing-speed fall damage through the existing player damage/death lifecycle
-- ✅ Expanded melee and ranged weapon tiers, armor progression, trauma care and durable gear
-- ✅ Deterministic scavenger awareness, coordinated raids, wildlife and guarded high-risk POIs
-- ✅ Relay signal caches, repeatable storm salvage and risk-scaled location loot
-- ✅ Powered Homestead intrusion alarms, base security and persistent campfire cooking
+## 🗺️ Development direction
 
----
-
-## 🗺️ Roadmap
-
-### `v0.2.x` — Foundation & stability
-Performance, input, loading, persistence, building reliability, resource behaviour and debugging tools.
-
-### `v0.3.x` — Menu & settings foundation
-Game-style main/pause menus, tabbed settings, remappable controls, graphics/audio controls and EN/CZ localization.
-
-### `v0.4.x` — Movement & first-person feel
-Acceleration/deceleration, crouch and landing transitions, air control, footsteps, auto-run, first-person hands and tool animation.
-
-### Next milestones
-- `v0.9.1+`: deeper POIs, equipment, hazardous zones, ownership and upkeep
-- Later: farming, AI, world events, electricity, ocean gameplay, vehicles and multiplayer
-
-The roadmap is intentionally flexible. Features are added when they improve the core survival experience rather than simply increasing the feature count.
+Continue improving world readability, biome transitions and visual stability across real hardware and weather states. Deepen exploration rewards and survival progression around existing POIs, equipment, salvage and workbenches while preserving existing saves and controls. The roadmap stays flexible and prioritizes changes that strengthen Tideland’s coastal survival identity.
 
 ---
 
@@ -258,6 +203,19 @@ npm run icons:render
 
 This runs Blender in background mode and writes the catalogued transparent WebP assets to `public/assets/items/`. Blender must be installed locally; when it is not on `PATH`, set `BLENDER_BIN` to its executable. The renderer uses only project-authored geometry and materials.
 
+Generate the original modular environment models and validate them with:
+
+```bash
+npm run assets:world
+npm run test:assets:world
+```
+
+The headless Blender exporter in `tools/world-assets/` builds source-authored trees, rocks, shoreline props and POI assets as compact GLBs with LOD0/1/2 meshes and one shared material set per model. It emits meter-based collision-proxy hints alongside the GLBs; live gameplay colliders remain managed by the existing world and physics systems. Export rules, LOD selection and budgets are documented in [`tools/world-assets/README.md`](tools/world-assets/README.md). No external asset pack is required.
+
+World rendering batches repeated tree, grass, rock and shoreline assets with instancing, distance culling and graphics-tier LOD/density choices. Save data continues to store procedural world identity and gameplay nodes rather than these visual meshes, so asset refinements preserve existing save layouts.
+
+For browser content checks, `npm run test:testing-mode` opens an isolated developer sandbox for items, building, weather and combat QA. Testing Mode displays a save lock and rejects writes to normal browser saves.
+
 ---
 
 ## 🧪 Development workflow
@@ -286,6 +244,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.12.0` | Blender world-asset pipeline, refined item icons, environment LODs, wet weather, readable HUD and save-locked Testing Mode |
 | `v0.11.0` | Original item-icon pipeline, cohesive responsive interface, EN/CZ research, station and map localization |
 | `v0.10.0` | World Revision 6, expanded archipelago, forests, marsh, terrain, atmosphere and landmark polish |
 | `v0.9.3` | Combat and armor progression, raiding/security, relay and storm events, Breakwater wreck and campfire cooking |
@@ -349,9 +308,15 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.11.0 / EA-11.0`
+`EARLY ACCESS DEVELOPMENT · v0.12.0 / EA-12.0`
 
 </div>
+
+### v0.12.0 validation and compatibility
+
+World-generation identity and save schema are unchanged. Generation 1–4 keep their legacy generators; historical Generation 5 revisions retain their original terrain, roads, POIs, resource identities and player/world state. New visual assets are runtime representations and collision-proxy sidecars are authoring hints; live gameplay colliders remain owned by the existing world and physics systems. Testing Mode rejects save writes and does not alter ordinary browser saves.
+
+Validation: `npm test` **496/496 passed in 53 files** and `npm run build` passed. Screenshot-free browser QA passed world-art **82/82**, Testing Mode **12/12**, menu/Settings, gameplay construction and inventory, and Recycler/Lost Pack regression checks without browser errors. The Blender pipeline generated **53 icons** (472,310 bytes) and verified **31 world GLBs plus 31 collision proxies**. Matched Chrome/Metal HIGH performance against archived v0.11.0 measured **216.53 → 217.70 FPS**, **4.618 → 4.593 ms/frame**, **437 → 463 draw calls** and **3,553,774 → 3,134,585 triangles** at 1280×900, seed 731942 and 240 sampled frames; both runs reported no browser errors.
 
 ### v0.11.0 validation and compatibility
 

@@ -1,3 +1,11 @@
+## v0.12.0 / EA-12.0 — Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul (2026-10-07)
+
+- Added a project-authored Blender world-asset pipeline for modular GLB models, LOD0/1/2 exports and verified collision-proxy metadata.
+- Refined original inventory icon models and added authored, batched environment assets for trees, rocks, shoreline props and Breakwater.
+- Improved rain and surface wetness presentation, HUD exposure readability, water/weather graphics controls and developer Testing Mode.
+- Preserved historical world generators, existing save layouts, structures, inventory, stations and progression.
+- Validation: 496 unit tests, production build, world-art 82/82, Testing Mode 12/12, gameplay/Recycler browser QA, Blender asset checks and matched v0.11.0 HIGH performance comparison.
+
 ## v0.11.0 / EA-11.0 — UI, Icons & Visual Identity Overhaul (2026-10-05)
 
 - Added an original coastal-industrial UI design system across inventory, crafting, equipment, HUD, menus, settings, history and save management.

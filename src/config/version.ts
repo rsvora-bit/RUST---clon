@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.11.0';
-export const GAME_BUILD='EA-11.0';
-export const GAME_RELEASE_DATE='2026-10-05';
+export const GAME_VERSION='0.12.0';
+export const GAME_BUILD='EA-12.0';
+export const GAME_RELEASE_DATE='2026-10-07';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.12.0',date:'2026-10-07',title:'Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul',changes:[
+    'Added an original headless Blender pipeline for modular world GLBs, three LOD levels and validated collision-proxy hints.',
+    'Refined original item icons and integrated authored tree, rock, shoreline and Breakwater details with batched LOD rendering.',
+    'Improved rain response, pooled surface splashes, readable wet/cold/toxic HUD exposure and independent water/weather quality controls.',
+    'Added a save-locked developer Testing Mode for safe browser QA while preserving normal worlds and historical save layouts.',
+    'Validated legacy and current saves, world art, gameplay, Settings, Testing Mode, 53 generated icons and matched HIGH performance.'
+  ]},
   {version:'0.11.0',date:'2026-10-05',title:'UI, Icons & Visual Identity Overhaul',changes:[
     'Introduced a cohesive original coastal-industrial interface system with refined inventory, equipment, crafting, HUD, main menu, pause, settings, history and save surfaces.',
     'Created 53 original transparent item icons with a reproducible Blender-to-WebP pipeline and compact runtime assets; no external asset packs were added.',
