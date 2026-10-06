@@ -181,7 +181,13 @@ def build(item):
             poly_prism("poll impact plane",[(.48,.60),(.52,.54),(.48,.48)],.20,steel,.008)
         elif item=="quarryMaul":
             cube("mining head",(.33,0,.53),(.53,.18,.2),steel,.08);cube("striking face",(.61,0,.53),(.12,.22,.25),iron,.035)
-        elif item=="hammer": cube("hammer head",(.35,0,.56),(.42,.22,.27),steel,.055)
+        elif item=="hammer":
+            poly_prism("forged carpenter hammer body",[(.20,.45),(.34,.42),(.49,.44),(.58,.48),(.64,.54),(.64,.60),(.59,.66),(.48,.69),(.31,.67),(.22,.62),(.17,.55)],.19,steel,.024)
+            curve_tube("upper curved nail claw",[(.25,0,.59),(.205,0,.635),(.155,0,.70),(.105,0,.73)],.034,iron)
+            curve_tube("lower hooked nail claw",[(.25,0,.55),(.18,0,.535),(.11,0,.505),(.07,0,.47)],.034,iron)
+            poly_prism("ground striking poll",[(.53,.47),(.61,.49),(.66,.54),(.66,.60),(.62,.65),(.54,.67),(.50,.61),(.51,.53)],.205,iron,.011)
+            poly_prism("replaceable poll cap",[(.605,.50),(.655,.54),(.655,.60),(.615,.65),(.59,.61),(.59,.54)],.214,copper,.006)
+            poly_prism("forged cheek reinforcement",[(.32,.49),(.39,.46),(.48,.48),(.51,.55),(.49,.62),(.41,.65),(.33,.61)],.205,steel,.01)
         elif item=="spear":
             bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.17,radius2=0,depth=.48,location=(.31,0,.75));assign(bpy.context.object,steel)
         elif item=="arrow":
@@ -208,8 +214,9 @@ def build(item):
             for x,z in ((.22,.60),(.43,.60)):
                 ico("forged rivet",(x,-.13,z),(.035,.02,.035),copper,1)
         if item=="hammer":
-            cube("hammer claw",(.48,0,.63),(.23,.18,.11),steel,.035).rotation_euler[1]=-.30
-            cube("hammer face cap",(.57,-.10,.56),(.12,.035,.19),copper,.018)
+            for x,z in ((.29,.59),(.43,.61)):
+                ico("forged cheek rivet",(x,-.132,z),(.026,.014,.026),copper,1)
+            rod("poll cap wear groove",(.61,-.12,.535),(.61,-.12,.625),.006,gold,6)
         if item=="docksideCleaver":
             cube("cleaver tang",(.15,-.09,.50),(.34,.025,.075),iron,.012).rotation_euler[1]=-.18
             dark_grip=material("salt-darkened grip leather",(.105,.075,.052,1),0,.91)
