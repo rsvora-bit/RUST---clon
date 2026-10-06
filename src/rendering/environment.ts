@@ -13,7 +13,7 @@ import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as mak
 import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
-type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string};
+type NaturalCollider={position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string;rainSurface?:boolean};
 type GrassChunk={mesh:THREE.InstancedMesh;center:THREE.Vector3;fullCount:number};
 type TreeFall={elapsed:number;duration:number;hold:number;fade:number;axis:THREE.Vector3;refs:InstanceRef[];node:ResourceNode};
 
@@ -221,7 +221,7 @@ export class Environment {
         trunks.setColorAt(index,trunkColor);crowns.setColorAt(index,crownColor);masses?.setColorAt(index,crownColor);
         this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:crownMatrix},...(masses?[{mesh:masses,index,matrix:crownMatrix}]:[])]);batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,crownMatrix,active:true,visible:true,renderIndex:index,trunkColor,crownColor});
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
-        this.colliders.push({nodeId:node.id,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
+        this.colliders.push({nodeId:node.id,rainSurface:false,position:{x:node.position.x,y:node.position.y+(broad?3.6:6.2)*node.scale,z:node.position.z},halfExtents:{x:.27*node.scale,y:(broad?3.6:6.2)*node.scale,z:.27*node.scale}});
       });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(masses?.instanceColor)masses.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();masses?.computeBoundingSphere();this.treeBatches.push({trunks,crowns,masses,species,fullCount:entries.length,instances:batchInstances});for(const tree of batchInstances)this.treeInstancesById.set(tree.id,tree);
     }
   }

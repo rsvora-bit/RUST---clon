@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 import { PLAYER } from '../config/balance';
 import type { Vec3 } from '../core/types';
-export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string}
+export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string;rainSurface?:boolean}
 export class PhysicsWorld {
   readonly world:RAPIER.World;
   readonly body:RAPIER.RigidBody;
@@ -10,12 +10,14 @@ export class PhysicsWorld {
   readonly controller:RAPIER.KinematicCharacterController;
   private structureColliders = new Map<string,RAPIER.Collider[]>();
   private naturalColliders = new Map<string,RAPIER.Collider>();
+  private readonly excludedRainSurfaces=new Set<number>();
+  private readonly rainRay=new RAPIER.Ray({x:0,y:0,z:0},{x:0,y:-1,z:0});
   constructor(terrain:THREE.BufferGeometry,props:CollisionBox[],spawn:Vec3){
     this.world = new RAPIER.World({x:0,y:-PLAYER.GRAVITY,z:0});
     const positions = new Float32Array(terrain.getAttribute('position').array);
     const indices = terrain.index ? new Uint32Array(terrain.index.array) : new Uint32Array(Array.from({length:positions.length/3},(_,i)=>i));
     this.world.createCollider(RAPIER.ColliderDesc.trimesh(positions,indices).setFriction(0.9));
-    for(const p of props) { const collider=this.createBox(p);if(p.nodeId)this.naturalColliders.set(p.nodeId,collider); }
+    for(const p of props) { const collider=this.createBox(p);if(p.nodeId)this.naturalColliders.set(p.nodeId,collider);if(p.rainSurface===false)this.excludedRainSurfaces.add(collider.handle); }
     this.body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(spawn.x,spawn.y+PLAYER.HEIGHT/2,spawn.z));
     this.collider=this.world.createCollider(RAPIER.ColliderDesc.capsule(PLAYER.HEIGHT/2-PLAYER.RADIUS,PLAYER.RADIUS),this.body);
     this.controller=this.world.createCharacterController(0.025);
@@ -33,7 +35,12 @@ export class PhysicsWorld {
   setStructure(id:string,boxes:CollisionBox[]){this.removeStructure(id);this.structureColliders.set(id,boxes.map(b=>this.createBox(b)));}
   removeStructure(id:string){for(const c of this.structureColliders.get(id)??[])this.world.removeCollider(c,true);this.structureColliders.delete(id);}
   hasStructure(id:string){return this.structureColliders.has(id);}
-  removeNodeCollider(id:string){const collider=this.naturalColliders.get(id);if(collider){this.world.removeCollider(collider,true);this.naturalColliders.delete(id);}}
+  removeNodeCollider(id:string){const collider=this.naturalColliders.get(id);if(collider){this.world.removeCollider(collider,true);this.naturalColliders.delete(id);this.excludedRainSurfaces.delete(collider.handle);}}
+  rainSurfaceAt(x:number,z:number,originY:number,maxDistance:number,point:THREE.Vector3,normal:THREE.Vector3):boolean{
+    this.rainRay.origin.x=x;this.rainRay.origin.y=originY;this.rainRay.origin.z=z;
+    const hit=this.world.castRayAndGetNormal(this.rainRay,maxDistance,true,undefined,undefined,this.collider,this.body,collider=>!this.excludedRainSurfaces.has(collider.handle));
+    if(!hit)return false;point.set(x,originY-hit.timeOfImpact,z);normal.set(hit.normal.x,hit.normal.y,hit.normal.z).normalize();return true;
+  }
   move(delta:Vec3){
     this.controller.computeColliderMovement(this.collider,delta);
     const m=this.controller.computedMovement(),p=this.body.translation();

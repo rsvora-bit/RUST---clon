@@ -218,4 +218,18 @@ describe('environment visual building blocks',()=>{
       expect(splash!.visible).toBe(false);
     }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
+
+  it('places pooled splashes on sampled solid surfaces with an independent surface normal per instance',()=>{
+    const seed=901,state=new GameSimulation(seed,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather;
+    Object.assign(w,{kind:'rain',remaining:3600,blend:1,rain:1,storm:0,mist:0});
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3(),surface=new THREE.Vector3(),normal=new THREE.Vector3();let sample=0;
+    const surfaceAt=(x:number,z:number,point:THREE.Vector3,n:THREE.Vector3)=>{point.set(x,2,z);const sloped=sample++===0;n.set(sloped?0.6:0,sloped?0.8:1,0);return true;};
+    try{
+      atmosphere.update(.4,10,camera);weather.update(.4,state,atmosphere,camera,'ultra',undefined,surfaceAt);
+      const splash=scene.children.find((child):child is THREE.InstancedMesh=>child instanceof THREE.InstancedMesh)!;
+      expect(sample).toBe(2);let found=0;const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();
+      for(let i=0;i<splash.count;i++){splash.getMatrixAt(i,matrix);matrix.decompose(position,rotation,scale);if(position.y<0)continue;found++;expect(position.y).toBeCloseTo(2.025,3);const orientedNormal=new THREE.Vector3(0,0,1).applyQuaternion(rotation);if(found===1){expect(orientedNormal.x).toBeCloseTo(.6,3);expect(orientedNormal.y).toBeCloseTo(.8,3);}else{expect(orientedNormal.x).toBeCloseTo(0,3);expect(orientedNormal.y).toBeCloseTo(1,3);}}
+      expect(found).toBe(2);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
+  });
 });
