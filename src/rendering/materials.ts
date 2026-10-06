@@ -7,6 +7,7 @@ export function addWeatherSurfaceResponse(material:THREE.MeshStandardMaterial,we
     previousCompile.call(this,shader,renderer);
     if(shader.fragmentShader.includes('tidelandWeatherWetness'))return;
     shader.uniforms.tidelandWeatherWetness=wetness;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float tidelandWeatherWetness;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>\nfloat tidelandWet=clamp(tidelandWeatherWetness*${strength.toFixed(3)},0.0,1.0);diffuseColor.rgb*=1.0-tidelandWet*.105;`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,max(${minRoughness.toFixed(3)},roughnessFactor*.76),tidelandWet*.72);`);
   };

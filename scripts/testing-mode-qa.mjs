@@ -24,5 +24,5 @@ try{
   const saveResult=await page.evaluate(()=>window.__TIDELAND.save()),savesAfter=await page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.entries(localStorage).sort())));
   check('save attempt is rejected and existing browser saves stay byte-for-byte unchanged',saveResult===false&&savesAfter===savesBefore);
   await clickControl('[data-dev="testing"]');check('disabling mode keeps session save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED'&&await page.evaluate(()=>window.__TIDELAND.save())===false);
-  check('no browser console or page errors',errors.length===0);
+  assert.equal(errors.length,0,`browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
 } finally {await browser.close();}

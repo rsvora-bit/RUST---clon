@@ -10,12 +10,13 @@ describe('weather surface response',()=>{
     material.customProgramCacheKey=()=> 'existing-material-key';
     const wetness={value:0};
     addWeatherSurfaceResponse(material,wetness,.68,.46);
-    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'',fragmentShader:'#include <color_fragment>\n#include <roughnessmap_fragment>'};
+    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'',fragmentShader:'#include <common>\n#include <color_fragment>\n#include <roughnessmap_fragment>'};
 
     material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);
 
     expect(priorCompile).toHaveBeenCalledOnce();
     expect(shader.uniforms.tidelandWeatherWetness?.value).toBe(0);
+    expect(shader.fragmentShader).toContain('uniform float tidelandWeatherWetness;');
     expect(shader.fragmentShader).toContain('tidelandWeatherWetness*0.680');
     expect(shader.fragmentShader).toContain('roughnessFactor=mix(roughnessFactor,max(0.460,roughnessFactor*.76)');
     expect(material.customProgramCacheKey()).toContain('existing-material-key|tideland-weather-response-v1-0.680-0.460');
