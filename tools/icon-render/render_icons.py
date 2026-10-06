@@ -684,10 +684,32 @@ def build(item):
         elif item=="relayAccessCard":
             cube("access card",(0,0,0),(.65,.04,.42),sea,.035);cube("chip",(-.16,-.03,.04),(.14,.02,.13),gold,.018)
             cube("stripe",(.18,-.03,-.1),(.18,.015,.045),steel,.006)
+        elif item=="techParts":
+            board=poly_prism("irregular salvaged circuit board",[(-.37,-.27),(-.34,.25),(-.22,.36),(.20,.35),(.36,.20),(.33,-.24),(.16,-.36),(-.22,-.34)],.065,sea,.02);board.location.y=.065
+            # Copper traces and punched contact pads remain visible around the
+            # central processor instead of reading as a featureless green box.
+            for points in (((-.27,-.055,.25),(-.19,-.055,.18),(-.12,-.055,.18)),((.25,-.055,.22),(.15,-.055,.12),(.12,-.055,.12)),((-.28,-.055,-.22),(-.17,-.055,-.12),(-.14,-.055,-.12)),((.26,-.055,-.22),(.19,-.055,-.12),(.14,-.055,-.12))):
+                curve_tube("etched copper circuit path",points,.011,gold)
+            chip_outline=[(-.17,-.14),(-.14,.13),(-.09,.18),(.12,.18),(.17,.13),(.16,-.14),(.10,-.19),(-.11,-.19)]
+            chip=poly_prism("salvaged processor package",chip_outline,.072,iron,.015);chip.location=(0,-.015,.02)
+            poly_prism("ceramic processor lid",[(-.105,-.12),(-.085,.10),(-.055,.125),(.075,.125),(.115,.09),(.10,-.11),(.06,-.145),(-.075,-.145)],.018,dark,.008).location=(0,-.063,.02)
+            for side in (-1,1):
+                for index in range(5):
+                    z=-.12+index*.07
+                    rod("processor gull-wing pin",(side*.16,-.075,z),(side*.235,-.075,z),.009,copper,6)
+                    cyl("board solder pad",(side*.25,-.061,z),.018,.012,gold,8,"Y",.003)
+            for x,z,radius,height in ((-.245,.205,.058,.16),(.25,-.18,.064,.19)):
+                cyl("salvaged electrolytic capacitor",(x,-.025,z),radius,height,iron,12,"Z",.008)
+                cyl("capacitor scored cap",(x,-.025,z+height*.51),radius*.84,.018,steel,12,"Z",.004)
+                for side in (-1,1):rod("capacitor lead",(x+side*.025,-.02,z-height*.5),(x+side*.025,-.02,z-height*.5-.08),.008,copper,6)
+            torus("copper wound signal inductor",(.23,-.075,.17),.085,.014,copper,(math.pi/2,0,0))
+            profile_mesh("salvaged glass crystal oscillator",(-.245,-.01,-.19),[(-.09,.045),(-.065,.075),(.065,.075),(.09,.045)],white,"X",8)
+            for index in range(5):
+                x=-.24+index*.12
+                cube("edge connector finger",(x,-.014,-.33),(.055,.016,.035),gold,.006)
         else:
             if item!="machineParts":
                 for i,(pos,sz) in enumerate([((-.19,0,.05),(.28,.2,.23)),((.1,.02,-.12),(.34,.24,.2)),((.18,0,.19),(.2,.17,.2))]):cube("salvaged component",pos,sz,steel if i%2 else copper,.045)
-                if item=="techParts":cube("sealed module",(0,-.13,.04),(.32,.06,.23),sea,.025)
             if item=="machineParts":
                 # Broken motor casing: a hand-shaped irregular cast shell with a
                 # torn lower edge, vent ribs and a deep rotor aperture.
