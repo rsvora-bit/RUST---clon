@@ -5,6 +5,7 @@ import type {GameState} from '../src/core/types';
 import {loadSettings,saveSettings} from '../src/save/storage';
 import {Atmosphere} from '../src/world/atmosphere';
 import {Weather} from '../src/survival/Weather';
+import {scaledFoliageDistance} from '../src/rendering/environment';
 
 class MemoryStorage {
   private readonly data=new Map<string,string>();
@@ -19,15 +20,21 @@ describe('independent water and weather effect quality settings',()=>{
 
   it('migrates older settings and persists independent effect choices',()=>{
     localStorage.setItem('tideland:settings:v1',JSON.stringify({quality:'high'}));
-    expect(loadSettings()).toMatchObject({waterQuality:'high',weatherEffectsQuality:'high'});
+    expect(loadSettings()).toMatchObject({waterQuality:'high',weatherEffectsQuality:'high',foliageDistance:1});
     localStorage.setItem('tideland:settings:v1',JSON.stringify({quality:'low'}));
-    expect(loadSettings()).toMatchObject({quality:'low',waterQuality:'low',weatherEffectsQuality:'low'});
+    expect(loadSettings()).toMatchObject({quality:'low',waterQuality:'low',weatherEffectsQuality:'low',foliageDistance:.65});
     localStorage.setItem('tideland:settings:v1',JSON.stringify({quality:'medium'}));
-    expect(loadSettings()).toMatchObject({quality:'medium',waterQuality:'medium',weatherEffectsQuality:'medium'});
-    saveSettings({...DEFAULT_SETTINGS,waterQuality:'low',weatherEffectsQuality:'medium',keybinds:{...DEFAULT_SETTINGS.keybinds}});
-    expect(loadSettings()).toMatchObject({waterQuality:'low',weatherEffectsQuality:'medium'});
+    expect(loadSettings()).toMatchObject({quality:'medium',waterQuality:'medium',weatherEffectsQuality:'medium',foliageDistance:.8});
+    saveSettings({...DEFAULT_SETTINGS,foliageDistance:1.35,waterQuality:'low',weatherEffectsQuality:'medium',keybinds:{...DEFAULT_SETTINGS.keybinds}});
+    expect(loadSettings()).toMatchObject({foliageDistance:1.35,waterQuality:'low',weatherEffectsQuality:'medium'});
     localStorage.setItem('tideland:settings:v1',JSON.stringify({waterQuality:'ultra',weatherEffectsQuality:'invalid'}));
     expect(loadSettings()).toMatchObject({waterQuality:'high',weatherEffectsQuality:'high'});
+  });
+
+  it('scales grass and tree visibility distance while clamping the supported range',()=>{
+    expect([.5,1,1.5].map(scale=>scaledFoliageDistance(520,scale))).toEqual([260,520,780]);
+    expect(scaledFoliageDistance(520,0)).toBe(260);
+    expect(scaledFoliageDistance(520,2)).toBe(780);
   });
 
   it('selects distinct shader detail levels without changing legacy quality tiers',()=>{

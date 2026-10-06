@@ -151,6 +151,7 @@ function normalizeSettings(value: unknown): Settings {
   const source=record(value.keybinds)?value.keybinds:{};
   const graphicsQuality=['low','medium','high','ultra'].includes(String(value.quality))?value.quality as Settings['quality']:DEFAULT_SETTINGS.quality;
   const presetEffectQuality=graphicsQuality==='low'?'low':graphicsQuality==='medium'?'medium':'high';
+  const presetFoliageDistance=graphicsQuality==='low'?.65:graphicsQuality==='medium'?.8:graphicsQuality==='ultra'?1.2:1;
   const keybinds={...DEFAULT_KEYBINDS} as Settings['keybinds'];
   for(const action of Object.keys(DEFAULT_KEYBINDS) as (keyof Settings['keybinds'])[]){
     const code=source[action];
@@ -177,6 +178,7 @@ function normalizeSettings(value: unknown): Settings {
     shadowQuality: value.shadowQuality === 'low' || value.shadowQuality === 'medium' || value.shadowQuality === 'high' ? value.shadowQuality : DEFAULT_SETTINGS.shadowQuality,
     shadowDistance: finite(value.shadowDistance, 35, 120) ? value.shadowDistance : DEFAULT_SETTINGS.shadowDistance,
     foliageDensity: finite(value.foliageDensity, 0.25, 1) ? value.foliageDensity : DEFAULT_SETTINGS.foliageDensity,
+    foliageDistance: finite(value.foliageDistance, 0.5, 1.5) ? value.foliageDistance : presetFoliageDistance,
     waterQuality: value.waterQuality === 'low' || value.waterQuality === 'medium' || value.waterQuality === 'high' ? value.waterQuality : presetEffectQuality,
     weatherEffectsQuality: value.weatherEffectsQuality === 'low' || value.weatherEffectsQuality === 'medium' || value.weatherEffectsQuality === 'high' ? value.weatherEffectsQuality : presetEffectQuality,
     postProcessing: typeof value.postProcessing === 'boolean' ? value.postProcessing : DEFAULT_SETTINGS.postProcessing,

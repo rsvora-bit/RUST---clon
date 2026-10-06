@@ -32,6 +32,10 @@ try{
   await page.locator('[data-preset="low"]').click();
   const lowPreset=await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('tideland:settings:v1'));return{water:value.waterQuality,weather:value.weatherEffectsQuality};});
   pass('LOW preset selects genuinely reduced water and weather effects',lowPreset.water==='low'&&lowPreset.weather==='low');
+  const foliageDistance=page.locator('input[data-setting="foliageDistance"]');
+  await foliageDistance.evaluate(input=>{input.value='1.35';input.dispatchEvent(new Event('input',{bubbles:true}));});
+  const foliage=await page.evaluate(()=>({value:JSON.parse(localStorage.getItem('tideland:settings:v1'))?.foliageDistance,live:window.__TIDELAND.cameraState().settings.foliageDistance,label:document.querySelector('[data-setting-value="foliageDistance"]')?.textContent,preset:document.querySelector('[data-preset-state]')?.textContent.trim()}));
+  pass('Foliage draw distance visibly updates, applies immediately and persists as a custom preset',foliage.value===1.35&&foliage.live===1.35&&foliage.label==='135%'&&foliage.preset==='VLASTNÍ');
   await page.locator('[data-effect-quality="waterQuality"][data-value="high"]').click();
   await page.locator('[data-effect-quality="weatherEffectsQuality"][data-value="medium"]').click();
   const independent=await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('tideland:settings:v1'));return{water:value.waterQuality,weather:value.weatherEffectsQuality,waterSelected:document.querySelector('[data-effect-quality="waterQuality"][data-value="high"]').classList.contains('active'),weatherSelected:document.querySelector('[data-effect-quality="weatherEffectsQuality"][data-value="medium"]').classList.contains('active'),custom:document.querySelector('[data-preset-state]').textContent.trim(),activePresets:document.querySelectorAll('[data-preset].active').length};});
@@ -51,7 +55,7 @@ try{
   pass('Returning to Main Menu from gameplay retains a rendered world',(await menuRenderState()).drawCalls>0);
 
   await page.reload();await page.waitForFunction(()=>window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden'});await waitForMenu();
-  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass,water:window.__TIDELAND.cameraState().settings.waterQuality,weather:window.__TIDELAND.cameraState().settings.weatherEffectsQuality}));
-  pass('Language and gameplay/effect Settings survive reload',persisted.language==='cs'&&persisted.compass===false&&persisted.water==='high'&&persisted.weather==='medium');
+  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass,water:window.__TIDELAND.cameraState().settings.waterQuality,weather:window.__TIDELAND.cameraState().settings.weatherEffectsQuality,foliageDistance:window.__TIDELAND.cameraState().settings.foliageDistance}));
+  pass('Language and gameplay/graphics Settings survive reload',persisted.language==='cs'&&persisted.compass===false&&persisted.water==='high'&&persisted.weather==='medium'&&persisted.foliageDistance===1.35);
   assert.deepEqual(errors,[],`Browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
 }finally{await context.close();await browser.close();}
