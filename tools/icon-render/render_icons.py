@@ -417,14 +417,50 @@ def build(item):
                 poly_prism("hooded inspection lamp",[(-.25,.60),(-.15,.67),(.02,.63),(.08,.54),(-.01,.51)],.18,copper,.016).location.x=-.28
                 ico("inspection lamp lens",(-.20,-.115,.575),(.048,.025,.035),gold,1)
         elif item in ("storage","homesteadCore"):
-            cube("weatherproof case",(0,0,0),(.72,.55,.58),wood,.09);cube("lid",(0,0,.32),(.76,.58,.13),iron,.04)
-            cube("latch",(0,-.3,.02),(.15,.045,.17),copper,.02)
+            cube("weatherproof case",(0,0,0),(.72,.55,.58),wood,.09)
+            cube("reinforced chest lid",(0,0,.32),(.76,.58,.13),iron,.04)
+            if item=="storage":
+                # A field chest has board seams, a lifted sealing rim, tiedown
+                # bands and a real hasp so it reads as storage at thumbnail scale.
+                cube("raised lid inset",(0,-.012,.393),(.53,.39,.018),dark,.018)
+                for x in (-.25,.25):
+                    cube("lid timber slat",(x,0,.407),(.025,.36,.016),wl,.006)
+                    cube("vertical crate strap",(x,-.286,.025),(.045,.022,.65),steel,.012)
+                    cube("strap lid crossing",(x,0,.411),(.045,.48,.018),steel,.008)
+                    for z in (-.20,-.05,.18,.34):ico("chest strap rivet",(x,-.304,z),(.018,.012,.018),copper,1)
+                    for y in (.16,.225):cyl("lid hinge knuckle",(x,y,.34),.027,.09,copper,10,"X",.006)
+                cube("reinforced lid lip",(0,-.296,.30),(.70,.035,.07),iron,.012)
+                cube("locking hasp",(0,-.322,.20),(.14,.026,.20),copper,.018)
+                cube("hasp key slot",(0,-.341,.20),(.025,.006,.065),dark,.004)
+                for x in (-.24,.24):
+                    cube("corner guard",(x,-.285,-.24),(.10,.035,.11),iron,.018)
+                    cyl("corner guard rivet",(x,-.309,-.22),.016,.012,gold,8,"Y",.003)
+                    rod("raised chest foot runner",(x,-.20,-.32),(x,.20,-.32),.035,dark,8)
+            else:
+                cube("homestead beacon latch",(0,-.3,.02),(.15,.045,.17),copper,.02)
+                for x in (-.25,.25):
+                    cube("beacon case reinforcement",(x,-.285,.03),(.07,.035,.49),iron,.018)
+                    for z in (-.18,.18):ico("beacon case rivet",(x,-.31,z),(.018,.012,.018),gold,1)
             if item=="homesteadCore":
                 cyl("beacon mast",(0,0,.63),.035,.55,steel);ico("beacon lens",(0,0,.93),(.13,.13,.12),sea)
         elif item=="furnace":
-            cyl("field processor body",(0,0,0),.36,.62,iron,12);cyl("top collar",(0,0,.34),.39,.1,steel,12)
-            cube("fire door",(0,-.34,-.1),(.31,.04,.25),dark,.025);ico("pilot glow",(0,-.37,-.1),(.1,.025,.07),red)
-            cyl("exhaust",(.15,.12,.53),.1,.55,steel,10)
+            cyl("cast furnace foot",(0,0,-.29),.34,.10,dark,12,"Z",.02)
+            cyl("field processor body",(0,0,0),.36,.58,iron,12)
+            cyl("upper firebox shoulder",(0,0,.27),.375,.11,iron,12)
+            cyl("raised furnace crown",(0,0,.34),.39,.075,steel,12)
+            for i in range(8):
+                angle=i*math.tau/8;x,z=math.cos(angle)*.355,math.sin(angle)*.355
+                rod("cast furnace cooling rib",(x,.015,z-.18),(x,.015,z+.15),.019,steel,8)
+            cube("recessed fire door surround",(0,-.352,-.075),(.34,.045,.28),steel,.035)
+            cube("dark firebox opening",(0,-.381,-.075),(.25,.018,.19),dark,.02)
+            cube("firebox grate",(0,-.394,-.145),(.19,.012,.025),iron,.006)
+            ico("pilot glow",(0,-.397,-.055),(.09,.014,.055),red,2)
+            for x in (-.09,-.045,0,.045,.09):rod("firebox vent slot",(x,-.396,.025),(x,-.396,.075),.008,copper,6)
+            cyl("exhaust base flange",(.15,.12,.42),.15,.065,iron,12,"Z",.01)
+            cyl("exhaust neck",(.15,.12,.61),.095,.39,steel,12,"Z",.014)
+            cyl("exhaust rain cap",(.15,.12,.82),.125,.045,iron,12,"Z",.008)
+            torus("exhaust collar",(.15,.12,.45),.11,.014,copper)
+            for x in (-.29,.29):rod("furnace carry lug",(x,-.19,.17),(x,.19,.17),.026,steel,8)
         elif item=="generator":
             # Stamped engine casing with a separate service panel, ventilation,
             # recoil starter and real control hardware; retain the portable
@@ -465,10 +501,23 @@ def build(item):
             cube("switch case",(0,0,0),(.64,.2,.52),sea,.07);cube("switch face",(0,-.12,.02),(.47,.04,.35),dark,.025)
             cube("toggle",(.02,-.17,.08),(.1,.06,.23),copper,.025);ico("status lamp",(.17,-.16,-.07),(.045,.025,.045),green)
         elif item=="lamp":
-            cyl("lamp cage",(0,0,.12),.22,.42,steel,12);ico("lamp lens",(0,0,.13),(.15,.15,.18),gold)
+            # Open storm lantern cage, with visible glass, guard hoops,
+            # reinforced uprights, an oil reservoir and a carrying handle.
+            cyl("lantern weighted foot",(0,0,-.22),.20,.09,dark,12,"Z",.015)
+            cyl("brass reservoir",(0,0,-.125),.17,.13,copper,16,"Z",.018)
+            torus("lower cage hoop",(0,0,-.04),.225,.022,iron)
+            torus("upper cage hoop",(0,0,.285),.225,.022,steel)
+            torus("middle cage hoop",(0,0,.12),.214,.012,copper)
+            ico("frosted storm glass",(0,0,.12),(.15,.15,.18),gold,2)
             for a in range(6):
-                q=a*math.tau/6;rod("protective cage",(.24*math.cos(q),.24*math.sin(q),-.08),(.24*math.cos(q),.24*math.sin(q),.33),.018,iron,8)
-            cyl("mount foot",(0,0,-.18),.19,.08,iron)
+                q=a*math.tau/6;x,y=.22*math.cos(q),.22*math.sin(q)
+                rod("protective cage upright",(x,y,-.04),(x*.82,y*.82,.27),.018,steel,8)
+                ico("cage foot rivet",(x*.91,y*.91,-.03),(.022,.022,.022),copper,1)
+            cyl("lantern crown",(0,0,.31),.19,.075,iron,12,"Z",.014)
+            cyl("crown vent neck",(0,0,.37),.075,.12,steel,12,"Z",.01)
+            torus("arched carrying bail",(0,0,.40),.13,.018,steel,(math.pi/2,0,0))
+            cube("lantern ignition plate",(.15,-.09,-.12),(.10,.035,.09),iron,.014)
+            cube("lantern ignition toggle",(.16,-.112,-.11),(.025,.018,.055),red,.006)
         elif item=="campfire":
             for a in range(3):
                 q=a*math.tau/3;rod("fuel stick",(.28*math.cos(q),.28*math.sin(q),-.2),(-.28*math.cos(q),-.28*math.sin(q),-.2),.07,wood)
