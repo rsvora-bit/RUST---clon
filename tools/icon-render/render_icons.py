@@ -227,7 +227,22 @@ def build(item):
             cube("waist",(0,0,.25),(.56,.24,.25),cloth,.06)
             for x in (-.15,.15):cube("trouser leg",(x,0,-.16),(.23,.23,.58),leather,.06)
         elif item=="boots":
-            for x in (-.18,.18):cube("hide boot",(x,0,-.03),(.31,.5,.34),leather,.07)
+            for index,x in enumerate((-.19,.19)):
+                depth=.045 if index else -.07
+                sole=poly_prism("layered lug sole",[(-.32,-.27),(.27,-.27),(.38,-.22),(.36,-.15),(-.30,-.15)],.42,dark,.025);sole.location.x=x;sole.location.y=depth
+                welt=poly_prism("stitched leather welt",[(-.30,-.17),(.28,-.17),(.34,-.12),(.31,-.09),(-.27,-.09)],.39,wl,.016);welt.location.x=x;welt.location.y=depth-.01
+                upper=poly_prism("sculpted ankle boot upper",[(-.27,-.12),(.27,-.12),(.31,-.045),(.17,.015),(.13,.27),(.075,.34),(-.15,.32),(-.19,.09),(-.28,.015)],.34,leather,.035);upper.location.x=x;upper.location.y=depth-.025
+                toe=poly_prism("reinforced rounded toe panel",[(.045,-.09),(.25,-.09),(.31,-.045),(.17,.015),(.075,.035),(.015,-.005)],.025,wood,.014);toe.location.x=x;toe.location.y=depth-.20
+                cuff=poly_prism("folded ankle cuff",[(-.16,.24),(.13,.24),(.085,.33),(-.15,.33)],.37,wl,.02);cuff.location.x=x;cuff.location.y=depth-.018
+                for lace in range(3):
+                    z=.045+lace*.062
+                    rod("crossed waxed boot lace",(x-.075,depth-.205,z),(x+.065,depth-.205,z+.027),.012,white,8)
+                    for eyelet_x in (-.085,.078):ico("brass boot eyelet",(x+eyelet_x,depth-.205,z),(.012,.009,.012),copper,1)
+                for seam in range(4):
+                    z=-.09+seam*.045
+                    rod("welt saddle stitch",(x-.23,depth-.222,z),(x-.13,depth-.222,z+.006),.006,white,6)
+                buckle=cube("ankle strap buckle",(x-.14,depth-.205,.19),(.075,.018,.055),copper,.012)
+                buckle.rotation_euler[1]=-.12
         else:
             ico("filter hood",(0,0,.05),(.35,.25,.4),cloth,2);cube("visor",(0,-.23,.04),(.34,.04,.12),sea,.025)
     elif item in ("storage","furnace","workbench1","workbench2","workbench3","generator","powerSwitch","lamp","homesteadCore","campfire"):
@@ -356,6 +371,9 @@ def build(item):
 def setup():
     scene=bpy.context.scene
     scene.render.engine="BLENDER_EEVEE"
+    # Disable stochastic screen-space GI/ray effects so identical authored
+    # models produce identical item thumbnails across headless runs.
+    scene.eevee.use_fast_gi=False;scene.eevee.use_raytracing=False;scene.eevee.use_shadow_jitter_viewport=False;scene.eevee.taa_render_samples=128
     scene.render.resolution_x=512;scene.render.resolution_y=512;scene.render.resolution_percentage=100
     scene.render.image_settings.file_format="WEBP";scene.render.image_settings.color_mode="RGBA";scene.render.image_settings.quality=88
     scene.render.film_transparent=True;scene.render.image_settings.color_depth="8"
