@@ -191,4 +191,24 @@ describe('environment visual building blocks',()=>{
       expect(scene.children.some(child=>child instanceof THREE.LineSegments&&child.visible)).toBe(true);expect(position.version).toBe(1);expect(geometry.drawRange.count).toBe(700);expect(position.array.slice(350*6)).toEqual(dryPositions.slice(350*6));
     }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
+
+  it('uses one bounded instanced pool for rain splashes and emits none on low quality',()=>{
+    const seed=731942,state=new GameSimulation(seed,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather;
+    Object.assign(w,{kind:'rain',remaining:3600,blend:1,rain:1,storm:0,mist:0});
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3(3,4,-2);
+    try{
+      const splash=scene.children.find((child):child is THREE.InstancedMesh=>child instanceof THREE.InstancedMesh);
+      expect(splash).toBeDefined();expect(splash!.count).toBe(40);expect(splash!.geometry).toBeInstanceOf(THREE.RingGeometry);
+      expect(atmosphere.ocean.material.fragmentShader).toContain('rainRing');
+      atmosphere.update(.2,10,camera);weather.update(.2,state,atmosphere,camera,'low');
+      expect(splash!.visible).toBe(false);
+      weather.update(.2,state,atmosphere,camera,'ultra');
+      expect(splash!.visible).toBe(true);expect(splash!.count).toBe(40);
+      const matrix=new THREE.Matrix4();let visibleInstances=0;
+      for(let i=0;i<splash!.count;i++){splash!.getMatrixAt(i,matrix);if(matrix.elements[13]!>-100)visibleInstances++;}
+      expect(visibleInstances).toBeGreaterThan(0);expect(visibleInstances).toBeLessThanOrEqual(2);
+      Object.assign(w,{kind:'clear',remaining:3600,rain:0,storm:0});atmosphere.update(.7,10,camera);weather.update(.7,state,atmosphere,camera,'ultra');
+      expect(splash!.visible).toBe(false);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
+  });
 });
