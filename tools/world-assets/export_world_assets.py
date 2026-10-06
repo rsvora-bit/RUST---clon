@@ -38,6 +38,8 @@ WOOD_DARK = mat("Tideland soaked end grain", (.12, .105, .075))
 RUST = mat("Tideland oxidized steel", (.24, .20, .15), .42, .9)
 BARK = mat("Tideland furrowed bark", (.20, .15, .095))
 LEAF = mat("Tideland coastal leaf", (.20, .30, .16))
+LEAF_LIGHT = mat("Tideland sunlit leaf", (.30, .37, .19))
+LEAF_SHADE = mat("Tideland shaded leaf", (.13, .23, .14))
 NEEDLE = mat("Tideland alpine needle", (.105, .19, .15))
 STONE = mat("Tideland fractured granite", (.34, .34, .31), .03, .96)
 MOSS = mat("Tideland rock moss", (.18, .23, .14), .0, .98)
@@ -141,17 +143,24 @@ def wreck_section():
         box("oxidized torn hull strap",(x,.515,.45),(.27,.025,.14),RUST,.018)
 
 def tree(kind):
-    rng=random.Random(8101 if kind=="broadleaf_a" else 8102)
-    h=9.3 if kind=="broadleaf_a" else 11.6
-    # Tapered trunk with a slight lean and six buttress roots.
+    broadleaf=kind.startswith("broadleaf") or kind in ("marsh_tree","coastal_tree")
+    alpine=kind=="alpine_conifer"
+    variant=ord(kind[-1])-ord("a") if kind[-1].isalpha() and kind[-1] in "abc" else 0
+    seed=sum((index+1)*ord(char) for index,char in enumerate(kind))+8101
+    rng=random.Random(seed)
+    heights={"broadleaf_a":9.3,"broadleaf_b":10.7,"broadleaf_c":8.5,"conifer_a":11.6,"conifer_b":13.1,"conifer_c":10.2,"alpine_conifer":8.4,"marsh_tree":7.8,"coastal_tree":9.1}
+    h=heights[kind]
+    lean=rng.uniform(-.28,.28) if kind in ("coastal_tree","marsh_tree") else rng.uniform(-.12,.12)
+    # A tapered, subtly bent bole with a broad root flare; marsh variants add
+    # exposed wetland roots instead of a generic straight trunk.
     rings=[]
-    for z,radius,offset in ((0,.47,0),(.35,.38,0),(1.8,.29,.08),(4.6,.205,.17),(h*.72,.15,.24)):
+    for z,radius,offset in ((0,.47,0),(.35,.38,lean*.20),(1.8,.29,lean*.42),(4.6,.205,lean*.72),(h*.72,.15,lean)):
         rings.append((z,radius,offset))
     verts=[]; sides=9
     for z,radius,offset in rings:
         for i in range(sides):
             angle=2*math.pi*i/sides
-            variation=1+.09*math.sin(i*4.2+z)
+            variation=1+.11*math.sin(i*4.2+z+seed*.01)+.045*math.sin(i*7.7-z*.3)
             verts.append((offset+math.cos(angle)*radius*variation,math.sin(angle)*radius*variation,z))
     faces=[]
     for row in range(len(rings)-1):
@@ -159,32 +168,64 @@ def tree(kind):
     faces.append(tuple(range((len(rings)-1)*sides,len(rings)*sides)))
     mesh=bpy.data.meshes.new("tapered irregular trunk mesh");mesh.from_pydata(verts,[],faces);mesh.materials.append(BARK);mesh.update()
     trunk=bpy.data.objects.new("tapered trunk with root flare",mesh);bpy.context.collection.objects.link(trunk)
-    for i in range(6):
-        a=i*math.tau/6;end=(math.cos(a)*1.15,math.sin(a)*.92,.04)
-        rod("root flare",(0,0,.52),end,.19,BARK,7)
-    branch_count=10 if kind=="broadleaf_a" else 8
+    root_count=8 if kind=="marsh_tree" else 6
+    for i in range(root_count):
+        a=i*math.tau/root_count+rng.uniform(-.14,.14)
+        reach=rng.uniform(1.0,1.65) if kind=="marsh_tree" else rng.uniform(.82,1.24)
+        end=(lean*.2+math.cos(a)*reach,math.sin(a)*reach*.82,.025)
+        rod("splayed wetland buttress root" if kind=="marsh_tree" else "root flare",(0,0,.65),end,.16 if kind=="marsh_tree" else .19,BARK,7)
+    branch_count=(10+variant*2) if broadleaf and kind.startswith("broadleaf") else (9 if kind=="coastal_tree" else 8 if kind=="marsh_tree" else 8+variant)
     for i in range(branch_count):
-        angle=i*math.tau/branch_count+rng.uniform(-.24,.24)
-        start_z=h*(.49+rng.random()*.27); reach=rng.uniform(1.5,2.55)
-        start=(.2*start_z/h,0,start_z); end=(start[0]+math.cos(angle)*reach,math.sin(angle)*reach*.72,start_z+rng.uniform(.7,1.7))
+        angle=i*math.tau/branch_count+rng.uniform(-.32,.32)
+        start_z=h*(.42+rng.random()*.31); reach=rng.uniform(1.45,2.65)*(1.12 if kind=="coastal_tree" else 1)
+        start=(lean*start_z/h,0,start_z); end=(start[0]+math.cos(angle)*reach,math.sin(angle)*reach*.72,start_z+rng.uniform(.55,1.65))
         rod("primary branch",start,end,rng.uniform(.075,.13),BARK,7)
-        for split in range(2):
-            t=.56+split*.16; base=tuple(start[j]*(1-t)+end[j]*t for j in range(3))
-            side=angle+(-1 if split==0 else 1)*rng.uniform(.45,.9)
-            twig=(base[0]+math.cos(side)*.85,base[1]+math.sin(side)*.6,base[2]+.55)
-            rod("secondary branch",base,twig,.045,BARK,6)
-    cluster_count=11 if kind=="broadleaf_a" else 0
-    for i in range(cluster_count):
-        angle=i*math.tau/cluster_count+rng.uniform(-.28,.28); radius=rng.uniform(1.1,2.2)
-        z=h*rng.uniform(.62,.94); loc=(.2*z/h+math.cos(angle)*radius,math.sin(angle)*radius*.72,z)
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2 if i%3==0 else 1,radius=1,location=loc)
-        crown=bpy.context.object;crown.name="layered broadleaf crown mass";crown.scale=(rng.uniform(1.15,1.75),rng.uniform(1.05,1.6),rng.uniform(.9,1.35));crown.data.materials.append(LEAF)
-    if kind=="conifer_a":
-        for tier in range(7):
-            z=2.0+tier*1.25; radius=(1-tier/8)*2.7
-            bpy.ops.mesh.primitive_cone_add(vertices=9,radius1=radius,radius2=.06,depth=3.2,location=(.15,.05,z))
-            crown=bpy.context.object;crown.name="layered alpine bough whorl";crown.data.materials.append(NEEDLE)
-            crown.rotation_euler[0]=rng.uniform(-.04,.04)
+        for split in range(2+(1 if rng.random()<.35 else 0)):
+            t=.48+split*.16;base=tuple(start[j]*(1-t)+end[j]*t for j in range(3))
+            side=angle+(-1 if split%2==0 else 1)*rng.uniform(.42,1.05)
+            twig=(base[0]+math.cos(side)*rng.uniform(.62,.98),base[1]+math.sin(side)*.7,base[2]+rng.uniform(.35,.78))
+            rod("secondary branch",base,twig,.038 if split else .048,BARK,6)
+    if broadleaf:
+        cluster_count={"broadleaf_a":20,"broadleaf_b":24,"broadleaf_c":18,"marsh_tree":14,"coastal_tree":16}[kind]
+        for i in range(cluster_count):
+            angle=i*2.399963+rng.uniform(-.22,.22)
+            radius=rng.uniform(.62,1.28) if i%3 else rng.uniform(1.18,1.82)
+            z=h*rng.uniform(.62,.96);loc=(lean*z/h+math.cos(angle)*radius,math.sin(angle)*radius*.72,z)
+            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2 if i%2==0 else 1,radius=1,location=loc)
+            crown=bpy.context.object;crown.name="irregular layered broadleaf crown cluster";crown.scale=(rng.uniform(.92,1.34),rng.uniform(.78,1.12),rng.uniform(.72,1.18))
+            for vertex in crown.data.vertices:
+                jitter=1+.16*math.sin(vertex.co.x*5.3+vertex.co.z*3.1+seed)+.075*math.sin(vertex.co.y*8.2-vertex.co.x)
+                vertex.co*=jitter
+            for face in crown.data.polygons:face.use_smooth=True
+            crown.data.materials.append(LEAF if i%5<3 else LEAF_LIGHT if i%5==3 else LEAF_SHADE)
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1,location=(lean*.8,0,h*.81))
+        crown=bpy.context.object;crown.name="continuous crown heart";crown.scale=(1.0,.82,.92)
+        for face in crown.data.polygons:face.use_smooth=True
+        crown.data.materials.append(LEAF)
+    else:
+        tiers=8 if alpine else 9+variant
+        for tier in range(tiers):
+            z=1.35+tier*(h-2.2)/tiers
+            radius=(1-tier/(tiers+.8))*rng.uniform(2.15,2.85)*(0.83 if alpine else 1)
+            whorl=4+(tier%2)
+            for branch in range(whorl):
+                angle=branch*math.tau/whorl+tier*1.71+rng.uniform(-.20,.20)
+                length=radius*rng.uniform(.78,1.12)
+                start=(lean*z/h,0,z);end=(start[0]+math.cos(angle)*length,math.sin(angle)*length,z-rng.uniform(.18,.48))
+                rod("layered needle bough",start,end,.055 if alpine else .065, BARK,6)
+                for offset in (.64,):
+                    center=tuple(start[j]*(1-offset)+end[j]*offset for j in range(3))
+                    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=center)
+                    needles=bpy.context.object;needles.name="volumetric needle spray";needles.scale=(length*.30,length*.23,.20 if alpine else .25)
+                    for vertex in needles.data.vertices:vertex.co*=1+.08*math.sin(vertex.co.x*7+vertex.co.z*4+tier)
+                    for face in needles.data.polygons:face.use_smooth=True
+                    needles.data.materials.append(NEEDLE)
+                if rng.random()<.28:
+                    center=tuple(start[j]*.30+end[j]*.70 for j in range(3))
+                    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=center)
+                    needles=bpy.context.object;needles.name="secondary needle spray";needles.scale=(length*.21,length*.18,.15 if alpine else .19)
+                    for face in needles.data.polygons:face.use_smooth=True
+                    needles.data.materials.append(NEEDLE)
 
 def boulder():
     rng=random.Random(994)
@@ -221,7 +262,7 @@ def create(name):
     reset()
     if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
     elif name=="wreck_section_a":wreck_section()
-    elif name in ("broadleaf_a","conifer_a"):tree(name)
+    elif name in ("broadleaf_a","broadleaf_b","broadleaf_c","conifer_a","conifer_b","conifer_c","alpine_conifer","marsh_tree","coastal_tree"):tree(name)
     elif name=="coastal_boulder_a":boulder()
     elif name=="driftwood_a":driftwood()
     elif name=="salvage_crate_a":crate()
@@ -234,7 +275,6 @@ def create(name):
     source=bpy.context.object;source.name=name+" LOD0 mesh"
     source.data.validate(verbose=False,clean_customdata=True)
     source.data.update()
-    for poly in source.data.polygons:poly.use_smooth=False
     root=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(root)
     levels=(1.0,.48,.16)
     for index,ratio in enumerate(levels):

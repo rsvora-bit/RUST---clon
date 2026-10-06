@@ -14,7 +14,12 @@ material regions remain available. The Breakwater uses the `shipwreck_hull_a`
 render asset on Generation-5 Revision-6 worlds. It replaces only the old hull
 mesh; the saved POI, existing collision proxies, gameplay stations, and legacy
 world revisions are unchanged. Other catalog assets form the reusable library
-for later POI and environment integration.
+for later POI and environment integration. The tree set currently includes
+three distinct broadleaf forms, three temperate conifers, an alpine conifer,
+a splayed-root marsh tree, and a wind-leaning coastal tree. Tree variants are
+seeded by asset ID and exported with the same three-LOD pipeline; runtime tree
+placement still uses the existing instanced gameplay batches until the model
+library can be integrated without multiplying draw calls.
 
 Regenerate and check file sizes with:
 
