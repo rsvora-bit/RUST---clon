@@ -1,0 +1,1 @@
+{"asset":"coastal_rock","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0184,1.058,0.0186],"halfExtents":[1.7905,1.0947,1.15],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

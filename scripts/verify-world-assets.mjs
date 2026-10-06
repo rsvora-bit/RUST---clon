@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root=process.cwd(),assetDir=path.join(root,'public/assets/world'),catalog=JSON.parse(fs.readFileSync(path.join(root,'tools/world-assets/catalog.json'),'utf8'));
+const root=process.cwd(),assetDir=path.join(root,'public/assets/world'),catalog=JSON.parse(fs.readFileSync(path.join(root,'tools/world-assets/catalog.json'),'utf8')),collisionDir=path.join(assetDir,'collision-proxies');
 function readGlb(name){
   const bytes=fs.readFileSync(path.join(assetDir,`${name}.glb`));
   assert.equal(bytes.toString('ascii',0,4),'glTF',`${name} GLB magic`);
@@ -12,6 +12,12 @@ function readGlb(name){
   return{bytes,json:JSON.parse(bytes.toString('utf8',20,20+bytes.readUInt32LE(12)))};
 }
 assert.deepEqual(fs.readdirSync(assetDir).filter(name=>name.endsWith('.glb')).sort(),catalog.map(name=>`${name}.glb`).sort(),'catalog outputs match exactly');
+assert.deepEqual(fs.readdirSync(collisionDir).filter(name=>name.endsWith('.json')).sort(),catalog.map(name=>`${name}.json`).sort(),'collision proxy outputs match the asset catalog');
+for(const id of catalog){
+  const proxy=JSON.parse(fs.readFileSync(path.join(collisionDir,`${id}.json`),'utf8'));
+  assert.equal(proxy.asset,id,`${id} collision proxy identity`);assert.equal(proxy.units,'meters',`${id} collision proxy units`);assert.equal(proxy.coordinateSystem,'gltf-y-up',`${id} collision proxy coordinates`);assert.equal(proxy.source,'LOD0',`${id} collision proxy source`);assert.equal(proxy.shapes.length,1,`${id} has one coarse collision proxy`);
+  const shape=proxy.shapes[0];if(shape.type==='box')assert.ok(shape.center.length===3&&shape.halfExtents.length===3&&shape.halfExtents.every(value=>Number.isFinite(value)&&value>0),`${id} has valid box bounds`);else assert.ok(shape.type==='capsule'&&shape.axis==='y'&&shape.center.length===3&&shape.radius>0&&shape.halfHeight>0,`${id} has a valid tree trunk capsule`);
+}
 for(const id of catalog){
   const{bytes,json}=readGlb(id),names=new Set(json.nodes.map(node=>node.name));
   for(const level of ['LOD0','LOD1','LOD2'])assert.ok(names.has(level),`${id} contains ${level}`);
@@ -34,4 +40,4 @@ assert.notDeepEqual(readGlb('large_boulder_a').bytes,readGlb('large_boulder_c').
 assert.notDeepEqual(readGlb('cliff_slab_a').bytes,readGlb('cliff_slab_b').bytes,'cliff slabs have distinct fractured faces');
 const first=readGlb('shipwreck_hull_a').json,second=readGlb('shipwreck_hull_b').json;
 assert.notDeepEqual(first.nodes.map(node=>node.name),second.nodes.map(node=>node.name),'shipwreck variants are distinct');
-console.log(`World assets PASS · ${catalog.length} GLBs · LOD0/1/2 · all under 512 KiB`);
+console.log(`World assets PASS · ${catalog.length} GLBs · ${catalog.length} collision proxies · LOD0/1/2 · all under 512 KiB`);

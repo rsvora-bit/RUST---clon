@@ -1,0 +1,1 @@
+{"asset":"cliff_slab_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.2308,1.9819,-0.0342],"halfExtents":[2.6826,2.1617,0.9188],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

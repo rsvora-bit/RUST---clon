@@ -1,0 +1,1 @@
+{"asset":"large_boulder_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.3926,1.6634,0.0057],"halfExtents":[2.0959,1.7949,2.0663],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

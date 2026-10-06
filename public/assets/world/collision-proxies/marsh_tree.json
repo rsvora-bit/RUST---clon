@@ -1,0 +1,1 @@
+{"asset":"marsh_tree","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,3.9,0],"halfHeight":3.52,"radius":0.38,"type":"capsule"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

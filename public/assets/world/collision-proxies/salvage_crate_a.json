@@ -1,0 +1,1 @@
+{"asset":"salvage_crate_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[0.0,0.0075,0.044],"halfExtents":[0.46,0.3675,0.434],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

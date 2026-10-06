@@ -13,7 +13,9 @@ from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 OUT = os.path.join(ROOT, "public/assets/world")
+COLLISION_OUT = os.path.join(OUT, "collision-proxies")
 CATALOG = json.load(open(os.path.join(os.path.dirname(__file__), "catalog.json"), encoding="utf8"))
+TREE_HEIGHTS = {"broadleaf_a":9.3,"broadleaf_b":10.7,"broadleaf_c":8.5,"conifer_a":11.6,"conifer_b":13.1,"conifer_c":10.2,"alpine_conifer":8.4,"marsh_tree":7.8,"coastal_tree":9.1,"palm_tree_a":9.6}
 
 def reset():
     bpy.ops.object.select_all(action="SELECT")
@@ -180,8 +182,7 @@ def tree(kind):
     variant=ord(kind[-1])-ord("a") if kind[-1].isalpha() and kind[-1] in "abc" else 0
     seed=sum((index+1)*ord(char) for index,char in enumerate(kind))+8101
     rng=random.Random(seed)
-    heights={"broadleaf_a":9.3,"broadleaf_b":10.7,"broadleaf_c":8.5,"conifer_a":11.6,"conifer_b":13.1,"conifer_c":10.2,"alpine_conifer":8.4,"marsh_tree":7.8,"coastal_tree":9.1}
-    h=heights[kind]
+    h=TREE_HEIGHTS[kind]
     lean=rng.uniform(-.28,.28) if kind in ("coastal_tree","marsh_tree") else rng.uniform(-.12,.12)
     # A tapered, subtly bent bole with a broad root flare; marsh variants add
     # exposed wetland roots instead of a generic straight trunk.
@@ -435,6 +436,26 @@ def coastal_drum():
         bpy.ops.mesh.primitive_cylinder_add(vertices=8,radius=radius*.67,depth=.009,location=(x,-.035,z-.003))
         plug=bpy.context.object;plug.name="recessed drum bung";plug.data.materials.append(DRUM_DARK)
 
+def export_collision_proxy(name, source):
+    """Write a lightweight Y-up physics hint without changing gameplay colliders."""
+    if name in TREE_HEIGHTS:
+        radius=.34 if name in ("alpine_conifer","palm_tree_a") else .38
+        height=TREE_HEIGHTS[name]
+        proxy={"type":"capsule","axis":"y","center":[0,round(height*.5,4),0],"radius":radius,"halfHeight":round((height-2*radius)*.5,4)}
+    else:
+        vertices=[vertex.co for vertex in source.data.vertices]
+        minimum=[min(vertex[axis] for vertex in vertices) for axis in range(3)]
+        maximum=[max(vertex[axis] for vertex in vertices) for axis in range(3)]
+        # Blender Z-up -> glTF/Three.js Y-up; the asset exporter also flips Blender Y.
+        center=[(minimum[0]+maximum[0])*.5, (minimum[2]+maximum[2])*.5, -(minimum[1]+maximum[1])*.5]
+        half=[(maximum[0]-minimum[0])*.5, (maximum[2]-minimum[2])*.5, (maximum[1]-minimum[1])*.5]
+        proxy={"type":"box","center":[round(value,4) for value in center],"halfExtents":[round(max(value,.01),4) for value in half]}
+    payload={"asset":name,"units":"meters","coordinateSystem":"gltf-y-up","source":"LOD0","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored","shapes":[proxy]}
+    os.makedirs(COLLISION_OUT,exist_ok=True)
+    with open(os.path.join(COLLISION_OUT,name+".json"),"w",encoding="utf8") as file:
+        json.dump(payload,file,separators=(",",":"),sort_keys=True)
+        file.write("\n")
+
 def create(name):
     reset()
     if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
@@ -462,6 +483,8 @@ def create(name):
     source=bpy.context.object;source.name=name+" LOD0 mesh"
     source.data.validate(verbose=False,clean_customdata=True)
     source.data.update()
+    source.location=(0,0,0);source.rotation_euler=(0,0,0);source.scale=(1,1,1)
+    export_collision_proxy(name,source)
     root=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(root)
     levels=(1.0,.48,.16)
     for index,ratio in enumerate(levels):

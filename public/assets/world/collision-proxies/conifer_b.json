@@ -1,0 +1,1 @@
+{"asset":"conifer_b","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,6.55,0],"halfHeight":6.17,"radius":0.38,"type":"capsule"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

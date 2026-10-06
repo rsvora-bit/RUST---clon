@@ -1,0 +1,1 @@
+{"asset":"driftwood_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[0.2292,0.0413,-0.0932],"halfExtents":[0.4527,1.5739,0.2571],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

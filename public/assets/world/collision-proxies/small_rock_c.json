@@ -1,0 +1,1 @@
+{"asset":"small_rock_c","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0153,0.728,0.0177],"halfExtents":[0.8303,0.7139,0.6747],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

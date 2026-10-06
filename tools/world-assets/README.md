@@ -28,6 +28,13 @@ set contains three size variants each for small, medium, and large rocks, plus
 coastal/alpine stones, two cliff slabs, and broken stone. Facet shape and
 material regions are generated deterministically from each asset ID.
 
+The same command writes one compact sidecar under
+`public/assets/world/collision-proxies/` for each catalog model. Tree variants
+receive a vertical trunk capsule; other props receive a meter-scaled LOD0
+bounding box in glTF Y-up coordinates. These are coarse authoring hints for
+future static integrations, not replacements for the hand-authored gameplay
+colliders currently owned by `WorldSurvival` and `PhysicsWorld`.
+
 Regenerate and check file sizes with:
 
 ```sh

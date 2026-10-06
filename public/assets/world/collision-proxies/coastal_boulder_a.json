@@ -1,0 +1,1 @@
+{"asset":"coastal_boulder_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.074,1.0513,-0.0047],"halfExtents":[1.8055,1.0709,1.2494],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

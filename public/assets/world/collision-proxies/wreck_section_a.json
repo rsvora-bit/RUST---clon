@@ -1,0 +1,1 @@
+{"asset":"wreck_section_a","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0188,0.537,-0.2867],"halfExtents":[1.8312,0.5381,0.375],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
