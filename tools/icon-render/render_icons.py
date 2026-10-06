@@ -189,10 +189,18 @@ def build(item):
             bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.09,radius2=0,depth=.22,location=(.25,0,.63));assign(bpy.context.object,steel)
         elif item=="torch":
             cyl("resin bundle",(.32,0,.63),.13,.33,leather,10);ico("ember",(.32,0,.82),(.11,.11,.14),gold)
-        elif item=="docksideCleaver": cube("salvage blade",(.4,0,.57),(.38,.08,.22),steel,.035)
+        elif item=="docksideCleaver":
+            # A broad, repaired cargo-clearing blade with a flared nose and a
+            # hand-ground belly; the irregular silhouette reads at inventory scale.
+            poly_prism("forged dockside cleaver blade",[(.10,.47),(.20,.42),(.34,.45),(.48,.51),(.72,.49),(.84,.56),(.88,.65),(.84,.75),(.73,.83),(.60,.79),(.45,.70),(.29,.64),(.18,.61)],.145,steel,.023)
+            poly_prism("freshly ground cleaver bevel",[(.48,.51),(.72,.49),(.84,.56),(.88,.65),(.84,.75),(.73,.83),(.69,.75),(.76,.64),(.68,.57)],.151,iron,.012)
+            poly_prism("bright chipped cutting edge",[(.72,.49),(.84,.56),(.88,.65),(.84,.75),(.73,.83),(.77,.72),(.82,.65),(.75,.58)],.156,wl,.004)
+            poly_prism("welded blade shoulder",[(.12,.48),(.21,.43),(.34,.46),(.43,.53),(.35,.61),(.22,.59)],.163,copper,.012)
+            poly_prism("dark blade fuller",[(.34,.54),(.43,.55),(.66,.60),(.70,.64),(.63,.64),(.41,.59)],.166,dark,.003)
         # A few contrasting ferrules and grip wraps break up the long, otherwise
         # uninterrupted procedural silhouette and remain legible at icon size.
-        for x,z in ((-.17,-.42),(-.02,-.10),(.12,.20)):
+        ferrule_points=((-.17,-.42),(-.02,-.10),(.12,.20)) if item!="docksideCleaver" else ((-.13,-.34),(.14,.28))
+        for x,z in ferrule_points:
             band=cube("tool haft ferrule",(x,-.005,z),(.19,.17,.045),copper,.012);band.rotation_euler[1]=-.43
         if item in ("hatchet","pickaxe","hammer","quarryMaul"):
             eye_radius=.105 if item=="pickaxe" else .14
@@ -203,8 +211,13 @@ def build(item):
             cube("hammer claw",(.48,0,.63),(.23,.18,.11),steel,.035).rotation_euler[1]=-.30
             cube("hammer face cap",(.57,-.10,.56),(.12,.035,.19),copper,.018)
         if item=="docksideCleaver":
-            cube("cleaver tang",(.18,-.09,.50),(.25,.025,.07),iron,.01)
-            for x in (.18,.33):ico("handle pin",(x,-.105,.49),(.025,.012,.025),copper,1)
+            cube("cleaver tang",(.15,-.09,.50),(.34,.025,.075),iron,.012).rotation_euler[1]=-.18
+            dark_grip=material("salt-darkened grip leather",(.105,.075,.052,1),0,.91)
+            rod("darkened leather cleaver grip sleeve",(-.062,-.02,-.18),(.078,.02,.13),.09,dark_grip,12)
+            for x,z in ((.04,.45),(.27,.51)):
+                ico("peened cleaver tang pin",(x,-.112,z),(.028,.014,.028),copper,1)
+            for x,z in ((.52,.68),(.61,.72),(.71,.77)):
+                rod("cargo-blade grind scratch",(x,-.09,z),(x+.034,-.09,z+.018),.006,copper,6)
     elif item in ("salvageRevolver","fieldShotgun"):
         long=item=="fieldShotgun";scale=1.22 if long else 1
         if long:
