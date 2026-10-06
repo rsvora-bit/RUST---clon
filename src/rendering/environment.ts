@@ -55,6 +55,7 @@ export class Environment {
   private readonly marshPoolLocations:Vec3[]=[];
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;masses?:THREE.InstancedMesh;species:number;fullCount:number;generatedLods?:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[];instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
   private readonly outcropBatches:{mesh:THREE.InstancedMesh;variant:number;generatedLods?:THREE.BufferGeometry[]}[]=[];
+  private shoreDriftwoodBatch?:{mesh:THREE.InstancedMesh;generatedLods?:THREE.BufferGeometry[]};
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
   private readonly surfaceWetness:{value:number};
@@ -96,6 +97,7 @@ export class Environment {
   get renderedTreeInstanceCount():number{return this.treeBatches.reduce((n,b)=>n+b.trunks.count,0);}
   get generatedTreeModelStats():{trees:number;batches:number;meshes:number;triangles:number;lod:number;assets:string[]}{const meshes=this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&typeof object.userData.generatedWorldAsset==='string'),assets=[...new Set(meshes.map(mesh=>mesh.userData.generatedWorldAsset as string))];return{trees:meshes.filter(mesh=>mesh.name.endsWith('trunks')).reduce((sum,mesh)=>sum+mesh.count,0),batches:assets.length,meshes:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='ultra'?0:this.quality==='high'?1:2,assets};}
   get generatedRockModelStats():{instances:number;batches:number;triangles:number;lod:number}{const meshes=this.outcropBatches.filter(batch=>batch.mesh.userData.generatedWorldAsset).map(batch=>batch.mesh);return{instances:meshes.reduce((sum,mesh)=>sum+mesh.count,0),batches:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0};}
+  get generatedShoreModelStats():{instances:number;triangles:number;lod:number;asset:string|null}{const batch=this.shoreDriftwoodBatch,mesh=batch?.mesh;return{instances:mesh?.count??0,triangles:mesh?((mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3)*mesh.count:0,lod:this.quality==='low'?2:this.quality==='medium'?1:0,asset:mesh?.userData.generatedWorldAsset??null};}
   get treeCrownScales():[number,number,number][]{const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();return this.treeBatches.flatMap(batch=>Array.from({length:batch.crowns.count},(_,index)=>{batch.crowns.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return[scale.x,scale.y,scale.z] as [number,number,number];}));}
   get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
   get fallingTreeCount():number{return this.fallingTrees.size;}
@@ -259,6 +261,19 @@ export class Environment {
       const matrix=new THREE.Matrix4();for(let index=0;index<batch.mesh.count;index++){batch.mesh.getMatrixAt(index,matrix);matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.position.y+=terrainContactOffset(levels[0]!,matrix,(x,z)=>this.heightAt(x,z),this.matrixDummy.scale.y*.14);this.matrixDummy.updateMatrix();batch.mesh.setMatrixAt(index,this.matrixDummy.matrix);}batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.computeBoundingSphere();integrated+=batch.mesh.count;
     }
     return integrated;
+  }
+  /** Replace the simple beach-log proxy with the authored, weather-reactive GLB while keeping one instanced batch. */
+  useGeneratedShoreDriftwood(asset:THREE.Object3D):number {
+    const batch=this.shoreDriftwoodBatch;if(!batch||this.terrain.generation!==5||this.worldRevision<6)return 0;
+    asset.updateMatrixWorld(true);const lods:THREE.BufferGeometry[]=[];let sourceMaterials:THREE.Material[]|undefined;
+    for(const name of ['LOD0','LOD1','LOD2']){
+      const level=asset.getObjectByName(name);if(!level)break;level.updateMatrixWorld(true);const inverse=level.matrixWorld.clone().invert(),parts:THREE.BufferGeometry[]=[],partMaterials:THREE.Material[]=[];
+      level.traverse(object=>{if(!(object instanceof THREE.Mesh))return;const source=object.geometry.clone();source.applyMatrix4(inverse.clone().multiply(object.matrixWorld));parts.push(source);for(const material of Array.isArray(object.material)?object.material:[object.material])if(!partMaterials.some(existing=>existing===material))partMaterials.push(material);});
+      const geometry=parts.length===1?parts[0]!:parts.length?mergeGeometries(parts,true):null;if(parts.length>1)parts.forEach(part=>part.dispose());if(!geometry)break;geometry.computeBoundingSphere();lods.push(geometry);sourceMaterials??=partMaterials;
+    }
+    if(lods.length!==3||!sourceMaterials?.length){lods.forEach(geometry=>geometry.dispose());return 0;}
+    const materials=sourceMaterials.map(source=>{const material=source instanceof THREE.MeshStandardMaterial?source.clone():new THREE.MeshStandardMaterial({color:0x82765e,roughness:.94});material.roughness=Math.max(.82,material.roughness);addWeatherSurfaceResponse(material,this.surfaceWetness,.48,.50);this.materials.add(material);return material;});
+    lods.forEach(geometry=>this.geometries.add(geometry));batch.generatedLods=lods;batch.mesh.geometry=lods[this.quality==='low'?2:this.quality==='medium'?1:0]!;batch.mesh.material=materials;batch.mesh.userData.generatedWorldAsset='driftwood_a';batch.mesh.computeBoundingSphere();this.shoreDriftwoodBatch=batch;return batch.mesh.count;
   }
   private populateRocks():void {
     const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];
@@ -458,7 +473,7 @@ export class Environment {
     }
     const log=this.own(new THREE.CylinderGeometry(.055,.10,1.9,7));log.rotateZ(Math.PI/2);const weedG=this.own(seaweedGeometry()),weedM=new THREE.MeshStandardMaterial({color:0x596340,roughness:.92,side:THREE.DoubleSide});this.materials.add(weedM);
     for(const [index,matrices] of stones.entries()){const mesh=new THREE.InstancedMesh(this.own(rockGeometry([811,1391,2209][index]!)),this.stone,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=index===0?'Tide-washed pebbles':`Tide-washed pebbles variant ${index+1}`;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);}
-    for(const [matrices,geometry,material,name] of [[wood,log,this.bark,'Stranded branches'],[weed,weedG,weedM,'Tidal seaweed']] as const){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=name;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);if(name==='Tidal seaweed')this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});}
+    for(const [matrices,geometry,material,name] of [[wood,log,this.bark,'Stranded branches'],[weed,weedG,weedM,'Tidal seaweed']] as const){const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.name=name;mesh.receiveShadow=true;mesh.computeBoundingSphere();this.root.add(mesh);if(name==='Stranded branches'&&revision6)this.shoreDriftwoodBatch={mesh};if(name==='Tidal seaweed')this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});}
   }
   private populateGrass():void {
     const rand=randomSource(this.seed+814),revision6=this.worldRevision>=6,grassVariants=Array.from({length:revision6?4:1},(_,variant)=>this.own(grassGeometry(revision6,variant))),chunks=new Map<string,{positions:{x:number;y:number;z:number;s:number;r:number;dry:boolean}[];x:number;z:number;type:number;variant:number}>();
@@ -494,7 +509,7 @@ export class Environment {
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=quality==='low'?62:quality==='medium'?86:quality==='high'?112:128;
-    const treeLod=quality==='ultra'?0:quality==='high'?1:2,rockLod=quality==='low'?2:quality==='medium'?1:0;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;}}for(const batch of this.outcropBatches){const level=batch.generatedLods?.[rockLod];if(level)batch.mesh.geometry=level;}
+    const treeLod=quality==='ultra'?0:quality==='high'?1:2,rockLod=quality==='low'?2:quality==='medium'?1:0;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;}}for(const batch of this.outcropBatches){const level=batch.generatedLods?.[rockLod];if(level)batch.mesh.geometry=level;}const shoreLod=this.shoreDriftwoodBatch?.generatedLods?.[rockLod];if(shoreLod&&this.shoreDriftwoodBatch)this.shoreDriftwoodBatch.mesh.geometry=shoreLod;
     const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'||o.name==='Oak canopy masses'))o.castShadow=quality==='ultra'||(this.worldRevision<6&&quality==='high');});this.cullClock=0;
