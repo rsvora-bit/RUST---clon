@@ -7,7 +7,7 @@ import { ITEMS, isItemId } from '../items/definitions';
 import { RECIPES } from '../crafting/recipes';
 import { copyInventory, deductCosts, hasCosts, insertItem, itemCount, moveStack, type InventorySlots } from '../inventory/inventory';
 import { PIECES, validateStructurePlacement } from '../building/rules';
-import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,upgradeStructure} from '../building/grades';
+import {damageStructure as applyStructureDamage,demolishStructure,migrateStructure,repairStructure,rotateStructure,structureCurrentHealth,structureMaxHealth,upgradeStructure} from '../building/grades';
 import {createStarterInventory} from '../inventory/starter';
 import {ensureTech,researchTech,type ResearchResult,TECH_NODES,type TechNodeId} from '../crafting/techTree';
 import {damageTypeForCause,resolveDamage,type Damageable,type DamagePacket,type DamageResult} from '../combat/damage';
@@ -20,6 +20,11 @@ const validSlot = (slot: number): boolean => Number.isInteger(slot) && slot >= 0
 export class GameSimulation implements Damageable {
   state: GameState;
   onNotify: (message: string) => void = () => {};
+  /** Session-only developer mode. Never serialized into GameState. */
+  testingMode = false;
+  testingFreeBuild = false;
+  testingNoCostUpgrades = false;
+  testingInstantRepair = false;
   private queueBlocked = false;
   private benchTimer=0;workbenchLevel=0;
 
@@ -194,13 +199,14 @@ export class GameSimulation implements Damageable {
 
   craftStatus(recipeId: string):{craftable:boolean;reason:'ok'|'unknown'|'locked'|'workbench'|'resources'|'inventory-space'|'queue-full';requiredTech?:TechNodeId;requiredWorkbench?:number}{
     const recipe=Object.hasOwn(RECIPES,recipeId)?RECIPES[recipeId]:undefined;if(!recipe)return {craftable:false,reason:'unknown'};
-    const tech=ensureTech(this.state);if(recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech))return {craftable:false,reason:'locked',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
-    const level=nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position);if((recipe.requiredWorkbenchLevel??0)>level)return {craftable:false,reason:'workbench',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    const tech=ensureTech(this.state);if(!this.testingMode&&recipe.requiredTech&&!tech.unlocked.includes(recipe.requiredTech))return {craftable:false,reason:'locked',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    const level=nearbyWorkbench(ensureProgression(this.state).stations,this.state.player.position);if(!this.testingMode&&(recipe.requiredWorkbenchLevel??0)>level)return {craftable:false,reason:'workbench',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
     if(this.state.craftQueue.length>=INVENTORY.MAX_CRAFT_QUEUE)return {craftable:false,reason:'queue-full',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
-    if(!hasCosts(this.state.inventory,recipe.ingredients))return {craftable:false,reason:'resources',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
-    const inventory=copyInventory(this.state.inventory);deductCosts(inventory,recipe.ingredients);if(!this.fitsQueue(inventory,[...this.state.craftQueue,{recipeId,remaining:recipe.craftTime,total:recipe.craftTime}]))return {craftable:false,reason:'inventory-space',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    if(!this.testingMode&&!hasCosts(this.state.inventory,recipe.ingredients))return {craftable:false,reason:'resources',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
+    const inventory=copyInventory(this.state.inventory);if(!this.testingMode)deductCosts(inventory,recipe.ingredients);if(!this.fitsQueue(inventory,[...this.state.craftQueue,{recipeId,remaining:recipe.craftTime,total:recipe.craftTime}]))return {craftable:false,reason:'inventory-space',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
     return {craftable:true,reason:'ok',requiredTech:recipe.requiredTech,requiredWorkbench:recipe.requiredWorkbenchLevel};
   }
+  testCraftingEnabled():boolean{return this.testingMode;}
   canCraft(recipeId: string): boolean { return this.craftStatus(recipeId).craftable; }
 
   craft(recipeId: string): boolean {
@@ -210,7 +216,7 @@ export class GameSimulation implements Damageable {
       this.onNotify(status.reason==='locked'?`Research ${TECH_NODES[recipe.requiredTech!].displayName} first`:status.reason==='workbench'?`Requires workbench level ${recipe.requiredWorkbenchLevel}`:status.reason==='resources'?'Not enough resources':status.reason==='queue-full'?'Crafting queue is full':'Make room for the crafted item');
       return false;
     }
-    deductCosts(this.state.inventory, recipe.ingredients);
+    if(!this.testingMode)deductCosts(this.state.inventory, recipe.ingredients);
     this.state.craftQueue.push({ recipeId, remaining: recipe.craftTime, total: recipe.craftTime });
     this.onNotify(`Crafting ${ITEMS[recipe.resultItemId].displayName}`);
     return true;
@@ -222,7 +228,7 @@ export class GameSimulation implements Damageable {
     if (problem) { this.onNotify(problem); return null; }
     const pos = this.state.player.position;
     if (Math.hypot(candidate.position.x - pos.x, candidate.position.z - pos.z) > BUILD.MAX_DISTANCE || Math.abs(candidate.position.y - pos.y) > BUILD.MAX_DISTANCE) { this.onNotify('Move closer to build'); return null; }
-    if (!deductCosts(this.state.inventory, PIECES[candidate.pieceType].cost)) { this.onNotify('Not enough resources'); return null; }
+    if (!(this.testingMode&&this.testingFreeBuild)&&!deductCosts(this.state.inventory, PIECES[candidate.pieceType].cost)) { this.onNotify('Not enough resources'); return null; }
     const structure: Structure = {
       id: `structure-${this.state.nextId++}`, pieceType: candidate.pieceType, position: { ...candidate.position }, rotation: candidate.rotation,
       health: BUILDING_RULES.HEALTH, currentHealth:BUILDING_RULES.HEALTH, maxHealth:BUILDING_RULES.HEALTH, grade:'wood', createdAt: this.state.elapsed,
@@ -248,8 +254,8 @@ export class GameSimulation implements Damageable {
 
   researchTech(nodeId:TechNodeId):ResearchResult{return researchTech(this.state,nodeId,this.state.player.position);}
 
-  upgradeStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?upgradeStructure(this.state,structure):{ok:false,reason:'not-found' as const};}
-  repairStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?repairStructure(this.state,structure):{ok:false,reason:'not-found' as const};}
+  upgradeStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);if(!structure)return {ok:false,reason:'not-found' as const};if(!this.testingMode||!this.testingNoCostUpgrades)return upgradeStructure(this.state,structure);const inventory=this.state.inventory;this.state.inventory=Array.from({length:INVENTORY.SLOTS},()=>null);this.addItem('stone',10000);this.addItem('metal',10000);const result=upgradeStructure(this.state,structure);this.state.inventory=inventory;return result;}
+  repairStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);if(!structure)return {ok:false,reason:'not-found' as const};if(!this.testingMode||!this.testingInstantRepair)return repairStructure(this.state,structure);if(structureCurrentHealth(structure)>=structureMaxHealth(structure))return {ok:false,reason:'full-health' as const};structure.currentHealth=structureMaxHealth(structure);structure.health=structure.currentHealth;return {ok:true,reason:'ok' as const};}
   demolishStructure(id:string){return demolishStructure(this.state,id);}
   rotateStructure(id:string){const structure=this.state.structures.find(entry=>entry.id===id);return structure?rotateStructure(structure):{ok:false,reason:'not-found' as const};}
   damageStructure(id:string,amount:number){return applyStructureDamage(this.state,id,amount);}

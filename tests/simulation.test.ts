@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { GameState, PieceType, ResourceNode, Structure, Vec3 } from '../src/core/types';
+import type { BuildCandidate, GameState, PieceType, ResourceNode, Structure, Vec3 } from '../src/core/types';
 import { BUILD, DEFAULT_SETTINGS } from '../src/config/balance';
 import { SAVE } from '../src/config/gameplay';
 import { GameSimulation } from '../src/simulation/GameSimulation';
@@ -63,6 +63,27 @@ describe('inventory transactions', () => {
 });
 
 describe('crafting and gathering progression', () => {
+  it('keeps developer testing behavior session-only and permits locked, free crafting', () => {
+    const game = sim();
+    expect(game.canCraft('trauma_kit')).toBe(false);
+    game.testingMode = true;
+    expect(game.canCraft('trauma_kit')).toBe(true);
+    expect(game.craft('trauma_kit')).toBe(true);
+    expect(game.count('techParts')).toBe(0);
+    expect(game.state.progression?.tech?.unlocked).toEqual([]);
+    const foundation: BuildCandidate = {pieceType:'foundation',position:{...spawn},rotation:0,valid:true,reason:'',snapped:false};
+    expect(game.place(foundation)).toBeNull();game.testingFreeBuild=true;
+    const placed=game.place(foundation)!;expect(placed).not.toBeNull();
+    expect(game.count('wood')).toBe(0);
+    game.testingNoCostUpgrades=true;expect(game.upgradeStructure(placed.id).ok).toBe(true);expect(placed.grade).toBe('stone');expect(game.count('stone')).toBe(0);
+    game.damageStructure(placed.id,120);game.testingInstantRepair=true;expect(game.repairStructure(placed.id).ok).toBe(true);expect(placed.currentHealth).toBe(placed.maxHealth);
+    expect('testingMode' in game.state).toBe(false);
+    expect(validateGameState(game.state)).toBe(true);
+    const reloaded = new GameSimulation(731942, spawn, structuredClone(game.state));
+    expect(reloaded.testingMode).toBe(false);
+    expect(reloaded.canCraft('trauma_kit')).toBe(false);
+  });
+
   it('starts with only a rock and torch, gathers, pays once, then completes sequential jobs', () => {
     const game = sim();
     expect(game.state.inventory.filter(Boolean).map(item => item?.itemId)).toEqual(['rock', 'torch']);
