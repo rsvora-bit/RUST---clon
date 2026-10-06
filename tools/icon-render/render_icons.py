@@ -722,7 +722,23 @@ def build(item):
                 toothed_gear("salvaged profile gear",pos,r,.09,teeth,steel if index==0 else copper)
                 torus("worn gear hub ring",(pos[0],-.053,pos[2]),r*.31,.014,iron,(math.pi/2,0,0))
         elif item=="wiring":
-            torus("coiled cable",(0,0,0),.28,.045,copper,(math.pi/2,0,0));torus("coiled cable",(0,.04,.02),.2,.025,sea,(math.pi/2,0,0))
+            insulation=[material("faded signal red insulation",(.48,.105,.075,1),0,.8),material("salted teal cable insulation",(.12,.34,.32,1),0,.78),material("aged yellow cable insulation",(.63,.43,.13,1),0,.82)]
+            for strand,(cx,cz,phase) in enumerate(((-.035,.035,0),(.025,.01,.28),(.04,-.055,.56))):
+                path=[]
+                for step in range(9):
+                    angle=step*math.tau/8+phase;radius=.22+math.sin(angle*2+phase)*.025
+                    path.append((cx+math.cos(angle)*radius,-.07+math.sin(angle*2+phase)*.045,cz+math.sin(angle)*radius*.72))
+                curve_tube("loosely coiled insulated wire",path,.024+strand*.003,insulation[strand])
+                end=path[0];tail=(end[0]-.20,-.08,end[2]-.11)
+                curve_tube("cut cable tail",[end,(end[0]-.06,-.075,end[2]-.025),(tail[0]+.06,-.08,tail[2]+.035),tail],.022+strand*.002,insulation[strand])
+                stripped=(tail[0]-.065,tail[1],tail[2]-.035)
+                rod("exposed copper wire core",tail,stripped,.009,copper,7)
+                profile_mesh("brass cable ferrule",(tail[0]+.015,tail[1],tail[2]),[(-.045,.028),(-.035,.043),(.02,.043),(.034,.026)],gold,"X",10)
+            for x,z in ((-.20,.23),(.23,-.18)):
+                profile_mesh("salvage cable plug housing",(x,-.06,z),[(-.11,.045),(-.08,.072),(.07,.072),(.105,.045)],steel,"X",12)
+                cyl("plug contact collar",(x+.105,-.06,z),.055,.035,copper,10,"X",.006)
+                cyl("plug contact tip",(x+.14,-.06,z),.026,.045,gold,8,"X",.004)
+            curve_tube("cable loom retaining tie",[(-.20,-.13,-.05),(-.10,-.13,-.11),(.02,-.13,-.08),(.14,-.13,.0)],.018,leather)
         elif item in ("pistolAmmo","shotgunShells"):
             for i in range(3):cyl("cartridge",(-.2+i*.2,0,0),.07,.48,gold if item=="pistolAmmo" else copper,12)
             for i in range(3):bpy.data.objects.get("cartridge").rotation_euler[1]=.18
