@@ -28,6 +28,10 @@ for(const id of treeIds){
 }
 assert.notDeepEqual(readGlb('broadleaf_a').bytes,readGlb('broadleaf_b').bytes,'broadleaf variants use separately modeled geometry');
 assert.notDeepEqual(readGlb('conifer_a').bytes,readGlb('conifer_c').bytes,'conifer variants use separately modeled geometry');
+const rockIds=['small_rock_a','small_rock_b','small_rock_c','medium_rock_a','medium_rock_b','medium_rock_c','large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock','cliff_slab_a','cliff_slab_b','broken_stone'];
+for(const id of rockIds){assert.ok(catalog.includes(id),`fractured rock library contains ${id}`);const{json}=readGlb(id);for(const level of ['LOD0','LOD1','LOD2'])assert.ok(json.nodes.some(node=>node.name===level||node.name===`${id} ${level}`),`${id} contains ${level}`);}
+assert.notDeepEqual(readGlb('large_boulder_a').bytes,readGlb('large_boulder_c').bytes,'large boulders have distinct chipped silhouettes');
+assert.notDeepEqual(readGlb('cliff_slab_a').bytes,readGlb('cliff_slab_b').bytes,'cliff slabs have distinct fractured faces');
 const first=readGlb('shipwreck_hull_a').json,second=readGlb('shipwreck_hull_b').json;
 assert.notDeepEqual(first.nodes.map(node=>node.name),second.nodes.map(node=>node.name),'shipwreck variants are distinct');
 console.log(`World assets PASS · ${catalog.length} GLBs · LOD0/1/2 · all under 512 KiB`);

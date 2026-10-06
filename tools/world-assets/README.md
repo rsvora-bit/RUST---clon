@@ -19,7 +19,10 @@ three distinct broadleaf forms, three temperate conifers, an alpine conifer,
 a splayed-root marsh tree, and a wind-leaning coastal tree. Tree variants are
 seeded by asset ID and exported with the same three-LOD pipeline; runtime tree
 placement still uses the existing instanced gameplay batches until the model
-library can be integrated without multiplying draw calls.
+library can be integrated without multiplying draw calls. The fractured-stone
+set contains three size variants each for small, medium, and large rocks, plus
+coastal/alpine stones, two cliff slabs, and broken stone. Facet shape and
+material regions are generated deterministically from each asset ID.
 
 Regenerate and check file sizes with:
 

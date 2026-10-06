@@ -42,6 +42,8 @@ LEAF_LIGHT = mat("Tideland sunlit leaf", (.30, .37, .19))
 LEAF_SHADE = mat("Tideland shaded leaf", (.13, .23, .14))
 NEEDLE = mat("Tideland alpine needle", (.105, .19, .15))
 STONE = mat("Tideland fractured granite", (.34, .34, .31), .03, .96)
+STONE_LIGHT = mat("Tideland exposed fracture planes", (.43, .42, .37), .02, .98)
+STONE_COLD = mat("Tideland alpine slate", (.25, .29, .31), .025, .94)
 MOSS = mat("Tideland rock moss", (.18, .23, .14), .0, .98)
 
 def box(name, loc, scale, material, bevel_width=0):
@@ -142,6 +144,32 @@ def wreck_section():
     for x in (-1.08,.92):
         box("oxidized torn hull strap",(x,.515,.45),(.27,.025,.14),RUST,.018)
 
+def broadleaf_foliage(kind, centers, seed):
+    rng=random.Random(seed+7341);verts=[];faces=[];material_indices=[]
+    for center,radius,amount in centers:
+        for _ in range(amount):
+            angle=rng.uniform(0,math.tau);vertical=rng.uniform(-.68,.92)
+            direction=Vector((math.cos(angle),math.sin(angle),vertical)).normalized()
+            base=Vector(center)+Vector((rng.uniform(-.20,.20),rng.uniform(-.18,.18),rng.uniform(-.15,.17)))
+            length=rng.uniform(.58,.98)*(1.08 if kind=="coastal_tree" else 1)
+            width=rng.uniform(.16,.28);tip=base+direction*length
+            side=direction.cross(Vector((0,0,1)))
+            if side.length<.1:side=direction.cross(Vector((0,1,0)))
+            side.normalize();front=direction.cross(side).normalized()
+            mid=base+direction*length*.48
+            left=mid-side*width;right=mid+side*width
+            ridge=mid+front*width*.30;under=mid-front*width*.24
+            start=len(verts);verts.extend([tuple(base),tuple(left),tuple(ridge),tuple(right),tuple(tip),tuple(under)])
+            local=((0,1,2),(0,2,3),(1,4,2),(2,4,3),(0,2,1),(0,3,2),(1,2,4),(2,3,4))
+            faces.extend(tuple(start+index for index in face) for face in local)
+            shade=0 if rng.random()<.57 else 1 if rng.random()<.58 else 2
+            material_indices.extend([shade]*len(local))
+    mesh=bpy.data.meshes.new("individually modeled three-dimensional leaf blades");mesh.from_pydata(verts,[],faces);mesh.update()
+    obj=bpy.data.objects.new("layered broadleaf sprays",mesh);bpy.context.collection.objects.link(obj)
+    for material in (LEAF,LEAF_LIGHT,LEAF_SHADE):mesh.materials.append(material)
+    for polygon,index in zip(mesh.polygons,material_indices):polygon.material_index=index
+    return obj
+
 def tree(kind):
     broadleaf=kind.startswith("broadleaf") or kind in ("marsh_tree","coastal_tree")
     alpine=kind=="alpine_conifer"
@@ -187,21 +215,14 @@ def tree(kind):
             rod("secondary branch",base,twig,.038 if split else .048,BARK,6)
     if broadleaf:
         cluster_count={"broadleaf_a":20,"broadleaf_b":24,"broadleaf_c":18,"marsh_tree":14,"coastal_tree":16}[kind]
+        clusters=[]
         for i in range(cluster_count):
             angle=i*2.399963+rng.uniform(-.22,.22)
             radius=rng.uniform(.62,1.28) if i%3 else rng.uniform(1.18,1.82)
             z=h*rng.uniform(.62,.96);loc=(lean*z/h+math.cos(angle)*radius,math.sin(angle)*radius*.72,z)
-            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2 if i%2==0 else 1,radius=1,location=loc)
-            crown=bpy.context.object;crown.name="irregular layered broadleaf crown cluster";crown.scale=(rng.uniform(.92,1.34),rng.uniform(.78,1.12),rng.uniform(.72,1.18))
-            for vertex in crown.data.vertices:
-                jitter=1+.16*math.sin(vertex.co.x*5.3+vertex.co.z*3.1+seed)+.075*math.sin(vertex.co.y*8.2-vertex.co.x)
-                vertex.co*=jitter
-            for face in crown.data.polygons:face.use_smooth=True
-            crown.data.materials.append(LEAF if i%5<3 else LEAF_LIGHT if i%5==3 else LEAF_SHADE)
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1,location=(lean*.8,0,h*.81))
-        crown=bpy.context.object;crown.name="continuous crown heart";crown.scale=(1.0,.82,.92)
-        for face in crown.data.polygons:face.use_smooth=True
-        crown.data.materials.append(LEAF)
+            clusters.append((loc,radius,16 if kind.startswith("broadleaf") else 13))
+        clusters.append(((lean*.8,0,h*.81),.8,38))
+        broadleaf_foliage(kind,clusters,seed)
     else:
         tiers=8 if alpine else 9+variant
         for tier in range(tiers):
@@ -227,16 +248,65 @@ def tree(kind):
                     for face in needles.data.polygons:face.use_smooth=True
                     needles.data.materials.append(NEEDLE)
 
-def boulder():
-    rng=random.Random(994)
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1,location=(0,0,.78))
-    obj=bpy.context.object;obj.name="fractured coastal granite"
-    for v in obj.data.vertices:
-        noise=1+.14*math.sin(v.co.x*8+v.co.y*3)*math.sin(v.co.z*6)+rng.uniform(-.055,.055)
-        v.co.x*=1.8*noise;v.co.y*=1.38*noise;v.co.z*=1.05*noise
-    obj.data.materials.append(STONE);obj.data.materials.append(MOSS)
-    for p in obj.data.polygons:
-        if p.normal.z>.45 and rng.random()<.16:p.material_index=1
+def rock(name):
+    seed=sum((index+1)*ord(char) for index,char in enumerate(name))+994
+    rng=random.Random(seed)
+    if name.startswith("small_rock"): dimensions=(.82,.66,.72);subdivisions=2
+    elif name.startswith("medium_rock"): dimensions=(1.45,1.18,1.12);subdivisions=2
+    elif name.startswith("large_boulder"): dimensions=(2.35,1.86,1.72);subdivisions=2
+    elif name=="broken_stone": dimensions=(.94,.52,.43);subdivisions=1
+    elif name=="coastal_rock": dimensions=(1.8,1.20,1.10);subdivisions=2
+    elif name=="alpine_rock": dimensions=(1.65,1.22,2.0);subdivisions=2
+    elif name=="coastal_boulder_a": dimensions=(1.8,1.38,1.05);subdivisions=2
+    else: dimensions=(1.25,1.0,.8);subdivisions=2
+    if name.startswith("cliff_slab"):
+        # A chipped, stratified ledge block built as a faceted rock face rather
+        # than a stretched primitive; one broad sloped face reads from afar.
+        verts=[];sides=10;phase=rng.uniform(-.25,.25)
+        for level in range(3):
+            for i in range(sides):
+                angle=math.tau*i/sides+phase
+                jag=rng.uniform(.68,1.27)
+                x=math.cos(angle)*(3.0 if level==0 else 2.55 if level==1 else 2.05)*jag
+                y=math.sin(angle)*(1.10 if level==0 else .88 if level==1 else .67)*jag
+                peak=max(0,math.cos(angle*1.15+(0 if name.endswith("a") else 1.1)))
+                z=(0 if level==0 else 1.25 if level==1 else 3.0+peak*rng.uniform(.25,1.25))+rng.uniform(-.24,.24)
+                if name.endswith("b") and level==2:x+=.92*math.sin(angle*1.3)
+                verts.append((x,y,z))
+        faces=[]
+        for level in range(2):
+            for i in range(sides):
+                a=level*sides+i;b=level*sides+(i+1)%sides
+                c=(level+1)*sides+(i+1)%sides;d=(level+1)*sides+i
+                if (i+level)%2:faces.extend(((a,b,c),(a,c,d)))
+                else:faces.extend(((a,b,d),(b,c,d)))
+        faces.append(tuple(range(2*sides,3*sides)))
+        mesh=bpy.data.meshes.new("broken stratified cliff mesh");mesh.from_pydata(verts,[],faces);mesh.update()
+        obj=bpy.data.objects.new(name+" fractured ledge",mesh);bpy.context.collection.objects.link(obj)
+        materials=[STONE_COLD if name.endswith("b") else STONE,STONE_LIGHT,MOSS]
+        for material in materials:mesh.materials.append(material)
+        for face in mesh.polygons:
+            face.material_index=2 if face.normal.z>.72 and rng.random()<.22 else 1 if rng.random()<.32 else 0
+        return obj
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdivisions,radius=1,location=(0,0,0))
+    obj=bpy.context.object;obj.name="chipped stratified stone mass"
+    cold=name=="alpine_rock";coastal=name.startswith("coastal")
+    for vertex in obj.data.vertices:
+        co=vertex.co.copy()
+        noise=1+.12*math.sin(co.x*7.1+co.y*3.2+seed*.003)*math.sin(co.z*6.4-co.x*2.1)+rng.uniform(-.065,.065)
+        # Flatten one or more planes into chipped facets and skew the crown;
+        # scale variation remains in vertex positions for clean GLB transforms.
+        x=co.x*dimensions[0]*noise;y=co.y*dimensions[1]*noise;z=co.z*dimensions[2]*noise
+        if name=="broken_stone":z*=.72
+        if coastal:x+=.18*co.z;y*=.92
+        if cold:z+=.16*co.x
+        vertex.co=(x,y,z+dimensions[2]*.99)
+    obj.data.materials.append(STONE_COLD if cold else STONE);obj.data.materials.append(STONE_LIGHT);obj.data.materials.append(MOSS)
+    for face in obj.data.polygons:
+        centroid=face.center
+        fractured=(face.normal.x<-.52 and rng.random()<.22) or rng.random()<.045
+        if face.normal.z>.48 and rng.random()<(.12 if coastal else .07):face.material_index=2
+        elif fractured:face.material_index=1
     obj.data.update();return obj
 
 def driftwood():
@@ -263,7 +333,7 @@ def create(name):
     if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
     elif name=="wreck_section_a":wreck_section()
     elif name in ("broadleaf_a","broadleaf_b","broadleaf_c","conifer_a","conifer_b","conifer_c","alpine_conifer","marsh_tree","coastal_tree"):tree(name)
-    elif name=="coastal_boulder_a":boulder()
+    elif name in ("coastal_boulder_a","small_rock_a","small_rock_b","small_rock_c","medium_rock_a","medium_rock_b","medium_rock_c","large_boulder_a","large_boulder_b","large_boulder_c","coastal_rock","alpine_rock","cliff_slab_a","cliff_slab_b","broken_stone"):rock(name)
     elif name=="driftwood_a":driftwood()
     elif name=="salvage_crate_a":crate()
     # Normalize transforms and combine each asset into one mesh per LOD while preserving material slots.
