@@ -2,6 +2,7 @@ import {chromium} from 'playwright-core';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const outputDir=process.env.TIDELAND_QA_DIR||'test-results/polish';fs.mkdirSync(outputDir,{recursive:true});
+const captureScreenshots=process.env.TIDELAND_QA_SCREENSHOTS!=='0';
 const appUrl=process.env.TIDELAND_QA_URL||'http://localhost:5173';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-gl=angle',`--use-angle=${process.env.TIDELAND_QA_ANGLE||'swiftshader'}`]});
 const page=await browser.newPage({viewport:{width:1280,height:720}});const errors=[],warnings=[],results=[];
@@ -9,7 +10,7 @@ page.setDefaultTimeout(180000);
 page.on('response',r=>{if(r.status()>=400)console.log('HTTP',r.status(),r.url())});
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='warning')warnings.push(m.text());if(m.type()==='error')errors.push(m.text()+' '+JSON.stringify(m.location()))});
 const check=(label,value)=>{assert.ok(value,label);results.push(label);console.log('PASS',label)};
-const shot=async name=>{await page.waitForTimeout(250);await page.screenshot({path:`${outputDir}/${name}.png`,timeout:60000})};
+const shot=async name=>{if(!captureScreenshots)return;await page.waitForTimeout(250);await page.screenshot({path:`${outputDir}/${name}.png`,timeout:60000});};
 try{
 await page.goto(appUrl);await page.waitForFunction(()=>window.__TIDELAND,{timeout:150000});
 await page.locator('.loading-screen').waitFor({state:'hidden',timeout:60000});
