@@ -212,14 +212,23 @@ def build(item):
             for z in (.045,.185):
                 cyl("side by side shotgun barrel",(.37*scale,-.012,z),.052,.68*scale,steel,16,"X")
                 torus("shotgun muzzle rim",(.72*scale,-.012,z),.052,.012,copper,(0,math.pi/2,0))
+                torus("breech barrel ferrule",(.405,-.012,z),.053,.010,iron,(0,math.pi/2,0))
                 cyl("dark muzzle bore",(.735*scale,-.012,z),.029,.018,dark,12,"X",.004)
             rod("raised barrel rib",(.04,-.02,.24),(.70*scale,-.02,.24),.018,steel,8)
+            rod("lower barrel joining rib",(.10,.025,-.005),(.69*scale,.025,-.005),.012,iron,8)
             poly_prism("shaped walnut fore-end",[(.015,-.13),(.06,-.04),(.14,-.015),(.34,-.03),(.39,-.10),(.35,-.18),(.10,-.19)],.17,wood,.02)
             cube("forend nose cap",(.36,-.015,-.11),(.06,.19,.15),iron,.02)
             for x in (-.60,-.34,.08,.32):ico("shotgun receiver pin",(x,-.108,.085),(.025,.016,.025),copper,1)
             torus("trigger guard",(-.04,-.105,-.095),.125,.014,iron,(math.pi/2,0,0))
             rod("shotgun trigger",(-.015,-.12,-.02),(.01,-.12,-.12),.018,copper,8)
-            cube("receiver hinge",(.10,-.11,.01),(.22,.04,.10),copper,.018)
+            # A transverse pin and release lever make the break-action joint
+            # read as working hardware instead of a copper-colored block.
+            cyl("break-action hinge boss",(.17,-.123,.055),.064,.045,iron,16,"Y",.008)
+            torus("hinge boss retaining rim",(.17,-.151,.055),.049,.009,copper,(math.pi/2,0,0))
+            cyl("hinge pivot cap",(.17,-.158,.055),.026,.014,steel,12,"Y",.004)
+            cube("pivot screw slot",(.17,-.167,.055),(.026,.006,.004),dark,.001)
+            poly_prism("top lever locking shoe",[(-.01,.205),(.10,.205),(.16,.232),(.11,.247),(0,.24)],.08,steel,.009).location.y=-.075
+            rod("top lever thumb tab",(.055,-.09,.235),(-.025,-.09,.267),.018,copper,8)
         else:
             cyl("revolver barrel",(.37,0,.12),.064,.62,steel,16,"X")
             torus("revolver muzzle rim",(.69,0,.12),.064,.014,copper,(0,math.pi/2,0))
