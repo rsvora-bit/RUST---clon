@@ -375,8 +375,24 @@ def build(item):
                     poly_prism("raised center breastplate ridge",[(-.018,-.20),(0,.20),(.035,.20),(.025,-.20)],.014,steel,.004).location.y=-.194
                     poly_prism("scratched unit marking",[(-.075,.10),(.075,.10),(.065,.065),(-.065,.065)],.012,red,.003).location.y=-.202
         elif item=="pants":
-            cube("waist",(0,0,.25),(.56,.24,.25),cloth,.06)
-            for x in (-.15,.15):cube("trouser leg",(x,0,-.16),(.23,.23,.58),leather,.06)
+            trouser_canvas=material("salt-faded trouser canvas",(.16,.22,.13,1),0,.9)
+            knee_leather=material("patched knee leather",(.10,.13,.09,1),0,.94)
+            waist_outline=[(-.27,.29),(-.30,.43),(-.22,.51),(-.13,.54),(.13,.54),(.22,.51),(.30,.43),(.27,.29),(.16,.24),(0,.27),(-.16,.24)]
+            poly_prism("shaped trouser seat and waistband",waist_outline,.23,trouser_canvas,.025)
+            for side in (-1,1):
+                leg_outline=[(side*x,z) for x,z in ((-.12,.30),(.12,.30),(.135,.10),(.105,-.18),(.13,-.45),(.075,-.51),(-.11,-.49),(-.13,-.22))]
+                poly_prism("tapered articulated trouser leg",leg_outline,.205,trouser_canvas,.022).location.x=side*.145
+                knee_outline=[(side*x,z) for x,z in ((-.105,-.13),(.105,-.13),(.095,-.31),(-.09,-.32))]
+                knee=poly_prism("stitched double-layer knee patch",knee_outline,.026,knee_leather,.01);knee.location=(side*.145,-.119,-.005)
+                pocket_outline=[(-.085,.075),(.085,.075),(.08,-.065),(-.08,-.065)]
+                pocket=poly_prism("buttoned field cargo pocket",pocket_outline,.034,trouser_canvas,.012);pocket.location=(side*.205,-.13,.105)
+                flap=poly_prism("cargo pocket flap",[(-.09,.025),(.09,.025),(.08,-.035),(-.08,-.035)],.022,leather,.008);flap.location=(side*.205,-.151,.17)
+                ico("cargo pocket stud",(side*.205,-.17,.157),(.014,.009,.014),copper,1)
+                for z in (-.39,-.35):rod("knee reinforcement stitch",(side*.09,-.142,z),(side*.20,-.142,z+.005),.005,wl,6)
+            poly_prism("fly front reinforcement",[(-.025,.28),(.025,.28),(.018,.02),(-.018,-.015)],.018,leather,.006).location.y=-.126
+            for x in (-.22,-.11,0,.11,.22):
+                loop=poly_prism("stitched belt loop",[(-.025,.12),(.025,.12),(.025,-.035),(-.025,-.035)],.025,leather,.006);loop.location=(x,-.139,.38)
+            cube("salvage belt buckle",(0,-.16,.405),(.09,.028,.085),copper,.018)
         elif item=="boots":
             for index,x in enumerate((-.19,.19)):
                 depth=.045 if index else -.07
@@ -395,7 +411,16 @@ def build(item):
                 buckle=cube("ankle strap buckle",(x-.14,depth-.205,.19),(.075,.018,.055),copper,.012)
                 buckle.rotation_euler[1]=-.12
         else:
-            ico("filter hood",(0,0,.05),(.35,.25,.4),cloth,2);cube("visor",(0,-.23,.04),(.34,.04,.12),sea,.025)
+            ico("fabric hood crown",(0,.25,.12),(.34,.28,.38),cloth,2)
+            shell=poly_prism("tailored protective hood mantle",[(-.32,-.24),(-.37,.06),(-.29,.31),(-.15,.43),(.12,.45),(.30,.31),(.36,.04),(.30,-.23),(.20,-.35),(-.20,-.35)],.27,cloth,.035);shell.location.y=.01
+            poly_prism("dark face opening",[(-.19,-.16),(-.21,.11),(-.14,.25),(.12,.25),(.20,.11),(.17,-.16),(.08,-.23),(-.10,-.23)],.024,dark,.025).location.y=-.145
+            curve_tube("hood face opening binding",[(-.21,-.17,-.12),(-.23,-.17,.10),(-.15,-.17,.27),(0,-.17,.30),(.16,-.17,.25),(.22,-.17,.08),(.19,-.17,-.15)],.024,leather)
+            lens=poly_prism("split protective goggle lenses",[(-.19,.08),(-.16,.18),(-.035,.18),(-.02,.045),(-.14,.035)],.026,sea,.014);lens.location=(0,-.178,0)
+            right_lens=poly_prism("right protective goggle lens",[(.035,.18),(.16,.18),(.19,.08),(.14,.035),(.02,.045)],.026,sea,.014);right_lens.location=(0,-.18,0)
+            rod("goggle bridge",(-.03,-.205,.11),(.03,-.205,.11),.014,copper,8)
+            cyl("respirator filter canister",(0,-.205,-.11),.092,.12,iron,12,"Y",.012)
+            for x in (-.045,0,.045):rod("filter vent slot",(x,-.27,-.12),(x,-.27,-.075),.007,steel,6)
+            curve_tube("respirator side hose",[(-.08,-.19,-.15),(-.17,-.10,-.20),(-.24,.02,-.16)],.018,copper)
     elif item in ("storage","furnace","workbench1","workbench2","workbench3","generator","powerSwitch","lamp","homesteadCore","campfire"):
         if item.startswith("workbench"):
             if item=="workbench1":
