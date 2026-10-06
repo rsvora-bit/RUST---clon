@@ -371,17 +371,39 @@ def build(item):
         if item=="bandage":
             cube("folded dressing",(0,0,0),(.62,.18,.22),white,.07);cube("cross stripe",(0,-.1,0),(.1,.025,.22),red,.01)
         elif item=="traumaKit":
-            cube("medical case lower tray",(0,0,-.045),(.68,.43,.29),red,.065)
-            cube("raised hinged lid",(0,-.005,.15),(.68,.43,.16),red,.055)
-            cube("lid inset panel",(0,-.226,.15),(.52,.025,.095),wl,.018)
-            cube("medical cross vertical",(0,-.247,.145),(.075,.018,.15),white,.012)
-            cube("medical cross horizontal",(0,-.25,.145),(.18,.018,.06),white,.012)
-            cube("case handle",(0,-.03,.29),(.3,.08,.06),iron,.02)
-            for x in (-.24,.24):
-                cube("brass case hinge",(x,.22,.105),(.10,.04,.07),copper,.012)
-                cube("case latch",(x,-.244,-.055),(.085,.035,.10),steel,.014)
-                for z in (-.13,.02):ico("case seam rivet",(x,-.245,z),(.018,.012,.018),copper,1)
-            for x in (-.29,.29):cube("stitched case seam",(x,-.225,.02),(.018,.016,.23),wl,.006)
+            case=material("weathered trauma enamel",(.34,.095,.071,1),.06,.72)
+            canvas=material("faded medical canvas",(.54,.48,.36,1),0,.92)
+            webbing=material("olive utility webbing",(.13,.17,.13,1),0,.94)
+            cube("molded lower trauma tray",(0,0,-.045),(.68,.43,.29),case,.075)
+            lid=poly_prism("chamfered trauma lid",[(-.31,.015),(-.30,.145),(-.245,.225),(.22,.225),(.30,.155),(.315,.02),(.255,-.005),(-.25,-.005)],.445,case,.027)
+            lid.location=(0,0,.115)
+            # A raised, stitched cloth panel replaces the flat painted box-face label.
+            panel=poly_prism("worn canvas medical panel",[(-.225,-.005),(-.205,.052),(-.17,.071),(.17,.071),(.205,.052),(.225,-.005)],.018,canvas,.008)
+            panel.location=(0,-.232,.205)
+            poly_prism("embroidered medical cross vertical",[(-.034,-.045),(-.034,.045),(.034,.045),(.034,-.045)],.012,white,.004).location=(0,-.246,.205)
+            poly_prism("embroidered medical cross arms",[(-.078,-.018),(-.078,.018),(.078,.018),(.078,-.018)],.014,white,.004).location=(0,-.25,.205)
+            # The arched, wrapped carry handle is a real curved mesh with raised end mounts.
+            for x in (-.13,.13):cube("handle leather socket",(x,-.015,.345),(.075,.095,.035),leather,.012)
+            curve_tube("arched leather carry handle",[(-.13,-.02,.35),(-.15,-.02,.43),(-.09,-.02,.475),(0,-.02,.485),(.09,-.02,.475),(.15,-.02,.43),(.13,-.02,.35)],.026,leather)
+            # Two adjustable webbing straps cross the lid and wrap onto the lower tray.
+            for x in (-.245,.245):
+                cube("front webbing strap",(x,-.235,.045),(.048,.022,.46),webbing,.014)
+                cube("lid webbing strap",(x,-.02,.35),(.048,.29,.018),webbing,.014)
+                cube("brass locking buckle",(x,-.254,-.025),(.085,.028,.105),copper,.018)
+                cube("buckle dark recess",(x,-.271,-.025),(.048,.012,.062),dark,.009)
+                rod("buckle cross pin",(x-.022,-.282,-.025),(x+.022,-.282,-.025),.009,gold,8)
+                # Pin hinges show separate knuckles rather than a single decorative block.
+                for z in (.075,.12):
+                    cyl("lid hinge knuckle",(x,.222,z),.024,.045,steel,10,"X",.006)
+                    cyl("hinge pin cap",(x+(.027 if x>0 else -.027),.222,z),.012,.012,copper,8,"X",.003)
+                for z in (-.145,-.095,.15,.18):
+                    rod("canvas edge stitching",(x-.012,-.253,z),(x+.012,-.253,z+.012),.004,white,6)
+                ico("case corner rivet",(x,-.258,-.16),(.016,.01,.016),gold,1)
+            # Shallow wear marks and molded reinforcement ribs catch the icon light.
+            for x,z,length in ((-.17,-.12,.055),(.11,-.16,.035),(.17,.12,.045),(-.14,.10,.028)):
+                rod("scraped enamel edge",(x,-.222,z),(x+length,-.222,z+.012),.004,wl,6)
+            for x in (-.27,-.23,.23,.27):
+                cube("tray corner guard",(x,-.16,-.155),(.038,.10,.055),iron,.012)
         elif item=="canteen":
             cyl("canteen body",(0,0,0),.27,.5,sea,12);cube("shoulder",(0,0,.28),(.25,.25,.13),sea,.05)
             cyl("cap",(0,0,.39),.11,.1,copper,12);rod("strap",(-.21,.12,.17),(.21,.12,.17),.025,leather)
