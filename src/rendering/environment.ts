@@ -53,6 +53,7 @@ export class Environment {
   private readonly reedLocations:Vec3[]=[];
   private readonly marshPoolLocations:Vec3[]=[];
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;masses?:THREE.InstancedMesh;species:number;fullCount:number;generatedLods?:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[];instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color}[]}[]=[];
+  private readonly outcropBatches:{mesh:THREE.InstancedMesh;variant:number;generatedLods?:THREE.BufferGeometry[]}[]=[];
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
   private readonly surfaceWetness:{value:number};
@@ -93,6 +94,7 @@ export class Environment {
   get renderedTreeCount():number{return this.treeBatches.reduce((n,b)=>n+b.instances.filter(t=>t.visible).length,0);}
   get renderedTreeInstanceCount():number{return this.treeBatches.reduce((n,b)=>n+b.trunks.count,0);}
   get generatedTreeModelStats():{trees:number;batches:number;meshes:number;triangles:number;lod:number}{const meshes=this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&typeof object.userData.generatedWorldAsset==='string');return{trees:meshes.filter(mesh=>mesh.name.endsWith('trunks')).reduce((sum,mesh)=>sum+mesh.count,0),batches:new Set(meshes.map(mesh=>mesh.userData.generatedWorldAsset as string)).size,meshes:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='ultra'?0:this.quality==='high'?1:2};}
+  get generatedRockModelStats():{instances:number;batches:number;triangles:number;lod:number}{const meshes=this.outcropBatches.filter(batch=>batch.mesh.userData.generatedWorldAsset).map(batch=>batch.mesh);return{instances:meshes.reduce((sum,mesh)=>sum+mesh.count,0),batches:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0};}
   get treeCrownScales():[number,number,number][]{const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();return this.treeBatches.flatMap(batch=>Array.from({length:batch.crowns.count},(_,index)=>{batch.crowns.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return[scale.x,scale.y,scale.z] as [number,number,number];}));}
   get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
   get fallingTreeCount():number{return this.fallingTrees.size;}
@@ -243,6 +245,20 @@ export class Environment {
     }
     this.cullClock=0;return integrated;
   }
+  /** Use the authored fractured-stone library for decorative outcrops without changing harvest nodes or collider placement. */
+  useGeneratedRockModels(models:Record<string,THREE.Object3D>):number {
+    if(this.terrain.generation!==5||this.worldRevision<6)return 0;
+    const assetIds=['large_boulder_a','large_boulder_b','large_boulder_c'];let integrated=0;
+    for(const batch of this.outcropBatches){const assetId=assetIds[batch.variant]!,asset=models[assetId];if(!asset)continue;asset.updateMatrixWorld(true);const levels:THREE.BufferGeometry[]=[];let valid=true;
+      for(const lodName of ['LOD0','LOD1','LOD2']){const lod=asset.getObjectByName(lodName);if(!lod){valid=false;break;}lod.updateMatrixWorld(true);const inverseLod=lod.matrixWorld.clone().invert(),parts:THREE.BufferGeometry[]=[];
+        lod.traverse(object=>{if(!(object instanceof THREE.Mesh))return;const material=Array.isArray(object.material)?object.material[0]:object.material,geometry=object.geometry.clone();geometry.applyMatrix4(inverseLod.clone().multiply(object.matrixWorld));geometry.scale(.38,.22,.40);const materialName=material?.name.toLowerCase()??'',tint=materialName.includes('moss')?[.76,.94,.70]:materialName.includes('fracture')?[1.13,1.08,1.02]:[1,1,1],colors=new Float32Array(geometry.getAttribute('position').count*3);for(let i=0;i<colors.length;i+=3){colors[i]=tint[0]!;colors[i+1]=tint[1]!;colors[i+2]=tint[2]!;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.clearGroups();parts.push(geometry);});
+        const merged=parts.length?mergeGeometries(parts,false):null;parts.forEach(geometry=>geometry.dispose());if(!merged){valid=false;break;}merged.computeBoundingSphere();levels.push(merged);
+      }
+      if(!valid||levels.length!==3){levels.forEach(geometry=>geometry.dispose());continue;}for(const geometry of levels)this.geometries.add(geometry);batch.generatedLods=levels;batch.mesh.geometry=levels[this.quality==='low'?2:this.quality==='medium'?1:0]!;batch.mesh.userData.generatedWorldAsset=assetId;
+      const matrix=new THREE.Matrix4();for(let index=0;index<batch.mesh.count;index++){batch.mesh.getMatrixAt(index,matrix);matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.position.y+=terrainContactOffset(levels[0]!,matrix,(x,z)=>this.heightAt(x,z),this.matrixDummy.scale.y*.14);this.matrixDummy.updateMatrix();batch.mesh.setMatrixAt(index,this.matrixDummy.matrix);}batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.computeBoundingSphere();integrated+=batch.mesh.count;
+    }
+    return integrated;
+  }
   private populateRocks():void {
     const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];
     const boulders:{x:number;y:number;z:number;sx:number;sy:number;sz:number;rot:number;variant:number}[]=[];
@@ -269,7 +285,7 @@ export class Environment {
       const size=rocky?1.8+rand()*5:.7+rand()*1.8;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.5),sy:size*(.7+rand()*.55),sz:size*(.8+rand()*.5),rot:rand()*6.28,variant:Math.floor(rand()*3)});
     }
     for(let v=0;v<3;v++){
-      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.outcrop,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);
+      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.outcrop,rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);if(revision6Shape){const gradeX=(this.heightAt(r.x+2,r.z)-this.heightAt(r.x-2,r.z))*.25,gradeZ=(this.heightAt(r.x,r.z+2)-this.heightAt(r.x,r.z-2))*.25,surface=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(surface,r.rot)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler((rand()-.5)*.12,0,(rand()-.5)*.14)));}else this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:r.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);if(revision6Shape)this.outcropBatches.push({mesh,variant:v});
     }
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;
@@ -477,7 +493,7 @@ export class Environment {
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=quality==='low'?62:quality==='medium'?86:quality==='high'?112:128;
-    const treeLod=quality==='ultra'?0:quality==='high'?1:2;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;}}
+    const treeLod=quality==='ultra'?0:quality==='high'?1:2,rockLod=quality==='low'?2:quality==='medium'?1:0;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;}}for(const batch of this.outcropBatches){const level=batch.generatedLods?.[rockLod];if(level)batch.mesh.geometry=level;}
     const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'||o.name==='Oak canopy masses'))o.castShadow=quality==='ultra'||(this.worldRevision<6&&quality==='high');});this.cullClock=0;

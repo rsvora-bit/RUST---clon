@@ -8,6 +8,7 @@ import json
 import math
 import os
 import random
+import sys
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -44,7 +45,7 @@ NEEDLE = mat("Tideland alpine needle", (.105, .19, .15))
 STONE = mat("Tideland fractured granite", (.34, .34, .31), .03, .96)
 STONE_LIGHT = mat("Tideland exposed fracture planes", (.43, .42, .37), .02, .98)
 STONE_COLD = mat("Tideland alpine slate", (.25, .29, .31), .025, .94)
-MOSS = mat("Tideland rock moss", (.18, .23, .14), .0, .98)
+MOSS = mat("Tideland rock moss", (.15, .18, .13), .0, .98)
 
 def box(name, loc, scale, material, bevel_width=0):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
@@ -253,7 +254,7 @@ def rock(name):
     rng=random.Random(seed)
     if name.startswith("small_rock"): dimensions=(.82,.66,.72);subdivisions=2
     elif name.startswith("medium_rock"): dimensions=(1.45,1.18,1.12);subdivisions=2
-    elif name.startswith("large_boulder"): dimensions=(2.35,1.86,1.72);subdivisions=2
+    elif name.startswith("large_boulder"): dimensions=(2.35,1.86,1.72);subdivisions=3
     elif name=="broken_stone": dimensions=(.94,.52,.43);subdivisions=1
     elif name=="coastal_rock": dimensions=(1.8,1.20,1.10);subdivisions=2
     elif name=="alpine_rock": dimensions=(1.65,1.22,2.0);subdivisions=2
@@ -297,6 +298,13 @@ def rock(name):
         # Flatten one or more planes into chipped facets and skew the crown;
         # scale variation remains in vertex positions for clean GLB transforms.
         x=co.x*dimensions[0]*noise;y=co.y*dimensions[1]*noise;z=co.z*dimensions[2]*noise
+        if name.startswith("large_boulder"):
+            # A deterministic diagonal fracture plane chips one shoulder so
+            # large stones read as broken strata, not subdivided spheres.
+            plane=x+z*(.22 if name.endswith("a") else -.18);cut=dimensions[0]*(.54 if name.endswith("b") else .60)
+            if plane>cut:
+                excess=(plane-cut)/(1+(.22 if name.endswith("a") else -.18)**2);slope=.22 if name.endswith("a") else -.18
+                x-=excess;z-=excess*slope
         if name=="broken_stone":z*=.72
         if coastal:x+=.18*co.z;y*=.92
         if cold:z+=.16*co.x
@@ -304,8 +312,11 @@ def rock(name):
     obj.data.materials.append(STONE_COLD if cold else STONE);obj.data.materials.append(STONE_LIGHT);obj.data.materials.append(MOSS)
     for face in obj.data.polygons:
         centroid=face.center
-        fractured=(face.normal.x<-.52 and rng.random()<.22) or rng.random()<.045
-        if face.normal.z>.48 and rng.random()<(.12 if coastal else .07):face.material_index=2
+        slope=.22 if name.endswith("a") else -.18
+        fractured=name.startswith("large_boulder") and abs(centroid.x+centroid.z*slope-dimensions[0]*(.54 if name.endswith("b") else .60))<.13 or (face.normal.x<-.52 and rng.random()<.28) or rng.random()<.08
+        moss_slope=.64 if name.startswith("large_boulder") else .48
+        moss_chance=.025 if name.startswith("large_boulder") else .12 if coastal else .07
+        if face.normal.z>moss_slope and rng.random()<moss_chance:face.material_index=2
         elif fractured:face.material_index=1
     obj.data.update();return obj
 
@@ -368,4 +379,9 @@ def create(name):
     print("Exported",name,path,os.path.getsize(path),"bytes",flush=True)
 
 os.makedirs(OUT,exist_ok=True)
-for asset in CATALOG:create(asset)
+arguments=sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else []
+requested=arguments[arguments.index("--ids")+1:] if "--ids" in arguments else []
+unknown=set(requested)-set(CATALOG)
+if unknown: raise ValueError("Unknown world asset IDs: "+", ".join(sorted(unknown)))
+for asset in CATALOG:
+    if not requested or asset in requested:create(asset)
