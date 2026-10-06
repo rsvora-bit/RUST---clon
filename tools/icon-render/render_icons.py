@@ -270,12 +270,13 @@ def build(item):
                 for z in (.47,.64):ico("maul poll rivet",(x,-.145,z),(.024,.013,.024),gold,1)
     elif item in ("salvageRevolver","fieldShotgun"):
         long=item=="fieldShotgun";scale=1.22 if long else 1
+        weapon_iron=material("weathered blued weapon steel",(.34,.405,.40,1),.48,.43)
         if long:
             poly_prism("hinged shotgun receiver",[(-.35,-.035),(-.31,.16),(-.20,.235),(.18,.215),(.34,.15),(.32,.005),(.14,-.075),(-.10,-.08)],.20*scale,iron,.025)
             poly_prism("shotgun grip profile",[(-.39,-.02),(-.20,.015),(-.12,-.14),(-.16,-.42),(-.27,-.49),(-.41,-.37),(-.44,-.12)],.17,leather,.025)
         else:
-            poly_prism("curved revolver frame",[(-.34,.055),(-.31,.18),(-.20,.235),(.18,.21),(.34,.145),(.31,.035),(.16,-.005),(.085,-.13),(-.075,-.19),(-.28,-.11)],.19,iron,.024)
-            poly_prism("angled revolver grip profile",[(-.43,-.035),(-.25,.01),(-.12,-.13),(-.15,-.40),(-.27,-.51),(-.42,-.40),(-.47,-.16)],.17,leather,.026)
+            poly_prism("curved revolver frame",[(-.34,.055),(-.32,.155),(-.26,.205),(-.16,.23),(.12,.215),(.25,.18),(.34,.145),(.31,.055),(.18,.015),(.11,-.075),(.035,-.15),(-.09,-.19),(-.24,-.15),(-.31,-.09)],.19,weapon_iron,.022)
+            poly_prism("angled revolver grip profile",[(-.43,-.035),(-.395,.015),(-.31,.035),(-.245,-.005),(-.18,-.105),(-.18,-.30),(-.205,-.395),(-.27,-.46),(-.34,-.455),(-.405,-.405),(-.445,-.31),(-.465,-.17)],.17,leather,.035)
         if long:
             poly_prism("sculpted ash stock",[(-.77,-.09),(-.73,.10),(-.57,.18),(-.38,.14),(-.23,.08),(-.24,-.08),(-.43,-.17),(-.65,-.20)],.16,wood,.025)
             poly_prism("rubber shoulder pad",[(-.79,-.11),(-.76,.12),(-.70,.16),(-.70,-.19)],.18,dark,.016)
@@ -307,41 +308,41 @@ def build(item):
             # A six-fluted cylinder breaks up the large plain metal drum and
             # keeps the chamber assembly legible at inventory-icon scale.
             # The shallow scallops are actual mesh relief rather than a decal.
-            base_x,base_y,base_z=.03,-.02,.08; radius=.15; sides=72
+            # The cylinder axle follows the barrel (X). Its flutes run lengthwise;
+            # the older Y-axis drum faced the camera like a gear and obscured the
+            # revolver silhouette with six large circular holes.
+            base_x,base_y,base_z=.03,-.02,.08; radius=.145; sides=72
             rings=[(-.125,.91),(-.108,.985),(-.085,1.0),(.045,1.0),(.068,.985),(.085,.91)]
             verts=[]
-            for y,edge in rings:
+            for along,edge in rings:
                 for index in range(sides):
                     angle=math.tau*index/sides
-                    # Place each relief between adjacent chamber bores so the
-                    # front-face ports remain circular and unobstructed.
                     flute=(.029*max(0,math.cos(angle*6+math.pi)))
                     r=(radius-flute)*edge
-                    verts.append((base_x+math.cos(angle)*r,base_y+y,base_z+math.sin(angle)*r))
+                    verts.append((base_x+along,base_y+math.cos(angle)*r,base_z+math.sin(angle)*r))
             faces=[]
             for row in range(len(rings)-1):
                 for index in range(sides):
                     a=row*sides+index;b=row*sides+(index+1)%sides
-                    faces.append((a,a+sides,b+sides,b))
-            # The lower and upper cap windings face away from the cylinder.
-            faces.extend((tuple(range(sides)),tuple((len(rings)-1)*sides+i for i in range(sides-1,-1,-1))))
+                    faces.append((a,b,b+sides,a+sides))
+            faces.extend((tuple(range(sides-1,-1,-1)),tuple((len(rings)-1)*sides+i for i in range(sides))))
             drum_mesh=bpy.data.meshes.new("six-flute revolver cylinder mesh");drum_mesh.from_pydata(verts,[],faces);drum_mesh.materials.append(steel);drum_mesh.update()
             drum=bpy.data.objects.new("six-fluted revolver cylinder",drum_mesh);bpy.context.collection.objects.link(drum)
             for polygon in drum_mesh.polygons:
                 polygon.use_smooth=len(polygon.vertices)==4
-            torus("cylinder rim",(.03,-.16,.08),.12,.018,copper,(math.pi/2,0,0))
+            torus("cylinder rim",(.116,-.02,.08),.118,.012,copper,(0,math.pi/2,0))
             for chamber in range(6):
                 angle=chamber*math.tau/6
-                cx=.03+math.cos(angle)*.094;cz=.08+math.sin(angle)*.094
-                torus("individual cylinder chamber rim",(cx,-.157,cz),.026,.006,copper,(math.pi/2,0,0))
-                cyl("dark cylinder chamber",(cx,-.158,cz),.018,.012,dark,10,"Y",.003)
-            profile_mesh("cylinder extractor star and arbor",(base_x,-.163,base_z),[(-.038,.035),(-.024,.052),(-.010,.034),(.005,.022)],iron,"Y",12)
-            cyl("extractor spindle screw",(.03,-.207,.08),.018,.012,gold,8,"Y",.003)
+                cy=base_y+math.cos(angle)*.085;cz=base_z+math.sin(angle)*.085
+                torus("individual cylinder chamber rim",(.121,cy,cz),.019,.004,copper,(0,math.pi/2,0))
+                cyl("dark cylinder chamber",(.123,cy,cz),.012,.008,dark,10,"X",.002)
+            profile_mesh("cylinder extractor star and arbor",(.119,base_y,base_z),[(-.038,.035),(-.024,.052),(-.010,.034),(.005,.022)],iron,"X",12)
+            cyl("extractor spindle screw",(.128,-.02,.08),.012,.010,gold,8,"X",.002)
             torus("curved trigger guard",(-.13,-.105,-.13),.115,.016,iron,(math.pi/2,0,0))
             rod("revolver trigger",(-.035,-.125,-.02),(-.015,-.125,-.12),.018,copper,8)
             cube("revolver hammer spur",(-.34,-.035,.25),(.13,.12,.10),copper,.025).rotation_euler[1]=-.28
-            poly_prism("contoured grip side panel",[(-.405,-.09),(-.29,-.07),(-.18,-.18),(-.20,-.37),(-.29,-.44),(-.41,-.34),(-.44,-.17)],.025,wl,.012).location.y=-.095
-            for z in (-.23,-.08):ico("grip screw",(-.30,-.116,z),(.018,.012,.018),steel,1)
+            poly_prism("contoured grip side panel",[(-.405,-.10),(-.37,-.055),(-.29,-.055),(-.215,-.145),(-.215,-.31),(-.265,-.405),(-.31,-.42),(-.385,-.365),(-.425,-.27),(-.44,-.17)],.025,wl,.016).location.y=-.095
+            for z in (-.27,-.12):ico("grip screw",(-.33,-.116,z),(.018,.012,.018),steel,1)
         cube("sight",(.3,0,.23),(.12,.06,.05),copper,.01)
         cube("rear sight",(-.30,0,.23),(.10,.08,.045),steel,.012)
     elif item in ("shirt","pants","boots","warmJacket","protectiveHood","salvageVest","yardPlate"):
@@ -821,6 +822,11 @@ def setup():
 
 def render(item):
     clear_scene();scene=bpy.context.scene;setup();build(item)
+    if item=="salvageRevolver":
+        # A flatter side view keeps the cylinder's axial flutes legible and
+        # avoids presenting the chamber end as a gear-like circular face.
+        scene.camera.location=(2.35,-6.0,3.35)
+        scene.camera.rotation_euler=(Vector((0,0,0))-scene.camera.location).to_track_quat("-Z","Y").to_euler()
     # Fit each silhouette consistently to the same visual occupancy while keeping the render background transparent.
     bpy.context.view_layer.update()
     meshes=[obj for obj in scene.objects if obj.type=='MESH']
