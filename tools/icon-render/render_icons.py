@@ -224,12 +224,39 @@ def build(item):
             cyl("revolver barrel",(.37,0,.12),.064,.62,steel,16,"X")
             torus("revolver muzzle rim",(.69,0,.12),.064,.014,copper,(0,math.pi/2,0))
             cyl("revolver barrel bore",(.707,0,.12),.034,.018,dark,12,"X",.004)
-            cyl("six chamber cylinder",(.03,-.02,.08),.15,.25,steel,16,"Y");torus("cylinder rim",(.03,-.16,.08),.12,.018,copper,(math.pi/2,0,0))
+            # A six-fluted cylinder breaks up the large plain metal drum and
+            # keeps the chamber assembly legible at inventory-icon scale.
+            # The shallow scallops are actual mesh relief rather than a decal.
+            base_x,base_y,base_z=.03,-.02,.08; radius=.15; sides=72
+            rings=[(-.125,.91),(-.108,.985),(-.085,1.0),(.045,1.0),(.068,.985),(.085,.91)]
+            verts=[]
+            for y,edge in rings:
+                for index in range(sides):
+                    angle=math.tau*index/sides
+                    # Place each relief between adjacent chamber bores so the
+                    # front-face ports remain circular and unobstructed.
+                    flute=(.029*max(0,math.cos(angle*6+math.pi)))
+                    r=(radius-flute)*edge
+                    verts.append((base_x+math.cos(angle)*r,base_y+y,base_z+math.sin(angle)*r))
+            faces=[]
+            for row in range(len(rings)-1):
+                for index in range(sides):
+                    a=row*sides+index;b=row*sides+(index+1)%sides
+                    faces.append((a,a+sides,b+sides,b))
+            # The lower and upper cap windings face away from the cylinder.
+            faces.extend((tuple(range(sides)),tuple((len(rings)-1)*sides+i for i in range(sides-1,-1,-1))))
+            drum_mesh=bpy.data.meshes.new("six-flute revolver cylinder mesh");drum_mesh.from_pydata(verts,[],faces);drum_mesh.materials.append(steel);drum_mesh.update()
+            drum=bpy.data.objects.new("six-fluted revolver cylinder",drum_mesh);bpy.context.collection.objects.link(drum)
+            for polygon in drum_mesh.polygons:
+                polygon.use_smooth=len(polygon.vertices)==4
+            torus("cylinder rim",(.03,-.16,.08),.12,.018,copper,(math.pi/2,0,0))
             for chamber in range(6):
                 angle=chamber*math.tau/6
                 cx=.03+math.cos(angle)*.094;cz=.08+math.sin(angle)*.094
                 torus("individual cylinder chamber rim",(cx,-.157,cz),.026,.006,copper,(math.pi/2,0,0))
                 cyl("dark cylinder chamber",(cx,-.158,cz),.018,.012,dark,10,"Y",.003)
+            profile_mesh("cylinder extractor star and arbor",(base_x,-.163,base_z),[(-.038,.035),(-.024,.052),(-.010,.034),(.005,.022)],iron,"Y",12)
+            cyl("extractor spindle screw",(.03,-.207,.08),.018,.012,gold,8,"Y",.003)
             torus("curved trigger guard",(-.13,-.105,-.13),.115,.016,iron,(math.pi/2,0,0))
             rod("revolver trigger",(-.035,-.125,-.02),(-.015,-.125,-.12),.018,copper,8)
             cube("revolver hammer spur",(-.34,-.035,.25),(.13,.12,.10),copper,.025).rotation_euler[1]=-.28
