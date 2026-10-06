@@ -7,6 +7,7 @@ import bpy
 import json
 import math
 import os
+import random
 import sys
 from mathutils import Vector
 
@@ -69,6 +70,21 @@ def ico(name, loc, scale, mat, subdivisions=1):
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=subdivisions, radius=1, location=loc)
     o=bpy.context.object;o.name=name;o.scale=scale;assign(o,mat)
     bpy.ops.object.shade_smooth();return o
+
+def fractured_clast(name,loc,scale,mats,seed):
+    """Deterministic hand-broken stone with faceted planes and color regions."""
+    rng=random.Random(seed)
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=loc)
+    obj=bpy.context.object;obj.name=name;obj.scale=scale
+    for vertex in obj.data.vertices:
+        vertex.co*=.82+rng.random()*.34
+        vertex.co.x*=.88+rng.random()*.24
+        vertex.co.y*=.90+rng.random()*.20
+    for mat in mats:obj.data.materials.append(mat)
+    for face in obj.data.polygons:
+        face.use_smooth=False
+        roll=rng.random();face.material_index=1 if roll<.25 else 2 if roll<.39 else 0
+    return obj
 
 def rod(name, a, b, radius, mat, vertices=12):
     mid=(Vector(a)+Vector(b))/2; delta=Vector(b)-Vector(a)
@@ -584,12 +600,24 @@ def build(item):
                 q=a*math.tau/3;rod("fuel stick",(.28*math.cos(q),.28*math.sin(q),-.2),(-.28*math.cos(q),-.28*math.sin(q),-.2),.07,wood)
             ico("fire bundle",(0,0,-.01),(.2,.19,.24),red)
     elif item in ("rock","stone","ore","sulfurOre","hqMetalOre","metal","wood","fiber","hide","rawMeat","cookedMeat","berries"):
-        colors={"sulfurOre":gold,"hqMetalOre":copper,"metal":steel,"wood":wl,"fiber":fiber,"hide":leather,"rawMeat":meat,"cookedMeat":meat,"berries":berry}
+        colors={"ore":copper,"sulfurOre":gold,"hqMetalOre":copper,"metal":steel,"wood":wl,"fiber":fiber,"hide":leather,"rawMeat":meat,"cookedMeat":meat,"berries":berry}
         mat=colors.get(item,stone)
         if item in ("rock","stone","ore","sulfurOre","hqMetalOre"):
-            for i,(loc,sz) in enumerate([((-.18,-.04,-.02),(.43,.38,.38)),((.16,.02,.08),(.38,.35,.44)),((.02,.05,.28),(.34,.3,.31))]):ico("ore fragment",loc,sz,mat,1)
+            if item in ("rock","stone"):
+                mat=material(f"weathered {item} core",(.25,.285,.265,1) if item=="rock" else (.31,.325,.30,1),.01,.97)
+            elif item=="sulfurOre":mat=material("ochre sulfur ore matrix",(.40,.285,.075,1),.02,.91)
+            lightColor=(.46,.465,.42,1) if item in ("rock","stone") else (.65,.47,.12,1) if item=="sulfurOre" else (.53,.41,.31,1) if item in ("ore","hqMetalOre") else (.53,.56,.56,1)
+            darkColor=(.22,.25,.24,1) if item in ("rock","stone") else (.31,.20,.055,1) if item=="sulfurOre" else (.20,.17,.14,1) if item in ("ore","hqMetalOre") else (.18,.21,.22,1)
+            lightStone=material(f"fresh fractured {item} face",lightColor,.025,.94)
+            darkStone=material(f"wet dark {item} fracture",darkColor,.035,.98)
+            for i,(loc,sz) in enumerate([((-.18,-.04,-.02),(.43,.38,.38)),((.16,.02,.08),(.38,.35,.44)),((.02,.05,.28),(.34,.3,.31))]):
+                fractured_clast("broken ore and stone fragment",loc,sz,(mat,lightStone,darkStone),sum(map(ord,item))*37+i*101)
             if item in ("sulfurOre","hqMetalOre"):
-                for loc in ((-.12,-.24,.1),(.12,-.22,.29)):ico("mineral vein",loc,(.13,.025,.035),gold if item=="sulfurOre" else steel)
+                veinMat=material("exposed sulfur crystal seam",(.76,.34,.025,1),.08,.45) if item=="sulfurOre" else material("exposed high-grade metal seam",(.53,.69,.72,1),.72,.30)
+                for index,(x,z) in enumerate(((-.16,.08),(.14,.28))):
+                    for shard,(dx,dz,size) in enumerate(((-.055,-.018,.84),(-.015,.026,1.0),(.042,.047,.76))):
+                        size*=1.18 if item=="sulfurOre" else 1
+                        fractured_clast("exposed faceted mineral crystal",(x+dx,-.35,z+dz),(.052*size,.026,.041*size),(veinMat,veinMat,veinMat),sum(map(ord,item))*19+index*7+shard)
         elif item=="wood":
             for z in (-.16,.07,.28):cyl("split timber",(0,0,z),.105,.85,wl,10,"X")
         elif item=="fiber":
