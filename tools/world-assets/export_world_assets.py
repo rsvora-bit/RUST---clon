@@ -447,6 +447,14 @@ def create(name):
     elif name=="coastal_drum_a":coastal_drum()
     # Normalize transforms and combine each asset into one mesh per LOD while preserving material slots.
     meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
+    if name=="salvage_crate_a":
+        # The crate's many beveled boards and rivets produced unstable topology
+        # when Blender evaluated their merged modifier stack during GLB export.
+        # Bake each part in its own stack order before joining it.
+        for part in meshes:
+            bpy.ops.object.select_all(action="DESELECT")
+            part.select_set(True);bpy.context.view_layer.objects.active=part
+            while part.modifiers:bpy.ops.object.modifier_apply(modifier=part.modifiers[0].name)
     bpy.ops.object.select_all(action="DESELECT")
     for o in meshes:o.select_set(True)
     bpy.context.view_layer.objects.active=meshes[0]
@@ -461,7 +469,7 @@ def create(name):
         if index:obj.data=source.data.copy();bpy.context.scene.collection.objects.link(obj)
         group=bpy.data.objects.new("LOD"+str(index),None);bpy.context.scene.collection.objects.link(group);group.parent=root
         obj.name=name+" LOD"+str(index);obj.parent=group
-        if ratio<1:
+        if ratio<1 and name!="salvage_crate_a":
             # Bake bevel/normal modifiers first so decimation operates on the evaluated mesh.
             bpy.context.view_layer.objects.active=obj;obj.select_set(True)
             for existing in list(obj.modifiers):bpy.ops.object.modifier_apply(modifier=existing.name)
