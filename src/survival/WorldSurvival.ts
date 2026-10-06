@@ -286,6 +286,7 @@ export class WorldSurvival {
     type Batch={material:T.Material;castShadow:boolean;receiveShadow:boolean;geometries:T.BufferGeometry[];markers:{name:string;position:T.Vector3}[]};
     const batches=new Map<string,Batch>();
     for(const child of [...group.children]){
+      if(child.name==='Breakwater washed cargo drum')continue;
       if(!(child instanceof T.Mesh)||Array.isArray(child.material))continue;
       child.updateMatrix();const key=`${child.material.uuid}:${child.castShadow}:${child.receiveShadow}`;let batch=batches.get(key);
       if(!batch){batch={material:child.material,castShadow:child.castShadow,receiveShadow:child.receiveShadow,geometries:[],markers:[]};batches.set(key,batch);}
@@ -328,15 +329,18 @@ export class WorldSurvival {
     return this.attachLodAsset(asset,poiRoot,'Breakwater Blender shipwreck hull LOD',{x:0,y:.20,z:0},1,0,[0,48,118]);
   }
   /** Adds authored visual debris around the same POI without changing physics or saved stations. */
-  useGeneratedWreckDetails(fragment:T.Object3D,driftwood:T.Object3D,crate:T.Object3D,secondaryHull:T.Object3D):boolean{
+  useGeneratedWreckDetails(fragment:T.Object3D,driftwood:T.Object3D,crate:T.Object3D,secondaryHull:T.Object3D,drum:T.Object3D):boolean{
     if(this.env.terrain.generation!==5||this.env.worldRevision<6)return false;
     const poi=this.pois.find(item=>item.kind===5),root=poi?this.group.getObjectByName(poi.id):null;if(!root)return false;
-    return this.attachLodAsset(fragment,root,'Breakwater detached wreck section',{x:4.1,y:.08,z:-.1},.42,-.24,[0,34,82])
+    const attached=this.attachLodAsset(fragment,root,'Breakwater detached wreck section',{x:4.1,y:.08,z:-.1},.42,-.24,[0,34,82])
       &&this.attachLodAsset(driftwood,root,'Breakwater Blender driftwood',{x:-4.35,y:.02,z:1.12},.82,.46,[0,24,58])
       &&this.attachLodAsset(crate,root,'Breakwater Blender salvage crate',{x:2.65,y:.02,z:1.30},.82,-.18,[0,30,72])
       // A second, half-buried hull gives the beach site a layered wreck field.
       // It is visual-only; POI identity, collision and saved loot remain unchanged.
-      &&this.attachLodAsset(secondaryHull,root,'Breakwater secondary Blender hull LOD',{x:4.75,y:.04,z:1.85},.34,.58,[0,24,58]);
+      &&this.attachLodAsset(secondaryHull,root,'Breakwater secondary Blender hull LOD',{x:4.75,y:.04,z:1.85},.34,.58,[0,24,58])
+      &&this.attachLodAsset(drum,root,'Breakwater Blender cargo drum LOD',{x:-4.65,y:.28,z:-1.65},.96,.08,[0,24,58]);
+    if(attached){const legacyDrum=root.getObjectByName('Breakwater washed cargo drum');if(legacyDrum)legacyDrum.visible=false;}
+    return attached;
   }
   private attachLodAsset(asset:T.Object3D,parent:T.Object3D,name:string,position:Vec3,scale:number,yaw:number,distances:number[]):boolean{
     const levels=[0,1,2].map(index=>asset.getObjectByName(`LOD${index}`)).filter((item):item is T.Object3D=>item!==undefined);if(levels.length!==3)return false;

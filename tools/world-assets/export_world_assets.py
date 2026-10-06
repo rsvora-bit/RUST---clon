@@ -46,6 +46,9 @@ STONE = mat("Tideland fractured granite", (.34, .34, .31), .03, .96)
 STONE_LIGHT = mat("Tideland exposed fracture planes", (.43, .42, .37), .02, .98)
 STONE_COLD = mat("Tideland alpine slate", (.25, .29, .31), .025, .94)
 MOSS = mat("Tideland rock moss", (.15, .18, .13), .0, .98)
+DRUM_ENAMEL = mat("Tideland faded harbor drum enamel", (.17, .28, .27), .24, .72)
+DRUM_RUST = mat("Tideland flaking drum corrosion", (.31, .17, .105), .18, .94)
+DRUM_DARK = mat("Tideland drum bung recess", (.075, .09, .085), .08, .86)
 
 def box(name, loc, scale, material, bevel_width=0):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
@@ -339,6 +342,42 @@ def crate():
         for z in (.12,.64):
             bpy.ops.mesh.primitive_uv_sphere_add(segments=8,ring_count=4,radius=.028,location=(x,-.45,z));bpy.context.object.name="crate strap rivet";bpy.context.object.data.materials.append(WOOD_DARK)
 
+def coastal_drum():
+    sides=16
+    # A hand-profiled bulged shell on its side. Distinct hoop sections, a
+    # dented crown and separate end heads make it read as a cargo drum rather
+    # than a smoothed cylinder; all parts merge into one mesh before export.
+    profile=[(-.39,.205),(-.365,.232),(-.335,.244),(-.305,.246),(-.278,.255),(-.245,.272),(-.18,.291),(-.08,.301),(.04,.302),(.15,.292),(.225,.276),(.265,.258),(.292,.249),(.322,.248),(.352,.236),(.38,.209)]
+    verts=[]
+    for x,radius in profile:
+        for side in range(sides):
+            angle=side*math.tau/sides
+            dent=1.-.095*math.exp(-((x-.19)/.10)**2-((angle-2.7)/.56)**2)
+            out=radius*dent*(1.+.012*math.sin(side*3.1+x*14))
+            verts.append((x,math.cos(angle)*out,math.sin(angle)*out))
+    faces=[];materials=[]
+    for row in range(len(profile)-1):
+        band=(profile[row][0] < -.278 and profile[row+1][0] <= -.278) or (profile[row][0] >= .265 and profile[row+1][0] <= .292)
+        for side in range(sides):
+            faces.append((row*sides+side,row*sides+(side+1)%sides,(row+1)*sides+(side+1)%sides,(row+1)*sides+side))
+            angle=(side+.5)*math.tau/sides;weathered=math.sin(angle*4+row*1.7)>.83
+            materials.append(1 if band or weathered else 0)
+    for end,reverse in ((0,True),(len(profile)-1,False)):
+        center=len(verts);x=profile[end][0];verts.append((x,0,0));ring=end*sides
+        for side in range(sides):faces.append((center,ring+(side+1)%sides,ring+side) if reverse else (center,ring+side,ring+(side+1)%sides));materials.append(2)
+    mesh=bpy.data.meshes.new("rolled cargo drum with profiled shell and end heads");mesh.from_pydata(verts,[],faces);mesh.materials.append(DRUM_ENAMEL);mesh.materials.append(DRUM_RUST);mesh.materials.append(DRUM_DARK)
+    for polygon,index in zip(mesh.polygons,materials):polygon.material_index=index
+    mesh.update();shell=bpy.data.objects.new("dented enamel cargo drum",mesh);bpy.context.collection.objects.link(shell)
+    for polygon in mesh.polygons:polygon.use_smooth=len(polygon.vertices)==4
+    # Fill ports sit on the upper surface, with a recessed hex plug and a
+    # raised rolled lip. Their slight irregularity matches the damaged shell.
+    for x,radius in ((-.07,.044),(.17,.032)):
+        z=.296 if x<0 else .285
+        bpy.ops.mesh.primitive_torus_add(major_radius=radius,minor_radius=.009,major_segments=12,minor_segments=5,location=(x,-.035,z))
+        lip=bpy.context.object;lip.name="raised drum fill-port lip";lip.data.materials.append(DRUM_RUST)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=8,radius=radius*.67,depth=.009,location=(x,-.035,z-.003))
+        plug=bpy.context.object;plug.name="recessed drum bung";plug.data.materials.append(DRUM_DARK)
+
 def create(name):
     reset()
     if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
@@ -347,6 +386,7 @@ def create(name):
     elif name in ("coastal_boulder_a","small_rock_a","small_rock_b","small_rock_c","medium_rock_a","medium_rock_b","medium_rock_c","large_boulder_a","large_boulder_b","large_boulder_c","coastal_rock","alpine_rock","cliff_slab_a","cliff_slab_b","broken_stone"):rock(name)
     elif name=="driftwood_a":driftwood()
     elif name=="salvage_crate_a":crate()
+    elif name=="coastal_drum_a":coastal_drum()
     # Normalize transforms and combine each asset into one mesh per LOD while preserving material slots.
     meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
     bpy.ops.object.select_all(action="DESELECT")
