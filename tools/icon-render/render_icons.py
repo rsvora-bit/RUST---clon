@@ -180,7 +180,12 @@ def build(item):
             poly_prism("broad poll striking face",[(.32,.58),(.38,.62),(.48,.60),(.52,.54),(.48,.48),(.38,.45),(.34,.48)],.19,iron,.022)
             poly_prism("poll impact plane",[(.48,.60),(.52,.54),(.48,.48)],.20,steel,.008)
         elif item=="quarryMaul":
-            cube("mining head",(.33,0,.53),(.53,.18,.2),steel,.08);cube("striking face",(.61,0,.53),(.12,.22,.25),iron,.035)
+            poly_prism("forged quarry maul head",[(.12,.49),(.19,.43),(.54,.43),(.63,.48),(.68,.54),(.65,.62),(.56,.68),(.20,.68),(.12,.62),(.085,.55)],.22,steel,.028)
+            poly_prism("left battered striking face",[(.085,.50),(.15,.46),(.22,.48),(.22,.62),(.15,.65),(.085,.60)],.236,iron,.012)
+            poly_prism("right hardened striking face",[(.53,.47),(.62,.47),(.69,.53),(.69,.59),(.62,.65),(.53,.65)],.236,iron,.012)
+            poly_prism("right face replaceable cap",[(.62,.47),(.69,.53),(.69,.59),(.62,.65),(.60,.61),(.60,.51)],.248,copper,.006)
+            # A deep forged collar shoulders the handle eye and ties both poll faces together.
+            poly_prism("reinforced maul eye collar",[(.25,.43),(.43,.43),(.49,.49),(.49,.62),(.43,.68),(.25,.68),(.20,.62),(.20,.49)],.25,iron,.014)
         elif item=="hammer":
             poly_prism("forged carpenter hammer body",[(.20,.45),(.34,.42),(.49,.44),(.58,.48),(.64,.54),(.64,.60),(.59,.66),(.48,.69),(.31,.67),(.22,.62),(.17,.55)],.19,steel,.024)
             curve_tube("upper curved nail claw",[(.25,0,.59),(.205,0,.635),(.155,0,.70),(.105,0,.73)],.034,iron)
@@ -225,6 +230,9 @@ def build(item):
                 ico("peened cleaver tang pin",(x,-.112,z),(.028,.014,.028),copper,1)
             for x,z in ((.52,.68),(.61,.72),(.71,.77)):
                 rod("cargo-blade grind scratch",(x,-.09,z),(x+.034,-.09,z+.018),.006,copper,6)
+        if item=="quarryMaul":
+            for x in (.18,.55):
+                for z in (.47,.64):ico("maul poll rivet",(x,-.145,z),(.024,.013,.024),gold,1)
     elif item in ("salvageRevolver","fieldShotgun"):
         long=item=="fieldShotgun";scale=1.22 if long else 1
         if long:
