@@ -1,4 +1,18 @@
 import * as THREE from 'three';
+export interface WeatherWetnessUniform{value:number}
+export function addWeatherSurfaceResponse(material:THREE.MeshStandardMaterial,wetness:WeatherWetnessUniform,strength=.72,minRoughness=.46){
+  if(material.userData.tidelandWeatherResponse)return;
+  const previousCompile=material.onBeforeCompile,previousCacheKey=material.customProgramCacheKey;
+  material.onBeforeCompile=function(shader,renderer){
+    previousCompile.call(this,shader,renderer);
+    if(shader.fragmentShader.includes('tidelandWeatherWetness'))return;
+    shader.uniforms.tidelandWeatherWetness=wetness;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>\nfloat tidelandWet=clamp(tidelandWeatherWetness*${strength.toFixed(3)},0.0,1.0);diffuseColor.rgb*=1.0-tidelandWet*.105;`);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,max(${minRoughness.toFixed(3)},roughnessFactor*.76),tidelandWet*.72);`);
+  };
+  material.customProgramCacheKey=()=>`${previousCacheKey.call(material)}|tideland-weather-response-v1-${strength.toFixed(3)}-${minRoughness.toFixed(3)}`;
+  material.userData.tidelandWeatherResponse=true;material.userData.tidelandWeatherWetness=wetness;material.needsUpdate=true;
+}
 export function woodMaterial(color:string){
   const canvas=document.createElement('canvas');canvas.width=128;canvas.height=512;const c=canvas.getContext('2d')!;
   c.fillStyle='#969183';c.fillRect(0,0,128,512);let n=42;const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};

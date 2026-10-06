@@ -3,15 +3,17 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import { BUILD } from '../config/balance';
 import type { BuildCandidate,PieceType,Structure,StructureGrade,Vec3 } from '../core/types';
 import type {CollisionBox} from '../physics/PhysicsWorld';
-import {woodMaterial,stoneMaterial} from '../rendering/materials';
+import {addWeatherSurfaceResponse,woodMaterial,stoneMaterial} from '../rendering/materials';
 import {structureGrade} from './grades';
 const S=BUILD.SIZE,H=BUILD.WALL_HEIGHT,T=BUILD.THICKNESS,F=BUILD.FOUNDATION_HEIGHT,DW=BUILD.DOOR_WIDTH,DH=BUILD.DOOR_HEIGHT;
 export class StructureRenderer {
   readonly group=new THREE.Group();readonly objects=new Map<string,THREE.Group>();readonly ghost=new THREE.Group();
+  private readonly weatherWetness={value:0};
   private wood=woodMaterial('#969286');private darkWood=woodMaterial('#777467');private stone=stoneMaterial();private stoneTrim=new THREE.MeshStandardMaterial({color:'#62655c',roughness:.98});private metal=new THREE.MeshStandardMaterial({color:'#59615f',roughness:.72,metalness:.52});private metalTrim=new THREE.MeshStandardMaterial({color:'#262e2e',roughness:.55,metalness:.72});
   private ghostMaterial=new THREE.MeshBasicMaterial({color:'#8bbb84',transparent:true,opacity:.35,depthWrite:false});private ghostType:PieceType|null=null;
   private interactionMaterial=new THREE.MeshBasicMaterial({visible:false});
-  constructor(scene:THREE.Scene){scene.add(this.group,this.ghost);this.ghost.visible=false;}
+  constructor(scene:THREE.Scene){for(const material of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim])addWeatherSurfaceResponse(material,this.weatherWetness,.72,.44);scene.add(this.group,this.ghost);this.ghost.visible=false;}
+  setWeatherWetness(rain:number,storm=0):void{this.weatherWetness.value=THREE.MathUtils.clamp(rain*.58+storm*.42,0,1);}
   private box(parent:THREE.Group,w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.Material=this.wood){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);const uv=mesh.geometry.getAttribute('uv'),normal=mesh.geometry.getAttribute('normal');for(let i=0;i<uv.count;i++){const nx=Math.abs(normal.getX(i)),ny=Math.abs(normal.getY(i));const across=nx>.5?d:w,along=ny>.5?d:h;uv.setXY(i,uv.getX(i)*across*2.1+x*.173+z*.211,uv.getY(i)*along*.47+y*.13);}mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   private brace(parent:THREE.Group,x1:number,y1:number,x2:number,y2:number,z:number){const length=Math.hypot(x2-x1,y2-y1);const beam=this.box(parent,.11,length,.09,(x1+x2)/2,(y1+y2)/2,z,this.darkWood);beam.rotation.z=-Math.atan2(x2-x1,y2-y1);}
   private batch(g:THREE.Group,ghost=false){

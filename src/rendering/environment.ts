@@ -7,6 +7,7 @@ import type {ClimateSample} from '../terrain/island';
 import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
+import {addWeatherSurfaceResponse} from './materials';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
@@ -121,7 +122,7 @@ export class Environment {
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
     const terrainMat=terrainMaterial(this.worldRevision);this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed,this.worldRevision);
-    this.bark=new THREE.MeshStandardMaterial({map:barkTexture(this.worldRevision>=6),color:0xb6b4a4,roughness:.97});
+    this.bark=new THREE.MeshStandardMaterial({map:barkTexture(this.worldRevision>=6),color:0xb6b4a4,roughness:.97});addWeatherSurfaceResponse(this.bark,this.surfaceWetness,.58,.58);
     this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pineMass=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x080d06,emissiveIntensity:.04,flatShading:true,vertexColors:true});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
     const rockStyle=rockMaterialStyle(this.worldRevision),rockWetness=this.worldRevision>=6?this.surfaceWetness:undefined;this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors,rockWetness);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors,rockWetness);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors,rockWetness);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors,rockWetness);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors,rockWetness);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
