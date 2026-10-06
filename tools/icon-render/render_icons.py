@@ -362,11 +362,60 @@ def build(item):
             ico("filter hood",(0,0,.05),(.35,.25,.4),cloth,2);cube("visor",(0,-.23,.04),(.34,.04,.12),sea,.025)
     elif item in ("storage","furnace","workbench1","workbench2","workbench3","generator","powerSwitch","lamp","homesteadCore","campfire"):
         if item.startswith("workbench"):
-            cube("work surface",(0,0,.15),(.95,.54,.18),wood,.05)
-            for x in (-.36,.36):
-                for y in (-.18,.18):cube("bench leg",(x,y,-.2),(.1,.1,.54),iron,.025)
-            cube("tool housing",(0,-.06,.31),(.35,.3,.18),iron,.035)
-            if item=="workbench3": cube("vise",(.3,-.1,.35),(.2,.16,.16),copper,.03)
+            if item=="workbench1":
+                # A field-built timber bench: three separate boards, pegged
+                # trestle legs, a low stretcher and a hand saw left on top.
+                for index,y in enumerate((-.18,0,.18)):
+                    cube("hand-planed bench board",(0,y,.17),(.98,.17,.115),wood if index!=1 else wl,.035)
+                    for x in (-.35,.35):ico("timber peg",(x,y-.06,.235),(.014,.012,.014),iron,1)
+                for x in (-.34,.34):
+                    rod("splayed trestle leg front",(x,-.19,.105),(x-.055,-.25,-.34),.052,wood,8)
+                    rod("splayed trestle leg rear",(x,.19,.105),(x+.055,.25,-.34),.052,wood,8)
+                rod("lower timber stretcher",(-.35,-.23,-.23),(.35,-.23,-.23),.034,wl,8)
+                cube("open tool tray",(-.03,.015,-.10),(.50,.27,.07),wood,.025)
+                poly_prism("hand saw blade profile",[(-.34,.255),(.03,.255),(.12,.29),(-.34,.29)],.025,steel,.006).location.y=-.10
+                rod("saw leather handle",(-.33,-.12,.272),(-.48,-.12,.272),.038,leather,8)
+                rod("bench chisel",(.13,-.12,.27),(.39,-.12,.31),.022,steel,7)
+            elif item=="workbench2":
+                # A service bench adds a reinforced top, steel frame, bench
+                # vise and a working drill press with chuck and feed handle.
+                cube("reinforced worktop",(0,0,.17),(.98,.58,.14),wood,.035)
+                for y in (-.28,.28):rod("steel worktop edging",(-.46,y,.245),(.46,y,.245),.022,steel,8)
+                for x in (-.36,.36):
+                    for y in (-.20,.20):rod("square steel leg",(x,y,.10),(x,y,-.35),.043,iron,8)
+                rod("lower steel stretcher",(-.36,-.20,-.21),(.36,-.20,-.21),.027,steel,8)
+                cube("vise anvil base",(.25,-.10,.27),(.35,.26,.055),iron,.018)
+                poly_prism("bench vise fixed jaw",[(.08,.28),(.31,.28),(.34,.38),(.10,.38)],.20,steel,.012).location.y=-.18
+                poly_prism("bench vise sliding jaw",[(.22,.28),(.40,.28),(.40,.36),(.23,.36)],.20,copper,.01).location.y=-.18
+                rod("vise lead screw",(.16,-.22,.315),(.42,-.22,.315),.021,steel,8)
+                cyl("vise screw handwheel",(.45,-.22,.315),.075,.028,iron,12,"Y",.006)
+                rod("drill press column",(-.25,.04,.22),(-.25,.04,.77),.055,steel,10)
+                cube("drill press head",(-.12,.03,.67),(.36,.31,.17),iron,.035)
+                cyl("drill chuck",(-.12,-.02,.52),.052,.20,steel,12,"Z",.009)
+                cyl("drill bit",(-.12,-.02,.39),.014,.12,copper,8,"Z",.003)
+                rod("drill feed lever",(-.30,-.08,.66),(-.43,-.08,.60),.018,copper,8)
+                ico("drill feed knob",(-.44,-.08,.595),(.035,.035,.035),dark,1)
+            else:
+                # The advanced station is a heavier fabrication table with a
+                # precision vise, drawer apron and articulated inspection lamp.
+                cube("cast iron precision table",(0,0,.18),(1.0,.62,.16),iron,.035)
+                cube("sacrificial cutting mat",(-.10,-.02,.27),(.54,.35,.035),cloth,.012)
+                for x in (-.38,.38):
+                    for y in (-.22,.22):rod("heavy bench pedestal",(x,y,.105),(x,y,-.36),.064,steel,8)
+                cube("drawer apron",(0,-.21,-.02),(.72,.075,.22),dark,.025)
+                for x in (-.23,.23):
+                    cube("machined drawer face",(x,-.258,-.015),(.30,.025,.16),iron,.012)
+                    rod("drawer pull",(x-.045,-.282,-.015),(x+.045,-.282,-.015),.012,copper,8)
+                cube("precision vise shoe",(.23,-.12,.295),(.43,.30,.07),steel,.022)
+                poly_prism("fixed hardened vise jaw",[(.03,.31),(.20,.31),(.22,.43),(.04,.43)],.28,iron,.015).location.y=-.20
+                poly_prism("movable hardened vise jaw",[(.28,.31),(.46,.31),(.46,.40),(.29,.40)],.28,iron,.015).location.y=-.20
+                rod("vise screw spindle",(.18,-.24,.35),(.48,-.24,.35),.025,steel,10)
+                cyl("vise tommy bar pivot",(.49,-.24,.35),.052,.035,copper,12,"Y",.008)
+                rod("vise tommy bar",(.49,-.24,.35),(.49,-.24,.52),.016,steel,8)
+                ico("vise tommy bar grip",(.49,-.24,.535),(.032,.032,.04),dark,1)
+                curve_tube("inspection lamp flex arm",[(-.34,.12,.25),(-.38,.12,.48),(-.30,.10,.63),(-.13,.08,.67)],.025,steel)
+                poly_prism("hooded inspection lamp",[(-.25,.60),(-.15,.67),(.02,.63),(.08,.54),(-.01,.51)],.18,copper,.016).location.x=-.28
+                ico("inspection lamp lens",(-.20,-.115,.575),(.048,.025,.035),gold,1)
         elif item in ("storage","homesteadCore"):
             cube("weatherproof case",(0,0,0),(.72,.55,.58),wood,.09);cube("lid",(0,0,.32),(.76,.58,.13),iron,.04)
             cube("latch",(0,-.3,.02),(.15,.045,.17),copper,.02)
