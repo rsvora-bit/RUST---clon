@@ -175,18 +175,22 @@ def build(item):
             for x in (.18,.33):ico("handle pin",(x,-.105,.49),(.025,.012,.025),copper,1)
     elif item in ("salvageRevolver","fieldShotgun"):
         long=item=="fieldShotgun";scale=1.22 if long else 1
-        cube("receiver",(-.04,0,.08),(.68*scale,.19,.22),iron,.055)
-        cube("grip",(-.29,0,-.16),(.22,.16,.48),leather,.045).rotation_euler[1]=-.2
         if long:
-            cube("wood stock",(-.46,0,.05),(.48,.15,.18),wood,.05)
-            cube("stock shoulder pad",(-.72,-.01,.05),(.10,.18,.24),dark,.035)
-            cube("stock cheek riser",(-.48,-.09,.14),(.28,.035,.07),wl,.018)
+            poly_prism("hinged shotgun receiver",[(-.35,-.035),(-.31,.16),(-.20,.235),(.18,.215),(.34,.15),(.32,.005),(.14,-.075),(-.10,-.08)],.20*scale,iron,.025)
+            poly_prism("shotgun grip profile",[(-.39,-.02),(-.20,.015),(-.12,-.14),(-.16,-.42),(-.27,-.49),(-.41,-.37),(-.44,-.12)],.17,leather,.025)
+        else:
+            poly_prism("curved revolver frame",[(-.34,.055),(-.31,.18),(-.20,.235),(.18,.21),(.34,.145),(.31,.035),(.16,-.005),(.085,-.13),(-.075,-.19),(-.28,-.11)],.19,iron,.024)
+            poly_prism("angled revolver grip profile",[(-.43,-.035),(-.25,.01),(-.12,-.13),(-.15,-.40),(-.27,-.51),(-.42,-.40),(-.47,-.16)],.17,leather,.026)
+        if long:
+            poly_prism("sculpted ash stock",[(-.77,-.09),(-.73,.10),(-.57,.18),(-.38,.14),(-.23,.08),(-.24,-.08),(-.43,-.17),(-.65,-.20)],.16,wood,.025)
+            poly_prism("rubber shoulder pad",[(-.79,-.11),(-.76,.12),(-.70,.16),(-.70,-.19)],.18,dark,.016)
+            poly_prism("stock cheek riser",[(-.65,.105),(-.57,.20),(-.39,.18),(-.34,.12),(-.48,.105)],.18,wl,.012)
             for z in (.045,.185):
                 cyl("side by side shotgun barrel",(.37*scale,-.012,z),.052,.68*scale,steel,16,"X")
                 torus("shotgun muzzle rim",(.72*scale,-.012,z),.052,.012,copper,(0,math.pi/2,0))
                 cyl("dark muzzle bore",(.735*scale,-.012,z),.029,.018,dark,12,"X",.004)
             rod("raised barrel rib",(.04,-.02,.24),(.70*scale,-.02,.24),.018,steel,8)
-            cube("foregrip",(.2,0,-.11),(.31,.17,.12),wood,.035)
+            poly_prism("shaped walnut fore-end",[(.015,-.13),(.06,-.04),(.14,-.015),(.34,-.03),(.39,-.10),(.35,-.18),(.10,-.19)],.17,wood,.02)
             cube("forend nose cap",(.36,-.015,-.11),(.06,.19,.15),iron,.02)
             for x in (-.60,-.34,.08,.32):ico("shotgun receiver pin",(x,-.108,.085),(.025,.016,.025),copper,1)
             torus("trigger guard",(-.04,-.105,-.095),.125,.014,iron,(math.pi/2,0,0))
@@ -205,7 +209,7 @@ def build(item):
             torus("curved trigger guard",(-.13,-.105,-.13),.115,.016,iron,(math.pi/2,0,0))
             rod("revolver trigger",(-.035,-.125,-.02),(-.015,-.125,-.12),.018,copper,8)
             cube("revolver hammer spur",(-.34,-.035,.25),(.13,.12,.10),copper,.025).rotation_euler[1]=-.28
-            cube("grip side panel",(-.30,-.092,-.16),(.16,.035,.34),wl,.035).rotation_euler[1]=-.2
+            poly_prism("contoured grip side panel",[(-.405,-.09),(-.29,-.07),(-.18,-.18),(-.20,-.37),(-.29,-.44),(-.41,-.34),(-.44,-.17)],.025,wl,.012).location.y=-.095
             for z in (-.23,-.08):ico("grip screw",(-.30,-.116,z),(.018,.012,.018),steel,1)
         cube("sight",(.3,0,.23),(.12,.06,.05),copper,.01)
         cube("rear sight",(-.30,0,.23),(.10,.08,.045),steel,.012)
@@ -306,13 +310,9 @@ def build(item):
             cyl("sleeping roll",(0,0,0),.22,.74,cloth,12,"X");torus("roll strap",(-.2,0,0),.23,.025,copper,(0,math.pi/2,0));torus("roll strap",(.2,0,0),.23,.025,copper,(0,math.pi/2,0))
     elif item in ("scrap","gears","wiring","machineParts","techParts","pistolAmmo","shotgunShells","relayAccessCard"):
         if item=="gears":
-            for pos,r in (((-.15,0,.05),.2),((.2,0,-.12),.14)):
-                cyl("salvaged gear",pos,r,.09,steel,12,"Y");cyl("gear bore",(pos[0],-.06,pos[2]),r*.38,.02,dark,12,"Y")
-                for tooth in range(10):
-                    angle=tooth*math.tau/10
-                    tooth_obj=cube("individual gear tooth",(pos[0]+math.cos(angle)*(r+.018),pos[1],pos[2]+math.sin(angle)*(r+.018)),(.065,.10,.045),steel,.008)
-                    tooth_obj.rotation_euler[1]=-angle
-                torus("machined gear hub",(pos[0],-.058,pos[2]),r*.48,.018,copper,(math.pi/2,0,0))
+            for index,(pos,r,teeth) in enumerate((((-.15,0,.05),.2,12),((.2,0,-.12),.14,10))):
+                toothed_gear("salvaged profile gear",pos,r,.09,teeth,steel if index==0 else copper)
+                torus("worn gear hub ring",(pos[0],-.053,pos[2]),r*.31,.014,iron,(math.pi/2,0,0))
         elif item=="wiring":
             torus("coiled cable",(0,0,0),.28,.045,copper,(math.pi/2,0,0));torus("coiled cable",(0,.04,.02),.2,.025,sea,(math.pi/2,0,0))
         elif item in ("pistolAmmo","shotgunShells"):
