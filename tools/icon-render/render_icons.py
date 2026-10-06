@@ -104,6 +104,15 @@ def profile_mesh(name, loc, profile, mat, axis="Y", sides=24):
     for face in mesh.polygons: face.use_smooth=True
     return obj
 
+def curve_tube(name, points, radius, mat):
+    """Create a smoothly shaped, converted mesh tube for string, limbs and rope."""
+    curve=bpy.data.curves.new(name+" authored path","CURVE");curve.dimensions="3D";curve.resolution_u=20;curve.bevel_depth=radius;curve.bevel_resolution=4
+    spline=curve.splines.new("BEZIER");spline.bezier_points.add(len(points)-1)
+    for point,co in zip(spline.bezier_points,points):point.co=co;point.handle_left_type="AUTO";point.handle_right_type="AUTO"
+    obj=bpy.data.objects.new(name,curve);bpy.context.collection.objects.link(obj);bpy.context.view_layer.objects.active=obj;obj.select_set(True);bpy.ops.object.convert(target="MESH");obj=bpy.context.object;obj.name=name;assign(obj,mat)
+    for polygon in obj.data.polygons:polygon.use_smooth=True
+    return obj
+
 def toothed_gear(name, center, radius, thickness, teeth, mat):
     """Extruded involute-like tooth silhouette with a true open center bore."""
     offsets=(-.48,-.31,-.23,.23,.31,.48);scales=(.82,.82,1.08,1.08,.82,.82);outer=[]
@@ -141,7 +150,22 @@ def build(item):
     white=material("aged ceramic",PALETTE["white"],.03,.63);green=material("wild leaf",PALETTE["green"],0,.82)
     dark=material("charcoal rubber",PALETTE["dark"],.12,.65)
     # Long-handled tools and weapons are framed diagonally for quick recognition.
-    if item in ("hatchet","pickaxe","hammer","quarryMaul","spear","torch","arrow","docksideCleaver"):
+    if item=="bow":
+        # Laminated ash limbs curve away from a tensioned fiber string; the
+        # cord, reinforced nocks and wrapped grip make the silhouette read as
+        # a field bow rather than a generic crescent-shaped prop.
+        curve_tube("sculpted lower ash bow limb",[(.50,0,-1.04),(.67,0,-.86),(.53,0,-.61),(.27,0,-.34),(.02,0,-.16)],.043,wood)
+        curve_tube("sculpted upper ash bow limb",[(.02,0,.16),(.27,0,.34),(.53,0,.61),(.67,0,.86),(.50,0,1.04)],.043,wood)
+        curve_tube("laminated pale ash backing",[(.51,-.027,-1.015),(.68,-.03,-.86),(.55,-.03,-.61),(.29,-.03,-.34),(.035,-.027,-.16)],.011,wl)
+        curve_tube("tapered upper ash backing",[(.035,-.027,.16),(.29,-.03,.34),(.55,-.03,.61),(.68,-.03,.86),(.51,-.027,1.015)],.011,wl)
+        curve_tube("drawn braided bowstring",[(.50,-.045,-1.025),(.20,-.045,-.68),(-.28,-.045,0),(.20,-.045,.68),(.50,-.045,1.025)],.009,fiber)
+        curve_tube("leather-wrapped riser",[(.02,-.055,-.22),(.015,-.07,-.13),(.00,-.075,0),(.015,-.07,.13),(.02,-.055,.22)],.057,leather)
+        for z in (-.985,.985):
+            ring=cyl("darkened bowstring nock",(.51,-.005,z),.053,.07,dark,10,"Y",.008);ring.rotation_euler[1]=-.28 if z>0 else .28
+            band=cube("brass limb binding",(.52,-.015,z+(-.045 if z>0 else .045)),(.11,.085,.045),copper,.012);band.rotation_euler[1]=.32 if z>0 else -.32
+        for z in (-.15,-.08,0,.08,.15):
+            wrap=rod("cross-wrapped bow grip",(-.035,-.115,z-.025),(.035,-.115,z+.025),.010,wl,7)
+    elif item in ("hatchet","pickaxe","hammer","quarryMaul","spear","torch","arrow","docksideCleaver"):
         rod("haft",(-.26,-.02,-.62),(.28,.02,.58),.075,wood)
         if item=="hatchet":
             poly_prism("forged hatchet head",[(.22,.54),(.29,.7),(.57,.65),(.73,.5),(.61,.35),(.29,.32)],.19,steel,.035)
