@@ -252,6 +252,63 @@ def tree(kind):
                     for face in needles.data.polygons:face.use_smooth=True
                     needles.data.materials.append(NEEDLE)
 
+def palm_tree():
+    """A wind-shaped coastal palm with one fibrous bole and feathered fronds."""
+    rng=random.Random(62183);height=9.6;lean=-.18;sides=14
+    rings=((0,.49,0),(.34,.43,lean*.08),(1.5,.34,lean*.25),(4.0,.265,lean*.48),(7.1,.225,lean*.78),(9.15,.25,lean))
+    verts=[]
+    for z,radius,offset in rings:
+        for side in range(sides):
+            angle=side*math.tau/sides
+            variation=1+.045*math.sin(side*3.7+z*1.1)+.022*math.sin(side*6.1-z*.7)
+            verts.append((offset+math.cos(angle)*radius*variation,math.sin(angle)*radius*variation,z))
+    faces=[]
+    for row in range(len(rings)-1):
+        for side in range(sides):
+            a=row*sides+side;b=row*sides+(side+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+    mesh=bpy.data.meshes.new("wind-bent fibrous palm bole mesh");mesh.from_pydata(verts,[],faces);mesh.materials.append(BARK);mesh.update()
+    trunk=bpy.data.objects.new("palm bark trunk",mesh);bpy.context.collection.objects.link(trunk)
+    # Old frond bases leave close-set, shallow ridges around the upper bole.
+    for z in (5.9,6.25,6.60,6.95,7.30,7.65,8.0,8.35,8.7):
+        radius=.225-(z-7.1)*.006
+        bpy.ops.mesh.primitive_torus_add(major_radius=radius,minor_radius=.018,major_segments=14,minor_segments=4,location=(lean*z/height,0,z))
+        scar=bpy.context.object;scar.name="raised palm frond scar";scar.data.materials.append(BARK)
+    # Each feather frond has a curved, tapered rachis and individually shaped
+    # pinnae. All leaflets are combined into one mesh/material set per LOD.
+    leaf_verts=[];leaf_faces=[];leaf_materials=[]
+    anchor=(lean*.94,0,9.05)
+    for frond in range(10):
+        angle=frond*math.tau/10+rng.uniform(-.11,.11)
+        radial=Vector((math.cos(angle),math.sin(angle),0));side=Vector((-radial.y,radial.x,0))
+        reach=rng.uniform(3.55,4.25);droop=rng.uniform(1.25,1.75)
+        spine=[]
+        for t in (0,.30,.64,1):
+            spine.append(Vector(anchor)+radial*(reach*t)+Vector((0,0,.40*math.sin(math.pi*t)-droop*t*t)))
+        for index in range(len(spine)-1):
+            rod("arched palm frond rachis",tuple(spine[index]),tuple(spine[index+1]),.075*(1-index*.19),WOOD_LIGHT,7)
+        for leaflet in range(15):
+            t=.08+leaflet*.056
+            segment=min(2,int(t*3));local=(t-segment/3)*3
+            center=spine[segment].lerp(spine[segment+1],local)
+            length=(.62+1.22*math.sin(math.pi*(t*.88+.06)))*rng.uniform(.84,1.12)*(1-.24*t)
+            width=.108*(1-.32*t);fall=length*(.24+.28*t)
+            for sign in (-1,1):
+                outward=(side*sign*.90+radial*.28).normalized()
+                base=center+side*sign*.045
+                shoulder=base+outward*(length*.48)+Vector((0,0,-fall*.20))
+                tip=base+outward*length+Vector((0,0,-fall))
+                inner=shoulder-side*sign*width;outer=shoulder+side*sign*width
+                ridge=shoulder+Vector((0,0,.025))
+                first=len(leaf_verts);leaf_verts.extend((tuple(base),tuple(inner),tuple(ridge),tuple(outer),tuple(tip)))
+                leaf_faces.extend(((first,first+1,first+2),(first,first+2,first+3),(first+1,first+4,first+2),(first+2,first+4,first+3)))
+                shade=0 if rng.random()<.55 else 1 if rng.random()<.68 else 2
+                leaf_materials.extend((shade,shade,shade,shade))
+    leaf_mesh=bpy.data.meshes.new("hand-shaped pinnate palm leaflet mesh");leaf_mesh.from_pydata(leaf_verts,[],leaf_faces)
+    for material in (LEAF,LEAF_LIGHT,LEAF_SHADE):leaf_mesh.materials.append(material)
+    for polygon,index in zip(leaf_mesh.polygons,leaf_materials):polygon.material_index=index
+    leaf_mesh.update();crown=bpy.data.objects.new("feathered coastal palm crown",leaf_mesh);bpy.context.collection.objects.link(crown)
+
 def rock(name):
     seed=sum((index+1)*ord(char) for index,char in enumerate(name))+994
     rng=random.Random(seed)
@@ -382,6 +439,7 @@ def create(name):
     reset()
     if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
     elif name=="wreck_section_a":wreck_section()
+    elif name=="palm_tree_a":palm_tree()
     elif name in ("broadleaf_a","broadleaf_b","broadleaf_c","conifer_a","conifer_b","conifer_c","alpine_conifer","marsh_tree","coastal_tree"):tree(name)
     elif name in ("coastal_boulder_a","small_rock_a","small_rock_b","small_rock_c","medium_rock_a","medium_rock_b","medium_rock_c","large_boulder_a","large_boulder_b","large_boulder_c","coastal_rock","alpine_rock","cliff_slab_a","cliff_slab_b","broken_stone"):rock(name)
     elif name=="driftwood_a":driftwood()

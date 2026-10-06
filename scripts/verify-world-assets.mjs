@@ -19,7 +19,7 @@ for(const id of catalog){
   assert.equal(json.meshes.length,3,`${id} has one mesh for each LOD`);
   assert.ok(bytes.length<512*1024,`${id} is within the 512 KiB shipping budget`);
 }
-const treeIds=['broadleaf_a','broadleaf_b','broadleaf_c','conifer_a','conifer_b','conifer_c','alpine_conifer','marsh_tree','coastal_tree'];
+const treeIds=['broadleaf_a','broadleaf_b','broadleaf_c','conifer_a','conifer_b','conifer_c','alpine_conifer','marsh_tree','coastal_tree','palm_tree_a'];
 for(const id of treeIds){
   assert.ok(catalog.includes(id),`tree library contains ${id}`);
   const{json}=readGlb(id),triangles=level=>{const node=json.nodes.find(item=>item.name===`${level}`||item.name===`${id} ${level}`);assert.ok(node&&Number.isInteger(node.mesh),`${id} has mesh-backed ${level}`);return json.meshes[node.mesh].primitives.reduce((sum,primitive)=>sum+(primitive.indices!==undefined?json.accessors[primitive.indices].count/3:json.accessors[primitive.attributes.POSITION].count/3),0);};

@@ -17,6 +17,7 @@ try{
   assert.equal(initial.trees.length,1500,'revision 6 must retain its expected deterministic tree set');
   assert.ok(initial.generatedTreeModels.trees>0,'original Blender tree geometry should replace procedural silhouettes in runtime instanced batches');
   assert.ok(initial.generatedTreeModels.batches>=3,'multiple original broadleaf and conifer variants should be active');
+  assert.ok(initial.generatedTreeModels.assets.includes('palm_tree_a'),'climate-selected palms use the authored Blender palm LOD asset');
   assert.ok(initial.generatedTreeModels.meshes<=initial.generatedTreeModels.batches*2,'tree model integration must stay within two instanced meshes per asset batch');
   assert.equal(initial.generatedRockModels.instances,initial.outcropInstances.length,'original rock models must remain instanced over their original decorative positions');
   assert.equal(initial.generatedRockModels.batches,3,'all three fractured rock variants should be active');
