@@ -170,10 +170,17 @@ def build(item):
         if item=="hatchet":
             poly_prism("forged hatchet head",[(.22,.54),(.29,.7),(.57,.65),(.73,.5),(.61,.35),(.29,.32)],.19,steel,.035)
             poly_prism("sharpened cutting edge",[(.57,.65),(.73,.5),(.61,.35)],.2,iron,.018)
-        elif item in ("pickaxe","quarryMaul"):
+        elif item=="pickaxe":
+            # A mining pick has a long pointed beak and a broad striking poll
+            # on opposite sides of the eye; the working edges span across the
+            # haft instead of rising like a vertical spike.
+            poly_prism("forged pick eye socket",[(.16,.43),(.19,.59),(.32,.62),(.38,.56),(.36,.43),(.30,.38)],.19,steel,.025)
+            poly_prism("tapered geological pick beak",[(.20,.55),(.12,.59),(-.03,.57),(-.18,.52),(-.05,.49),(.08,.45)],.17,iron,.018)
+            poly_prism("bright pick cutting ridge",[(-.03,.57),(-.18,.52),(-.05,.49)],.18,steel,.008)
+            poly_prism("broad poll striking face",[(.32,.58),(.38,.62),(.48,.60),(.52,.54),(.48,.48),(.38,.45),(.34,.48)],.19,iron,.022)
+            poly_prism("poll impact plane",[(.48,.60),(.52,.54),(.48,.48)],.20,steel,.008)
+        elif item=="quarryMaul":
             cube("mining head",(.33,0,.53),(.53,.18,.2),steel,.08);cube("striking face",(.61,0,.53),(.12,.22,.25),iron,.035)
-            if item=="pickaxe":
-                bpy.ops.mesh.primitive_cone_add(vertices=8,radius1=.12,radius2=0,depth=.45,location=(.61,0,.78));assign(bpy.context.object,steel)
         elif item=="hammer": cube("hammer head",(.35,0,.56),(.42,.22,.27),steel,.055)
         elif item=="spear":
             bpy.ops.mesh.primitive_cone_add(vertices=6,radius1=.17,radius2=0,depth=.48,location=(.31,0,.75));assign(bpy.context.object,steel)
@@ -188,7 +195,8 @@ def build(item):
         for x,z in ((-.17,-.42),(-.02,-.10),(.12,.20)):
             band=cube("tool haft ferrule",(x,-.005,z),(.19,.17,.045),copper,.012);band.rotation_euler[1]=-.43
         if item in ("hatchet","pickaxe","hammer","quarryMaul"):
-            cyl("reinforced tool eye",(.31,0,.48),.14,.23,iron,10,"Y")
+            eye_radius=.105 if item=="pickaxe" else .14
+            cyl("reinforced tool eye",(.31,0,.48),eye_radius,.23,iron,10,"Y")
             for x,z in ((.22,.60),(.43,.60)):
                 ico("forged rivet",(x,-.13,z),(.035,.02,.035),copper,1)
         if item=="hammer":
