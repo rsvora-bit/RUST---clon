@@ -169,12 +169,12 @@ describe('environment visual building blocks',()=>{
     expect(naturalWeatherKind(seed,240)).toBe(naturalWeatherKind(seed,240));
   });
 
-  it('adds broad storm cloud cover and shortens rain streaks under gusts',()=>{
+  it('adds broad storm cloud cover with restrained, muted rain streaks',()=>{
     const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height);
     try{
       expect(atmosphere.sky.material.fragmentShader).toContain('stormCover*.88*storm');
       const clear=Array.from({length:11},(_,index)=>rainStreakLength(index,0)),gust=Array.from({length:11},(_,index)=>rainStreakLength(index,1));
-      expect(Math.min(...clear)).toBeCloseTo(.34);expect(Math.max(...clear)).toBeCloseTo(.59);expect(Math.min(...gust)).toBeCloseTo(.50);expect(Math.max(...gust)).toBeCloseTo(.75);
+      expect(Math.min(...clear)).toBeCloseTo(.18);expect(Math.max(...clear)).toBeCloseTo(.32);expect(Math.min(...gust)).toBeCloseTo(.26);expect(Math.max(...gust)).toBeCloseTo(.40);
     }finally{atmosphere.dispose();height.dispose();}
   });
 
@@ -196,6 +196,7 @@ describe('environment visual building blocks',()=>{
       const dryPositions=position.array.slice();weatherState.kind='storm';weatherState.remaining=3600;weatherState.rain=1;weatherState.storm=1;weatherState.blend=1;
       atmosphere.update(1/60,10,camera);weather.update(1/60,state,atmosphere,camera,'low');
       expect(scene.children.some(child=>child instanceof THREE.LineSegments&&child.visible)).toBe(true);expect(position.version).toBe(1);expect(geometry.drawRange.count).toBe(700);expect(position.array.slice(350*6)).toEqual(dryPositions.slice(350*6));
+      expect((weather as unknown as {material:THREE.LineBasicMaterial}).material.opacity).toBeCloseTo(.21);
     }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 
