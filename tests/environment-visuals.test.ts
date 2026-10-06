@@ -6,8 +6,15 @@ import {naturalWeatherKind,Weather,rainStreakLength,stormLightningRoll,WEATHER} 
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {ensureProgression} from '../src/survival/progression';
+import {stoneWeatherShader} from '../src/world/materials';
 
 describe('environment visual building blocks',()=>{
+  it('makes revision-6 stone surfaces gradually darker and smoother in rain',()=>{
+    const rev6=stoneWeatherShader(true),legacy=stoneWeatherShader(false);
+    expect(rev6.diffuse).toContain('surfaceWetness*1.');expect(rev6.diffuse).toContain('mix(1.,.78');expect(rev6.roughness).toContain(',.56,');
+    expect(legacy.diffuse).toContain('surfaceWetness*0.');expect(rev6.uniform).toBe('uniform float surfaceWetness;');
+  });
+
   it('builds non-empty low-cost understory and coast geometry',()=>{
     for(const geometry of [fernGeometry(),twigGeometry(),seaweedGeometry(),reedGeometry()]){expect(geometry.getAttribute('position').count).toBeGreaterThan(20);expect(Array.from(geometry.getAttribute('position').array).every(Number.isFinite)).toBe(true);geometry.dispose();}
   });

@@ -162,9 +162,13 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
 export function rockMaterialStyle(worldRevision:number):{resourceTint:number;outcropTint:number;vertexColors:boolean} {
   const revision6=worldRevision>=6;return{resourceTint:revision6?0x999b93:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:revision6};
 }
-export function stoneMaterial(tint=0xb0ada0,vertexColors=true):THREE.MeshStandardMaterial {
-  const tex=groundTexture('rock',773);const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.92,metalness:.015,bumpMap:tex,bumpScale:.075});
-  mat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;diffuseColor.rgb*=.78+stoneDetail*1.1;`);};return mat;
+export function stoneWeatherShader(enabled:boolean):{uniform:string;diffuse:string;roughness:string}{
+  return{uniform:'uniform float surfaceWetness;',diffuse:`float stoneWet=surfaceWetness*${enabled?'1.':'0.'};diffuseColor.rgb*=mix(1.,.78,clamp(stoneWet*.58,0.,.58));`,roughness:'roughnessFactor=mix(roughnessFactor,.56,clamp(stoneWet*.58,0.,.58));'};
+}
+export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{value:number}):THREE.MeshStandardMaterial {
+  const tex=groundTexture('rock',773),wetnessUniform=surfaceWetness??{value:0};const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.92,metalness:.015,bumpMap:tex,bumpScale:.075});
+  if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
+  const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;diffuseColor.rgb*=.78+stoneDetail*1.1;${weather.diffuse}`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\n${weather.roughness}`);};return mat;
 }
 
 
