@@ -117,6 +117,29 @@ def shipwreck(variant=0):
         bpy.ops.mesh.primitive_torus_add(major_radius=.10,minor_radius=.022,major_segments=12,minor_segments=5,location=(x,-.70,.49),rotation=(math.pi/2,0,0))
         bpy.context.object.name="rusted mooring eye";bpy.context.object.data.materials.append(RUST)
 
+def wreck_section():
+    rng=random.Random(9207)
+    # A single torn quarter of a hull: the cutaway edge is open and the
+    # surviving ribs lean at different angles so it reads as debris, not a
+    # second intact boat.
+    for row in range(3):
+        start=-1.85+row*.19
+        xs=[start+i*.31 for i in range(9)]
+        if row!=1:
+            xs=[x for i,x in enumerate(xs) if i not in (3,4)]
+        plank("torn wreck-section plank",xs,.10+row*.30,.32+row*.30,
+              .49-row*.055,1,(WOOD_DARK,WOOD,WOOD_LIGHT)[row],9207+row)
+    for i,x in enumerate((-1.55,-.62,.28,1.18,1.72)):
+        lean=rng.uniform(-.24,.3)
+        rod("broken exposed wreck rib",(x,0,.08),(x+lean,.50,.72+rng.uniform(-.18,.38)),
+            .075 if i%2 else .10,WOOD_LIGHT,7)
+    rod("splintered keel fragment",(-1.8,0,.08),(1.4,0,.12),.09,WOOD_DARK,7)
+    for i in range(5):
+        x=rng.uniform(-1.4,1.4)
+        rod("loose snapped beam",(x,.12,.16),(x+rng.uniform(-.35,.35),rng.uniform(.3,.8),rng.uniform(.42,.95)),.045,WOOD_LIGHT,6)
+    for x in (-1.08,.92):
+        box("oxidized torn hull strap",(x,.515,.45),(.27,.025,.14),RUST,.018)
+
 def tree(kind):
     rng=random.Random(8101 if kind=="broadleaf_a" else 8102)
     h=9.3 if kind=="broadleaf_a" else 11.6
@@ -196,8 +219,8 @@ def crate():
 
 def create(name):
     reset()
-    if name=="shipwreck_hull_a":shipwreck(0)
-    elif name=="shipwreck_hull_b":shipwreck(1)
+    if name in ("shipwreck_hull_a","shipwreck_hull_b"):shipwreck(0 if name.endswith("_a") else 1)
+    elif name=="wreck_section_a":wreck_section()
     elif name in ("broadleaf_a","conifer_a"):tree(name)
     elif name=="coastal_boulder_a":boulder()
     elif name=="driftwood_a":driftwood()

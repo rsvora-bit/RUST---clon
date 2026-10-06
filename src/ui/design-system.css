@@ -43,7 +43,8 @@
 .tide-ui :is(.danger-button,[data-action="drop"],[data-action="resetConfirm"]) { color: var(--tide-danger); }
 .tide-ui :is(.eyebrow,.settings-page-title>span,.nav-index,.menu-meta,.slot-usage,.inventory-world-info) { color: var(--tide-text-muted); }
 .tide-ui :is(.menu-masthead,.menu-footer,.overlay-header,.inventory-footer,.pause-v4-footer) { border-color: var(--tide-line); }
-.tide-ui .menu-screen { background-color: var(--tide-ink); }
+/* Keep the world-rendered canvas visible beneath the menu's translucent grading layers. */
+.tide-ui .menu-screen { background-color: transparent; }
 .tide-ui .menu-screen:before { opacity: .42; }
 .tide-ui .menu-content h1 { text-shadow: 0 8px 40px rgb(0 0 0 / 34%); }
 .tide-ui .menu-link { border-bottom-color: var(--tide-line); }
