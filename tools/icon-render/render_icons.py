@@ -519,7 +519,24 @@ def build(item):
                     cube("beacon case reinforcement",(x,-.285,.03),(.07,.035,.49),iron,.018)
                     for z in (-.18,.18):ico("beacon case rivet",(x,-.31,z),(.018,.012,.018),gold,1)
             if item=="homesteadCore":
-                cyl("beacon mast",(0,0,.63),.035,.55,steel);ico("beacon lens",(0,0,.93),(.13,.13,.12),sea)
+                # Property beacon hardware sits above the weatherproof core:
+                # isolated mast, guarded signal lamp and a legible service face.
+                for x in (-.28,.28):
+                    rod("beacon chassis side brace",(x,-.20,-.24),(x*.82,-.20,.29),.028,steel,8)
+                    rod("beacon anchor runner",(x,-.18,-.32),(x,.18,-.32),.035,dark,8)
+                    for z in (-.22,.22):ico("beacon chassis fastener",(x,-.225,z),(.022,.012,.022),gold,1)
+                face=poly_prism("homestead service instrument fascia",[(-.20,-.12),(-.16,.12),(.16,.12),(.20,-.12)],.035,sea,.018);face.location=(0,-.294,.02)
+                cube("beacon panel display",(0,-.316,.045),(.16,.012,.085),dark,.012)
+                for i in range(3):ico("beacon status diode",(-.045+i*.045,-.327,.045),(.014,.009,.014),green if i==0 else gold,1)
+                cyl("mast foot isolation collar",(0,0,.405),.105,.09,copper,12,"Z",.012)
+                cyl("beacon mast",(0,0,.66),.035,.49,steel,12,"Z",.008)
+                for z,radius in ((.48,.073),(.84,.060),(.93,.15)):
+                    torus("beacon signal guard ring",(0,0,z),radius,.012,copper if z<.9 else steel)
+                ico("beacon signal lens",(0,0,.94),(.105,.105,.10),sea,2)
+                for i in range(4):
+                    angle=i*math.pi/2
+                    rod("signal lens cage stay",(.13*math.cos(angle),.13*math.sin(angle),.84),(.085*math.cos(angle),.085*math.sin(angle),1.02),.012,iron,7)
+                for z in (-.13,-.08,-.03):rod("vented core heat slot",(-.12,-.302,z),(.12,-.302,z),.008,dark,6)
         elif item=="furnace":
             cyl("cast furnace foot",(0,0,-.29),.34,.10,dark,12,"Z",.02)
             cyl("field processor body",(0,0,0),.36,.58,iron,12)
