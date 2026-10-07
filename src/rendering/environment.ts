@@ -7,7 +7,7 @@ import type {ClimateSample} from '../terrain/island';
 import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
-import {addInstanceWindResponse,addWeatherSurfaceResponse} from './materials';
+import {addInstanceWindResponse,addWeatherSurfaceResponse,woodSurfaceMaps} from './materials';
 import {collisionBoundsFromBox,collisionBoundsFromObject,treeTrunkCollision} from '../physics/collisionBounds';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
@@ -68,6 +68,7 @@ export class Environment {
   windStrength=1;
   private readonly windUniform={value:0};
   private readonly windStrengthUniform={value:.12};
+  private generatedBarkMaps?:ReturnType<typeof woodSurfaceMaps>;
   private readonly cameraUniform={value:new THREE.Vector3()};
   private readonly grassDistanceUniform={value:110};
   private readonly hits=new Map<string,{elapsed:number;intensity:number}>();
@@ -245,7 +246,7 @@ export class Environment {
         const trunk=trunkGeometries.length?mergeGeometries(trunkGeometries,false):null,foliage=foliageGeometries.length?mergeGeometries(foliageGeometries,true):null;[...trunkGeometries,...foliageGeometries].forEach(geometry=>geometry.dispose());if(!trunk||!foliage){trunk?.dispose();foliage?.dispose();valid=false;break;}trunk.computeBoundingSphere();foliage.computeBoundingSphere();generatedLods.push({trunk,foliage});
       }
       if(!valid||generatedLods.length!==3||!trunkMaterial){generatedLods.forEach(level=>{level.trunk.dispose();level.foliage.dispose();});continue;}
-      for(const level of generatedLods){this.geometries.add(level.trunk);this.geometries.add(level.foliage);}const sharedFoliageMaterials=[...foliageMaterials.values()];for(const material of sharedFoliageMaterials){material.side=THREE.DoubleSide;if(material instanceof THREE.MeshStandardMaterial)material.roughness=Math.max(material.roughness,.78);addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);this.materials.add(material);}this.materials.add(trunkMaterial);
+      for(const level of generatedLods){this.geometries.add(level.trunk);this.geometries.add(level.foliage);}const sharedFoliageMaterials=[...foliageMaterials.values()];for(const material of sharedFoliageMaterials){material.side=THREE.DoubleSide;if(material instanceof THREE.MeshStandardMaterial)material.roughness=Math.max(material.roughness,.78);addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);this.materials.add(material);}if(trunkMaterial instanceof THREE.MeshStandardMaterial){const maps=this.generatedBarkMaps??=woodSurfaceMaps(449);trunkMaterial.map??=this.bark.map;trunkMaterial.normalMap??=maps.normal;trunkMaterial.roughnessMap??=maps.roughness;trunkMaterial.normalScale.set(.12,.12);trunkMaterial.roughness=Math.max(.90,trunkMaterial.roughness);trunkMaterial.metalness=0;trunkMaterial.userData.textures=[...new Set([...(Array.isArray(trunkMaterial.userData.textures)?trunkMaterial.userData.textures:[]),trunkMaterial.map,maps.normal,maps.roughness])];addWeatherSurfaceResponse(trunkMaterial,this.surfaceWetness,.58,.58);trunkMaterial.needsUpdate=true;}this.materials.add(trunkMaterial);
       batch.generatedLods=generatedLods;const lodIndex=this.quality==='ultra'?0:this.quality==='high'?1:2;batch.trunks.geometry=generatedLods[lodIndex]!.trunk;batch.trunks.material=trunkMaterial;batch.crowns.geometry=generatedLods[lodIndex]!.foliage;batch.crowns.material=sharedFoliageMaterials;batch.crowns.visible=true;batch.trunks.visible=true;batch.trunks.userData.generatedWorldAsset=assetId;batch.crowns.userData.generatedWorldAsset=assetId;batch.trunks.name=batch.species===5?'Palm trunks':batch.species===1||batch.species===4?'Oak trunks':'Pine trunks';batch.crowns.name=batch.species===5?'Palm canopy':batch.species===1||batch.species===4?'Oak canopy':'Pine canopy';batch.trunks.castShadow=batch.trunks.receiveShadow=true;batch.crowns.castShadow=false;batch.crowns.receiveShadow=false;
       for(const tree of batch.instances){batch.crowns.setMatrixAt(tree.renderIndex,tree.crownMatrix);const refs=this.instances.get(tree.id);if(refs){const crownRef=refs.find(reference=>reference.mesh===batch.crowns);if(crownRef)crownRef.matrix=tree.crownMatrix;}}
       batch.trunks.computeBoundingSphere();batch.crowns.computeBoundingSphere();batch.crowns.instanceMatrix.needsUpdate=true;if(batch.masses){batch.masses.visible=false;batch.masses.count=0;}
