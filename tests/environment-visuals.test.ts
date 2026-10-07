@@ -93,6 +93,7 @@ describe('environment visual building blocks',()=>{
       const angularSpan=(geometry:THREE.BufferGeometry,group:number)=>{const positions=geometry.getAttribute('position'),angles=Array.from({length:rowSize},(_,i)=>Math.atan2(positions.getZ(group*groupSize+rowSize*3+i),positions.getX(group*groupSize+rowSize*3+i))),anchor=angles[0]!,unwrapped=angles.map(angle=>{let delta=angle-anchor;while(delta>Math.PI)delta-=Math.PI*2;while(delta< -Math.PI)delta+=Math.PI*2;return delta;});return Math.max(...unwrapped)-Math.min(...unwrapped);};expect(Math.min(...Array.from({length:6},(_,group)=>angularSpan(rev6,group)))).toBeGreaterThan(.4);
       const widestAngularGap=(geometry:THREE.BufferGeometry)=>{const positions=geometry.getAttribute('position'),angles=Array.from({length:6},(_,group)=>{const i=group*groupSize+rowSize*3+36;return (Math.atan2(positions.getZ(i),positions.getX(i))+Math.PI*2)%(Math.PI*2);}).sort((x,y)=>x-y);return Math.max(...angles.map((angle,index)=>((angles[(index+1)%angles.length]!+(index===angles.length-1?Math.PI*2:0))-angle)));};expect(widestAngularGap(rev6)).toBeGreaterThan(widestAngularGap(a)+.25);
       const tonalRange=(geometry:THREE.BufferGeometry)=>{const color=geometry.getAttribute('color'),values=Array.from({length:color.count},(_,index)=>color.getX(index)*.2126+color.getY(index)*.7152+color.getZ(index)*.0722);return Math.max(...values)-Math.min(...values);};expect(tonalRange(rev6)).toBeGreaterThan(tonalRange(rev5)*1.4);
+      const snowVertices=Array.from({length:ridgeColor.count},(_,index)=>ridgeColor.getZ(index)>ridgeColor.getY(index)*1.035&&ridgeColor.getY(index)>ridgeColor.getX(index)*1.035).filter(Boolean).length;expect(snowVertices).toBeGreaterThan(0);expect(snowVertices).toBeLessThan(ridgeColor.count*.12);
       for(let group=0;group<6;group++)for(let row=0;row<7;row++){expect(a.getAttribute('position').getY(group*groupSize+row*rowSize)).toBeLessThan(-50);expect(a.getAttribute('position').getY(group*groupSize+row*rowSize+rowSize-1)).toBeLessThan(-50);}
     }finally{a.dispose();b.dispose();c.dispose();rev4.dispose();rev5.dispose();rev6.dispose();rev6b.dispose();}
   });
@@ -176,6 +177,30 @@ describe('environment visual building blocks',()=>{
       const clear=Array.from({length:11},(_,index)=>rainStreakLength(index,0)),gust=Array.from({length:11},(_,index)=>rainStreakLength(index,1));
       expect(Math.min(...clear)).toBeCloseTo(.18);expect(Math.max(...clear)).toBeCloseTo(.32);expect(Math.min(...gust)).toBeCloseTo(.26);expect(Math.max(...gust)).toBeCloseTo(.40);
     }finally{atmosphere.dispose();height.dispose();}
+  });
+
+  it('renders the ocean underside with a restrained submerged tint and stable surface threshold',()=>{
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),height,1280,731942,6),camera=new THREE.Vector3();
+    try{
+      expect(atmosphere.ocean.material.side).toBe(THREE.DoubleSide);expect(atmosphere.ocean.material.fragmentShader).toContain('underwater*.78');
+      atmosphere.update(0,10,camera);const clearFog=atmosphere.fog.density;
+      atmosphere.setSubmerged(-.5);atmosphere.update(.5,10,camera);const submerged=atmosphere.ocean.material.uniforms.underwater.value as number,wetFog=atmosphere.fog.density;
+      expect(submerged).toBeGreaterThan(.7);expect(wetFog).toBeGreaterThan(clearFog);
+      atmosphere.setSubmerged(-.1);atmosphere.update(.3,10,camera);expect(atmosphere.ocean.material.uniforms.underwater.value).toBeGreaterThan(submerged);
+      atmosphere.setSubmerged(.4);atmosphere.update(.5,10,camera);expect(atmosphere.ocean.material.uniforms.underwater.value).toBeLessThan(submerged);
+    }finally{atmosphere.dispose();height.dispose();}
+  });
+
+  it('keeps surfaces wet briefly after rainfall and then dries them gradually',()=>{
+    const state=new GameSimulation(731942,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather;
+    Object.assign(w,{kind:'rain',remaining:3600,blend:1,rain:0,storm:0,mist:0});
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3();
+    try{
+      atmosphere.update(0,10,camera);const during=weather.update(5,state,atmosphere,camera,'low').surfaceWetness;expect(during).toBeGreaterThan(.65);
+      Object.assign(w,{kind:'clear',remaining:3600,rain:0,storm:0,mist:0});const drying=weather.update(5,state,atmosphere,camera,'low').surfaceWetness;
+      expect(drying).toBeGreaterThan(0);expect(drying).toBeLessThan(during);
+      expect(weather.update(30,state,atmosphere,camera,'low').surfaceWetness).toBe(0);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 
   it('adds deterministic, brief lightning flashes only during storms',()=>{

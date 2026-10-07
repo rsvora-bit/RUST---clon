@@ -1,3 +1,11 @@
+## v0.14.0 / EA-14.0 — Visual Fidelity & Physical World Overhaul (2026-10-07)
+
+- Improved weathered PBR detail for wood, metal, rock and terrain, with reduced texture stretch on steep ground and restrained biome-aware moss, mud and snow variation.
+- Aligned major rock, tree, station and shipwreck collision proxies more closely with rendered geometry; added F3 collider, bounds, grounding, nearby-asset and LOD inspection tools.
+- Refined instanced tree variants and wind response, fractured outcrop silhouettes, climate-aware decals, distant mountain depth and underwater readability.
+- Added gradual surface drying, rain-responsive world materials and batched exhaust/smoke feedback for active generators while preserving existing save and world-generation identities.
+- Validation: 530 unit tests, production build, screenshot-free movement/build/save, world-art, world-generation/map/weather, Testing Mode, death/Lost Pack, Recycler, menu/settings and world-asset browser checks passed. Matched Chrome/Metal HIGH performance against archived v0.13.0 remained within the target regression budget.
+
 ## v0.13.0 / EA-13.0 — Gameplay Depth, World Polish & UI 2.0 (2026-10-07)
 
 - Anchored gathering weak points to real hit surfaces and kept follow-up targets close in height; grounded world props and added collision to rain collectors.

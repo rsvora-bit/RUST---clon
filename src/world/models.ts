@@ -153,7 +153,9 @@ export function rockGeometry(seed:number,sharperFacets=false,revision6Shape=fals
       points.push(new THREE.Vector3(Math.cos(a)*extent+offset,y+(r()-.5)*(revision6Shape?.21:.16)-slump,Math.sin(a)*extent*(.68+r()*.31)));
     }
   }
-  const hull=new ConvexGeometry(points),geo=toCreasedNormals(hull,sharperFacets?.54:.85);hull.dispose();
+  const hull=new ConvexGeometry(points);
+  if(revision6Shape){const crown=hull.getAttribute('position');for(let i=0;i<crown.count;i++){const x=crown.getX(i),y=crown.getY(i),z=crown.getZ(i);if(y>.48){const blend=THREE.MathUtils.smoothstep(y,.48,.68);crown.setY(i,y+blend*(x*.24+z*.19+Math.sin((x-z)*5+phase)*.018));}}crown.needsUpdate=true;}
+  const geo=toCreasedNormals(hull,sharperFacets?.54:.85);hull.dispose();
   const p=geo.getAttribute('position'),norm=geo.getAttribute('normal'),uv=new Float32Array(p.count*2),colors=new Float32Array(p.count*3);
   for(let i=0;i<p.count;i++){
     const nx=norm.getX(i),ny=norm.getY(i),nz=norm.getZ(i);uv[i*2]=Math.abs(nx)>.6?p.getZ(i):p.getX(i);uv[i*2+1]=Math.abs(ny)>.6?p.getZ(i):p.getY(i);

@@ -5,6 +5,16 @@ import {createStation} from '../src/survival/stations';
 
 describe('event cache rendering',()=>{
   afterEach(()=>vi.unstubAllGlobals());
+  it('extends solid workbench collision to the authored upper assembly and follows station rotation',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const renderer=new StationRenderer(new THREE.Scene()),bench=createStation('bench-collision','workbench3',{x:4,y:2,z:-3},Math.PI/2);renderer.sync([bench]);
+    const [box]=renderer.boxes(bench);expect(box!.position.y+box!.halfExtents.y).toBeCloseTo(3.83,2);expect(box!.rotation).toBe(Math.PI/2);renderer.dispose();
+  });
+  it('keeps signal antenna and beacon out of the solid salvage-cache proxy',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const renderer=new StationRenderer(new THREE.Scene()),cache=createStation('event-radio-signal','loot',{x:4,y:8,z:-3});renderer.sync([cache]);
+    const [box]=renderer.boxes(cache);expect(box!.position.y+box!.halfExtents.y).toBeLessThan(9);expect(box!.position.y+box!.halfExtents.y).toBeGreaterThan(8.7);renderer.dispose();
+  });
   it('adds a compact visible aerial only to the encrypted relay cache',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const scene=new THREE.Scene(),renderer=new StationRenderer(scene),signal=createStation('event-radio-signal','loot',{x:4,y:8,z:-3}),ordinary=createStation('loot-field-0','loot',{x:0,y:0,z:0});
@@ -36,9 +46,19 @@ describe('event cache rendering',()=>{
   });
   it('spins the generator flywheel only while its powered status is on',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
-    const scene=new THREE.Scene(),renderer=new StationRenderer(scene),generator=createStation('generator-test','generator',{x:0,y:0,z:0});
-    generator.active=true;generator.inventory[0]={itemId:'wood',count:1};renderer.sync([generator]);const fan=renderer.objects.get(generator.id)!.getObjectByName('generator-fan')!;
-    renderer.update([generator],1,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(9);
-    generator.active=false;renderer.update([generator],2,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(0);renderer.dispose();
+    const scene=new THREE.Scene(),renderer=new StationRenderer(scene),generator=createStation('generator-test','generator',{x:0,y:0,z:0},Math.PI/2);
+    generator.active=true;generator.inventory[0]={itemId:'wood',count:1};renderer.sync([generator]);const group=renderer.objects.get(generator.id)!,fan=group.getObjectByName('generator-fan')!;
+    expect(group.getObjectByName('generator-exhaust')).toBeTruthy();renderer.update([generator],1,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(9);expect(renderer.smokePuffCount).toBe(2);
+    const smoke=scene.getObjectByName('Batched station smoke') as THREE.InstancedMesh,matrix=new THREE.Matrix4(),smokePosition=new THREE.Vector3();smoke.getMatrixAt(0,matrix);smokePosition.setFromMatrixPosition(matrix);expect(smokePosition.x).toBeCloseTo(-.15,1);expect(smokePosition.z).toBeCloseTo(-.27,1);
+    generator.active=false;renderer.update([generator],2,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(0);expect(renderer.smokePuffCount).toBe(0);renderer.dispose();
+  });
+  it('batches nearby active furnace and campfire smoke, then clears it when cold or distant',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const renderer=new StationRenderer(new THREE.Scene()),furnace=createStation('smoke-furnace','furnace',{x:2,y:0,z:0}),campfire=createStation('smoke-campfire','campfire',{x:-2,y:0,z:0}),cold=createStation('cold-campfire','campfire',{x:0,y:0,z:2});
+    furnace.active=true;furnace.inventory[0]={itemId:'ore',count:10};furnace.inventory[2]={itemId:'wood',count:5};campfire.active=true;campfire.inventory[0]={itemId:'wood',count:2};renderer.sync([furnace,campfire,cold]);
+    renderer.update([cold],.5,new THREE.Vector3());const smoke=renderer.group.getObjectByName('Batched station smoke') as THREE.InstancedMesh;expect(renderer.smokePuffCount).toBe(0);expect(smoke.instanceMatrix.version).toBe(0);
+    renderer.update([furnace,campfire,cold],1,new THREE.Vector3());expect(renderer.smokePuffCount).toBe(10);expect(smoke.instanceMatrix.version).toBe(1);
+    const first=new THREE.Matrix4(),later=new THREE.Matrix4();smoke.getMatrixAt(0,first);renderer.update([furnace,campfire,cold],2,new THREE.Vector3());smoke.getMatrixAt(0,later);expect(first.equals(later)).toBe(false);expect(smoke.instanceMatrix.version).toBe(2);
+    renderer.update([furnace,campfire,cold],3,new THREE.Vector3(100,0,0));expect(renderer.smokePuffCount).toBe(0);expect(smoke.instanceMatrix.version).toBe(2);renderer.dispose();
   });
 });

@@ -16,8 +16,25 @@ try{
   check('F3 test controls are organized into readable developer groups',groups.map(group=>group.id).join(',')==='items,player,building,world'&&groups[0].title==='INVENTORY / PROGRESSION'&&groups[1].actions.includes('health')&&groups[2].actions.includes('build-toggle')&&groups[3].actions.includes('teleport'));
   await page.locator('[data-action="launchTestWorld"]').click();
   await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing'&&document.querySelector('[data-dev="testing"]')?.getAttribute('aria-pressed')==='true',{timeout:180000});
+  // The live telemetry intentionally stops replacing panel contents while a
+  // Testing Mode control has focus. Blur the launch button before reading it.
+  await page.evaluate(()=>document.activeElement instanceof HTMLElement&&document.activeElement.blur());
+  if(await page.locator('.diagnostics').isHidden())await page.keyboard.press('F3');
+  await page.mouse.move(1,1);
+  await page.waitForFunction(()=>document.querySelector('[data-telemetry-body="world"]')?.textContent?.includes('WORLD ASSET LOD'),{timeout:15000});
+  const assetLod=await page.locator('[data-telemetry-body="world"]').innerText();check('F3 world telemetry identifies active tree, rock, shoreline LOD and nearest asset ID',/TREES LOD[012]/.test(assetLod)&&/ROCKS LOD[012]/.test(assetLod)&&/SHORE LOD[012]/.test(assetLod)&&/NEARBY ASSET [\w_-]+ \([\d]+m\)/.test(assetLod));
+  await clickControl('[data-dev="collisions"]');await page.waitForFunction(()=>window.__TIDELAND.debugForTest().collisions);check('F3 renders the live Rapier collider wireframe',await page.evaluate(()=>window.__TIDELAND.debugForTest().collisions));await clickControl('[data-dev="collisions"]');
+  await clickControl('[data-dev="worldBounds"]');await page.waitForFunction(()=>window.__TIDELAND.debugForTest().worldBounds);const proxyDebug=await page.evaluate(()=>window.__TIDELAND.debugForTest());check('F3 renders tree, rock, landmark, station and building proxy bounds',proxyDebug.worldBounds&&proxyDebug.worldBoundsBoxCount>proxyDebug.environmentColliderCount);await clickControl('[data-dev="worldBounds"]');
+  await clickControl('[data-dev="grounding"]');await page.waitForFunction(()=>window.__TIDELAND.debugForTest().grounding);check('F3 exposes a working terrain grounding overlay',await page.evaluate(()=>window.__TIDELAND.debugForTest().grounding));await clickControl('[data-dev="grounding"]');check('terrain grounding overlay can be disabled after inspection',await page.locator('[data-dev="grounding"]').getAttribute('aria-pressed')==='false');
   check('isolated test world starts with save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED');
   check('real item catalog and current POI list populate',await page.locator('[data-test-item] option').count()>40&&await page.locator('[data-test-poi] option').count()>=5);
+  check('Testing Mode exposes representative tree, rock and shipwreck targets',await page.locator('[data-test-poi] option[value="asset:tree"]').count()===1&&await page.locator('[data-test-poi] option[value="asset:rock"]').count()===1&&await page.locator('[data-test-poi] option[value="asset:shipwreck"]').count()===1);
+  for(const [asset,target] of [['tree',()=>page.evaluate(()=>window.__TIDELAND.nodes().find(node=>node.kind==='tree')?.position)],['rock',()=>page.evaluate(()=>window.__TIDELAND.worldArt().outcropInstances[0]?.position)],['shipwreck',()=>page.evaluate(()=>window.__TIDELAND.landmarks().find(poi=>poi.kind===5)?.position)]]){
+    const position=await target();assert.ok(position,`${asset} sample exists`);await page.locator('[data-test-poi]').selectOption(`asset:${asset}`);await clickControl('[data-test-action="teleport"]');
+    const player=await page.evaluate(()=>window.__TIDELAND.sim().state.player.position),distance=Math.hypot(player.x-position.x,player.z-position.z);
+    const maxDistance=asset==='shipwreck'?9.5:7.5;
+    check(`asset teleport places the player beside the representative ${asset}`,distance>2.5&&distance<maxDistance&&Math.abs(player.y)<100);
+  }
   await page.locator('[data-test-item]').selectOption('fieldShotgun');await clickControl('[data-test-action="weapon-kit"]');
   const weaponState=await page.evaluate(()=>({slot:window.__TIDELAND.sim().state.inventory[0],ammo:window.__TIDELAND.sim().count('shotgunShells')}));check('weapon kit equips real shotgun and supplies ammunition',weaponState.slot?.itemId==='fieldShotgun'&&weaponState.ammo>=32);
   await clickControl('[data-test-action="unlock"]');check('all current research unlocks in test state',await page.evaluate(()=>window.__TIDELAND.sim().state.progression.tech.unlocked.length===10));
@@ -29,4 +46,4 @@ try{
   check('save attempt is rejected and existing browser saves stay byte-for-byte unchanged',saveResult===false&&savesAfter===savesBefore);
   await clickControl('[data-dev="testing"]');check('disabling mode keeps session save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED'&&await page.evaluate(()=>window.__TIDELAND.save())===false);
   assert.equal(errors.length,0,`browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
-} finally {await browser.close();}
+} catch(error){console.error('BROWSER QA ERRORS',errors);throw error;} finally {await browser.close();}

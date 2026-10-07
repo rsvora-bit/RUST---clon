@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.13.0';
-export const GAME_BUILD='EA-13.0';
+export const GAME_VERSION='0.14.0';
+export const GAME_BUILD='EA-14.0';
 export const GAME_RELEASE_DATE='2026-10-07';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.14.0',date:'2026-10-07',title:'Visual Fidelity & Physical World Overhaul',changes:[
+    'Improved weathered PBR detail for wood, metal, rock and terrain, with less texture stretch on steep ground and restrained biome-aware moss, mud and snow variation.',
+    'Aligned major rock, tree, station and shipwreck collision proxies more closely with their rendered shapes; added F3 collider, bounds, terrain-grounding, nearby-asset and LOD inspection.',
+    'Refined instanced tree variants and wind response, fractured outcrop silhouettes, climate-aware terrain decals, irregular atmospheric mountain caps and underwater readability.',
+    'Added gradual surface drying, rain-responsive world materials and batched smoke/exhaust feedback for active field stations without changing saved world identity.',
+    'Preserved existing save layouts and validated world art, gameplay, Testing Mode, collisions, asset LODs and matched Chrome/Metal performance against v0.13.0.'
+  ]},
   {version:'0.13.0',date:'2026-10-07',title:'Gameplay Depth, World Polish & UI 2.0',changes:[
     'Anchored gathering weak points to real impact surfaces and kept follow-up targets within a tight, readable height band; improved grounded world props and solid rain-collector collisions.',
     'Added derived collidable support posts under raised floors and clearer snapped/ready building placement feedback without changing saved structure layouts.',

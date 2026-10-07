@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leavesTexture,leafMassTexture,terrainMaterial} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture,liftFoliageBaseColor,rockSurfaceMaps,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -58,6 +58,13 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('float strata=macro*.42+micro*.58');
       expect(newShader.fragmentShader).toContain('float mossNoise=macro*.68+micro*.32');
       expect(newShader.fragmentShader).toContain('float relief=(micro-.5)*.10');
+      expect(newShader.fragmentShader).toContain('float steepSurface=smoothstep(.14,.48,1.-abs(vGroundNormal.y))');
+      expect(newShader.fragmentShader).toContain('vec3 grassTri=texture2D(grassTex,uvX).rgb*blend.x');
+      expect(newShader.fragmentShader).toContain('dirtCol=mix(dirtCol,dirtTri,steepSurface*.84)');
+      expect(oldShader.fragmentShader).not.toContain('float steepSurface=');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.zy*.48).rgb*blend.x');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.xz*.48).rgb*blend.y');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.xy*.48).rgb*blend.z');
       expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.12+warp*.35)');
       expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.47+vec2(29.,-13.))');
       expect(newShader.fragmentShader).not.toContain('groundNoise(vGroundPosition.xz*21.)');
@@ -70,10 +77,52 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('mireSediment=smoothstep(.25,.78,mirePatch)');
       expect(newShader.fragmentShader).toContain('mix(vec3(.54,.70,.68),vec3(.78,.80,.69),mireSediment)');
       expect(newShader.fragmentShader).toContain('mireWetness*.45');
-      expect(revision6.userData.textures).toHaveLength(7);
+      expect(revision6.userData.textures).toHaveLength(8);
+      expect(revision6.normalMap).toBe(revision6.userData.textures[7]);
+      expect(revision6.normalScale.x).toBeCloseTo(.16);
     }finally{
       for(const material of [legacy,revision6])for(const tex of material.userData.textures as THREE.Texture[])tex.dispose();
     }
+  });
+});
+
+describe('terrain micro-normal map',()=>{
+  it('creates deterministic seamless linear-space normal detail for PBR lighting',()=>{
+    const first=terrainDetailNormalTexture(8241,64),repeat=terrainDetailNormalTexture(8241,64),other=terrainDetailNormalTexture(8242,64);
+    try{
+      expect(first.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.wrapS).toBe(THREE.RepeatWrapping);expect(first.wrapT).toBe(THREE.RepeatWrapping);
+      expect(first.repeat.x).toBe(224);expect(first.repeat.y).toBe(224);
+      expect(first.image.data).toEqual(repeat.image.data);expect(first.image.data).not.toEqual(other.image.data);
+      const pixels=first.image.data as Uint8Array,normal=(index:number)=>new THREE.Vector3(pixels[index]!/127.5-1,pixels[index+1]!/127.5-1,pixels[index+2]!/127.5-1).normalize();
+      for(let x=0;x<64;x+=7)for(const y of [0,63])expect(normal((y*64+x)*4).length()).toBeCloseTo(1,2);
+      const unique=new Set(Array.from({length:64*64},(_,index)=>`${pixels[index*4]},${pixels[index*4+1]},${pixels[index*4+2]}`));
+      expect(unique.size).toBeGreaterThan(500);
+    }finally{first.dispose();repeat.dispose();other.dispose();}
+  });
+});
+
+describe('stone micro-surface maps',()=>{
+  it('keeps rock normal and roughness data linear, varied, and deterministic',()=>{
+    const first=rockSurfaceMaps(773,48),repeat=rockSurfaceMaps(773,48),variant=rockSurfaceMaps(774,48);
+    try{
+      expect(first.normal.colorSpace).toBe(THREE.NoColorSpace);expect(first.roughness.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.normal.wrapS).toBe(THREE.RepeatWrapping);
+      expect(first.normal.image.data).toEqual(repeat.normal.image.data);expect(first.roughness.image.data).toEqual(repeat.roughness.image.data);
+      expect(first.normal.image.data).not.toEqual(variant.normal.image.data);
+      const rough=first.roughness.image.data as Uint8Array;
+      expect(new Set(Array.from({length:48*48},(_,index)=>rough[index*4]!)).size).toBeGreaterThan(8);
+    }finally{for(const map of [first,repeat,variant]){map.normal.dispose();map.roughness.dispose();}}
+  });
+});
+
+describe('imported foliage albedo',()=>{
+  it('lifts only very dark linear base values while retaining authored channel ratios',()=>{
+    const dark=new THREE.Color().setRGB(.033,.073,.024),lifted=liftFoliageBaseColor(dark);
+    expect(Math.max(lifted.r,lifted.g,lifted.b)).toBeCloseTo(.46);
+    expect(lifted.r/lifted.g).toBeCloseTo(dark.r/dark.g);
+    expect(lifted.g/lifted.b).toBeCloseTo(dark.g/dark.b);
+    const alreadyBright=liftFoliageBaseColor(new THREE.Color().setRGB(.52,.61,.42));expect(alreadyBright.r).toBeCloseTo(.52);expect(alreadyBright.g).toBeCloseTo(.61);expect(alreadyBright.b).toBeCloseTo(.42);
   });
 });
 
