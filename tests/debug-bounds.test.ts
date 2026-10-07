@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { boundsLineVertices,groundingLineVertices } from '../src/diagnostics/DebugView';
+import * as THREE from 'three';
+import { boundsLineVertices,DebugView,groundingLineVertices,shadowCasterLineVertices } from '../src/diagnostics/DebugView';
 import type { CollisionBox } from '../src/physics/PhysicsWorld';
 
 describe('F3 world collision bounds', () => {
@@ -34,5 +35,22 @@ describe('F3 world collision bounds', () => {
   it('limits grounding guides to nearby colliders and ignores void samples',()=>{
     const boxes:CollisionBox[]=[{position:{x:0,y:2,z:0},halfExtents:{x:1,y:1,z:1}},{position:{x:100,y:2,z:0},halfExtents:{x:1,y:1,z:1}},{position:{x:2,y:2,z:0},halfExtents:{x:1,y:1,z:1}}];
     expect(groundingLineVertices(boxes,(x)=>x===2?-20:0,{x:0,z:0},20)).toHaveLength(24);
+  });
+
+  it('shows nearby shadow-casting meshes and instances while excluding distant or non-casting objects',()=>{
+    const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(1,2,1),material=new THREE.MeshBasicMaterial(),caster=new THREE.Mesh(geometry,material);caster.castShadow=true;caster.position.set(2,1,0);scene.add(caster);
+    const instanced=new THREE.InstancedMesh(geometry,material,2);instanced.castShadow=true;instanced.setMatrixAt(0,new THREE.Matrix4().makeTranslation(5,1,0));instanced.setMatrixAt(1,new THREE.Matrix4().makeTranslation(100,1,0));scene.add(instanced);
+    const nonCaster=new THREE.Mesh(geometry,material);nonCaster.position.set(1,1,0);scene.add(nonCaster);
+    expect(shadowCasterLineVertices(scene,{x:0,y:1,z:0},20)).toHaveLength(2*12*2*3);
+    expect(shadowCasterLineVertices(scene,{x:0,y:1,z:0},20,1)).toHaveLength(12*2*3);
+    geometry.dispose();material.dispose();
+  });
+
+  it('toggles the F3 shadow-caster overlay on and off without enabling it by default',()=>{
+    const scene=new THREE.Scene(),mesh=new THREE.Mesh(new THREE.BoxGeometry(1,2,1),new THREE.MeshBasicMaterial());mesh.castShadow=true;scene.add(mesh);const debug=new DebugView(scene),fakePhysics={} as import('../src/physics/PhysicsWorld').PhysicsWorld;
+    debug.update(fakePhysics,[],[],new THREE.Vector3(0,1,0));expect(scene.getObjectByName('World shadow caster debug')).toBeUndefined();
+    debug.shadowCasters=true;debug.update(fakePhysics,[],[],new THREE.Vector3(0,1,0));const lines=scene.getObjectByName('World shadow caster debug') as THREE.LineSegments;
+    expect(lines.visible).toBe(true);expect(lines.geometry.getAttribute('position').count).toBe(24);
+    debug.shadowCasters=false;debug.update(fakePhysics,[],[],new THREE.Vector3(0,1,0));expect(lines.visible).toBe(false);mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();
   });
 });
