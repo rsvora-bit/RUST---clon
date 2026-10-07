@@ -21,7 +21,7 @@ try{
     const api=window.__TIDELAND,art=api.worldArt(),boxes=art.generatedRockColliderBounds??[],trees=api.nodes().filter(n=>n.kind==='tree').map(n=>n.position);
     if(api.world().revision<6||art.generatedRockModels?.assets?.join(',')!=='large_boulder_a,large_boulder_b,large_boulder_c'||!boxes.length)throw Error('Revision-6 authored boulders or live colliders are missing');
     const distanceToSegment=(p,start,direction,length)=>{const along=(p.x-start.x)*direction.x+(p.z-start.z)*direction.z,t=Math.max(0,Math.min(length,along));return{along,lateral:Math.hypot(p.x-start.x-direction.x*t,p.z-start.z-direction.z*t)};};
-    const plans=[];
+    const plans=new Map();
     boxes.forEach((box,index)=>{
       const yaw=box.rotation??0,axes=[{x:Math.cos(yaw),z:-Math.sin(yaw),extent:box.halfExtents.x},{x:Math.sin(yaw),z:Math.cos(yaw),extent:box.halfExtents.z}];
       for(let axisIndex=0;axisIndex<2;axisIndex++)for(const sign of [-1,1]){
@@ -31,19 +31,21 @@ try{
         for(const tree of trees){const d=distanceToSegment(tree,start,toward,distance);if(d.along>-.4&&d.along<distance+.4&&d.lateral<.9){valid=false;break;}}
         if(!valid)continue;
         for(let other=0;other<boxes.length;other++)if(other!==index){const blocker=boxes[other],radius=Math.hypot(blocker.halfExtents.x,blocker.halfExtents.z)+.5,d=distanceToSegment(blocker.position,start,toward,distance);if(d.along>-radius&&d.along<distance+radius&&d.lateral<radius){valid=false;break;}}
-        if(valid)plans.push({box,index,axis:toward,distance,start,extent:axis.extent});
+        if(valid){const side=`${axisIndex}:${sign}`,key=`${box.asset}:${side}`,candidate={box,index,asset:box.asset,side,axis:toward,distance,start,extent:axis.extent};if(!plans.has(key)||plans.get(key).extent<candidate.extent)plans.set(key,candidate);}
       }
     });
-    if(!plans.length)throw Error('No dry, flat, unobstructed boulder approach found');
-    plans.sort((a,b)=>b.extent-a.extent);const plan=plans[0],y=api.height(plan.start.x,plan.start.z);
+    const selected=[...plans.values()];if(selected.length!==12)throw Error(`Expected a clear dry approach to each side of all 3 authored rock variants; found ${selected.length}/12`);
+    const plan=selected[0],y=api.height(plan.start.x,plan.start.z);
     api.dev('testing');api.dev('god');api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});api.lookAt({x:plan.start.x+plan.axis.x,y:y+1.72,z:plan.start.z+plan.axis.z});api.setCapturePaused(false);
-    return{index:plan.index,axis:plan.axis,center:plan.box.position,start:plan.start,extent:plan.extent,assets:art.generatedRockModels.assets};
+    return{plans:selected.map(({index,asset,side,axis,distance,start,extent,box})=>({index,asset,side,axis,distance,start,extent,center:box.position})),assets:art.generatedRockModels.assets};
   });
-  const result=await page.evaluate(plan=>{const api=window.__TIDELAND;for(let i=0;i<10;i++)api.physicsMoveForTest({x:0,y:-.04,z:0});for(let i=0;i<100;i++)api.physicsMoveForTest({x:plan.axis.x*.12,y:0,z:plan.axis.z*.12});const p=api.physics().position,dx=p.x-plan.center.x,dz=p.z-plan.center.z,depth=dx*plan.axis.x+dz*plan.axis.z,lateral=Math.abs(dx*plan.axis.z-dz*plan.axis.x);return{position:p,depth,lateral,extent:plan.extent,start:plan.start,assets:plan.assets};},approach);
-  assert.ok(result.depth<-(result.extent+.10),`Player did not remain outside the boulder face: ${JSON.stringify(result)}`);
-  assert.ok(result.depth>-(result.extent+1.35),`Player did not stop near the visible boulder boundary: ${JSON.stringify(result)}`);
-  assert.ok(result.lateral<.8,`Player drifted off the boulder approach: ${JSON.stringify(result)}`);
+  const results=await page.evaluate(({plans})=>{const api=window.__TIDELAND;return plans.map(plan=>{const y=api.height(plan.start.x,plan.start.z);api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});for(let i=0;i<10;i++)api.physicsMoveForTest({x:0,y:-.04,z:0});for(let i=0;i<100;i++)api.physicsMoveForTest({x:plan.axis.x*.12,y:0,z:plan.axis.z*.12});const p=api.physics().position,dx=p.x-plan.center.x,dz=p.z-plan.center.z,depth=dx*plan.axis.x+dz*plan.axis.z,lateral=Math.abs(dx*plan.axis.z-dz*plan.axis.x);return{asset:plan.asset,side:plan.side,position:p,depth,lateral,extent:plan.extent};});},approach);
+  for(const result of results){
+    assert.ok(result.depth<-(result.extent+.10),`Player did not remain outside ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
+    assert.ok(result.depth>-(result.extent+1.35),`Player did not stop near ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
+    assert.ok(result.lateral<.8,`Player drifted off ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
+  }
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('PASS live player movement is blocked at the authored Revision-6 boulder collider');
-  console.log(JSON.stringify({assets:result.assets,colliderIndex:approach.index,depth:result.depth,halfExtent:result.extent,lateral:result.lateral,applicationErrors:errors.length},null,2));
+  console.log('PASS live player movement is blocked on all four sides of all authored Revision-6 boulder variants');
+  console.log(JSON.stringify({assets:approach.assets,checkedSides:results.length,results:results.map(({asset,side,depth,extent,lateral})=>({asset,side,depth,extent,lateral})),applicationErrors:errors.length},null,2));
 }finally{await browser.close();}
