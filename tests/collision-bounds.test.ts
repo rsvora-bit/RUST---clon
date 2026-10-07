@@ -1,6 +1,6 @@
 import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 
 describe('visual collision bounds', () => {
@@ -42,6 +42,16 @@ describe('visual collision bounds', () => {
     });
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 5).halfExtents.y).toBe(3.9);
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 4).halfExtents.y).toBe(4.25);
+  });
+
+  it('uses compact authored revision-6 trunk proxies instead of broad branch extents',()=>{
+    expect(treeAssetCollision({x:4,y:2,z:-3},1,1)).toEqual({
+      position:{x:4,y:6.65,z:-3},
+      halfExtents:{x:.38,y:4.27,z:.38},
+    });
+    const palm=treeAssetCollision({x:4,y:2,z:-3},1.2,5);
+    expect(palm.halfExtents.x).toBeCloseTo(.408,8);expect(palm.halfExtents.y).toBeCloseTo(5.352,8);expect(palm.halfExtents.z).toBeCloseTo(.408,8);
+    expect(treeAssetCollision({x:4,y:2,z:-3},1,99)).toEqual(treeTrunkCollision({x:4,y:2,z:-3},1,99));
   });
 
   it('derives an instance proxy from the authored trunk geometry instead of foliage extents',()=>{

@@ -16,6 +16,27 @@ export function treeTrunkCollision(position: { x: number; y: number; z: number }
   };
 }
 
+/** Revision-6 authored tree trunk proxies, kept independent from decorative branches and crowns. */
+export function treeAssetCollision(position: { x: number; y: number; z: number }, scale: number, species: number): CollisionBounds {
+  const proxy = [
+    { center: 5.8, halfHeight: 5.42, radius: .38 }, // conifer_a
+    { center: 4.65, halfHeight: 4.27, radius: .38 }, // broadleaf_a
+    { center: 6.55, halfHeight: 6.17, radius: .38 }, // conifer_b
+    { center: 5.1, halfHeight: 4.72, radius: .38 }, // conifer_c
+    { center: 4.25, halfHeight: 3.87, radius: .38 }, // broadleaf_c
+    { center: 4.8, halfHeight: 4.46, radius: .34 }, // palm_tree_a
+    { center: 4.2, halfHeight: 3.86, radius: .34 }, // alpine_conifer
+    { center: 3.9, halfHeight: 3.52, radius: .38 }, // marsh_tree
+    { center: 4.55, halfHeight: 4.17, radius: .38 }, // coastal_tree
+    { center: 5.35, halfHeight: 4.97, radius: .38 }, // broadleaf_b
+  ][species];
+  if (!proxy) return treeTrunkCollision(position, scale, species);
+  return {
+    position: { x: position.x, y: position.y + proxy.center * scale, z: position.z },
+    halfExtents: { x: proxy.radius * scale, y: proxy.halfHeight * scale, z: proxy.radius * scale },
+  };
+}
+
 /** Convert a world-space visual bound into a conservative, axis-aligned proxy. */
 export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): CollisionBounds {
   const center = box.getCenter(new THREE.Vector3());
