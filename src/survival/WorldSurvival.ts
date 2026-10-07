@@ -388,7 +388,34 @@ export class WorldSurvival {
     }
     this.eventSiteCache.set(sequence,best);return best;
   }
-  collisionBoxes():CollisionBox[]{const result:CollisionBox[]=[];for(const p of this.pois){if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}else if(p.kind===4){if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});}else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});}else if(p.kind===5){result.push(...this.generatedWreckSides,...this.generatedWreckDetailCollisions);result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}},{position:{x:p.position.x+1.48,y:p.position.y+1.05,z:p.position.z+.32},halfExtents:{x:.82,y:.38,z:.46}});if(this.env.terrain.generation===5&&this.env.worldRevision>=6){result.push({position:{x:p.position.x-.25,y:p.position.y+1.23,z:p.position.z},halfExtents:{x:2.55,y:.06,z:.725}});for(const x of [-1.955,-1.005]){result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});}result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});}}else if(p.kind===6){result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});}else if(p.kind===7){result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});}else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});}return result;}
+  collisionBoxes():CollisionBox[]{
+    const result:CollisionBox[]=[];
+    for(const p of this.pois){
+      if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}
+      else if(p.kind===4){
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+          result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});
+        }else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});
+      }else if(p.kind===5){
+        result.push(...this.generatedWreckSides,...this.generatedWreckDetailCollisions);
+        result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}});
+        // Two separate cargo proxies follow the visible containers instead of
+        // leaving their outer ends exposed beyond one offset shared box.
+        result.push(
+          {position:{x:p.position.x+1.05,y:p.position.y+1.08,z:p.position.z-.35},halfExtents:{x:.82,y:.39,z:.45},rotation:-.04},
+          {position:{x:p.position.x+2.25,y:p.position.y+1.08,z:p.position.z+.35},halfExtents:{x:.82,y:.39,z:.45},rotation:.06},
+        );
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+          result.push({position:{x:p.position.x-.25,y:p.position.y+1.23,z:p.position.z},halfExtents:{x:2.55,y:.06,z:.725}});
+          for(const x of [-1.955,-1.005])result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});
+          result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});
+        }
+      }else if(p.kind===6)result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});
+      else if(p.kind===7)result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});
+      else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});
+    }
+    return result;
+  }
   dispose(){this.group.traverse(o=>{if(o instanceof T.Mesh&&o.geometry!==this.relayMast&&o.geometry!==this.relayDish)o.geometry.dispose();});for(const material of this.generatedAssetMaterials)disposeMaterialTextures(material);this.generatedAssetMaterials.clear();this.group.removeFromParent();this.relayMast.dispose();this.relayDish.dispose();[this.wood,this.metal,this.rust,this.paint,this.chartPaper,this.glass,this.display,this.bridgeDisplay,this.bridgeLamp,this.cloth,this.stormCloth,this.sludge,this.road].forEach(disposeMaterialTextures);}
 }
 
