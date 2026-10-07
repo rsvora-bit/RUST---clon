@@ -200,3 +200,10 @@
 .status-pill.toxic{color:#d5c583;border-color:rgba(179,155,67,.44)}
 .status-pill[data-level="critical"]{border-color:currentColor;box-shadow:0 0 12px color-mix(in srgb,currentColor 18%,transparent)}
 .status-value{font-size:7px;font-variant-numeric:tabular-nums;opacity:.82}
+
+/* v0.13 developer tools: keep testing actions scannable without changing their behavior. */
+.testing-controls{display:flex;flex-direction:column;gap:7px}
+.testing-control-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px;border:1px solid rgba(196,216,165,.12);background:linear-gradient(145deg,rgba(220,231,211,.035),rgba(220,231,211,.012))}
+.testing-control-group h4{grid-column:1/-1;margin:0 0 1px;padding-bottom:5px;border-bottom:1px solid rgba(196,216,165,.1);color:#aebd98;font:700 8px var(--title-font);letter-spacing:.12em}
+.testing-control-group label{min-width:0}
+.testing-control-group button{min-width:0}

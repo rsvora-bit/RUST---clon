@@ -11,7 +11,10 @@ const clickControl=async selector=>{const result=await page.evaluate(selector=>{
 try{
   await page.goto(url);await page.waitForFunction(()=>window.__TIDELAND,{timeout:180000});await page.locator('.loading-screen').waitFor({state:'hidden',timeout:180000});
   const savesBefore=await page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.entries(localStorage).sort())));
-  await page.keyboard.press('F3');await page.locator('[data-action="launchTestWorld"]').click();
+  await page.keyboard.press('F3');
+  const groups=await page.locator('.testing-control-group').evaluateAll(nodes=>nodes.map(node=>({id:node.getAttribute('data-testing-group'),title:node.querySelector('h4')?.textContent,actions:[...node.querySelectorAll('[data-test-action]')].map(button=>button.getAttribute('data-test-action'))})));
+  check('F3 test controls are organized into readable developer groups',groups.map(group=>group.id).join(',')==='items,player,building,world'&&groups[0].title==='INVENTORY / PROGRESSION'&&groups[1].actions.includes('health')&&groups[2].actions.includes('build-toggle')&&groups[3].actions.includes('teleport'));
+  await page.locator('[data-action="launchTestWorld"]').click();
   await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing'&&document.querySelector('[data-dev="testing"]')?.getAttribute('aria-pressed')==='true',{timeout:180000});
   check('isolated test world starts with save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED');
   check('real item catalog and current POI list populate',await page.locator('[data-test-item] option').count()>40&&await page.locator('[data-test-poi] option').count()>=5);

@@ -141,9 +141,22 @@ export class UI {
       <div class="loading-screen" hidden><div class="loading-shell"><header class="loading-top"><div class="loading-mark">${mark}</div><div><span>WORLD INITIALIZATION</span><b>TIDELAND</b></div><small>v${GAME_VERSION} · ${GAME_BUILD}</small></header><div class="loading-heading"><div class="eyebrow"><span></span> PROCEDURAL SURVIVAL WORLD</div><h2>FINDING YOUR SHORE<span>.</span></h2><p>The world is built locally on this device. Heavy work stays behind this screen so the first playable frames stay smooth.</p></div><section class="loading-task"><span>CURRENT TASK</span><strong class="loading-status">Preparing engine</strong><p class="loading-detail">Starting the world pipeline</p></section><div class="loading-bar"><i class="loading-bar-fill"></i></div><div class="loading-meta"><span class="loading-phase">PHASE 1 / 6</span><b class="loading-percent">0%</b></div><div class="loading-pipeline"><div data-load-phase="engine"><i></i><span>ENGINE</span><b>WAITING</b></div><div data-load-phase="terrain"><i></i><span>TERRAIN</span><b>WAITING</b></div><div data-load-phase="world"><i></i><span>WORLD</span><b>WAITING</b></div><div data-load-phase="physics"><i></i><span>PHYSICS</span><b>WAITING</b></div><div data-load-phase="systems"><i></i><span>SYSTEMS</span><b>WAITING</b></div><div data-load-phase="gpu"><i></i><span>GPU WARM-UP</span><b>WAITING</b></div></div><footer class="loading-foot"><span>PREPARING FRAME PACING</span><small>Shaders, geometry and vegetation are warmed before control is handed to you.</small></footer></div></div>
     `;
     container.append(this.root);
+    this.organizeTestingControls();
     this.bindEvents();
     this.setSettings(this.settings);
     this.applyLanguage();
+  }
+
+  private organizeTestingControls():void{
+    const panel=this.root.querySelector<HTMLElement>('.testing-controls');if(!panel)return;
+    const definitions=[
+      {id:'items',en:'INVENTORY / PROGRESSION',cz:'INVENTÁŘ / PROGRESE',matches:(node:Element)=>node.matches('label')&&!!node.querySelector('[data-test-item],[data-test-count]')||node.matches('button')&&['give-one','give-stack','give-count','max-condition','equip','weapon-kit','unlock'].includes(node.getAttribute('data-test-action')??'')},
+      {id:'player',en:'PLAYER / VITALS',cz:'HRÁČ / STAVY',matches:(node:Element)=>node.matches('button')&&['health','food','water','stamina'].includes(node.getAttribute('data-test-action')??'')},
+      {id:'building',en:'BUILDING / STATIONS',cz:'STAVBY / STANICE',matches:(node:Element)=>node.matches('label')&&!!node.querySelector('[data-test-station]')||node.matches('button')&&['station','build-kit','build-toggle','upgrade-toggle','repair-toggle'].includes(node.getAttribute('data-test-action')??'')},
+      {id:'world',en:'WORLD / WEATHER',cz:'SVĚT / POČASÍ',matches:(node:Element)=>node.matches('label')&&!!node.querySelector('[data-test-weather],[data-test-poi]')||node.matches('button')&&['weather','teleport'].includes(node.getAttribute('data-test-action')??'')},
+    ];
+    const controls=Array.from(panel.children),groups=new Map(definitions.map(definition=>{const section=document.createElement('section');section.className='testing-control-group';section.dataset.testingGroup=definition.id;const heading=document.createElement('h4');heading.textContent=this.settings.language==='cs'?definition.cz:definition.en;section.append(heading);panel.append(section);return[definition.id,{section,definition}] as const;}));
+    for(const node of controls){const group=definitions.find(definition=>definition.matches(node));if(group)groups.get(group.id)!.section.append(node);else node.remove();}
   }
 
   private find<T extends HTMLElement = HTMLElement>(selector: string): T { return this.root.querySelector<T>(selector)!; }
@@ -347,6 +360,7 @@ export class UI {
     const cs=this.settings.language==='cs';
     const set=(selector:string,en:string,cz:string)=>{const node=this.root.querySelector<HTMLElement>(selector);if(node)node.textContent=cs?cz:en;};
     set('.testing-tools>header>b','TESTING MODE','TESTOVACÍ REŽIM');
+    for(const [id,en,cz] of [['items','INVENTORY / PROGRESSION','INVENTÁŘ / PROGRESE'],['player','PLAYER / VITALS','HRÁČ / STAVY'],['building','BUILDING / STATIONS','STAVBY / STANICE'],['world','WORLD / WEATHER','SVĚT / POČASÍ']] as const){const heading=this.root.querySelector<HTMLElement>(`[data-testing-group="${id}"] h4`);if(heading)heading.textContent=cs?cz:en;}
     set('[data-testing-warning]',savesLocked?'Save writes stay locked until you reload, even if Testing Mode is disabled.':'Temporary developer session. Enabling this blocks all save writes until the page reloads.',savesLocked?'Ukládání zůstane zamčené do obnovení stránky, i po vypnutí režimu.':'Dočasná vývojářská relace. Zapnutí zamkne ukládání až do obnovení stránky.');
     set('[data-action="launchTestWorld"]','LAUNCH TEST WORLD','SPUSTIT TESTOVACÍ SVĚT');
     const mode=this.root.querySelector<HTMLButtonElement>('[data-dev="testing"]');if(mode)mode.textContent=enabled?(cs?'VYPNOUT TESTOVACÍ REŽIM':'DISABLE TESTING MODE'):(cs?'ZAPNOUT TESTOVACÍ REŽIM':'ENABLE TESTING MODE');
