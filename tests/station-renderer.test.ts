@@ -10,8 +10,10 @@ describe('event cache rendering',()=>{
     const scene=new THREE.Scene(),renderer=new StationRenderer(scene),signal=createStation('event-radio-signal','loot',{x:4,y:8,z:-3}),ordinary=createStation('loot-field-0','loot',{x:0,y:0,z:0});
     renderer.sync([signal,ordinary]);
     const relay=renderer.objects.get(signal.id)!,cache=renderer.objects.get(ordinary.id)!;
-    expect(relay.getObjectByName('Relay cache aerial')).toBeInstanceOf(THREE.Mesh);
-    expect(relay.getObjectByName('Relay cache signal light')).toBeInstanceOf(THREE.Mesh);
+    const aerial=relay.getObjectByName('Relay cache aerial')!,beacon=relay.getObjectByName('Relay cache signal light')!;
+    expect(aerial).toBeInstanceOf(THREE.Mesh);expect(beacon).toBeInstanceOf(THREE.Mesh);
+    renderer.update([signal,ordinary],.25,new THREE.Vector3());const firstRotation=aerial.rotation.y;
+    expect(beacon.visible).toBe(true);renderer.update([signal,ordinary],.75,new THREE.Vector3());expect(beacon.visible).toBe(false);expect(aerial.rotation.y).not.toBe(firstRotation);
     expect(cache.getObjectByName('Relay cache aerial')).toBeUndefined();
     renderer.dispose();
   });
