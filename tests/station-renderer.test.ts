@@ -10,6 +10,12 @@ describe('event cache rendering',()=>{
     const renderer=new StationRenderer(new THREE.Scene()),bench=createStation('bench-collision','workbench3',{x:4,y:2,z:-3},Math.PI/2);renderer.sync([bench]);
     const [box]=renderer.boxes(bench);expect(box!.position.y+box!.halfExtents.y).toBeCloseTo(3.83,2);expect(box!.rotation).toBe(Math.PI/2);renderer.dispose();
   });
+  it('keeps live collision envelopes around every solid station mesh at rotated placements',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const kinds=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','generator','powerSwitch','lamp','homesteadCore','recycler','deathbag','loot','secureCache'] as const,stations=kinds.map((kind,index)=>createStation(`collider-audit-${kind}`,kind,{x:30+index*5,y:2,z:-20-index*3},.37)),renderer=new StationRenderer(new THREE.Scene()),excluded=new Set(['flame','power-lamp-bulb','Relay cache aerial','Relay cache signal light']);renderer.sync(stations);
+    try{for(const station of stations){const group=renderer.objects.get(station.id)!,box=renderer.boxes(station)[0]!;expect(box).toBeTruthy();const c=Math.cos(station.rotation),s=Math.sin(station.rotation),point=new THREE.Vector3();group.updateWorldMatrix(true,true);group.traverse(object=>{if(!(object instanceof THREE.Mesh)||!object.visible||excluded.has(object.name)||object.name.startsWith('recycler-spark-')||!object.material.visible)return;const geometry=object.geometry;if(!geometry.boundingBox)geometry.computeBoundingBox();const bounds=geometry.boundingBox;if(!bounds)return;for(let corner=0;corner<8;corner++){point.set(corner&1?bounds.max.x:bounds.min.x,corner&2?bounds.max.y:bounds.min.y,corner&4?bounds.max.z:bounds.min.z).applyMatrix4(object.matrixWorld);const dx=point.x-box.position.x,dz=point.z-box.position.z,localX=dx*c-dz*s,localZ=dx*s+dz*c;expect(Math.abs(localX)).toBeLessThanOrEqual(box.halfExtents.x+1e-4);expect(Math.abs(point.y-box.position.y)).toBeLessThanOrEqual(box.halfExtents.y+1e-4);expect(Math.abs(localZ)).toBeLessThanOrEqual(box.halfExtents.z+1e-4);}});}}
+    finally{renderer.dispose();}
+  });
   it('keeps signal antenna and beacon out of the solid salvage-cache proxy',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const renderer=new StationRenderer(new THREE.Scene()),cache=createStation('event-radio-signal','loot',{x:4,y:8,z:-3});renderer.sync([cache]);
