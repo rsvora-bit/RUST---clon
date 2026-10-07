@@ -55,8 +55,9 @@ describe('event cache rendering',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const renderer=new StationRenderer(new THREE.Scene()),furnace=createStation('smoke-furnace','furnace',{x:2,y:0,z:0}),campfire=createStation('smoke-campfire','campfire',{x:-2,y:0,z:0}),cold=createStation('cold-campfire','campfire',{x:0,y:0,z:2});
     furnace.active=true;furnace.inventory[0]={itemId:'ore',count:10};furnace.inventory[2]={itemId:'wood',count:5};campfire.active=true;campfire.inventory[0]={itemId:'wood',count:2};renderer.sync([furnace,campfire,cold]);
-    renderer.update([furnace,campfire,cold],1,new THREE.Vector3());expect(renderer.smokePuffCount).toBe(10);
-    const smoke=renderer.group.getObjectByName('Batched station smoke') as THREE.InstancedMesh,first=new THREE.Matrix4(),later=new THREE.Matrix4();smoke.getMatrixAt(0,first);renderer.update([furnace,campfire,cold],2,new THREE.Vector3());smoke.getMatrixAt(0,later);expect(first.equals(later)).toBe(false);
-    renderer.update([furnace,campfire,cold],3,new THREE.Vector3(100,0,0));expect(renderer.smokePuffCount).toBe(0);renderer.dispose();
+    renderer.update([cold],.5,new THREE.Vector3());const smoke=renderer.group.getObjectByName('Batched station smoke') as THREE.InstancedMesh;expect(renderer.smokePuffCount).toBe(0);expect(smoke.instanceMatrix.version).toBe(0);
+    renderer.update([furnace,campfire,cold],1,new THREE.Vector3());expect(renderer.smokePuffCount).toBe(10);expect(smoke.instanceMatrix.version).toBe(1);
+    const first=new THREE.Matrix4(),later=new THREE.Matrix4();smoke.getMatrixAt(0,first);renderer.update([furnace,campfire,cold],2,new THREE.Vector3());smoke.getMatrixAt(0,later);expect(first.equals(later)).toBe(false);expect(smoke.instanceMatrix.version).toBe(2);
+    renderer.update([furnace,campfire,cold],3,new THREE.Vector3(100,0,0));expect(renderer.smokePuffCount).toBe(0);expect(smoke.instanceMatrix.version).toBe(2);renderer.dispose();
   });
 });
