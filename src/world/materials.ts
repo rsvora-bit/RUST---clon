@@ -32,6 +32,20 @@ export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',see
   for(let i=0;i<2200;i++){const x=rand()*512,y=rand()*512,r=.3+rand()*(kind==='sand'?1.3:3);ctx.fillStyle=i%2?'rgba(25,27,21,.18)':'rgba(218,210,181,.24)';ctx.beginPath();ctx.ellipse(x,y,r,r*.63,rand()*6.28,0,Math.PI*2);ctx.fill();}
   return texture(c);
 }
+/** Seamless, linear-space tangent normals for sub-meter terrain grain. */
+export function terrainDetailNormalTexture(seed=8241,size=256):THREE.DataTexture {
+  const rand=randomSource(seed),waves=Array.from({length:9},()=>{
+    const frequency=2+Math.floor(rand()*33),angle=rand()*Math.PI*2;
+    return{kx:Math.round(Math.cos(angle)*frequency),ky:Math.round(Math.sin(angle)*frequency),phase:rand()*Math.PI*2,amplitude:.028/(.55+frequency*.055)};
+  }),data=new Uint8Array(size*size*4),tau=Math.PI*2,strength=.42;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const u=x/size,v=y/size;let dx=0,dy=0;
+    for(const wave of waves){const phase=tau*(wave.kx*u+wave.ky*v)+wave.phase,slope=Math.cos(phase)*wave.amplitude*tau;dx+=slope*wave.kx;dy+=slope*wave.ky;}
+    let nx=-dx*strength,ny=-dy*strength,nz=1;const length=Math.hypot(nx,ny,nz);nx/=length;ny/=length;nz/=length;
+    const offset=(y*size+x)*4;data[offset]=Math.round((nx*.5+.5)*255);data[offset+1]=Math.round((ny*.5+.5)*255);data[offset+2]=Math.round((nz*.5+.5)*255);data[offset+3]=255;
+  }
+  const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(224,224);map.anisotropy=8;map.needsUpdate=true;return map;
+}
 export function barkTexture(revision6=false):THREE.CanvasTexture {
   const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle=revision6?'#88765d':'#75664f';ctx.fillRect(0,0,512,512);
   const streaks=revision6?['#625442','#ad9575','#9a8364','#7b674d']:['#50483a','#998568','#87765b','#695a43'];
@@ -122,10 +136,10 @@ export function leafMassTexture(seed=741):THREE.CanvasTexture {
   return texture(c);
 }
 export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
-  const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),mud=groundTexture('dirt',1962),snow=groundTexture('snow',1181,worldRevision);
-  const revision6=worldRevision>=6,surfaceWetness={value:0},revision6Moss={value:revision6?1:0},mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0});
+  const grass=groundTexture('grass',184),dry=groundTexture('dry',318),sand=groundTexture('sand',921),rock=groundTexture('rock',541),dirt=groundTexture('dirt',712),mud=groundTexture('dirt',1962),snow=groundTexture('snow',1181,worldRevision),detailNormal=terrainDetailNormalTexture(8241);
+  const revision6=worldRevision>=6,surfaceWetness={value:0},revision6Moss={value:revision6?1:0},mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.98,metalness:0,normalMap:detailNormal,normalScale:new THREE.Vector2(.16,.16)});
   mat.userData.surfaceWetness=surfaceWetness;
-  mat.userData.textures=[grass,dry,sand,rock,dirt,mud,snow];
+  mat.userData.textures=[grass,dry,sand,rock,dirt,mud,snow,detailNormal];
   mat.onBeforeCompile=shader=>{
     const sharedRev6Fields=`float macro=groundNoise(gp.xz*.13+warp*2.)*.62+groundNoise(gp.xz*.034)*.38;float micro=groundNoise(gp.xz*3.7)*.72+groundNoise(gp.xz*11.3)*.28;float snowDrift=macro*.62+micro*.38;float duneField=macro*.72+micro*.28;float strata=macro*.42+micro*.58;`;
     const legacyFields=`float snowDrift=groundNoise(gp.xz*.12+warp*.35)*.62+groundNoise(gp.xz*.43+vec2(19.,-7.))*.38;float duneField=groundNoise(gp.xz*.035+warp*.24)*.62+groundNoise(gp.xz*.11+vec2(37.,-19.))*.38;float strata=groundNoise(gp.xz*.052+8.)*.62+groundNoise(gp.xz*.21-14.)*.38;`;

@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leavesTexture,leafMassTexture,terrainMaterial} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -70,10 +70,28 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('mireSediment=smoothstep(.25,.78,mirePatch)');
       expect(newShader.fragmentShader).toContain('mix(vec3(.54,.70,.68),vec3(.78,.80,.69),mireSediment)');
       expect(newShader.fragmentShader).toContain('mireWetness*.45');
-      expect(revision6.userData.textures).toHaveLength(7);
+      expect(revision6.userData.textures).toHaveLength(8);
+      expect(revision6.normalMap).toBe(revision6.userData.textures[7]);
+      expect(revision6.normalScale.x).toBeCloseTo(.16);
     }finally{
       for(const material of [legacy,revision6])for(const tex of material.userData.textures as THREE.Texture[])tex.dispose();
     }
+  });
+});
+
+describe('terrain micro-normal map',()=>{
+  it('creates deterministic seamless linear-space normal detail for PBR lighting',()=>{
+    const first=terrainDetailNormalTexture(8241,64),repeat=terrainDetailNormalTexture(8241,64),other=terrainDetailNormalTexture(8242,64);
+    try{
+      expect(first.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.wrapS).toBe(THREE.RepeatWrapping);expect(first.wrapT).toBe(THREE.RepeatWrapping);
+      expect(first.repeat.x).toBe(224);expect(first.repeat.y).toBe(224);
+      expect(first.image.data).toEqual(repeat.image.data);expect(first.image.data).not.toEqual(other.image.data);
+      const pixels=first.image.data as Uint8Array,normal=(index:number)=>new THREE.Vector3(pixels[index]!/127.5-1,pixels[index+1]!/127.5-1,pixels[index+2]!/127.5-1).normalize();
+      for(let x=0;x<64;x+=7)for(const y of [0,63])expect(normal((y*64+x)*4).length()).toBeCloseTo(1,2);
+      const unique=new Set(Array.from({length:64*64},(_,index)=>`${pixels[index*4]},${pixels[index*4+1]},${pixels[index*4+2]}`));
+      expect(unique.size).toBeGreaterThan(500);
+    }finally{first.dispose();repeat.dispose();other.dispose();}
   });
 });
 
