@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { collisionBoundsFromBox, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeTrunkCollision } from '../src/physics/collisionBounds';
+import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 
 describe('visual collision bounds', () => {
+  beforeAll(async()=>{await initPhysics();});
   it('contains every vertex after instance rotation, slope alignment and non-uniform scale', () => {
     const scene = new THREE.Group();
     const root = new THREE.Group();
@@ -65,6 +67,12 @@ describe('visual collision bounds', () => {
     }
     expect(proxy.halfExtents.x*proxy.halfExtents.z).toBeLessThan((worldBounds.max.x-worldBounds.min.x)*(worldBounds.max.z-worldBounds.min.z)*.72);
     rock.dispose();
+  });
+
+  it('blocks the player when approaching the rotated rock proxy from its side',()=>{
+    const terrain=new THREE.PlaneGeometry(40,40,1,1);terrain.rotateX(-Math.PI/2);const yaw=Math.PI/4,rock=new THREE.BoxGeometry(4,2,1),transform=new THREE.Matrix4().compose(new THREE.Vector3(0,1.1,0),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(1.1,.9,1.25));rock.computeBoundingBox();const proxy=collisionBoundsFromGeometry(rock,transform,.08),physics=new PhysicsWorld(terrain,[proxy],{x:-Math.sin(yaw)*4,y:0,z:-Math.cos(yaw)*4});
+    try{for(let i=0;i<32;i++)physics.move({x:Math.sin(yaw)*.25,y:0,z:Math.cos(yaw)*.25});const player=physics.position(),localX=Math.cos(yaw)*player.x-Math.sin(yaw)*player.z,localZ=Math.sin(yaw)*player.x+Math.cos(yaw)*player.z;expect(Math.abs(localX)).toBeLessThan(.9);expect(localZ).toBeGreaterThan(-1.7);expect(localZ).toBeLessThan(-.85);}
+    finally{physics.dispose();terrain.dispose();rock.dispose();}
   });
 
   it('places narrow hull side proxies on both authored visual edges',()=>{
