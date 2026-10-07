@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { addInstanceWindResponse, disposeMaterialTextures, metalMaterial, metalSurfaceMaps, stoneMaterial, woodSurfaceMaps } from '../src/rendering/materials';
+import { addInstanceWindResponse, disposeMaterialTextures, metalMaterial, metalSurfaceMaps, stoneMaterial, treeBarkMaterial, woodSurfaceMaps } from '../src/rendering/materials';
 
 afterEach(()=>vi.unstubAllGlobals());
 
@@ -19,6 +19,15 @@ describe('procedural wood surface maps',()=>{
       expect(Math.min(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeGreaterThanOrEqual(142);
       expect(Math.max(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeLessThanOrEqual(240);
     }finally{for(const maps of [first,repeat,variant]){maps.normal.dispose();maps.roughness.dispose();}}
+  });
+  it('shares linear bark grain and roughness maps between legacy and instanced trunk materials',()=>{
+    const maps=woodSurfaceMaps(449,64),albedo=new THREE.DataTexture(new Uint8Array(4),1,1,THREE.RGBAFormat);albedo.colorSpace=THREE.SRGBColorSpace;
+    const legacy=treeBarkMaterial(albedo,maps),instanced=treeBarkMaterial(albedo,maps,true);
+    try{
+      expect(legacy.normalMap).toBe(maps.normal);expect(legacy.roughnessMap).toBe(maps.roughness);expect(legacy.vertexColors).toBe(false);
+      expect(instanced.normalMap).toBe(legacy.normalMap);expect(instanced.roughnessMap).toBe(legacy.roughnessMap);expect(instanced.vertexColors).toBe(true);
+      expect(instanced.normalScale.x).toBeCloseTo(.12);expect(instanced.roughness).toBeCloseTo(.97);
+    }finally{legacy.dispose();instanced.dispose();albedo.dispose();maps.normal.dispose();maps.roughness.dispose();}
   });
 });
 

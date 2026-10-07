@@ -38,6 +38,10 @@ export function woodSurfaceMaps(seed=4108,size=128):WoodSurfaceMaps{
   const make=(data:Uint8Array)=>{const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2,1);map.anisotropy=4;map.needsUpdate=true;return map;};
   return{roughness:make(roughData),normal:make(normalData)};
 }
+export function treeBarkMaterial(map:THREE.Texture,maps:WoodSurfaceMaps,vertexColors=false):THREE.MeshStandardMaterial{
+  const material=new THREE.MeshStandardMaterial({map,color:0xb6b4a4,roughness:.97,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.12,.12),vertexColors});
+  material.userData.textures=[map,maps.normal,maps.roughness];return material;
+}
 export interface MetalSurfaceMaps{color:THREE.DataTexture;roughness:THREE.DataTexture;normal:THREE.DataTexture}
 /** Fine brushed grain, random tool scratches and roughness breakup for shared salvage metal. */
 export function metalSurfaceMaps(seed=5823,size=128):MetalSurfaceMaps{
