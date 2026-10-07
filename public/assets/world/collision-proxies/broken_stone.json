@@ -1,1 +1,1 @@
-{"asset":"broken_stone","coordinateSystem":"gltf-y-up","shapes":[{"center":[0.0228,0.441,-0.0035],"halfExtents":[0.855,0.3065,0.4918],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
+{"asset":"broken_stone","coordinateSystem":"gltf-y-up","shapes":[{"center":[0.0198,0.441,-0.02],"halfExtents":[0.8733,0.3065,0.5083],"type":"box"}],"source":"LOD0/LOD1/LOD2","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

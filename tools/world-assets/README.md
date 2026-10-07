@@ -30,10 +30,11 @@ material regions are generated deterministically from each asset ID.
 
 The same command writes one compact sidecar under
 `public/assets/world/collision-proxies/` for each catalog model. Tree variants
-receive a vertical trunk capsule; other props receive a meter-scaled LOD0
-bounding box in glTF Y-up coordinates. These are coarse authoring hints for
-future static integrations, not replacements for the hand-authored gameplay
-colliders currently owned by `WorldSurvival` and `PhysicsWorld`.
+receive a vertical trunk capsule; other props receive a meter-scaled bounding
+box that contains LOD0, LOD1, and LOD2 in glTF Y-up coordinates. This keeps
+lower-detail silhouettes inside their authoring proxy. These are coarse hints
+for future static integrations, not replacements for the hand-authored
+gameplay colliders currently owned by `WorldSurvival` and `PhysicsWorld`.
 
 Regenerate and check file sizes with:
 

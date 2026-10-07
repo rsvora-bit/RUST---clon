@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.14.0%20%7C%20EA--14.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.14.1%20%7C%20EA--14.1-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.14.0 / EA-14.0` · **7 October 2026**
+**Current release:** `v0.14.1 / EA-14.1` · **8 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.14.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.14.0/)
+Latest stable: [▶ PLAY LATEST](https://rsvora-bit.github.io/RUST---clon/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -122,6 +122,12 @@ The browser locally persists world generation, settings, inventory, crafting, re
 ---
 
 ## 🚀 Current release
+
+**v0.14.1 / EA-14.1 — Physical World & Foliage Stabilization** hardens collision proxies against visual LOD changes and verifies all sides of the three major boulder models in live browser movement. Generated trees retain their authored bark/foliage material groups through batching, while grass silhouettes gain variation at the same geometry budget. Existing save layouts and world identities are unchanged.
+
+### v0.14.1 validation and save compatibility
+
+No save schema or generation identity changed. The follow-up retains existing world, player, structures, stations, inventory, research, resources and Lost Packs. Full unit tests pass (537 tests across 57 files); production build and screenshot-free Chrome/Metal world-art/save, collision, tree-culling and Testing Mode QA pass without app/WebGL errors. Matched Chrome/Metal HIGH at 1280×720, seed 731942 and 240 frames measured v0.14.0 → v0.14.1 at **195.99 → 198.27 FPS** (**5.102 → 5.044 ms**), **464 → 451 draw calls**, **3,047,769 → 3,063,669 triangles** and **2,033 → 2,033 nodes**. This is a relative measurement on the same hardware/browser configuration, not a cross-device guarantee.
 
 **v0.14.0 / EA-14.0 — Visual Fidelity & Physical World Overhaul** improves shared PBR surface detail for wood, metal, rock and terrain; adds slope-aware terrain detail, weathered outcrops and climate-aware ground decals; refines instanced trees and wind; improves underwater readability and distant mountain depth; and makes wet surfaces dry gradually. Major world collision proxies are more closely aligned with visual models, and F3 now exposes physical bounds, grounding contacts, nearby asset identity and active LOD. Active generators receive restrained, batched exhaust and smoke feedback.
 
@@ -256,6 +262,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.14.1` | Stable cross-LOD collision, live boulder side checks, correct batched tree foliage materials and varied grass silhouettes |
 | `v0.14.0` | Physical collision proxies and F3 world debugging, detailed weathered materials, terrain/rock/vegetation polish, gradual wetness, station exhaust and mountain atmosphere |
 | `v0.13.0` | Surface-anchored gathering, supported vertical building, selectable menu scenes, F3 workflow groups, active station feedback and living-world polish |
 | `v0.12.0` | Blender world-asset pipeline, refined item icons, environment LODs, wet weather, readable HUD and save-locked Testing Mode |
@@ -322,7 +329,7 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.14.0 / EA-14.0`
+`EARLY ACCESS DEVELOPMENT · v0.14.1 / EA-14.1`
 
 </div>
 

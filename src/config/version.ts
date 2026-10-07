@@ -1,9 +1,14 @@
-export const GAME_VERSION='0.14.0';
-export const GAME_BUILD='EA-14.0';
-export const GAME_RELEASE_DATE='2026-10-07';
+export const GAME_VERSION='0.14.1';
+export const GAME_BUILD='EA-14.1';
+export const GAME_RELEASE_DATE='2026-10-08';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.14.1',date:'2026-10-08',title:'Physical World & Foliage Stabilization',changes:[
+    'Kept authored world-asset collision stable across every visual LOD and extended live collision QA to test all four sides of all three major boulder variants.',
+    'Preserved authored tree material groups while batching generated bark and foliage into shared indexed geometry, preventing leaf surfaces from inheriting trunk shading.',
+    'Improved generated grass silhouette variation and added focused material regression coverage without changing world generation identity or save data.'
+  ]},
   {version:'0.14.0',date:'2026-10-07',title:'Visual Fidelity & Physical World Overhaul',changes:[
     'Improved weathered PBR detail for wood, metal, rock and terrain, with less texture stretch on steep ground and restrained biome-aware moss, mud and snow variation.',
     'Aligned major rock, tree, station and shipwreck collision proxies more closely with their rendered shapes; added F3 collider, bounds, terrain-grounding, nearby-asset and LOD inspection.',

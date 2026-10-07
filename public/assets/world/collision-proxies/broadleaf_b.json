@@ -1,1 +1,1 @@
-{"asset":"broadleaf_b","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,5.35,0],"halfHeight":4.97,"radius":0.38,"type":"capsule"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
+{"asset":"broadleaf_b","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,5.35,0],"halfHeight":4.97,"radius":0.38,"type":"capsule"}],"source":"LOD0/LOD1/LOD2","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

@@ -1,1 +1,1 @@
-{"asset":"palm_tree_a","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,4.8,0],"halfHeight":4.46,"radius":0.34,"type":"capsule"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
+{"asset":"palm_tree_a","coordinateSystem":"gltf-y-up","shapes":[{"axis":"y","center":[0,4.8,0],"halfHeight":4.46,"radius":0.34,"type":"capsule"}],"source":"LOD0/LOD1/LOD2","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

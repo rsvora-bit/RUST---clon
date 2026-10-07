@@ -68,6 +68,13 @@ describe('procedural rock geometry',()=>{
     expect(lowest).toBeCloseTo(.035,5);geometry.dispose();
   });
 
+  it('seats every rock LOD against terrain when a lower-detail silhouette extends farther down',()=>{
+    const lod0=new THREE.BoxGeometry(2,2,2),lod2=new THREE.BoxGeometry(2,2.08,2),matrix=new THREE.Matrix4(),offset=terrainContactOffset([lod0,lod2],matrix,()=>0,.035);
+    expect(offset).toBeCloseTo(1.075,6);matrix.setPosition(0,offset,0);
+    const lowest=(geometry:THREE.BufferGeometry)=>{const position=geometry.getAttribute('position'),point=new THREE.Vector3();let value=Infinity;for(let i=0;i<position.count;i++){point.fromBufferAttribute(position,i).applyMatrix4(matrix);value=Math.min(value,point.y);}return value;};
+    expect(lowest(lod2)).toBeCloseTo(.035,6);expect(lowest(lod0)).toBeLessThan(.08);expect(lowest(lod0)).toBeGreaterThan(.03);lod0.dispose();lod2.dispose();
+  });
+
   it('does not pull a resource mesh toward out-of-world fallback heights',()=>{
     const geometry=new THREE.IcosahedronGeometry(1,0);
     expect(terrainContactOffset(geometry,new THREE.Matrix4(),()=>-10)).toBe(0);geometry.dispose();

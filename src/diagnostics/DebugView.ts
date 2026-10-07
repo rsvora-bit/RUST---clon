@@ -35,14 +35,35 @@ export function groundingLineVertices(boxes: readonly CollisionBox[],heightAt:(x
   return new Float32Array(values);
 }
 
+/** Nearby render bounds for objects that submit shadow maps, including instances. */
+export function shadowCasterLineVertices(scene:THREE.Scene,camera:{x:number;y:number;z:number},range=64,limit=160):Float32Array {
+  const limitSq=range*range,candidates:{bounds:THREE.Box3;distanceSq:number}[]=[],localBox=new THREE.Box3(),worldBox=new THREE.Box3(),instance=new THREE.Matrix4(),world=new THREE.Matrix4(),center=new THREE.Vector3();
+  const keep=(bounds:THREE.Box3)=>{
+    bounds.getCenter(center);const dx=center.x-camera.x,dy=center.y-camera.y,dz=center.z-camera.z,distanceSq=dx*dx+dy*dy+dz*dz;if(distanceSq>limitSq)return;
+    if(candidates.length>=limit){let farthest=0;for(let i=1;i<candidates.length;i++)if(candidates[i]!.distanceSq>candidates[farthest]!.distanceSq)farthest=i;if(candidates[farthest]!.distanceSq<=distanceSq)return;candidates[farthest]={bounds:bounds.clone(),distanceSq};return;}
+    candidates.push({bounds:bounds.clone(),distanceSq});
+  };
+  scene.updateMatrixWorld(true);
+  scene.traverseVisible(object=>{
+    if(!(object instanceof THREE.Mesh)||!object.castShadow||object.name.includes('debug'))return;
+    const geometry=object.geometry;if(!geometry.boundingBox)geometry.computeBoundingBox();if(!geometry.boundingBox)return;
+    if(object instanceof THREE.InstancedMesh){for(let index=0;index<object.count;index++){object.getMatrixAt(index,instance);world.multiplyMatrices(object.matrixWorld,instance);worldBox.copy(geometry.boundingBox).applyMatrix4(world);keep(worldBox);}}
+    else keep(worldBox.copy(geometry.boundingBox).applyMatrix4(object.matrixWorld));
+  });
+  candidates.sort((a,b)=>a.distanceSq-b.distanceSq);
+  const boxes=candidates.map(({bounds})=>{const center=bounds.getCenter(new THREE.Vector3()),half=bounds.getSize(new THREE.Vector3()).multiplyScalar(.5);return{position:{x:center.x,y:center.y,z:center.z},halfExtents:{x:half.x,y:half.y,z:half.z}};});
+  return boundsLineVertices(boxes);
+}
+
 export class DebugView {
-  collisions=false;sockets=false;worldBounds=false;grounding=false;private lastWorldBounds=false;private boundsUpdatedAt=0;private groundingUpdatedAt=0;private lines:THREE.LineSegments|null=null;private bounds:THREE.LineSegments|null=null;private groundLines:THREE.LineSegments|null=null;private socketGroup=new THREE.Group();private structureHash='';
+  collisions=false;sockets=false;worldBounds=false;grounding=false;shadowCasters=false;private lastWorldBounds=false;private boundsUpdatedAt=0;private groundingUpdatedAt=0;private shadowCastersUpdatedAt=0;private lines:THREE.LineSegments|null=null;private bounds:THREE.LineSegments|null=null;private groundLines:THREE.LineSegments|null=null;private shadowCasterLines:THREE.LineSegments|null=null;private socketGroup=new THREE.Group();private structureHash='';
   constructor(private scene:THREE.Scene){scene.add(this.socketGroup);}
   update(physics:PhysicsWorld,structures:Structure[],worldColliders:readonly CollisionBox[]=[],camera?:THREE.Vector3,heightAt?:(x:number,z:number)=>number,additionalColliders?:()=>readonly CollisionBox[]){
     if(this.collisions){const data=physics.world.debugRender();if(!this.lines){this.lines=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({vertexColors:true,depthTest:false,transparent:true,opacity:.8}));this.lines.name='Rapier collision debug';this.lines.renderOrder=999;this.scene.add(this.lines);}const g=this.lines.geometry;g.setAttribute('position',new THREE.BufferAttribute(data.vertices,3));g.setAttribute('color',new THREE.BufferAttribute(data.colors,4));this.lines.visible=true;}else if(this.lines)this.lines.visible=false;
     const now=performance.now(),needsWorldProxies=this.worldBounds||(this.grounding&&!!camera&&!!heightAt),allColliders=needsWorldProxies&&additionalColliders?[...worldColliders,...additionalColliders()]:worldColliders;
     if(this.worldBounds){if(!this.bounds){this.bounds=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:'#80e8ff',depthTest:false,transparent:true,opacity:.8}));this.bounds.name='World proxy bounds debug';this.bounds.renderOrder=1000;this.scene.add(this.bounds);}if(!this.lastWorldBounds||now-this.boundsUpdatedAt>500){this.bounds.geometry.setAttribute('position',new THREE.BufferAttribute(boundsLineVertices(allColliders),3));this.boundsUpdatedAt=now;}this.bounds.visible=true;}else if(this.bounds)this.bounds.visible=false;this.lastWorldBounds=this.worldBounds;
     if(this.grounding&&camera&&heightAt){if(!this.groundLines){this.groundLines=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:'#ffbd68',depthTest:false,transparent:true,opacity:.9}));this.groundLines.name='World grounding debug';this.groundLines.renderOrder=1001;this.scene.add(this.groundLines);}if(now-this.groundingUpdatedAt>160){this.groundLines.geometry.setAttribute('position',new THREE.BufferAttribute(groundingLineVertices(allColliders,heightAt,camera,72),3));this.groundingUpdatedAt=now;}this.groundLines.visible=true;}else if(this.groundLines)this.groundLines.visible=false;
+    if(this.shadowCasters&&camera){if(!this.shadowCasterLines){this.shadowCasterLines=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:'#ffb347',depthTest:false,transparent:true,opacity:.92}));this.shadowCasterLines.name='World shadow caster debug';this.shadowCasterLines.renderOrder=1002;this.scene.add(this.shadowCasterLines);}if(this.shadowCastersUpdatedAt===0||now-this.shadowCastersUpdatedAt>500){this.shadowCasterLines.geometry.setAttribute('position',new THREE.BufferAttribute(shadowCasterLineVertices(this.scene,camera),3));this.shadowCastersUpdatedAt=now;}this.shadowCasterLines.visible=true;}else if(this.shadowCasterLines)this.shadowCasterLines.visible=false;
     this.socketGroup.visible=this.sockets;
     const hash=structures.map(s=>s.id).join(',');if(this.sockets&&hash!==this.structureHash){this.socketGroup.clear();this.structureHash=hash;for(const s of structures)for(const socket of getSockets(s)){const p=socket.position;const m=new THREE.Mesh(new THREE.SphereGeometry(.075,6,4),new THREE.MeshBasicMaterial({color:'#ffff58',depthTest:false}));m.position.set(p.x,p.y,p.z);this.socketGroup.add(m);}}
   }

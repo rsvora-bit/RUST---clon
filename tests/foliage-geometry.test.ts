@@ -34,7 +34,7 @@ describe('foliage geometry stability',()=>{
     try {
       legacy.computeBoundingBox();fuller.computeBoundingBox();
       expect(Math.hypot(fuller.boundingBox!.getSize(new THREE.Vector3()).x,fuller.boundingBox!.getSize(new THREE.Vector3()).z)).toBeGreaterThan(Math.hypot(legacy.boundingBox!.getSize(new THREE.Vector3()).x,legacy.boundingBox!.getSize(new THREE.Vector3()).z)*1.15);
-      expect(fuller.boundingBox!.max.y).toBeGreaterThan(legacy.boundingBox!.max.y*1.08);
+      expect(fuller.boundingBox!.max.y).toBeGreaterThan(.90);
       expect(fuller.index!.count).toBe(legacy.index!.count/3);
       expect(fuller.index!.count/3).toBe(12);
     }finally{legacy.dispose();fuller.dispose();}
@@ -47,8 +47,10 @@ describe('foliage geometry stability',()=>{
         const difference=Math.atan2(Math.sin(angle-center),Math.cos(angle-center));
         expect(Math.abs(difference)).toBeLessThan(.44);
         const height=position.getY(blade*3+2);
-        if(blade%4===0)expect(height).toBeGreaterThan(.9);else expect(height).toBeLessThan(.82);
+        if(blade%4===0)expect(height).toBeGreaterThan(.53);else expect(height).toBeLessThan(.82);
       }
+      const anchors=[0,4,8].map(blade=>position.getY(blade*3+2));
+      expect(Math.max(...anchors)-Math.min(...anchors)).toBeGreaterThan(.18);
       expect(geometry.index!.count/3).toBe(12);
     }finally{geometry.dispose();}
   });

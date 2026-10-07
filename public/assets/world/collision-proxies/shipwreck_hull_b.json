@@ -1,1 +1,1 @@
-{"asset":"shipwreck_hull_b","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0842,0.783,-0.0016],"halfExtents":[4.0842,0.7663,0.7226],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
+{"asset":"shipwreck_hull_b","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0778,0.783,-0.002],"halfExtents":[4.0906,0.7663,0.7229],"type":"box"}],"source":"LOD0/LOD1/LOD2","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}

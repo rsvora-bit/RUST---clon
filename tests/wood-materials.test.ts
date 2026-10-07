@@ -26,18 +26,19 @@ describe('weathered salvage-metal surface maps',()=>{
   it('keeps brushed normal and scratch roughness detail deterministic and in linear space',()=>{
     const first=metalSurfaceMaps(842,64),repeat=metalSurfaceMaps(842,64),variant=metalSurfaceMaps(843,64);
     try{
-      expect(first.normal.colorSpace).toBe(THREE.NoColorSpace);expect(first.roughness.colorSpace).toBe(THREE.NoColorSpace);
-      expect(first.normal.image.data).toEqual(repeat.normal.image.data);expect(first.roughness.image.data).toEqual(repeat.roughness.image.data);
-      expect(first.normal.image.data).not.toEqual(variant.normal.image.data);
+      expect(first.color.colorSpace).toBe(THREE.SRGBColorSpace);expect(first.normal.colorSpace).toBe(THREE.NoColorSpace);expect(first.roughness.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.color.image.data).toEqual(repeat.color.image.data);expect(first.normal.image.data).toEqual(repeat.normal.image.data);expect(first.roughness.image.data).toEqual(repeat.roughness.image.data);
+      expect(first.color.image.data).not.toEqual(variant.color.image.data);expect(first.normal.image.data).not.toEqual(variant.normal.image.data);
+      const color=first.color.image.data as Uint8Array;expect(new Set(Array.from({length:64*64},(_,index)=>`${color[index*4]},${color[index*4+1]},${color[index*4+2]}`)).size).toBeGreaterThan(100);
       const roughness=first.roughness.image.data as Uint8Array;
       expect(Math.min(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeGreaterThanOrEqual(163);
       expect(Math.max(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeLessThanOrEqual(248);
-    }finally{for(const maps of [first,repeat,variant]){maps.normal.dispose();maps.roughness.dispose();}}
+    }finally{for(const maps of [first,repeat,variant]){maps.color.dispose();maps.normal.dispose();maps.roughness.dispose();}}
   });
   it('attaches its procedural maps to PBR metal and disposes their GPU resources with the material',()=>{
     const material=metalMaterial(0x64706b,.88,.3,842),textures=material.userData.textures as THREE.Texture[];let disposed=0;
     textures.forEach(texture=>texture.addEventListener('dispose',()=>disposed++));
-    expect(material.normalScale.x).toBeCloseTo(.085);expect(material.metalness).toBeCloseTo(.3);disposeMaterialTextures(material);expect(disposed).toBe(2);
+    expect(material.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(material.normalScale.x).toBeCloseTo(.085);expect(material.metalness).toBeCloseTo(.3);disposeMaterialTextures(material);expect(disposed).toBe(3);
   });
 });
 
