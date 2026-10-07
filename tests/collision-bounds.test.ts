@@ -87,6 +87,14 @@ describe('visual collision bounds', () => {
     nearMesh.geometry.dispose();farMesh.geometry.dispose();
   });
 
+  it('blocks the player at the protruding face of the farthest visual LOD',()=>{
+    const floor=new THREE.PlaneGeometry(40,40,1,1);floor.rotateX(-Math.PI/2);const root=new THREE.Group();root.position.y=1.1;const levels=[new THREE.Group(),new THREE.Group(),new THREE.Group()];
+    const meshes=[new THREE.Mesh(new THREE.BoxGeometry(2,2,2)),new THREE.Mesh(new THREE.BoxGeometry(2,2,2.4)),new THREE.Mesh(new THREE.BoxGeometry(2,2,3.4))];levels[1]!.position.z=.1;levels[2]!.position.z=.45;levels.forEach((level,index)=>{level.add(meshes[index]!);root.add(level);});
+    const bounds=collisionBoundsFromLodObjects(levels)!,physics=new PhysicsWorld(floor,[bounds],{x:0,y:0,z:bounds.position.z+bounds.halfExtents.z+3});
+    try{for(let step=0;step<50;step++)physics.move({x:0,y:0,z:-.12});const player=physics.position();expect(player.z).toBeGreaterThan(bounds.position.z+bounds.halfExtents.z-.42);expect(player.z).toBeLessThan(bounds.position.z+bounds.halfExtents.z+.46);}
+    finally{physics.dispose();floor.dispose();meshes.forEach(mesh=>mesh.geometry.dispose());}
+  });
+
   it('blocks the player when approaching the rotated rock proxy from its side',()=>{
     const terrain=new THREE.PlaneGeometry(40,40,1,1);terrain.rotateX(-Math.PI/2);const yaw=Math.PI/4,rock=new THREE.BoxGeometry(4,2,1),transform=new THREE.Matrix4().compose(new THREE.Vector3(0,1.1,0),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw),new THREE.Vector3(1.1,.9,1.25));rock.computeBoundingBox();const proxy=collisionBoundsFromGeometry(rock,transform,.08),physics=new PhysicsWorld(terrain,[proxy],{x:-Math.sin(yaw)*4,y:0,z:-Math.cos(yaw)*4});
     try{for(let i=0;i<32;i++)physics.move({x:Math.sin(yaw)*.25,y:0,z:Math.cos(yaw)*.25});const player=physics.position(),localX=Math.cos(yaw)*player.x-Math.sin(yaw)*player.z,localZ=Math.sin(yaw)*player.x+Math.cos(yaw)*player.z;expect(Math.abs(localX)).toBeLessThan(.9);expect(localZ).toBeGreaterThan(-1.7);expect(localZ).toBeLessThan(-.85);}
