@@ -1,6 +1,7 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
 import {addWeatherSurfaceResponse} from '../src/rendering/materials';
+import {stoneMaterial} from '../src/world/materials';
 
 describe('weather surface response',()=>{
   it('chains existing material hooks and applies live wetness to diffuse and roughness',()=>{
@@ -32,5 +33,35 @@ describe('weather surface response',()=>{
     addWeatherSurfaceResponse(material,{value:1},.2,.9);
     expect(material.onBeforeCompile).toBe(compile);
     expect(material.customProgramCacheKey()).toBe(cacheKey);
+  });
+
+  it('uses world-space triplanar stone detail for Revision 6 instances while keeping legacy projection unchanged',()=>{
+    vi.stubGlobal('document',{createElement:()=>{
+      const canvas={width:0,height:0},context={
+        createImageData:(width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),putImageData:()=>{},
+        beginPath:()=>{},moveTo:()=>{},lineTo:()=>{},quadraticCurveTo:()=>{},ellipse:()=>{},fill:()=>{},stroke:()=>{},fillRect:()=>{},
+        fillStyle:'#000',strokeStyle:'#000',lineWidth:1,lineCap:'butt',
+      };
+      return Object.assign(canvas,{getContext:()=>context});
+    }});
+    const compile=(material:THREE.MeshStandardMaterial)=>{
+      const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <defaultnormal_vertex>\n#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <map_fragment>\n#include <roughnessmap_fragment>'};
+      material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);return shader;
+    };
+    const legacy=stoneMaterial(),wetness={value:.35},revision6=stoneMaterial(0xb0ada0,true,wetness);
+    try{
+      const oldShader=compile(legacy),newShader=compile(revision6);
+      expect(oldShader.vertexShader).toContain('vStonePos=position;vStoneNormal=normal;');
+      expect(oldShader.vertexShader).not.toContain('stoneWorldPosition');
+      expect(newShader.vertexShader).toContain('mat3 stoneViewRotation=mat3(viewMatrix)');
+      expect(newShader.vertexShader).toContain('dot(stoneViewRotation[2],transformedNormal)');
+      expect(newShader.vertexShader).toContain('stoneWorldPosition=instanceMatrix*stoneWorldPosition');
+      expect(newShader.vertexShader).toContain('vStonePos=(modelMatrix*stoneWorldPosition).xyz');
+      expect(newShader.uniforms.surfaceWetness?.value).toBe(.35);
+      expect(newShader.fragmentShader).toContain('texture2D(map,vStonePos.yz*.7)');
+    }finally{
+      for(const material of [legacy,revision6])for(const texture of material.userData.textures as THREE.Texture[])texture.dispose();
+      vi.unstubAllGlobals();
+    }
   });
 });
