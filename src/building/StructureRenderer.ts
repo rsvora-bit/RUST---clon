@@ -3,13 +3,13 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import { BUILD } from '../config/balance';
 import type { BuildCandidate,PieceType,Structure,StructureGrade,Vec3 } from '../core/types';
 import type {CollisionBox} from '../physics/PhysicsWorld';
-import {addWeatherSurfaceResponse,woodMaterial,stoneMaterial} from '../rendering/materials';
+import {addWeatherSurfaceResponse,disposeMaterialTextures,metalMaterial,woodMaterial,stoneMaterial} from '../rendering/materials';
 import {structureGrade} from './grades';
 const S=BUILD.SIZE,H=BUILD.WALL_HEIGHT,T=BUILD.THICKNESS,F=BUILD.FOUNDATION_HEIGHT,DW=BUILD.DOOR_WIDTH,DH=BUILD.DOOR_HEIGHT;
 export class StructureRenderer {
   readonly group=new THREE.Group();readonly objects=new Map<string,THREE.Group>();readonly ghost=new THREE.Group();private ghostSupportSignature='';
   private readonly weatherWetness={value:0};
-  private wood=woodMaterial('#969286');private darkWood=woodMaterial('#777467');private stone=stoneMaterial();private stoneTrim=new THREE.MeshStandardMaterial({color:'#62655c',roughness:.98});private metal=new THREE.MeshStandardMaterial({color:'#59615f',roughness:.72,metalness:.52});private metalTrim=new THREE.MeshStandardMaterial({color:'#262e2e',roughness:.55,metalness:.72});
+  private wood=woodMaterial('#969286');private darkWood=woodMaterial('#777467');private stone=stoneMaterial();private stoneTrim=new THREE.MeshStandardMaterial({color:'#62655c',roughness:.98});private metal=metalMaterial(0x59615f,.72,.52,702);private metalTrim=metalMaterial(0x262e2e,.55,.72,703);
   private ghostMaterial=new THREE.MeshBasicMaterial({color:'#8bbb84',transparent:true,opacity:.35,depthWrite:false});private ghostType:PieceType|null=null;
   private interactionMaterial=new THREE.MeshBasicMaterial({visible:false});
   constructor(scene:THREE.Scene,private readonly heightAt:(x:number,z:number)=>number=()=>0){for(const material of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim])addWeatherSurfaceResponse(material,this.weatherWetness,.72,.44);scene.add(this.group,this.ghost);this.ghost.visible=false;}
@@ -116,5 +116,5 @@ export class StructureRenderer {
     return boxes;
   }
   private disposeGroup(group:THREE.Object3D){group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}
-  dispose(){this.disposeGroup(this.group);this.disposeGroup(this.ghost);this.group.removeFromParent();this.ghost.removeFromParent();for(const mat of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim,this.ghostMaterial,this.interactionMaterial])mat.dispose();}
+  dispose(){this.disposeGroup(this.group);this.disposeGroup(this.ghost);this.group.removeFromParent();this.ghost.removeFromParent();for(const mat of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim,this.ghostMaterial,this.interactionMaterial])disposeMaterialTextures(mat);}
 }

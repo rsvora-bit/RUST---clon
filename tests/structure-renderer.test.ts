@@ -44,4 +44,10 @@ describe('rendered structure regressions',()=>{
     expect([wood,stone,metal].every(group=>group.children.length<=3)).toBe(true);
     expect(new Set([signature(wood),signature(stone),signature(metal)]).size).toBe(3);r.dispose();
   });
+  it('gives metal building grades brushed, oxidized PBR detail while retaining shared batched materials',()=>{
+    const r=renderer(),wall=r.make('wall',false,'metal'),meshes:THREE.Mesh[]=[];wall.traverse(object=>{if(object instanceof THREE.Mesh)meshes.push(object);});
+    const surfaces=new Set(meshes.map(mesh=>mesh.material));expect(meshes.length).toBeLessThanOrEqual(3);expect(surfaces.size).toBe(2);
+    for(const material of surfaces){expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);const pbr=material as THREE.MeshStandardMaterial;expect(pbr.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(pbr.normalMap?.colorSpace).toBe(THREE.NoColorSpace);expect(pbr.roughnessMap?.colorSpace).toBe(THREE.NoColorSpace);expect(pbr.metalness).toBeGreaterThan(.5);expect(pbr.userData.tidelandWeatherResponse).toBe(true);}
+    const material=surfaces.values().next().value as THREE.MeshStandardMaterial,textures=material.userData.textures as THREE.Texture[];expect(textures).toHaveLength(3);r.dispose();
+  });
 });
