@@ -198,6 +198,7 @@ export function stoneWeatherShader(enabled:boolean):{uniform:string;diffuse:stri
 }
 export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{value:number}):THREE.MeshStandardMaterial {
   const tex=groundTexture('rock',773),detail=rockSurfaceMaps((Number(tint)^773)>>>0),wetnessUniform=surfaceWetness??{value:0},worldSpaceDetail=!!surfaceWetness;const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
+  mat.customProgramCacheKey=()=>`tideland-stone-detail-v1-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
   mat.userData.textures=[tex,detail.roughness,detail.normal];
   if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
   const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{

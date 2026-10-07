@@ -59,6 +59,8 @@ describe('weather surface response',()=>{
       expect(newShader.vertexShader).toContain('vStonePos=(modelMatrix*stoneWorldPosition).xyz');
       expect(newShader.uniforms.surfaceWetness?.value).toBe(.35);
       expect(newShader.fragmentShader).toContain('texture2D(map,vStonePos.yz*.7)');
+      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v1-world-weather');
+      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v1-local-static');
     }finally{
       for(const material of [legacy,revision6])for(const texture of material.userData.textures as THREE.Texture[])texture.dispose();
       vi.unstubAllGlobals();
