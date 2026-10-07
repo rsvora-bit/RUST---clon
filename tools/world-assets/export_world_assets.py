@@ -436,21 +436,21 @@ def coastal_drum():
         bpy.ops.mesh.primitive_cylinder_add(vertices=8,radius=radius*.67,depth=.009,location=(x,-.035,z-.003))
         plug=bpy.context.object;plug.name="recessed drum bung";plug.data.materials.append(DRUM_DARK)
 
-def export_collision_proxy(name, source):
-    """Write a lightweight Y-up physics hint without changing gameplay colliders."""
+def export_collision_proxy(name, lod_objects):
+    """Write a lightweight Y-up proxy containing every exported visual LOD."""
     if name in TREE_HEIGHTS:
         radius=.34 if name in ("alpine_conifer","palm_tree_a") else .38
         height=TREE_HEIGHTS[name]
         proxy={"type":"capsule","axis":"y","center":[0,round(height*.5,4),0],"radius":radius,"halfHeight":round((height-2*radius)*.5,4)}
     else:
-        vertices=[vertex.co for vertex in source.data.vertices]
+        vertices=[vertex.co for obj in lod_objects for vertex in obj.data.vertices]
         minimum=[min(vertex[axis] for vertex in vertices) for axis in range(3)]
         maximum=[max(vertex[axis] for vertex in vertices) for axis in range(3)]
         # Blender Z-up -> glTF/Three.js Y-up; the asset exporter also flips Blender Y.
         center=[(minimum[0]+maximum[0])*.5, (minimum[2]+maximum[2])*.5, -(minimum[1]+maximum[1])*.5]
         half=[(maximum[0]-minimum[0])*.5, (maximum[2]-minimum[2])*.5, (maximum[1]-minimum[1])*.5]
         proxy={"type":"box","center":[round(value,4) for value in center],"halfExtents":[round(max(value,.01),4) for value in half]}
-    payload={"asset":name,"units":"meters","coordinateSystem":"gltf-y-up","source":"LOD0","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored","shapes":[proxy]}
+    payload={"asset":name,"units":"meters","coordinateSystem":"gltf-y-up","source":"LOD0/LOD1/LOD2","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored","shapes":[proxy]}
     os.makedirs(COLLISION_OUT,exist_ok=True)
     with open(os.path.join(COLLISION_OUT,name+".json"),"w",encoding="utf8") as file:
         json.dump(payload,file,separators=(",",":"),sort_keys=True)
@@ -484,9 +484,9 @@ def create(name):
     source.data.validate(verbose=False,clean_customdata=True)
     source.data.update()
     source.location=(0,0,0);source.rotation_euler=(0,0,0);source.scale=(1,1,1)
-    export_collision_proxy(name,source)
     root=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(root)
     levels=(1.0,.48,.16)
+    lod_objects=[]
     for index,ratio in enumerate(levels):
         obj=source if index==0 else source.copy()
         if index:obj.data=source.data.copy();bpy.context.scene.collection.objects.link(obj)
@@ -500,6 +500,8 @@ def create(name):
             bpy.ops.object.modifier_apply(modifier=mod.name);obj.select_set(False)
             obj.data.validate(verbose=False,clean_customdata=True);obj.data.update()
         obj.location=(0,0,0);obj.rotation_euler=(0,0,0);obj.scale=(1,1,1)
+        lod_objects.append(obj)
+    export_collision_proxy(name,lod_objects)
     bpy.ops.object.select_all(action="DESELECT")
     for obj in [root]+[o for o in bpy.context.scene.objects if o.parent==root or (o.parent and o.parent.parent==root)]:obj.select_set(True)
     bpy.context.view_layer.objects.active=root

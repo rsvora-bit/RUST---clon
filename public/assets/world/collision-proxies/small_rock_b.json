@@ -1,1 +1,1 @@
-{"asset":"small_rock_b","coordinateSystem":"gltf-y-up","shapes":[{"center":[0.0011,0.7307,0.0149],"halfExtents":[0.7903,0.7186,0.6709],"type":"box"}],"source":"LOD0","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
+{"asset":"small_rock_b","coordinateSystem":"gltf-y-up","shapes":[{"center":[-0.0251,0.7238,0.0759],"halfExtents":[0.8165,0.7354,0.7357],"type":"box"}],"source":"LOD0/LOD1/LOD2","units":"meters","usage":"coarse authoring proxy; runtime gameplay colliders remain separately authored"}
