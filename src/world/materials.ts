@@ -212,11 +212,13 @@ export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{v
 }
 
 
-export function groundDecalTexture(seed:number,kind:'soil'|'leaves'|'stone'|'mud'|'moss'):THREE.CanvasTexture {
+export function groundDecalTexture(seed:number,kind:'soil'|'leaves'|'stone'|'mud'|'moss'|'oil'|'rust'):THREE.CanvasTexture {
   const [c,ctx]=canvas(256),rand=randomSource(seed);ctx.clearRect(0,0,256,256);
-  const base=kind==='soil'?'92,70,45':kind==='leaves'?'72,66,37':kind==='mud'?'53,54,46':kind==='moss'?'71,88,48':'88,91,84';
-  for(let i=0;i<180;i++){const a=rand()*Math.PI*2,r=Math.sqrt(rand())*104,x=128+Math.cos(a)*r,y=128+Math.sin(a)*r,s=kind==='leaves'?2+rand()*8:kind==='moss'?1.5+rand()*5:kind==='mud'?5+rand()*19:4+rand()*17;const alpha=(1-r/112)*(.035+rand()*(kind==='mud'?.15:.12));ctx.fillStyle=`rgba(${base},${Math.max(0,alpha)})`;ctx.beginPath();ctx.ellipse(x,y,s,s*(.3+rand()*.55),rand()*6.28,0,Math.PI*2);ctx.fill();}
+  const base=kind==='soil'?'92,70,45':kind==='leaves'?'72,66,37':kind==='mud'?'53,54,46':kind==='moss'?'71,88,48':kind==='oil'?'25,29,28':kind==='rust'?'112,61,37':'88,91,84';
+  for(let i=0;i<180;i++){const a=rand()*Math.PI*2,r=Math.sqrt(rand())*104,x=128+Math.cos(a)*r,y=128+Math.sin(a)*r,s=kind==='leaves'?2+rand()*8:kind==='moss'?1.5+rand()*5:kind==='mud'?5+rand()*19:kind==='oil'?7+rand()*21:kind==='rust'?2+rand()*8:4+rand()*17;const alpha=(1-r/112)*(.035+rand()*(kind==='mud'?.15:kind==='oil'?.19:kind==='rust'?.17:.12));ctx.fillStyle=`rgba(${base},${Math.max(0,alpha)})`;ctx.beginPath();ctx.ellipse(x,y,s,s*(.3+rand()*.55),rand()*6.28,0,Math.PI*2);ctx.fill();}
   if(kind==='moss')for(let i=0;i<42;i++){const x=32+rand()*192,y=32+rand()*192;ctx.strokeStyle=`rgba(139,151,83,${.08+rand()*.16})`;ctx.lineWidth=.7+rand()*1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+(rand()-.5)*9,y-5-rand()*4,x+(rand()-.5)*13,y-7-rand()*8);ctx.stroke();}
   if(kind==='mud')for(let i=0;i<12;i++){const x=45+rand()*166,y=45+rand()*166;ctx.strokeStyle=`rgba(35,39,35,${.045+rand()*.08})`;ctx.lineWidth=2+rand()*5;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+(rand()-.5)*30,y+(rand()-.5)*14,x+(rand()-.5)*44,y+(rand()-.5)*24);ctx.stroke();}
-  const radial=ctx.createRadialGradient(128,128,18,128,128,122);radial.addColorStop(0,`rgba(${base},${kind==='mud'?.14:kind==='moss'?.08:.10})`);radial.addColorStop(.72,`rgba(${base},.035)`);radial.addColorStop(1,`rgba(${base},0)`);ctx.fillStyle=radial;ctx.fillRect(0,0,256,256);return texture(c);
+  if(kind==='oil')for(let i=0;i<9;i++){const x=60+rand()*136,y=76+rand()*112;ctx.strokeStyle=`rgba(24,27,26,${.12+rand()*.14})`;ctx.lineWidth=1.5+rand()*5;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+(rand()-.5)*24,y+rand()*14,x+(rand()-.5)*38,y+rand()*30);ctx.stroke();}
+  if(kind==='rust')for(let i=0;i<80;i++){const x=24+rand()*208,y=24+rand()*208,s=.8+rand()*3.5;ctx.fillStyle=`rgba(${rand()>.55?'151,85,46':'73,51,39'},${.06+rand()*.18})`;ctx.beginPath();ctx.ellipse(x,y,s,s*(.4+rand()*.8),rand()*6.28,0,Math.PI*2);ctx.fill();}
+  const radial=ctx.createRadialGradient(128,128,18,128,128,122);radial.addColorStop(0,`rgba(${base},${kind==='mud'?.14:kind==='moss'?.08:kind==='oil'?.18:kind==='rust'?.12:.10})`);radial.addColorStop(.72,`rgba(${base},.035)`);radial.addColorStop(1,`rgba(${base},0)`);ctx.fillStyle=radial;ctx.fillRect(0,0,256,256);return texture(c);
 }

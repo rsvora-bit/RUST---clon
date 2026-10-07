@@ -493,6 +493,13 @@ export class Environment {
         const yaw=rand()*6.28,gradeX=(this.heightAt(x+2,z)-this.heightAt(x-2,z))*.25,gradeZ=(this.heightAt(x,z+2)-this.heightAt(x,z-2))*.25;normal.set(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(x,h+.028,z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,yaw));this.matrixDummy.scale.set(.75+rand()*2.1,1,.45+rand()*1.5);this.matrixDummy.updateMatrix();matrices.push(this.matrixDummy.matrix.clone());i++;}
       const mesh=new THREE.InstancedMesh(geometry,mat,matrices.length);mesh.name=`${kind} ground decals`;matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.renderOrder=1;mesh.computeBoundingSphere();this.root.add(mesh);this.decalMeshes.push(mesh);this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'high'});
     }
+    if(revision6&&this.layout?.pois.length){
+      const groups=[{kind:'oil' as const,seed:5107,sites:[0,2,5] as const},{kind:'rust' as const,seed:7319,sites:[0,1,2,4,5,6,7] as const}];
+      for(const group of groups){const rand=randomSource(this.seed+group.seed),texture=groundDecalTexture(group.seed,group.kind),material=new THREE.MeshStandardMaterial({map:texture,transparent:true,opacity:group.kind==='oil'?.34:.31,depthWrite:false,roughness:group.kind==='oil'?.45:.96,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}),matrices:THREE.Matrix4[]=[];this.materials.add(material);
+        for(const poi of this.layout.pois){if(!group.sites.some(kind=>kind===poi.kind))continue;for(let stain=0;stain<4;stain++){for(let attempt=0;attempt<5;attempt++){const angle=rand()*Math.PI*2,radius=group.kind==='oil'?2.5+rand()*4.5:3.4+rand()*6.2,x=poi.position.x+Math.cos(angle)*radius,z=poi.position.z+Math.sin(angle)*radius,y=this.heightAt(x,z);if(y<.35||y>(poi.kind===7?48:28)||this.terrain.slopeAt(x,z)>.28)continue;const gradeX=(this.heightAt(x+2,z)-this.heightAt(x-2,z))*.25,gradeZ=(this.heightAt(x,z+2)-this.heightAt(x,z-2))*.25;normal.set(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(x,y+.032,z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,rand()*Math.PI*2));const size=group.kind==='oil'?.58+rand()*.82:.42+rand()*.72;this.matrixDummy.scale.set(size,1,size*(.56+rand()*.5));this.matrixDummy.updateMatrix();matrices.push(this.matrixDummy.matrix.clone());break;}}}
+        if(!matrices.length)continue;const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);mesh.name=`${group.kind} POI ground decals`;matrices.forEach((matrix,index)=>mesh.setMatrixAt(index,matrix));mesh.renderOrder=1;mesh.computeBoundingSphere();this.root.add(mesh);this.decalMeshes.push(mesh);this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'high'});
+      }
+    }
   }
 
   private populateShore():void {
