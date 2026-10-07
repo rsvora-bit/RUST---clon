@@ -5,6 +5,16 @@ export interface CollisionBounds {
   halfExtents: { x: number; y: number; z: number };
 }
 
+/** Stable trunk proxy based on the authored species scale and meter height. */
+export function treeTrunkCollision(position: { x: number; y: number; z: number }, scale: number, species: number): CollisionBounds {
+  const halfHeight = species === 5 ? 3.9 : species === 1 ? 4.65 : species === 4 ? 4.25 : species === 2 ? 6.55 : species === 3 ? 5.1 : 5.8;
+  const radius = .45 * scale, height = halfHeight * scale;
+  return {
+    position: { x: position.x, y: position.y + height, z: position.z },
+    halfExtents: { x: radius, y: height, z: radius },
+  };
+}
+
 /** Convert a world-space visual bound into a conservative, axis-aligned proxy. */
 export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): CollisionBounds {
   const center = box.getCenter(new THREE.Vector3());

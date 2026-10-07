@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromObject } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromObject, treeTrunkCollision } from '../src/physics/collisionBounds';
 
 describe('visual collision bounds', () => {
   it('contains every vertex after instance rotation, slope alignment and non-uniform scale', () => {
@@ -31,5 +31,14 @@ describe('visual collision bounds', () => {
   it('adds a small safety margin and keeps degenerate bounds usable', () => {
     const proxy = collisionBoundsFromBox(new THREE.Box3(new THREE.Vector3(2, 3, 4), new THREE.Vector3(2, 3, 4)), .08);
     expect(proxy).toEqual({ position: { x: 2, y: 3, z: 4 }, halfExtents: { x: .08, y: .08, z: .08 } });
+  });
+
+  it('keeps species-specific trunk proxies centered and scaled to their authored heights', () => {
+    expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1.2, 0)).toEqual({
+      position: { x: 4, y: 8.96, z: -3 },
+      halfExtents: { x: .54, y: 6.96, z: .54 },
+    });
+    expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 5).halfExtents.y).toBe(3.9);
+    expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 4).halfExtents.y).toBe(4.25);
   });
 });
