@@ -5,6 +5,16 @@ import {createStation} from '../src/survival/stations';
 
 describe('event cache rendering',()=>{
   afterEach(()=>vi.unstubAllGlobals());
+  it('extends solid workbench collision to the authored upper assembly and follows station rotation',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const renderer=new StationRenderer(new THREE.Scene()),bench=createStation('bench-collision','workbench3',{x:4,y:2,z:-3},Math.PI/2);renderer.sync([bench]);
+    const [box]=renderer.boxes(bench);expect(box!.position.y+box!.halfExtents.y).toBeCloseTo(3.83,2);expect(box!.rotation).toBe(Math.PI/2);renderer.dispose();
+  });
+  it('keeps signal antenna and beacon out of the solid salvage-cache proxy',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const renderer=new StationRenderer(new THREE.Scene()),cache=createStation('event-radio-signal','loot',{x:4,y:8,z:-3});renderer.sync([cache]);
+    const [box]=renderer.boxes(cache);expect(box!.position.y+box!.halfExtents.y).toBeLessThan(9);expect(box!.position.y+box!.halfExtents.y).toBeGreaterThan(8.7);renderer.dispose();
+  });
   it('adds a compact visible aerial only to the encrypted relay cache',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
     const scene=new THREE.Scene(),renderer=new StationRenderer(scene),signal=createStation('event-radio-signal','loot',{x:4,y:8,z:-3}),ordinary=createStation('loot-field-0','loot',{x:0,y:0,z:0});
