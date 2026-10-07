@@ -391,7 +391,12 @@ export class WorldSurvival {
   collisionBoxes():CollisionBox[]{
     const result:CollisionBox[]=[];
     for(const p of this.pois){
-      if(p.kind===1){result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});}
+      if(p.kind===1){
+        result.push({position:{x:p.position.x+.8,y:p.position.y+.23,z:p.position.z-.7},halfExtents:{x:.8,y:.2,z:.45}});
+        result.push({position:{x:p.position.x-.75,y:p.position.y+.16,z:p.position.z+.7},halfExtents:{x:.62,y:.12,z:.35}});
+        result.push({position:{x:p.position.x-2.15,y:p.position.y+4.2,z:p.position.z+.35},halfExtents:{x:.36,y:4.22,z:.2}});
+        for(const [x,z,rotation] of [[1.25,1.05,.1],[2.15,.2,-.08],[-.25,2.4,.18]] as const)result.push({position:{x:p.position.x+x,y:p.position.y+.03,z:p.position.z+z},halfExtents:{x:.32,y:.42,z:.32},rotation});
+      }
       else if(p.kind===4){
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
           result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});

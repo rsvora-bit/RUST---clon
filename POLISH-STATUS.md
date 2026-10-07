@@ -162,3 +162,11 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Commits pushed in this continuation: `d1e05d4` (Breakwater debris collision), `e5b5252` (slope-tolerant rock collision QA), `9689939` (LOD bounds coverage), `0f82254` (far-LOD player collision test). User-created iCloud files ending in ` 2` and `artifacts/` remain untouched and untracked.
 - Overall completion estimate: **about 23%**. This is a broad, weighted estimate, not a claim that one subsystem’s tests imply release readiness. Existing branch work already includes PBR detail families, tree bark/foliage work, fractured rock geometry, wet material response and several debug overlays. Still largely open: complete asset/physical audit, terrain/rock/vegetation visual review, water/sky/weather and mountain fidelity, stations/decals, performance comparison, full regression suite, release documentation/versioning, CI, tag, GitHub Release and Pages verification.
 - First next step: continue the physical asset audit beyond boulders and Breakwater by comparing the largest remaining POI/station visible meshes with their live collision bounds; keep using focused tests and avoid screenshot churn. Do not merge or publish v0.14.0 until the requested release gates pass.
+
+# Tideland v0.14 physical audit continuation — 2026-10-08
+
+- Extended the physical audit to Collapsed Relay. Its visible wood crate, high weather mast and all three battery drums were missing from the POI collision set; added stable proxy boxes matching their authored placements and mast lean. Cabinet collision remains unchanged.
+- `tests/world-art.test.ts` now verifies all six relay collision boxes and the exact drum/mast placements.
+- Validation: `npm test -- --run tests/world-art.test.ts tests/station-renderer.test.ts tests/collision-bounds.test.ts` **57/57 PASS**; `npm run build` **PASS** (existing Vite large-chunk advisory); `git diff --check` **PASS**.
+- Working branch remains `codex/v0.14.2-water-weather`; user-created ` 2` files and `artifacts/` remain untracked and untouched. This relay fix is not committed yet.
+- Next: continue checking the remaining rendered POI props against physical colliders, then broaden visual and regression QA. No release/version bump has happened.

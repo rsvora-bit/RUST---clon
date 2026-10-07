@@ -35,11 +35,15 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(grassReceivesShadows(6)).toBe(false);
     expect(grassReceivesShadows(7)).toBe(false);
   });
-  it('adds a distant relay landmark without adding colliders',()=>{
+  it('blocks the collapsed relay cabinet, crate, mast and battery drums',()=>{
     const terrain=new IslandTerrain(731942,5),poi={id:'poi-1',name:'Collapsed relay site',kind:1,position:{x:120,y:12,z:80}};
     const env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:1,layout:{pois:[poi],trails:[]},heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment;
     const world=new WorldSurvival(env,new THREE.Scene(),731942);
-    try{const mast=world.group.getObjectByName('Weathered relay mast') as THREE.Mesh,reflector=world.group.getObjectByName('Relay reflector') as THREE.Mesh;expect(mast).toBeTruthy();expect(reflector).toBeTruthy();expect(mast.position.y).toBeCloseTo(4.2);expect(world.collisionBoxes()).toHaveLength(1);}
+    try{
+      const mast=world.group.getObjectByName('Weathered relay mast') as THREE.Mesh,reflector=world.group.getObjectByName('Relay reflector') as THREE.Mesh,boxes=world.collisionBoxes();expect(mast).toBeTruthy();expect(reflector).toBeTruthy();expect(mast.position.y).toBeCloseTo(4.2);expect(boxes).toHaveLength(6);
+      expect(boxes).toContainEqual({position:{x:poi.position.x-2.15,y:poi.position.y+4.2,z:poi.position.z+.35},halfExtents:{x:.36,y:4.22,z:.2}});
+      const drums=boxes.filter(box=>box.halfExtents.x===.32&&box.halfExtents.y===.42);expect(drums).toHaveLength(3);expect(drums.map(box=>box.position)).toEqual([{x:poi.position.x+1.25,y:poi.position.y+.03,z:poi.position.z+1.05},{x:poi.position.x+2.15,y:poi.position.y+.03,z:poi.position.z+.2},{x:poi.position.x-.25,y:poi.position.y+.03,z:poi.position.z+2.4}]);
+    }
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('adds a batched exposed relay control station only to new revision-6 worlds',()=>{
