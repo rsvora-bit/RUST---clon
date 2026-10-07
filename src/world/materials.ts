@@ -188,6 +188,10 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
 export function rockMaterialStyle(worldRevision:number):{resourceTint:number;outcropTint:number;vertexColors:boolean} {
   const revision6=worldRevision>=6;return{resourceTint:revision6?0x999b93:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:revision6};
 }
+/** Keep authored leaf hue/value relationships while preventing a dark GLB base factor from multiplying instance tint into near-black foliage. */
+export function liftFoliageBaseColor(color:THREE.Color,targetPeak=.46):THREE.Color{
+  const peak=Math.max(color.r,color.g,color.b);return peak>0&&peak<targetPeak?color.clone().multiplyScalar(targetPeak/peak):color.clone();
+}
 export function stoneWeatherShader(enabled:boolean):{uniform:string;diffuse:string;roughness:string}{
   return{uniform:'uniform float surfaceWetness;',diffuse:`float stoneWet=surfaceWetness*${enabled?'1.':'0.'};diffuseColor.rgb*=mix(1.,.78,clamp(stoneWet*.58,0.,.58));`,roughness:'roughnessFactor=mix(roughnessFactor,.56,clamp(stoneWet*.58,0.,.58));'};
 }

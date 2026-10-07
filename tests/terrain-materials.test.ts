@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leavesTexture,leafMassTexture,rockSurfaceMaps,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture,liftFoliageBaseColor,rockSurfaceMaps,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -109,6 +109,16 @@ describe('stone micro-surface maps',()=>{
       const rough=first.roughness.image.data as Uint8Array;
       expect(new Set(Array.from({length:48*48},(_,index)=>rough[index*4]!)).size).toBeGreaterThan(8);
     }finally{for(const map of [first,repeat,variant]){map.normal.dispose();map.roughness.dispose();}}
+  });
+});
+
+describe('imported foliage albedo',()=>{
+  it('lifts only very dark linear base values while retaining authored channel ratios',()=>{
+    const dark=new THREE.Color().setRGB(.033,.073,.024),lifted=liftFoliageBaseColor(dark);
+    expect(Math.max(lifted.r,lifted.g,lifted.b)).toBeCloseTo(.46);
+    expect(lifted.r/lifted.g).toBeCloseTo(dark.r/dark.g);
+    expect(lifted.g/lifted.b).toBeCloseTo(dark.g/dark.b);
+    const alreadyBright=liftFoliageBaseColor(new THREE.Color().setRGB(.52,.61,.42));expect(alreadyBright.r).toBeCloseTo(.52);expect(alreadyBright.g).toBeCloseTo(.61);expect(alreadyBright.b).toBeCloseTo(.42);
   });
 });
 
