@@ -48,8 +48,9 @@ describe('visual collision bounds', () => {
     const proxy=collisionBoundsFromGeometry(trunk,transform,.08),visual=new THREE.Box3().copy(trunk.boundingBox!).applyMatrix4(transform);
     expect(proxy.position.x).toBeCloseTo(visual.getCenter(new THREE.Vector3()).x);
     expect(proxy.position.y).toBeCloseTo(visual.getCenter(new THREE.Vector3()).y);
-    expect(proxy.halfExtents.x).toBeCloseTo(visual.getSize(new THREE.Vector3()).x/2+.08);
-    expect(proxy.halfExtents.y).toBeCloseTo(visual.getSize(new THREE.Vector3()).y/2+.08);
+    expect(proxy.halfExtents.x).toBeCloseTo(.48*1.2+.08);
+    expect(proxy.halfExtents.y).toBeCloseTo(4*1.1+.08);
+    expect(proxy.rotation).toBeCloseTo(.7);
     trunk.dispose();
   });
 
