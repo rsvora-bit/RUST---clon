@@ -89,6 +89,7 @@ export class Environment {
   private readonly matrixDummy=new THREE.Object3D();
   private readonly hiddenMatrix=new THREE.Matrix4().makeScale(0,0,0);
   private readonly hitRotation=new THREE.Matrix4();
+  private readonly fallRotation=new THREE.Quaternion();
   private readonly leaves:THREE.MeshLambertMaterial;
   private readonly leafMass:THREE.MeshLambertMaterial;
   private readonly pineMass:THREE.MeshLambertMaterial;
@@ -545,8 +546,8 @@ export class Environment {
       fall.elapsed+=dt;const fallT=Math.min(1,fall.elapsed/fall.duration),eased=1-Math.pow(1-fallT,3),fadeStart=fall.duration+fall.hold,total=fadeStart+fall.fade;
       if(fall.elapsed>=total){for(const ref of fall.refs){ref.mesh.setMatrixAt(ref.index,this.hiddenMatrix);ref.mesh.instanceMatrix.needsUpdate=true;}this.removeTreeInstance(id);this.fallingTrees.delete(id);this.cullClock=0;continue;}
       const fadeT=fall.elapsed>fadeStart?Math.min(1,(fall.elapsed-fadeStart)/fall.fade):0,scale=1-fadeT*.92,sink=fadeT*1.15*fall.node.scale;
-      const fallRotation=new THREE.Quaternion().setFromAxisAngle(fall.axis,eased*Math.PI*.49);
-      for(const ref of fall.refs){this.matrixDummy.matrix.copy(ref.matrix);this.matrixDummy.matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.quaternion.premultiply(fallRotation);this.matrixDummy.position.y-=sink;this.matrixDummy.scale.multiplyScalar(scale);this.matrixDummy.updateMatrix();ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}
+      this.fallRotation.setFromAxisAngle(fall.axis,eased*Math.PI*.49);
+      for(const ref of fall.refs){this.matrixDummy.matrix.copy(ref.matrix);this.matrixDummy.matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.quaternion.premultiply(this.fallRotation);this.matrixDummy.position.y-=sink;this.matrixDummy.scale.multiplyScalar(scale);this.matrixDummy.updateMatrix();ref.mesh.setMatrixAt(ref.index,this.matrixDummy.matrix);ref.mesh.instanceMatrix.needsUpdate=true;}
     }
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
