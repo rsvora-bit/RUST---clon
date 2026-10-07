@@ -37,6 +37,29 @@ export function woodSurfaceMaps(seed=4108,size=128):WoodSurfaceMaps{
   const make=(data:Uint8Array)=>{const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2,1);map.anisotropy=4;map.needsUpdate=true;return map;};
   return{roughness:make(roughData),normal:make(normalData)};
 }
+export interface MetalSurfaceMaps{roughness:THREE.DataTexture;normal:THREE.DataTexture}
+/** Fine brushed grain, random tool scratches and roughness breakup for shared salvage metal. */
+export function metalSurfaceMaps(seed=5823,size=128):MetalSurfaceMaps{
+  let state=seed>>>0;const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
+  const waves=Array.from({length:14},()=>({x:3+Math.floor(rand()*43),y:Math.floor(rand()*9),phase:rand()*Math.PI*2,amplitude:.006+rand()*.017})),scratches=Array.from({length:26},()=>{const angle=(rand()-.5)*.24;return{x:rand()*size,y:rand()*size,cos:Math.cos(angle),sin:Math.sin(angle),length:5+rand()*37,width:.35+rand()*1.25};}),normalData=new Uint8Array(size*size*4),roughData=new Uint8Array(size*size*4),tau=Math.PI*2;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const u=x/size,v=y/size;let dx=0,dy=0,rough=.80,scratch=0;
+    for(let i=0;i<waves.length;i++){const wave=waves[i]!,phase=tau*(wave.x*u+wave.y*v)+wave.phase,s=Math.sin(phase),slope=Math.cos(phase)*wave.amplitude*tau;dx+=slope*wave.x;dy+=slope*wave.y;rough+=s*([.005,.008,.012,.018][i%4]!);}
+    for(const line of scratches){const ox=x-line.x,oy=y-line.y,along=ox*line.cos+oy*line.sin,across=Math.abs(-ox*line.sin+oy*line.cos);const mask=(1-THREE.MathUtils.smoothstep(across,line.width,line.width+1.8))*THREE.MathUtils.smoothstep(along,-2,1)*(1-THREE.MathUtils.smoothstep(along,line.length-2,line.length+3));scratch=Math.max(scratch,mask);}
+    rough+=scratch*.11;const nx=-dx*.11,ny=-dy*.11,nz=1,length=Math.hypot(nx,ny,nz),offset=(y*size+x)*4;normalData[offset]=Math.round((nx/length*.5+.5)*255);normalData[offset+1]=Math.round((ny/length*.5+.5)*255);normalData[offset+2]=Math.round((nz/length*.5+.5)*255);normalData[offset+3]=255;
+    const value=Math.round(THREE.MathUtils.clamp(rough,.64,.97)*255);roughData[offset]=roughData[offset+1]=roughData[offset+2]=value;roughData[offset+3]=255;
+  }
+  const make=(data:Uint8Array)=>{const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2,2);map.anisotropy=4;map.needsUpdate=true;return map;};return{roughness:make(roughData),normal:make(normalData)};
+}
+export function metalMaterial(color:number,roughness:number,metalness:number,seed:number):THREE.MeshStandardMaterial{
+  const maps=metalSurfaceMaps(seed),material=new THREE.MeshStandardMaterial({color,roughness,metalness,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.085,.085)});material.userData.textures=[maps.roughness,maps.normal];return material;
+}
+export function disposeMaterialTextures(material:THREE.Material):void{
+  const record=material as THREE.MeshStandardMaterial,textures=new Set<THREE.Texture>();
+  for(const key of ['map','normalMap','roughnessMap','metalnessMap','bumpMap','alphaMap','aoMap','emissiveMap','lightMap','displacementMap'] as const){const value=record[key];if(value)textures.add(value);}
+  if(Array.isArray(material.userData.textures))for(const value of material.userData.textures)if(value instanceof THREE.Texture)textures.add(value);
+  material.dispose();for(const texture of textures)texture.dispose();
+}
 export function addWeatherSurfaceResponse(material:THREE.MeshStandardMaterial,wetness:WeatherWetnessUniform,strength=.72,minRoughness=.46){
   if(material.userData.tidelandWeatherResponse)return;
   const previousCompile=material.onBeforeCompile,previousCacheKey=material.customProgramCacheKey;

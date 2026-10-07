@@ -33,4 +33,4 @@ try{
   check('save attempt is rejected and existing browser saves stay byte-for-byte unchanged',saveResult===false&&savesAfter===savesBefore);
   await clickControl('[data-dev="testing"]');check('disabling mode keeps session save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED'&&await page.evaluate(()=>window.__TIDELAND.save())===false);
   assert.equal(errors.length,0,`browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
-} finally {await browser.close();}
+} catch(error){console.error('BROWSER QA ERRORS',errors);throw error;} finally {await browser.close();}
