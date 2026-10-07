@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
 import {StructureRenderer} from '../src/building/StructureRenderer';
 import {BUILD} from '../src/config/balance';
-import type {Structure} from '../src/core/types';
+import type {BuildCandidate,Structure} from '../src/core/types';
 function renderer(){
   // Geometry tests never upload textures; a minimal drawing surface is sufficient.
   vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
@@ -31,6 +31,12 @@ describe('rendered structure regressions',()=>{
     const scene=new THREE.Scene(),r=new StructureRenderer(scene,()=>0),raised:Structure={id:'raised',pieceType:'floor',position:{x:0,y:3,z:0},rotation:0,health:250,createdAt:0};
     r.sync([raised]);expect(r.objects.get(raised.id)?.getObjectByName('Derived foundation support posts')?.children.length).toBe(2);expect(r.boxes(raised)).toHaveLength(5);
     const low:Structure={...raised,id:'low',position:{x:8,y:.45,z:0}};expect(r.boxes(low)).toHaveLength(1);r.dispose();
+  });
+  it('shows derived floor supports in the same translucent valid/invalid preview state as the floor',()=>{
+    const r=renderer(),candidate:BuildCandidate={pieceType:'floor',position:{x:0,y:3,z:0},rotation:0,valid:true,reason:'Snapped · ready to build',snapped:true};
+    r.preview(candidate);const supports=r.ghost.getObjectByName('Derived foundation support posts')!,meshes:THREE.Mesh[]=[];supports.traverse(object=>{if(object instanceof THREE.Mesh)meshes.push(object);});
+    expect(meshes.length).toBeGreaterThan(0);for(const mesh of meshes){expect((mesh.material as THREE.Material).transparent).toBe(true);expect((mesh.material as THREE.Material).opacity).toBe(.35);}
+    candidate.valid=false;r.preview(candidate);for(const mesh of meshes)expect((mesh.material as THREE.MeshBasicMaterial).color.getHex()).toBe(0xda684c);r.dispose();
   });
   it('keeps grade silhouettes distinct within a small draw-call budget',()=>{
     const r=renderer(),wood=r.make('wall',false,'wood'),stone=r.make('wall',false,'stone'),metal=r.make('wall',false,'metal');
