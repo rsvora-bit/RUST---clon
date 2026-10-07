@@ -179,6 +179,18 @@ describe('environment visual building blocks',()=>{
     }finally{atmosphere.dispose();height.dispose();}
   });
 
+  it('renders the ocean underside with a restrained submerged tint and stable surface threshold',()=>{
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),height,1280,731942,6),camera=new THREE.Vector3();
+    try{
+      expect(atmosphere.ocean.material.side).toBe(THREE.DoubleSide);expect(atmosphere.ocean.material.fragmentShader).toContain('underwater*.78');
+      atmosphere.update(0,10,camera);const clearFog=atmosphere.fog.density;
+      atmosphere.setSubmerged(-.5);atmosphere.update(.5,10,camera);const submerged=atmosphere.ocean.material.uniforms.underwater.value as number,wetFog=atmosphere.fog.density;
+      expect(submerged).toBeGreaterThan(.7);expect(wetFog).toBeGreaterThan(clearFog);
+      atmosphere.setSubmerged(-.1);atmosphere.update(.3,10,camera);expect(atmosphere.ocean.material.uniforms.underwater.value).toBeGreaterThan(submerged);
+      atmosphere.setSubmerged(.4);atmosphere.update(.5,10,camera);expect(atmosphere.ocean.material.uniforms.underwater.value).toBeLessThan(submerged);
+    }finally{atmosphere.dispose();height.dispose();}
+  });
+
   it('keeps surfaces wet briefly after rainfall and then dries them gradually',()=>{
     const state=new GameSimulation(731942,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather;
     Object.assign(w,{kind:'rain',remaining:3600,blend:1,rain:0,storm:0,mist:0});
