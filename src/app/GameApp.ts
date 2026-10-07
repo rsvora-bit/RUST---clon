@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {FirstPersonProjection,horizontalFov} from '../camera/FirstPersonProjection';
 import {Environment} from '../rendering/environment';
-import {PhysicsWorld,initPhysics} from '../physics/PhysicsWorld';
+import {PhysicsWorld,initPhysics,type CollisionBox} from '../physics/PhysicsWorld';
 import {PlayerController} from '../player/PlayerController';
 import {Input} from '../input/Input';
 import {GameSimulation} from '../simulation/GameSimulation';
@@ -57,7 +57,7 @@ export class GameApp {
   readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly gatheringFeedback:GatheringFeedback;readonly postFX:WorldPostFX;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
   environment!:Environment;physics!:PhysicsWorld;player!:PlayerController;simulation!:GameSimulation;structures!:StructureRenderer;worldItems!:WorldItems;debug:DebugView;
   private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private activeSaveSlot:number|null=null;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
-  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();private wildlifeSightOrigin=new THREE.Vector3();private wildlifeSightDirection=new THREE.Vector3();private readonly wildlifeSightBlockers:THREE.Object3D[]=[];private readonly wildlifeSightHits:THREE.Intersection[]=[];private readonly interactionOccluders:THREE.Object3D[]=[];
+  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();private wildlifeSightOrigin=new THREE.Vector3();private wildlifeSightDirection=new THREE.Vector3();private readonly wildlifeSightBlockers:THREE.Object3D[]=[];private readonly wildlifeSightHits:THREE.Intersection[]=[];private readonly interactionOccluders:THREE.Object3D[]=[];private readonly buildCollisionCandidates:CollisionBox[]=[];
   private pendingHit:{node:ResourceNode;remaining:number;strike:GatherStrike}|null=null;
   private bowDrawStarted:number|null=null;private arrows:LiveArrow[]=[];
   private readonly arrowShaftGeometry=new THREE.CylinderGeometry(.012,.018,.72,6);private readonly arrowHeadGeometry=new THREE.ConeGeometry(.045,.14,6);
@@ -327,7 +327,8 @@ export class GameApp {
     const c=findBuildCandidate(this.buildPiece,this.targetPoint,this.buildRotation,this.simulation.state.structures,(x,z)=>this.environment.heightAt(x,z),id=>this.simulation.count(id),this.simulation.state.player.position);
     if(!hits.length&&this.camera.getWorldDirection(this.direction).y>.16){c.valid=false;c.reason='Aim at the ground or an attachment socket';}
     if(c.valid&&c.pieceType==='foundation'){
-      for(const prop of [...this.environment.colliders,...ensureProgression(this.simulation.state).stations.flatMap(s=>this.stationRenderer.boxes(s)),...this.worldSurvival.collisionBoxes()]){if(prop.nodeId&&this.simulation.state.nodeChanges[prop.nodeId]===0)continue;if(Math.abs(prop.position.x-c.position.x)<BUILD.SIZE/2+prop.halfExtents.x-.15&&Math.abs(prop.position.z-c.position.z)<BUILD.SIZE/2+prop.halfExtents.z-.15&&prop.position.y+prop.halfExtents.y>c.position.y&&prop.position.y-prop.halfExtents.y<c.position.y+BUILD.FOUNDATION_HEIGHT+1){c.valid=false;c.reason='Obstructed by a tree or rock';break;}}
+      const obstacles=this.buildCollisionCandidates;obstacles.length=0;for(const prop of this.environment.colliders)obstacles.push(prop);for(const station of ensureProgression(this.simulation.state).stations)for(const prop of this.stationRenderer.boxes(station))obstacles.push(prop);for(const prop of this.worldSurvival.collisionBoxes())obstacles.push(prop);
+      for(const prop of obstacles){if(prop.nodeId&&this.simulation.state.nodeChanges[prop.nodeId]===0)continue;if(Math.abs(prop.position.x-c.position.x)<BUILD.SIZE/2+prop.halfExtents.x-.15&&Math.abs(prop.position.z-c.position.z)<BUILD.SIZE/2+prop.halfExtents.z-.15&&prop.position.y+prop.halfExtents.y>c.position.y&&prop.position.y-prop.halfExtents.y<c.position.y+BUILD.FOUNDATION_HEIGHT+1){c.valid=false;c.reason='Obstructed by a tree or rock';break;}}
     }
     this.candidate=c;this.structures.preview(c);
   }
