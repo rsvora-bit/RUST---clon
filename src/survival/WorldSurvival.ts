@@ -416,7 +416,17 @@ export class WorldSurvival {
           result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});
         }
       }else if(p.kind===6)result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});
-      else if(p.kind===7)result.push({position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z},halfExtents:{x:.2,y:5.2,z:.2}});
+      else if(p.kind===7){
+        // Match the three visible ridge-tower legs instead of a phantom center post.
+        // The two leaning legs use a slightly wider envelope because collider boxes
+        // do not tilt around Z; this contains their full rendered length safely.
+        result.push(
+          {position:{x:p.position.x-1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.32,y:5.24,z:.16}},
+          {position:{x:p.position.x+1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.32,y:5.24,z:.16}},
+          {position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z+1.55},halfExtents:{x:.16,y:5.24,z:.16}},
+          {position:{x:p.position.x+2.45,y:p.position.y+.74,z:p.position.z+.15},halfExtents:{x:.44,y:.67,z:.38}},
+        );
+      }
       else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});
     }
     return result;

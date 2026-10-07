@@ -170,3 +170,5 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Validation: `npm test -- --run tests/world-art.test.ts tests/station-renderer.test.ts tests/collision-bounds.test.ts` **57/57 PASS**; `npm run build` **PASS** (existing Vite large-chunk advisory); `git diff --check` **PASS**.
 - Working branch remains `codex/v0.14.2-water-weather`; user-created ` 2` files and `artifacts/` remain untracked and untouched. This relay fix is not committed yet.
 - Next: continue checking the remaining rendered POI props against physical colliders, then broaden visual and regression QA. No release/version bump has happened.
+- Continued the audit into Highland Relay: replaced a phantom center-post collider with collision envelopes for its three visible tower legs and control cabinet. Extended the existing ridge approach physics test to assert the envelopes while still reaching the cabinet.
+- Highland Relay validation: `npm test -- --run tests/world-art.test.ts` **35/35 PASS**, including the real Rapier approach; `npm run build` **PASS** (same existing bundle-size advisory); `git diff --check` **PASS**. This follow-up remains uncommitted.

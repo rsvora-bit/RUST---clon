@@ -146,6 +146,14 @@ describe('v0.9.1 world art stabilization',()=>{
   it('reaches the Revision-6 Highland Relay control cabinet from ridge terrain',async()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),poi=layout.pois.find(entry=>entry.kind===7)!,env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
     try{
+      const relayBoxes=world.collisionBoxes().filter(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<4);
+      expect(relayBoxes).toHaveLength(4);
+      expect(relayBoxes.map(box=>box.position)).toEqual([
+        {x:poi.position.x-1.45,y:poi.position.y+5.2,z:poi.position.z-1},
+        {x:poi.position.x+1.45,y:poi.position.y+5.2,z:poi.position.z-1},
+        {x:poi.position.x,y:poi.position.y+5.2,z:poi.position.z+1.55},
+        {x:poi.position.x+2.45,y:poi.position.y+.74,z:poi.position.z+.15},
+      ]);
       const approaches=Array.from({length:16},(_,i)=>({x:Math.cos(i*Math.PI/8),z:Math.sin(i*Math.PI/8)})).map(direction=>({...direction,height:terrain.heightAt(poi.position.x+direction.x*10,poi.position.z+direction.z*10)})).sort((a,b)=>b.height-a.height),approach=approaches[0]!,target={x:poi.position.x+3.55,z:poi.position.z+.15},start={x:poi.position.x+approach.x*10,z:poi.position.z+approach.z*10};
       await initPhysics();const physics=new PhysicsWorld(terrain.geometry,world.collisionBoxes(),{...start,y:terrain.heightAt(start.x,start.z)});let vertical=0,grounded=false;
       try{for(let frame=0;frame<600;frame++){const p=physics.position(),dx=target.x-p.x,dz=target.z-p.z,distance=Math.hypot(dx,dz),speed=distance>1?4.4:0;if(grounded)vertical=-1.2;else vertical-=19/60;grounded=physics.move({x:distance>1?dx/distance*speed/60:0,y:vertical/60,z:distance>1?dz/distance*speed/60:0});}expect(Math.hypot(physics.position().x-(poi.position.x+2.45),physics.position().z-(poi.position.z+.15))).toBeLessThan(3.8);expect(physics.position().y).toBeGreaterThan(poi.position.y-1);}finally{physics.dispose();}
