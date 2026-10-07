@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { boundsLineVertices,DebugView,groundingLineVertices,shadowCasterLineVertices } from '../src/diagnostics/DebugView';
+import { boundsLineVertices,DebugView,groundingLineVertices,lodDebugGeometry,shadowCasterLineVertices } from '../src/diagnostics/DebugView';
 import type { CollisionBox } from '../src/physics/PhysicsWorld';
 
 describe('F3 world collision bounds', () => {
@@ -44,6 +44,18 @@ describe('F3 world collision bounds', () => {
     expect(shadowCasterLineVertices(scene,{x:0,y:1,z:0},20)).toHaveLength(2*12*2*3);
     expect(shadowCasterLineVertices(scene,{x:0,y:1,z:0},20,1)).toHaveLength(12*2*3);
     geometry.dispose();material.dispose();
+  });
+
+  it('draws bounded nearby authored asset boxes colored by their active LOD',()=>{
+    const scene=new THREE.Scene(),geometry=new THREE.BoxGeometry(2,2,2),mesh=new THREE.InstancedMesh(geometry,new THREE.MeshBasicMaterial(),2);mesh.userData.generatedWorldAsset='large_boulder_a';mesh.userData.generatedWorldLod=2;mesh.setMatrixAt(0,new THREE.Matrix4().makeTranslation(4,0,0));mesh.setMatrixAt(1,new THREE.Matrix4().makeTranslation(200,0,0));scene.add(mesh);
+    const result=lodDebugGeometry(scene,{x:0,y:0,z:0},30,10);
+    expect(result.assets).toBe(1);expect(result.positions).toHaveLength(12*2*3);expect(result.colors).toHaveLength(result.positions.length);expect(result.colors[0]).toBe(1);expect(result.colors[1]).toBeCloseTo(.34,5);expect(result.colors[2]).toBeCloseTo(.28,5);
+    expect(lodDebugGeometry(scene,{x:0,y:0,z:0},2,10).assets).toBe(0);geometry.dispose();(mesh.material as THREE.Material).dispose();
+  });
+
+  it('keeps the active-LOD overlay disabled until explicitly enabled',()=>{
+    const scene=new THREE.Scene(),mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial(),1);mesh.userData.generatedWorldAsset='large_boulder_a';scene.add(mesh);const debug=new DebugView(scene),fakePhysics={} as import('../src/physics/PhysicsWorld').PhysicsWorld;
+    debug.update(fakePhysics,[],[],new THREE.Vector3());expect(scene.getObjectByName('World active LOD debug')).toBeUndefined();debug.lod=true;debug.update(fakePhysics,[],[],new THREE.Vector3());const overlay=scene.getObjectByName('World active LOD debug') as THREE.LineSegments;expect(overlay.visible).toBe(true);expect(overlay.userData.assetCount).toBe(1);debug.lod=false;debug.update(fakePhysics,[],[],new THREE.Vector3());expect(overlay.visible).toBe(false);mesh.geometry.dispose();(mesh.material as THREE.Material).dispose();
   });
 
   it('toggles the F3 shadow-caster overlay on and off without enabling it by default',()=>{
