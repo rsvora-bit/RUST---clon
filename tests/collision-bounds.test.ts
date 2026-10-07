@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromObject, longHullSideCollisions, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeTrunkCollision } from '../src/physics/collisionBounds';
 
 describe('visual collision bounds', () => {
   it('contains every vertex after instance rotation, slope alignment and non-uniform scale', () => {
@@ -40,6 +40,17 @@ describe('visual collision bounds', () => {
     });
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 5).halfExtents.y).toBe(3.9);
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 4).halfExtents.y).toBe(4.25);
+  });
+
+  it('derives an instance proxy from the authored trunk geometry instead of foliage extents',()=>{
+    const trunk=new THREE.CylinderGeometry(.35,.48,8,8);trunk.computeBoundingBox();
+    const transform=new THREE.Matrix4().compose(new THREE.Vector3(12,7,-4),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),.7),new THREE.Vector3(1.2,1.1,.9));
+    const proxy=collisionBoundsFromGeometry(trunk,transform,.08),visual=new THREE.Box3().copy(trunk.boundingBox!).applyMatrix4(transform);
+    expect(proxy.position.x).toBeCloseTo(visual.getCenter(new THREE.Vector3()).x);
+    expect(proxy.position.y).toBeCloseTo(visual.getCenter(new THREE.Vector3()).y);
+    expect(proxy.halfExtents.x).toBeCloseTo(visual.getSize(new THREE.Vector3()).x/2+.08);
+    expect(proxy.halfExtents.y).toBeCloseTo(visual.getSize(new THREE.Vector3()).y/2+.08);
+    trunk.dispose();
   });
 
   it('places narrow hull side proxies on both authored visual edges',()=>{
