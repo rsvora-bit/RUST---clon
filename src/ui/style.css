@@ -207,3 +207,4 @@
 .testing-control-group h4{grid-column:1/-1;margin:0 0 1px;padding-bottom:5px;border-bottom:1px solid rgba(196,216,165,.1);color:#aebd98;font:700 8px var(--title-font);letter-spacing:.12em}
 .testing-control-group label{min-width:0}
 .testing-control-group button{min-width:0}
+.build-reason.snapped{width:max-content;max-width:100%;padding:5px 8px;border:1px solid rgba(183,214,154,.34);background:rgba(23,38,28,.66);letter-spacing:.075em}
