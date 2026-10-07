@@ -11,6 +11,7 @@ import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
+import {collisionBoundsFromLodObjects} from '../src/physics/collisionBounds';
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
@@ -19,6 +20,14 @@ describe('v0.9.1 world art stabilization',()=>{
     for(const [index,depth,offset] of [[0,1.4,0],[1,1.8,.1],[2,2.3,.4]] as const){const lod=new THREE.Group();lod.name=`LOD${index}`;const mesh=new THREE.Mesh(new THREE.BoxGeometry(8,1.4,depth),new THREE.MeshBasicMaterial());mesh.position.z=offset;lod.add(mesh);asset.add(lod);}
     try{world.populate(new GameSimulation(seed,terrain.spawn).state);expect(world.useGeneratedWreckHull(asset)).toBe(true);const hullSides=world.collisionBoxes().filter(box=>box.halfExtents.x>3.8);expect(hullSides).toHaveLength(2);expect(hullSides[0]!.halfExtents.x).toBeGreaterThan(3.8);expect(Math.max(...hullSides.map(box=>box.position.z))-Math.min(...hullSides.map(box=>box.position.z))).toBeGreaterThan(2.0);}
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
+  it('blocks major authored Breakwater debris with collision bounds from every LOD',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),asset=(width:number)=>{const root=new THREE.Group();for(const [index,scale] of [1,.94,1.08].entries()){const lod=new THREE.Group();lod.name=`LOD${index}`;const mesh=new THREE.Mesh(new THREE.BoxGeometry(width*scale,.82+index*.08,.9+index*.16),new THREE.MeshBasicMaterial());mesh.position.set(index*.06,0,index*.13);lod.add(mesh);root.add(lod);}return root;},fragment=asset(2.4),driftwood=asset(2.5),crate=asset(1.1),secondaryHull=asset(3.3),drum=asset(.9);
+    try{
+      world.populate(new GameSimulation(seed,terrain.spawn).state);const before=world.collisionBoxes().length;expect(world.useGeneratedWreckDetails(fragment,driftwood,crate,secondaryHull,drum)).toBe(true);const names=['Breakwater detached wreck section','Breakwater Blender salvage crate','Breakwater secondary Blender hull LOD','Breakwater Blender cargo drum LOD'];expect(world.collisionBoxes()).toHaveLength(before+names.length);
+      for(const name of names){const lod=world.group.getObjectByName(name);expect(lod).toBeInstanceOf(THREE.LOD);const expected=collisionBoundsFromLodObjects((lod as THREE.LOD).levels.map(level=>level.object));expect(expected).not.toBeNull();expect(world.collisionBoxes()).toContainEqual(expected);}
+      expect(world.group.getObjectByName('Breakwater Blender driftwood')).toBeInstanceOf(THREE.LOD);
+    }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('avoids per-blade shadow-map sampling for the dense revision-6 grass field while preserving legacy behavior',()=>{
     expect(grassReceivesShadows(1)).toBe(true);

@@ -53,6 +53,12 @@ export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): Collisi
   };
 }
 
+/** Enclose several authored render LODs in one stable physical proxy. */
+export function collisionBoundsFromLodObjects(levels:readonly THREE.Object3D[],padding=.06):CollisionBounds|null{
+  const bounds=new THREE.Box3().makeEmpty();for(const level of levels){level.updateWorldMatrix(true,true);bounds.union(new THREE.Box3().setFromObject(level,true));}
+  return bounds.isEmpty()?null:collisionBoundsFromBox(bounds,padding);
+}
+
 /** Build a yaw-oriented proxy from upright local bounds and their instance transform. */
 export function collisionBoundsFromLocalBox(bounds:THREE.Box3,transform:THREE.Matrix4,padding=.06):CollisionBounds {
   const worldBounds=new THREE.Box3().copy(bounds).applyMatrix4(transform),localCenter=bounds.getCenter(new THREE.Vector3()),center=localCenter.clone().applyMatrix4(transform),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
