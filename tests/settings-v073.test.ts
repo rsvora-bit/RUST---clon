@@ -13,4 +13,10 @@ describe('v0.7.3 small polish',()=>{
     localStorage.setItem('tideland:settings:v1',JSON.stringify({language:'en'}));
     expect(loadSettings().vsync).toBe(true);
   });
+  it('persists menu scene controls while supplying safe defaults to older settings',()=>{
+    saveSettings({...DEFAULT_SETTINGS,menuBackdrop:'highlands',menuMotion:false,keybinds:{...DEFAULT_SETTINGS.keybinds}});
+    expect(loadSettings()).toMatchObject({menuBackdrop:'highlands',menuMotion:false});
+    localStorage.setItem('tideland:settings:v1',JSON.stringify({language:'en'}));
+    expect(loadSettings()).toMatchObject({menuBackdrop:'coast',menuMotion:true});
+  });
 });

@@ -67,7 +67,7 @@ export class GameApp {
   private stationRenderer!:StationRenderer;private stationUI:StationUI;private techTreeUI:TechTreeUI;private terminal:DevTerminal;private openStation:string|null=null;private stationIds=new Set<string>();private stationPlacement:{kind:StationKind;position:THREE.Vector3;valid:boolean}|null=null;private homesteadAlarmKeys=new Set<string>();private poweredHomesteadCores=new Set<string>();private poweredHomesteadStations:Station[]=[];private homesteadAlarmCores=new Set<string>();private scavengerRaidTargets=new Map<string,WildlifeRaidTarget|null>();private lastHomesteadPowerRefresh=-1;
   private lastSafeGrounded:Vec3|null=null;private toxicExposureSeconds=0;private insideToxicZone=false;private coldExposureSeconds=0;private insideColdZone=false;private currentToxicExposure=0;private currentColdExposure=0;private currentWetness=0;
 
-  private last=0;private accumulator=0;private uiTimer=0;private elapsed=0;private autoSave=0;private cooldown=0;private reloadRemaining=0;private reloadSlot=-1;private firearmShotSequence=0;private fps=60;private frameMs=16.7;private timeMultiplier=1;private loading=false;private leftDown=false;private loopStarted=false;private loopMode:'vsync'|'uncapped'|null=null;private frameChannel:MessageChannel|null=null;private knownStructures=new Map<string,string>();private rainBarrels:THREE.Group[]=[];private flyMode=false;private godMode=false;
+  private last=0;private accumulator=0;private uiTimer=0;private elapsed=0;private autoSave=0;private cooldown=0;private reloadRemaining=0;private reloadSlot=-1;private firearmShotSequence=0;private fps=60;private frameMs=16.7;private timeMultiplier=1;private loading=false;private leftDown=false;private loopStarted=false;private loopMode:'vsync'|'uncapped'|null=null;private frameChannel:MessageChannel|null=null;private knownStructures=new Map<string,string>();private rainBarrels:THREE.Group[]=[];private flyMode=false;private godMode=false;private menuBackdropKey='';private menuCameraPosition=new THREE.Vector3();private menuCameraTarget=new THREE.Vector3();
   constructor(private canvas:HTMLCanvasElement,uiRoot:HTMLElement){
     this.uiContainer=uiRoot;
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.08;this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.postFX=new WorldPostFX(this.renderer,this.scene,this.camera);
@@ -102,6 +102,7 @@ export class GameApp {
     const channel=new MessageChannel();this.frameChannel=channel;channel.port1.onmessage=()=>{if(this.frameChannel!==channel||this.loopMode!=='uncapped'||this.settings.vsync)return;this.frame(performance.now());channel.port2.postMessage(0);};channel.port2.postMessage(0);
   }
   private async makeWorld(seed:number,saved?:GameState){
+    this.menuBackdropKey='';
     this.homesteadAlarmKeys.clear();this.poweredHomesteadCores.clear();this.poweredHomesteadStations=[];this.homesteadAlarmCores.clear();this.scavengerRaidTargets.clear();this.lastHomesteadPowerRefresh=-1;
     this.bowDrawStarted=null;for(const arrow of this.arrows)arrow.mesh.removeFromParent();this.arrows=[];
     this.wildlife?.dispose();this.worldSurvival?.dispose();this.weather?.dispose();this.islandMap?.dispose();
@@ -421,6 +422,16 @@ export class GameApp {
     return 'grass';
   }
   private tutorial(){if(this.stationPlacement)return `${STATIONS[this.stationPlacement.kind].name} · LMB place · R rotate · ${this.stationPlacement.valid?'READY':'Aim at a clear surface'}`;const s=this.simulation.state,progress=ensureProgression(s),waypoint=progress.waypoint,cs=this.settings.language==='cs';if(waypoint)return `WAYPOINT ${Math.round(Math.hypot(waypoint.x-s.player.position.x,waypoint.z-s.player.position.z))} m · M map · Hammer + RMB maintenance`;if(progress.radioSignal&&!progress.radioSignal.resolved)return cs?'Zachytil se šifrovaný signál.  ·  M otevře mapu a ukáže rádiovou zásilku':'Encrypted salvage signal marked on your map.  ·  M to locate the relay cache';if(this.simulation.count('relayAccessCard')>0&&progress.stations.some(station=>station.kind==='secureCache'&&station.locked))return cs?'Karta odemyká zapečetěné zásoby u POI.  ·  M zobrazí jejich polohu':'Use the relay access card at a secured POI cache.  ·  M to find marked sites';if(this.simulation.count('rawMeat')>0){const campfire=progress.stations.find(station=>station.kind==='campfire');return campfire?(cs?'Uvař syrové maso na ohni.  ·  Přidej dřevo + maso a nech ho 12 s hořet':'Cook raw meat at your campfire.  ·  Add wood + meat, then leave it burning 12s'):(cs?'Syrové maso je potřeba uvařit.  ·  Vyrob a umísti táborák':'Cook raw meat before eating it.  ·  Craft and place a campfire');}if(s.structures.length>=5)return 'Equip a builder\'s hammer and use RMB to improve your shelter.';if(s.structures.length>0)return 'Build your shelter.  ·  Q selects a piece · R rotates';if(this.simulation.count('plan'))return 'Equip your building plan.  ·  B to build';if(this.simulation.count('wood')>=25&&this.simulation.count('fiber')>=10)return 'You have the essentials.  ·  TAB to craft a building plan';return 'Find your footing.  ·  Gather wood and wild flax · TAB for crafting';}
+  private updateMenuCamera(){
+    const backdrop=this.settings.menuBackdrop;
+    if(this.menuBackdropKey!==backdrop){const spawn=this.environment.spawn,focus=new THREE.Vector3(spawn.x,spawn.y,spawn.z);let cameraOffset=new THREE.Vector3(29,9,25),targetOffset=new THREE.Vector3(-25,10,-60);
+      if(backdrop==='forest'){let chosen:ResourceNode|undefined,best=Infinity;for(const node of this.environment.nodes){if(node.kind!=='tree'||!this.environment.biomeAt(node.position.x,node.position.z).includes('FOREST'))continue;const distance=Math.hypot(node.position.x-spawn.x,node.position.z-spawn.z);if(distance>22&&distance<best){best=distance;chosen=node;}}if(chosen){focus.set(chosen.position.x,chosen.position.y,chosen.position.z);cameraOffset.set(20,9,24);targetOffset.set(0,4,-26);}}
+      else if(backdrop==='highlands'){let highest=-Infinity;const half=this.environment.terrain.halfSize;for(let x=-half+70;x<half-70;x+=90)for(let z=-half+70;z<half-70;z+=90){const h=this.environment.heightAt(x,z);if(h>highest){highest=h;focus.set(x,h,z);}}cameraOffset.set(78,25,54);targetOffset.set(0,8,-80);}
+      else if(backdrop==='wreck'){const wreck=this.worldSurvival.pois.find(poi=>poi.kind===5);if(wreck){focus.set(wreck.position.x,wreck.position.y,wreck.position.z);cameraOffset.set(27,13,32);targetOffset.set(0,6,-16);}}
+      this.menuCameraPosition.set(focus.x+cameraOffset.x,this.environment.heightAt(focus.x+cameraOffset.x,focus.z+cameraOffset.z)+cameraOffset.y,focus.z+cameraOffset.z);this.menuCameraTarget.set(focus.x+targetOffset.x,focus.y+targetOffset.y,focus.z+targetOffset.z);this.menuBackdropKey=backdrop;
+    }
+    this.camera.position.copy(this.menuCameraPosition);if(this.settings.menuMotion){this.camera.position.x+=Math.sin(this.elapsed*.085)*.42;this.camera.position.y+=Math.sin(this.elapsed*.19)*.12;this.camera.position.z+=Math.cos(this.elapsed*.07)*.24;}this.camera.lookAt(this.menuCameraTarget);
+  }
   private frame(timestamp:number){
     const dt=Math.min((timestamp-(this.last||timestamp))/1000,.1);this.last=timestamp;if(!this.environment||this.loading)return;this.elapsed+=dt;this.frameMs=THREE.MathUtils.lerp(this.frameMs,dt*1000,.04);this.fps=1000/Math.max(this.frameMs,1);this.cooldown=Math.max(0,this.cooldown-dt);
     const playing=this.screen==='playing',running=playing||this.screen==='inventory'||this.screen==='station';
@@ -444,7 +455,7 @@ export class GameApp {
       const bowDraw=this.bowDrawStarted===null?0:Math.min(1,(performance.now()-this.bowDrawStarted)/1150),reloadProgress=this.reloadRemaining>0?1-this.reloadRemaining/(FIREARMS[this.activeItem() as keyof typeof FIREARMS]?.reloadSeconds??1):0;
       this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching,bowDraw,reloadProgress);
     } else if(this.screen==='menu'||(this.screen==='settings'&&!this.activeWorld)){
-      const p=this.environment.spawn;this.camera.position.set(p.x+29,this.environment.heightAt(p.x+29,p.z+25)+9,p.z+25);this.camera.lookAt(p.x-25,10,p.z-60);
+      this.updateMenuCamera();
     }
     this.projection.update(dt,playing&&this.player.sprinting);
     const hour=this.activeWorld?this.simulation.state.timeOfDay:9.4;

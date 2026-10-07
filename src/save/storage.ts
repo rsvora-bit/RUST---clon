@@ -159,6 +159,8 @@ function normalizeSettings(value: unknown): Settings {
   }
   return {
     language:value.language==='cs'?'cs':'en',
+    menuBackdrop:value.menuBackdrop==='forest'||value.menuBackdrop==='highlands'||value.menuBackdrop==='wreck'?value.menuBackdrop:'coast',
+    menuMotion:typeof value.menuMotion==='boolean'?value.menuMotion:DEFAULT_SETTINGS.menuMotion,
     sensitivityX:finite(value.sensitivityX,0.05,3)?value.sensitivityX:legacySensitivity,
     sensitivityY:finite(value.sensitivityY,0.05,3)?value.sensitivityY:legacySensitivity,
     fov: finite(value.fov, 55, 110) ? normalizeFov(value.fov) : DEFAULT_SETTINGS.fov,
