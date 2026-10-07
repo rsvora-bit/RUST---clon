@@ -7,12 +7,12 @@ import {addWeatherSurfaceResponse,woodMaterial,stoneMaterial} from '../rendering
 import {structureGrade} from './grades';
 const S=BUILD.SIZE,H=BUILD.WALL_HEIGHT,T=BUILD.THICKNESS,F=BUILD.FOUNDATION_HEIGHT,DW=BUILD.DOOR_WIDTH,DH=BUILD.DOOR_HEIGHT;
 export class StructureRenderer {
-  readonly group=new THREE.Group();readonly objects=new Map<string,THREE.Group>();readonly ghost=new THREE.Group();
+  readonly group=new THREE.Group();readonly objects=new Map<string,THREE.Group>();readonly ghost=new THREE.Group();private ghostSupportSignature='';
   private readonly weatherWetness={value:0};
   private wood=woodMaterial('#969286');private darkWood=woodMaterial('#777467');private stone=stoneMaterial();private stoneTrim=new THREE.MeshStandardMaterial({color:'#62655c',roughness:.98});private metal=new THREE.MeshStandardMaterial({color:'#59615f',roughness:.72,metalness:.52});private metalTrim=new THREE.MeshStandardMaterial({color:'#262e2e',roughness:.55,metalness:.72});
   private ghostMaterial=new THREE.MeshBasicMaterial({color:'#8bbb84',transparent:true,opacity:.35,depthWrite:false});private ghostType:PieceType|null=null;
   private interactionMaterial=new THREE.MeshBasicMaterial({visible:false});
-  constructor(scene:THREE.Scene){for(const material of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim])addWeatherSurfaceResponse(material,this.weatherWetness,.72,.44);scene.add(this.group,this.ghost);this.ghost.visible=false;}
+  constructor(scene:THREE.Scene,private readonly heightAt:(x:number,z:number)=>number=()=>0){for(const material of [this.wood,this.darkWood,this.stone,this.stoneTrim,this.metal,this.metalTrim])addWeatherSurfaceResponse(material,this.weatherWetness,.72,.44);scene.add(this.group,this.ghost);this.ghost.visible=false;}
   setWeatherWetness(rain:number,storm=0):void{this.weatherWetness.value=THREE.MathUtils.clamp(rain*.58+storm*.42,0,1);}
   private box(parent:THREE.Group,w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.Material=this.wood){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);const uv=mesh.geometry.getAttribute('uv'),normal=mesh.geometry.getAttribute('normal');for(let i=0;i<uv.count;i++){const nx=Math.abs(normal.getX(i)),ny=Math.abs(normal.getY(i));const across=nx>.5?d:w,along=ny>.5?d:h;uv.setXY(i,uv.getX(i)*across*2.1+x*.173+z*.211,uv.getY(i)*along*.47+y*.13);}mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   private brace(parent:THREE.Group,x1:number,y1:number,x2:number,y2:number,z:number){const length=Math.hypot(x2-x1,y2-y1);const beam=this.box(parent,.11,length,.09,(x1+x2)/2,(y1+y2)/2,z,this.darkWood);beam.rotation.z=-Math.atan2(x2-x1,y2-y1);}
@@ -84,15 +84,26 @@ export class StructureRenderer {
     }
     return g;
   }
+  private supportColumns(s:Structure){
+    if(s.pieceType!=='floor')return [];
+    const inset=S/2-.28,c=Math.cos(s.rotation),sn=Math.sin(s.rotation),columns:{localX:number;localZ:number;ground:number;worldX:number;worldZ:number}[]=[];
+    for(const localX of [-inset,inset])for(const localZ of [-inset,inset]){const worldX=s.position.x+localX*c+localZ*sn,worldZ=s.position.z+localZ*c-localX*sn,ground=this.heightAt(worldX,worldZ);if(!Number.isFinite(ground)||ground<-9.9||s.position.y-ground<1.15)continue;columns.push({localX,localZ,ground,worldX,worldZ});}
+    return columns;
+  }
+  private makeSupports(s:Structure){
+    const group=new THREE.Group();group.name='Derived foundation support posts';
+    for(const support of this.supportColumns(s)){const top=s.position.y+.025,bottom=support.ground-.08,height=top-bottom;if(height<=.25)continue;this.box(group,.16,height,.16,support.localX,(top+bottom)/2-s.position.y,support.localZ,this.darkWood);this.box(group,.30,.12,.30,support.localX,support.ground+.015-s.position.y,support.localZ,this.stoneTrim);}
+    return this.batch(group);
+  }
   add(s:Structure){
     if(this.objects.has(s.id))return;
-    const grade=structureGrade(s),root=new THREE.Group(),body=this.make(s.pieceType,false,grade);root.add(body);root.position.set(s.position.x,s.position.y,s.position.z);root.rotation.y=s.rotation;
+    const grade=structureGrade(s),root=new THREE.Group(),body=this.make(s.pieceType,false,grade);root.add(body);if(s.pieceType==='floor')root.add(this.makeSupports(s));root.position.set(s.position.x,s.position.y,s.position.z);root.rotation.y=s.rotation;
     if(s.pieceType==='door'){body.position.x=s.flipped?DW/2:-DW/2;body.scale.x=s.flipped?-1:1;body.rotation.y=s.open?(s.flipped?Math.PI/2:-Math.PI/2):0;}
     if(s.pieceType==='door'&&s.locked){const lock=new THREE.Group(),bodyLock=new THREE.Mesh(new THREE.BoxGeometry(.18,.22,.07),this.metal),shackle=new THREE.Mesh(new THREE.TorusGeometry(.075,.018,6,10,Math.PI),this.metalTrim);bodyLock.position.set(.22,1.03,-.105);shackle.position.set(.22,1.16,-.105);shackle.rotation.z=Math.PI;lock.add(bodyLock,shackle);lock.name='Visible door padlock';root.add(lock);}
     root.traverse(o=>{o.userData.structureId=s.id;});root.userData.grade=grade;root.userData.flipped=s.flipped;root.userData.locked=Boolean(s.locked);root.userData.pieceType=s.pieceType;this.objects.set(s.id,root);this.group.add(root);
   }
   sync(structures:Structure[]){const ids=new Set(structures.map(s=>s.id));for(const [id,g] of this.objects)if(!ids.has(id)){this.group.remove(g);this.disposeGroup(g);this.objects.delete(id);}for(const s of structures){const old=this.objects.get(s.id),grade=structureGrade(s);if(old&&(old.userData.grade!==grade||old.userData.flipped!==s.flipped||old.userData.locked!==Boolean(s.locked))){this.disposeGroup(old);old.removeFromParent();this.objects.delete(s.id);}this.add(s);const g=this.objects.get(s.id)!;if(s.pieceType==='door')g.children[0].rotation.y=s.open?(s.flipped?Math.PI/2:-Math.PI/2):0;}}
-  preview(c:BuildCandidate|null){if(!c){this.ghost.visible=false;return;}if(c.pieceType!==this.ghostType){for(const child of [...this.ghost.children]){this.ghost.remove(child);this.disposeGroup(child);}this.ghost.add(this.make(c.pieceType,true));this.ghostType=c.pieceType;}this.ghost.visible=true;this.ghost.position.set(c.position.x,c.position.y,c.position.z);this.ghost.rotation.y=c.rotation;this.ghostMaterial.color.set(c.valid?'#8fce97':'#da684c');}
+  preview(c:BuildCandidate|null){if(!c){this.ghost.visible=false;return;}if(c.pieceType!==this.ghostType){for(const child of [...this.ghost.children]){this.ghost.remove(child);this.disposeGroup(child);}this.ghost.add(this.make(c.pieceType,true));this.ghostType=c.pieceType;this.ghostSupportSignature='';}if(c.pieceType==='floor'){const preview:Structure={id:'preview',pieceType:'floor',position:c.position,rotation:c.rotation,health:0,createdAt:0},signature=`${c.position.y.toFixed(1)}|${c.rotation.toFixed(2)}|${this.supportColumns(preview).map(support=>support.ground.toFixed(1)).join(',')}`;if(signature!==this.ghostSupportSignature){const old=this.ghost.getObjectByName('Derived foundation support posts');if(old){this.ghost.remove(old);this.disposeGroup(old);}this.ghost.add(this.makeSupports(preview));this.ghostSupportSignature=signature;}}this.ghost.visible=true;this.ghost.position.set(c.position.x,c.position.y,c.position.z);this.ghost.rotation.y=c.rotation;this.ghostMaterial.color.set(c.valid?'#8fce97':'#da684c');}
   boxes(s:Structure):CollisionBox[]{
     const boxes:CollisionBox[]=[];const add=(x:number,y:number,z:number,w:number,h:number,d:number,r=0)=>{const c=Math.cos(s.rotation),sn=Math.sin(s.rotation);boxes.push({position:{x:s.position.x+x*c+z*sn,y:s.position.y+y,z:s.position.z+z*c-x*sn},halfExtents:{x:w/2,y:h/2,z:d/2},rotation:s.rotation+r});};
     if(s.pieceType==='foundation')add(0,F/2,0,S,F,S);
@@ -100,6 +111,7 @@ export class StructureRenderer {
     if(s.pieceType==='doorway'){const side=(S-DW)/2;for(const sign of [-1,1])add(sign*(DW/2+side/2),H/2,0,side,H,T);add(0,DH+(H-DH)/2,0,DW,H-DH,T);}
     if(s.pieceType==='door'){const direction=s.flipped?-1:1,hinge=-direction*DW/2,r=s.open?-direction*Math.PI/2:0;add(hinge+Math.cos(r)*direction*DW/2,DH/2,-Math.sin(r)*direction*DW/2,DW-.035,DH-.03,.105,r);}
     if(s.pieceType==='floor'||s.pieceType==='roof')add(0,T/2,0,S,T,S);
+    for(const support of this.supportColumns(s)){const height=s.position.y+.025-support.ground;add(support.localX,(support.ground+s.position.y+.025)/2-s.position.y,support.localZ,.16,height,.16);}
     return boxes;
   }
   private disposeGroup(group:THREE.Object3D){group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}

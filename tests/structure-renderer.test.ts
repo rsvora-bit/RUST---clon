@@ -26,6 +26,12 @@ describe('rendered structure regressions',()=>{
     const box=r.boxes(floor)[0];expect(box.halfExtents.y*2).toBe(BUILD.THICKNESS);expect(box.position.y+box.halfExtents.y).toBeCloseTo(5+BUILD.THICKNESS);
     const wall=r.make('wall');expect(wall.children.length).toBeLessThanOrEqual(3);r.dispose();
   });
+  it('renders and collides with derived support posts under elevated floors only',()=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    const scene=new THREE.Scene(),r=new StructureRenderer(scene,()=>0),raised:Structure={id:'raised',pieceType:'floor',position:{x:0,y:3,z:0},rotation:0,health:250,createdAt:0};
+    r.sync([raised]);expect(r.objects.get(raised.id)?.getObjectByName('Derived foundation support posts')?.children.length).toBe(2);expect(r.boxes(raised)).toHaveLength(5);
+    const low:Structure={...raised,id:'low',position:{x:8,y:.45,z:0}};expect(r.boxes(low)).toHaveLength(1);r.dispose();
+  });
   it('keeps grade silhouettes distinct within a small draw-call budget',()=>{
     const r=renderer(),wood=r.make('wall',false,'wood'),stone=r.make('wall',false,'stone'),metal=r.make('wall',false,'metal');
     const signature=(group:THREE.Group)=>group.children.map(child=>child instanceof THREE.Mesh?Array.from(child.geometry.getAttribute('position').array).map(value=>Number(value).toFixed(3)).join(','):'').join('|');
