@@ -17,4 +17,10 @@ describe('F3 world collision bounds', () => {
   it('supports an empty world without allocating line vertices', () => {
     expect(boundsLineVertices([])).toHaveLength(0);
   });
+
+  it('rotates world proxy bounds with the physics cuboid yaw',()=>{
+    const box:CollisionBox={position:{x:0,y:0,z:0},halfExtents:{x:1,y:.5,z:2},rotation:Math.PI/2};
+    const lines=boundsLineVertices([box]);
+    expect([...lines.slice(0,6)]).toEqual([-2,-.5,1,-2,-.5,-1]);
+  });
 });

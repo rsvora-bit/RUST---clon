@@ -4,7 +4,7 @@ import {getSockets} from '../building/rules';
 import {PhysicsWorld} from '../physics/PhysicsWorld';
 import type {CollisionBox} from '../physics/PhysicsWorld';
 
-/** Edges for an axis-aligned world-space collision proxy. */
+/** Edges for world-space collision proxies, including their authored yaw. */
 export function boundsLineVertices(boxes: readonly CollisionBox[]): Float32Array {
   const edges = [
     [0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7],
@@ -13,10 +13,10 @@ export function boundsLineVertices(boxes: readonly CollisionBox[]): Float32Array
   let offset = 0;
   for (const box of boxes) {
     const {x,y,z}=box.position, {x:hx,y:hy,z:hz}=box.halfExtents;
-    const corners = [
-      [x-hx,y-hy,z-hz],[x+hx,y-hy,z-hz],[x-hx,y-hy,z+hz],[x+hx,y-hy,z+hz],
-      [x-hx,y+hy,z-hz],[x+hx,y+hy,z-hz],[x-hx,y+hy,z+hz],[x+hx,y+hy,z+hz],
-    ];
+    const c=Math.cos(box.rotation??0),s=Math.sin(box.rotation??0),corners = [
+      [-hx,-hy,-hz],[hx,-hy,-hz],[-hx,-hy,hz],[hx,-hy,hz],
+      [-hx,hy,-hz],[hx,hy,-hz],[-hx,hy,hz],[hx,hy,hz],
+    ].map(([lx,ly,lz])=>[x+lx!*c+lz!*s,y+ly!,z-lx!*s+lz!*c]);
     for (const [a,b] of edges) {for (const coordinate of corners[a]!) values[offset++]=coordinate;for (const coordinate of corners[b]!) values[offset++]=coordinate;}
   }
   return values;
