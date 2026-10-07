@@ -83,4 +83,10 @@ describe('visual collision bounds', () => {
     expect(sides[0]?.halfExtents.x).toBeCloseTo(3.9);
     expect(sides[0]?.halfExtents.z).toBe(.12);
   });
+
+  it('blocks the player at both sides of a long hull instead of allowing passage through the shell',()=>{
+    const terrain=new THREE.PlaneGeometry(40,40,1,1);terrain.rotateX(-Math.PI/2);const sides=longHullSideCollisions(new THREE.Box3(new THREE.Vector3(-4,0,-.78),new THREE.Vector3(4,1.4,.78)));
+    for(const side of [1,-1]){const physics=new PhysicsWorld(terrain,sides,{x:0,y:0,z:side*2.5});try{for(let step=0;step<32;step++)physics.move({x:0,y:0,z:-side*.15});const player=physics.position();expect(player.z*side).toBeGreaterThan(.80);expect(player.z*side).toBeLessThan(1.45);}finally{physics.dispose();}}
+    terrain.dispose();
+  });
 });
