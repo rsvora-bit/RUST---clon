@@ -8,6 +8,7 @@ import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '..
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {addWeatherSurfaceResponse} from './materials';
+import {collisionBoundsFromBox,collisionBoundsFromObject} from '../physics/collisionBounds';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
@@ -307,7 +308,7 @@ export class Environment {
         // The original fixed center offset only worked for one rock scale and
         // flat ground. Seat each shared instance against its sampled terrain.
         this.matrixDummy.position.y+=terrainContactOffset(geos[v]!,this.matrixDummy.matrix,(x,z)=>this.heightAt(x,z),.035);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);
-        const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5)this.colliders.push({position:{x:r.x,y:this.matrixDummy.position.y+r.sy*.12,z:r.z},halfExtents:{x:r.sx*.7,y:r.sy*.64,z:r.sz*.7},rotation:r.rot});});mesh.computeBoundingSphere();this.root.add(mesh);if(revision6Shape)this.outcropBatches.push({mesh,variant:v});
+        const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5){const localBounds=geos[v]!.boundingBox??(geos[v]!.computeBoundingBox(),geos[v]!.boundingBox!);const worldBounds=new THREE.Box3().copy(localBounds).applyMatrix4(this.matrixDummy.matrix);this.colliders.push(collisionBoundsFromBox(worldBounds,.08));}});mesh.computeBoundingSphere();this.root.add(mesh);if(revision6Shape)this.outcropBatches.push({mesh,variant:v});
     }
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;
@@ -324,7 +325,7 @@ export class Environment {
       // rendered mineral mass settles into the local terrain plane.
       const gradeX=(this.heightAt(x+2,z)-this.heightAt(x-2,z))*.25,gradeZ=(this.heightAt(x,z+2)-this.heightAt(x,z-2))*.25;
       const surfaceNormal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();group.quaternion.copy(surfaceAlignedQuaternion(surfaceNormal,node.rotation));group.updateMatrixWorld(true);group.position.y+=terrainContactOffset(main.geometry,main.matrixWorld,(px,pz)=>this.heightAt(px,pz));
-      this.colliders.push({nodeId:node.id,position:{x,y:node.position.y+.5*size,z},halfExtents:{x:.67*size,y:.73*size,z:.61*size},rotation:node.rotation});
+      this.colliders.push({...collisionBoundsFromObject(group,.08),nodeId:node.id,rainSurface:false});
     };
     if(this.terrain.generation>=3){make('stone',this.spawn.x+10,this.spawn.z-10,.95);make('stone',this.spawn.x-13,this.spawn.z-8,1.08);make('metal',this.spawn.x+16,this.spawn.z+11,1.02);}
     else {make('stone',24,206,.95);make('stone',35,199,1.1);make('metal',60,175,1.1);}
