@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="steel" x1="115" y1="93" x2="362" y2="421" gradientUnits="userSpaceOnUse"><stop stop-color="#eef0e7"/><stop offset=".28" stop-color="#89928e"/><stop offset=".56" stop-color="#d7d9ce"/><stop offset="1" stop-color="#59625f"/></linearGradient>
+    <linearGradient id="rust" x1="190" y1="147" x2="383" y2="349" gradientUnits="userSpaceOnUse"><stop stop-color="#d5a06c"/><stop offset=".45" stop-color="#795a43"/><stop offset="1" stop-color="#343a38"/></linearGradient>
+    <filter id="shadow" x="61" y="58" width="390" height="402" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="13"/></filter>
+  </defs>
+  <path d="M103 361c57-49 96-136 147-181 46-40 103-76 152-65 34 8 35 44 9 73-39 43-80 73-112 117-27 37-42 78-87 105-40 25-91 24-118-1-13-12-9-33 9-48Z" fill="#000" opacity=".35" filter="url(#shadow)"/>
+  <path d="m93 334 61-39 18-113 69 49 84-122 23 93 78 28-81 47-31 110-74-55-78 62-2-79-67 19Z" fill="url(#steel)" stroke="#343c3a" stroke-width="12" stroke-linejoin="bevel"/>
+  <path d="m172 182 69 49-12 72-57-8 18-113Z" fill="#f0eee2" opacity=".82"/>
+  <path d="m241 231 84-122 9 107-88 87-5-72Z" fill="#626d69"/>
+  <path d="m334 216 92 14-81 47-58-1 47-60Z" fill="#c6cbc2"/>
+  <path d="m303 276 24 111-74-55 50-56Z" fill="#48514f"/>
+  <path d="m153 295 76 8 24 29-78 62-2-79-20-20Z" fill="url(#rust)" stroke="#343c3a" stroke-width="8" stroke-linejoin="bevel"/>
+  <path d="m119 333 42-16m84-87 35-51m51 98 45-26" stroke="#fff" stroke-linecap="round" stroke-width="9" opacity=".65"/>
+  <path d="m212 215 25 17m76 44-14 35" stroke="#39413e" stroke-linecap="round" stroke-width="8" opacity=".75"/>
+</svg>

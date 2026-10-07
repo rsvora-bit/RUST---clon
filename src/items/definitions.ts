@@ -24,7 +24,7 @@ export const ITEMS: Record<ItemId, ItemDefinition> = {
   torch: item('torch', 'Handmade torch', 'A resin-soaked torch. Equip it after sundown to illuminate your surroundings.', 'tool', 1, ['light', 'starter']),
   wood: item('wood', 'Wood', 'Timber gathered from trees and driftwood. The foundation of a new shelter.', 'resource', 1000, ['building', 'crafting']),
   stone: item('stone', 'Stone', 'Rough stone used in foundations and improvised tools.', 'resource', 1000, ['building', 'crafting']),
-  metal: item('metal', 'Metal fragments', 'Processed fragments used for hardware and stronger construction.', 'resource', 1000, ['crafting']),
+  metal: item('metal', 'Metal fragments', 'Processed fragments used for hardware and stronger construction.', 'resource', 1000, ['crafting'], {icon:'assets/items/metal.svg'}),
   fiber: item('fiber', 'Plant fiber', 'Tough fibers from wild flax. Twist into cord or use as a dressing.', 'resource', 1000, ['crafting']),
   berries: item('berries', 'Wild berries', 'A small meal that restores 9 food and 5 hydration. Double-click to eat.', 'food', 20, ['food'], { consumable: true }),
   rawMeat: item('rawMeat', 'Raw meat', 'Freshly recovered island game. Cook it over a campfire before eating.', 'resource', 20, ['food','cooking']),

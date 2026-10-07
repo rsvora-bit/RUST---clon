@@ -10,13 +10,16 @@ describe('Blender item icon catalog',()=>{
   it('covers every runtime item exactly once',()=>{
     expect([...catalog].sort()).toEqual(Object.keys(ITEMS).sort());
   });
-  it('points every item at its generated optimized WebP',()=>{
+  it('points item art at a shipped generated asset and uses original steel art for metal fragments',()=>{
     for(const [id,item] of Object.entries(ITEMS)){
-      expect(item.icon,`${id} runtime path`).toBe(`assets/items/${id}.webp`);
-      const asset=new URL(`../public/assets/items/${id}.webp`,import.meta.url);
+      const extension=id==='metal'?'svg':'webp';
+      expect(item.icon,`${id} runtime path`).toBe(`assets/items/${id}.${extension}`);
+      const asset=new URL(`../public/assets/items/${id}.${extension}`,import.meta.url);
       expect(existsSync(asset),`${id} icon file`).toBe(true);
       expect(statSync(asset).size,`${id} icon size`).toBeLessThan(150_000);
     }
+    const metal=readFileSync(new URL('../public/assets/items/metal.svg',import.meta.url),'utf8');
+    expect(metal).toContain('steel');expect(metal).toContain('rust');
   });
   it('provides localized Czech item names and detail text',()=>{
     for(const [id,item] of Object.entries(ITEMS)){

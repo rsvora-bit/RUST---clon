@@ -636,6 +636,18 @@ def build(item):
                     for shard,(dx,dz,size) in enumerate(((-.055,-.018,.84),(-.015,.026,1.0),(.042,.047,.76))):
                         size*=1.18 if item=="sulfurOre" else 1
                         fractured_clast("exposed faceted mineral crystal",(x+dx,-.35,z+dz),(.052*size,.026,.041*size),(veinMat,veinMat,veinMat),sum(map(ord,item))*19+index*7+shard)
+        elif item=="metal":
+            bright=material("cut steel scrap",(.65,.71,.67,1),.86,.24)
+            darkSteel=material("oxidized scrap steel",(.24,.31,.30,1),.72,.39)
+            copper=material("rusted scrap edge",(.47,.24,.12,1),.68,.46)
+            # Thin folded plates with sharp, broken outlines read as processed
+            # metal pieces instead of the berry cluster fallback below.
+            for name,outline,depth,loc,mat,turn in (
+                ("bent steel fragment",[(-.30,-.20),(-.12,-.31),(.02,-.10),(.28,-.25),(.34,-.05),(.13,.06),(.22,.25),(-.02,.19),(-.22,.33),(-.18,.09),(-.36,.04)],.075,(-.05,.02,-.02),bright,.22),
+                ("dark folded plate",[(-.21,-.12),(-.12,-.25),(.02,-.14),(.22,-.20),(.17,-.02),(.31,.13),(.04,.08),(-.08,.24),(-.17,.06)],.095,(.08,-.08,.07),darkSteel,-.43),
+                ("rusted cut sliver",[(-.17,-.09),(-.04,-.17),(.24,.11),(.12,.17),(-.02,.05)],.045,(-.15,-.15,.12),copper,.61),
+            ):
+                piece=poly_prism(name,outline,depth,mat,.012);piece.location=loc;piece.rotation_euler[1]=turn
         elif item=="wood":
             for z in (-.16,.07,.28):cyl("split timber",(0,0,z),.105,.85,wl,10,"X")
         elif item=="fiber":
