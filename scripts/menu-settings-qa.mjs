@@ -14,6 +14,7 @@ const menuRenderState=()=>page.evaluate(()=>{const canvas=document.querySelector
 try{
   await page.goto(url);await page.waitForFunction(()=>window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden'});await waitForMenu();
   await page.waitForFunction(()=>window.__TIDELAND.stats().drawCalls>0&&window.__TIDELAND.stats().triangles>0);
+  const coastCamera=await page.evaluate(()=>window.__TIDELAND.cameraState().world.position);
   const startup=await menuRenderState();
   pass('Startup main menu has a visible, live rendered world',startup.screen==='menu'&&startup.uiScreen==='menu'&&startup.width>0&&startup.height>0&&startup.rect[0]>0&&startup.rect[1]>0&&startup.display!=='none'&&startup.visibility==='visible'&&startup.opacity>0&&startup.drawCalls>0&&startup.triangles>0);
 
@@ -28,6 +29,10 @@ try{
   const compassOff=page.locator('[data-toggle="showCompass"][data-value="false"]');
   await compassOff.click();
   pass('Toggle state and settings persistence update immediately',await compassOff.getAttribute('aria-pressed')==='true'&&await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1'))?.showCompass===false));
+  const backdrop=page.locator('[data-setting-select="menuBackdrop"]');await backdrop.selectOption('forest');
+  pass('Menu background selection is saved immediately',await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1'))?.menuBackdrop==='forest'));
+  const motionOff=page.locator('[data-toggle="menuMotion"][data-value="false"]');await motionOff.click();
+  pass('Menu background motion toggle is saved immediately',await motionOff.getAttribute('aria-pressed')==='true'&&await page.evaluate(()=>JSON.parse(localStorage.getItem('tideland:settings:v1'))?.menuMotion===false));
   await page.locator('[data-settings-tab="graphics"]').click();
   await page.locator('[data-preset="low"]').click();
   const lowPreset=await page.evaluate(()=>{const value=JSON.parse(localStorage.getItem('tideland:settings:v1'));return{water:value.waterQuality,weather:value.weatherEffectsQuality};});
@@ -42,7 +47,8 @@ try{
   pass('Water and weather effect quality can be customized independently and persist',independent.water==='high'&&independent.weather==='medium'&&independent.waterSelected&&independent.weatherSelected);
   pass('Preset row reports CUSTOM when individual values differ',independent.custom==='VLASTNÍ'&&independent.activePresets===0);
   await page.locator('[data-action="settingsBack"]').click();await waitForMenu();
-  pass('Returning from Settings restores the live menu environment',(await menuRenderState()).drawCalls>0);
+  await page.waitForTimeout(250);const forestCamera=await page.evaluate(()=>window.__TIDELAND.cameraState().world.position);
+  pass('Returning from Settings shows the selected forest scene',(await menuRenderState()).drawCalls>0&&Math.hypot(...forestCamera.map((value,index)=>value-coastCamera[index]))>8);
 
   await page.setViewportSize({width:1600,height:900});
   await page.waitForFunction(()=>{const canvas=document.querySelector('#game-canvas'),rect=canvas.getBoundingClientRect(),scale=window.devicePixelRatio*window.__TIDELAND.cameraState().settings.renderScale;return Math.abs(rect.width-window.innerWidth)<1&&Math.abs(rect.height-window.innerHeight)<1&&Math.abs(canvas.width-window.innerWidth*scale)<2&&Math.abs(canvas.height-window.innerHeight*scale)<2;});
@@ -55,7 +61,7 @@ try{
   pass('Returning to Main Menu from gameplay retains a rendered world',(await menuRenderState()).drawCalls>0);
 
   await page.reload();await page.waitForFunction(()=>window.__TIDELAND);await page.locator('.loading-screen').waitFor({state:'hidden'});await waitForMenu();
-  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass,water:window.__TIDELAND.cameraState().settings.waterQuality,weather:window.__TIDELAND.cameraState().settings.weatherEffectsQuality,foliageDistance:window.__TIDELAND.cameraState().settings.foliageDistance}));
-  pass('Language and gameplay/graphics Settings survive reload',persisted.language==='cs'&&persisted.compass===false&&persisted.water==='high'&&persisted.weather==='medium'&&persisted.foliageDistance===1.35);
+  const persisted=await page.evaluate(()=>({language:document.documentElement.lang,compass:window.__TIDELAND.cameraState().settings.showCompass,water:window.__TIDELAND.cameraState().settings.waterQuality,weather:window.__TIDELAND.cameraState().settings.weatherEffectsQuality,foliageDistance:window.__TIDELAND.cameraState().settings.foliageDistance,menuBackdrop:window.__TIDELAND.cameraState().settings.menuBackdrop,menuMotion:window.__TIDELAND.cameraState().settings.menuMotion}));
+  pass('Language, graphics and menu scene Settings survive reload',persisted.language==='cs'&&persisted.compass===false&&persisted.water==='high'&&persisted.weather==='medium'&&persisted.foliageDistance===1.35&&persisted.menuBackdrop==='forest'&&persisted.menuMotion===false);
   assert.deepEqual(errors,[],`Browser console/page errors:\n${errors.join('\n')}`);console.log('PASS no browser console or page errors');
 }finally{await context.close();await browser.close();}
