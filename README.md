@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.13.0%20%7C%20EA--13.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.14.0%20%7C%20EA--14.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.13.0 / EA-13.0` · **7 October 2026**
+**Current release:** `v0.14.0 / EA-14.0` · **7 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.13.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.13.0/)
+Latest stable: [▶ PLAY v0.14.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.14.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -123,7 +123,13 @@ The browser locally persists world generation, settings, inventory, crafting, re
 
 ## 🚀 Current release
 
-**v0.13.0 / EA-13.0 — Gameplay Depth, World Polish & UI 2.0** anchors gathering markers to real impact surfaces, grounds world props, adds collidable supports under raised floors, improves placement feedback, introduces selectable menu island scenes, clarifies F3 workflows and item visuals, and adds active-work feedback to stations. Relay signals and wildlife patrols now feel less static, while existing world and save layouts remain compatible.
+**v0.14.0 / EA-14.0 — Visual Fidelity & Physical World Overhaul** improves shared PBR surface detail for wood, metal, rock and terrain; adds slope-aware terrain detail, weathered outcrops and climate-aware ground decals; refines instanced trees and wind; improves underwater readability and distant mountain depth; and makes wet surfaces dry gradually. Major world collision proxies are more closely aligned with visual models, and F3 now exposes physical bounds, grounding contacts, nearby asset identity and active LOD. Active generators receive restrained, batched exhaust and smoke feedback.
+
+### v0.14.0 validation and save compatibility
+
+No save schema or generation identity changed. Generation 1–4 saves retain their legacy generators; archived v0.9.0 and v0.9.1 Generation 5 saves retain their revision, player position, inventory, structures, drops, resource state, stations, research, roads and POIs. Visual asset and proxy updates do not rewrite saved world layout or gameplay identity.
+
+Validation: `npm test` **530/530 passed in 56 files** and `npm run build` passed. Screenshot-free Chrome/Metal browser QA passed movement, gathering, inventory/crafting, multi-level building/colliders, settings, Recycler/furnace, death/Lost Pack, world generation/map/weather, Testing Mode physical overlays and teleport, and world-art/save checks; the probes reported no app/WebGL errors. Asset verification passed **31 GLBs and 31 collision-proxy sidecars**, with LOD0/1/2 and every GLB below 512 KiB. On matched Chrome/Metal HIGH, 1280×900, seed 731942, viewpoint `(0,0)`, 240 frames, v0.13.0 archive → v0.14.0 candidate measured **250.90 → 234.91 FPS** (**3.986 → 4.257 ms**, +6.8% frame time), **262 → 266 draw calls**, and **2,360,569 → 2,032,361 triangles** (−13.9%). The candidate stayed within the 10–15% runtime performance regression target. Menu-ready time was **3.34 → 4.47 s**, while prepared New Game startup was **170 → 71 ms**; shader precompile exceeded its advisory threshold on the candidate, but both runs reached Ready and had zero browser errors. Build output retains the known Vite advisory for a ~3.50 MB main JavaScript chunk.
 
 ### v0.13.0 validation and save compatibility
 
@@ -250,6 +256,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.14.0` | Physical collision proxies and F3 world debugging, detailed weathered materials, terrain/rock/vegetation polish, gradual wetness, station exhaust and mountain atmosphere |
 | `v0.13.0` | Surface-anchored gathering, supported vertical building, selectable menu scenes, F3 workflow groups, active station feedback and living-world polish |
 | `v0.12.0` | Blender world-asset pipeline, refined item icons, environment LODs, wet weather, readable HUD and save-locked Testing Mode |
 | `v0.11.0` | Original item-icon pipeline, cohesive responsive interface, EN/CZ research, station and map localization |
@@ -315,7 +322,7 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.13.0 / EA-13.0`
+`EARLY ACCESS DEVELOPMENT · v0.14.0 / EA-14.0`
 
 </div>
 
