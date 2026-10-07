@@ -42,6 +42,24 @@ export function treeBarkMaterial(map:THREE.Texture,maps:WoodSurfaceMaps,vertexCo
   const material=new THREE.MeshStandardMaterial({map,color:0xb6b4a4,roughness:.97,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.12,.12),vertexColors});
   material.userData.textures=[map,maps.normal,maps.roughness];return material;
 }
+export interface FabricSurfaceMaps{color:THREE.DataTexture;roughness:THREE.DataTexture;normal:THREE.DataTexture}
+export function fabricSurfaceMaps(seed=923,size=128):FabricSurfaceMaps{
+  let state=seed>>>0;const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
+  const patches=Array.from({length:18},()=>({x:rand()*size,y:rand()*size,radius:size*(.035+rand()*.12),amount:rand()*.13})),colorData=new Uint8Array(size*size*4),normalData=new Uint8Array(size*size*4),roughData=new Uint8Array(size*size*4),tau=Math.PI*2;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const offset=(y*size+x)*4,warpX=Math.sin(tau*x/4),warpY=Math.sin(tau*y/4),cross=(Math.pow(Math.abs(warpX),5)+Math.pow(Math.abs(warpY),5))*.5;
+    let dirt=0;for(const patch of patches){const dx=Math.min(Math.abs(x-patch.x),size-Math.abs(x-patch.x)),dy=Math.min(Math.abs(y-patch.y),size-Math.abs(y-patch.y)),distance=Math.hypot(dx,dy)/patch.radius;dirt=Math.max(dirt,patch.amount*(1-THREE.MathUtils.smoothstep(distance,.58,1.25)));}
+    const dye=THREE.MathUtils.clamp(.91+cross*.075-dirt, .68,1);for(let c=0;c<3;c++)colorData[offset+c]=Math.round(dye*255);colorData[offset+3]=255;
+    const nx=-Math.cos(tau*x/4)*.035,ny=-Math.cos(tau*y/4)*.035,length=Math.hypot(nx,ny,1);normalData[offset]=Math.round((nx/length*.5+.5)*255);normalData[offset+1]=Math.round((ny/length*.5+.5)*255);normalData[offset+2]=Math.round((1/length*.5+.5)*255);normalData[offset+3]=255;
+    const rough=Math.round(THREE.MathUtils.clamp(.88+cross*.035+dirt*.24,.84,.99)*255);roughData[offset]=roughData[offset+1]=roughData[offset+2]=rough;roughData[offset+3]=255;
+  }
+  const make=(data:Uint8Array,colorSpace:THREE.ColorSpace)=>{const texture=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);texture.colorSpace=colorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=4;texture.needsUpdate=true;return texture;};
+  return{color:make(colorData,THREE.SRGBColorSpace),roughness:make(roughData,THREE.NoColorSpace),normal:make(normalData,THREE.NoColorSpace)};
+}
+export function fabricMaterial(color:THREE.ColorRepresentation,seed:number,side:THREE.Side=THREE.FrontSide):THREE.MeshStandardMaterial{
+  const maps=fabricSurfaceMaps(seed),material=new THREE.MeshStandardMaterial({color,map:maps.color,roughness:.96,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.10,.10),side});
+  material.userData.textures=[maps.color,maps.roughness,maps.normal];return material;
+}
 export interface MetalSurfaceMaps{color:THREE.DataTexture;roughness:THREE.DataTexture;normal:THREE.DataTexture}
 /** Fine brushed grain, random tool scratches and roughness breakup for shared salvage metal. */
 export function metalSurfaceMaps(seed=5823,size=128):MetalSurfaceMaps{

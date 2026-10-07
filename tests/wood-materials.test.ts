@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { addInstanceWindResponse, disposeMaterialTextures, metalMaterial, metalSurfaceMaps, stoneMaterial, treeBarkMaterial, woodSurfaceMaps } from '../src/rendering/materials';
+import { addInstanceWindResponse, disposeMaterialTextures, fabricMaterial, fabricSurfaceMaps, metalMaterial, metalSurfaceMaps, stoneMaterial, treeBarkMaterial, woodSurfaceMaps } from '../src/rendering/materials';
 
 afterEach(()=>vi.unstubAllGlobals());
 
@@ -48,6 +48,18 @@ describe('weathered salvage-metal surface maps',()=>{
     const material=metalMaterial(0x64706b,.88,.3,842),textures=material.userData.textures as THREE.Texture[];let disposed=0;
     textures.forEach(texture=>texture.addEventListener('dispose',()=>disposed++));
     expect(material.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(material.normalScale.x).toBeCloseTo(.085);expect(material.metalness).toBeCloseTo(.3);disposeMaterialTextures(material);expect(disposed).toBe(3);
+  });
+});
+
+describe('weathered fabric surface maps',()=>{
+  it('creates deterministic woven color, normal and roughness maps with shared material setup',()=>{
+    const first=fabricSurfaceMaps(923,64),repeat=fabricSurfaceMaps(923,64),variant=fabricSurfaceMaps(924,64),material=fabricMaterial(0x626b52,923,THREE.DoubleSide),textures=material.userData.textures as THREE.Texture[];
+    try{
+      expect(first.color.colorSpace).toBe(THREE.SRGBColorSpace);expect(first.normal.colorSpace).toBe(THREE.NoColorSpace);expect(first.roughness.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.color.image.data).toEqual(repeat.color.image.data);expect(first.normal.image.data).toEqual(repeat.normal.image.data);expect(first.roughness.image.data).toEqual(repeat.roughness.image.data);expect(first.color.image.data).not.toEqual(variant.color.image.data);
+      expect(material.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(material.normalMap?.colorSpace).toBe(THREE.NoColorSpace);expect(material.roughnessMap?.colorSpace).toBe(THREE.NoColorSpace);expect(material.side).toBe(THREE.DoubleSide);expect(textures).toHaveLength(3);
+      const roughness=first.roughness.image.data as Uint8Array;expect(Math.min(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeGreaterThanOrEqual(224);expect(Math.max(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeLessThanOrEqual(255);
+    }finally{for(const maps of [first,repeat,variant]){maps.color.dispose();maps.normal.dispose();maps.roughness.dispose();}disposeMaterialTextures(material);}
   });
 });
 
