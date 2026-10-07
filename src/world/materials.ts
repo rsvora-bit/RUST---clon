@@ -152,7 +152,7 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
       vec2 warp=vec2(groundNoise(gp.xz*.09),groundNoise(gp.zx*.07+17.));${sharedFields}vec2 guv=gp.xz*.23+warp*.72;
       vec3 grassCol=mix(texture2D(grassTex,guv).rgb,texture2D(grassTex,mat2(.8,.6,-.6,.8)*guv*.43+7.).rgb,.38);
       vec3 dryCol=mix(texture2D(dryTex,guv*.82).rgb,texture2D(dryTex,mat2(.6,.8,-.8,.6)*guv*.37+19.).rgb,.36);
-      vec3 snowCol=mix(texture2D(snowTex,guv*.48).rgb,texture2D(snowTex,guv*1.9+31.).rgb,.18);snowCol*=mix(.88+.20*snowDrift,.72+.52*snowDrift,revision6Moss);
+      vec3 snowTri=texture2D(snowTex,gp.zy*.48).rgb*blend.x+texture2D(snowTex,gp.xz*.48).rgb*blend.y+texture2D(snowTex,gp.xy*.48).rgb*blend.z;vec3 snowCol=mix(snowTri,texture2D(snowTex,guv*1.9+31.).rgb,.18);snowCol*=mix(.88+.20*snowDrift,.72+.52*snowDrift,revision6Moss);
       // Reuse the snow texture's existing drift field to break up the Rev6
       // treeline/snowline. Legacy snapshots keep their original climate mask.
       float snowCover=mix(vGroundClimate.y,smoothstep(.24,.66,vGroundClimate.y+(snowDrift-.5)*.42),revision6Moss);

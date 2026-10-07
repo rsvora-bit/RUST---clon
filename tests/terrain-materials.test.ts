@@ -58,6 +58,9 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('float strata=macro*.42+micro*.58');
       expect(newShader.fragmentShader).toContain('float mossNoise=macro*.68+micro*.32');
       expect(newShader.fragmentShader).toContain('float relief=(micro-.5)*.10');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.zy*.48).rgb*blend.x');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.xz*.48).rgb*blend.y');
+      expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.xy*.48).rgb*blend.z');
       expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.12+warp*.35)');
       expect(newShader.fragmentShader).not.toContain('groundNoise(gp.xz*.47+vec2(29.,-13.))');
       expect(newShader.fragmentShader).not.toContain('groundNoise(vGroundPosition.xz*21.)');
