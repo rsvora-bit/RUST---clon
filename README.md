@@ -6,13 +6,13 @@
 
 **Explore. Gather. Build. Survive.**
 
-[![Version](https://img.shields.io/badge/version-v0.12.0%20%7C%20EA--12.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.13.0%20%7C%20EA--13.0-2ea44f?style=for-the-badge)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Tideland CI](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml/badge.svg)](https://github.com/rsvora-bit/RUST---clon/actions/workflows/tideland-ci.yml)
 
-**Current release:** `v0.12.0 / EA-12.0` · **7 October 2026**
+**Current release:** `v0.13.0 / EA-13.0` · **7 October 2026**
 
 > Active development repository. All new Tideland development continues here.
 
@@ -30,7 +30,7 @@
 
 [🕘 VIEW ALL RELEASES](https://rsvora-bit.github.io/RUST---clon/versions/)
 
-Latest stable: [▶ PLAY v0.12.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.12.0/)
+Latest stable: [▶ PLAY v0.13.0](https://rsvora-bit.github.io/RUST---clon/versions/v0.13.0/)
 
 Every tagged release is preserved as a separately playable build. See the repository [Releases](https://github.com/rsvora-bit/RUST---clon/releases) for release notes and direct play links.
 
@@ -123,7 +123,13 @@ The browser locally persists world generation, settings, inventory, crafting, re
 
 ## 🚀 Current release
 
-**v0.12.0 / EA-12.0 — Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul** adds an original Blender world-asset pipeline, refined item icons, batched tree/rock/shore props, clearer rain and exposure feedback, and a save-locked developer Testing Mode. Historical world layouts and gameplay saves remain supported.
+**v0.13.0 / EA-13.0 — Gameplay Depth, World Polish & UI 2.0** anchors gathering markers to real impact surfaces, grounds world props, adds collidable supports under raised floors, improves placement feedback, introduces selectable menu island scenes, clarifies F3 workflows and item visuals, and adds active-work feedback to stations. Relay signals and wildlife patrols now feel less static, while existing world and save layouts remain compatible.
+
+### v0.13.0 validation and save compatibility
+
+No save schema or generation identity changed. Generation 1–4 saves retain their legacy worlds; archived v0.9.0 and v0.9.1 Generation 5 saves retain their revision, player position, inventory, structures, drops, resource state, stations, research, roads and POIs.
+
+Validation: `npm test` **502/502 passed in 53 files** and `npm run build` passed. Screenshot-free browser QA passed movement, gathering, inventory/crafting, multi-level building and colliders, doors, settings, Recycler/furnace, death/Lost Pack, storm-salvage events, archived Generation 5 saves and world-art/weather checks without app or WebGL errors. Against archived v0.12.0 at 1280×900, HIGH, seed 731942, 240 SwiftShader frames measured telemetry **11.44 → 11.45 FPS**, **87.406 → 87.346 ms**, **472 → 472 draw calls**, and **3,182,461 → 3,182,165 triangles**. This is a relative headless stability check, not an absolute hardware benchmark.
 
 ## 🗺️ Development direction
 
@@ -244,6 +250,7 @@ The repository includes automated GitHub Actions CI so important regressions are
 
 | Version | Focus |
 | --- | --- |
+| `v0.13.0` | Surface-anchored gathering, supported vertical building, selectable menu scenes, F3 workflow groups, active station feedback and living-world polish |
 | `v0.12.0` | Blender world-asset pipeline, refined item icons, environment LODs, wet weather, readable HUD and save-locked Testing Mode |
 | `v0.11.0` | Original item-icon pipeline, cohesive responsive interface, EN/CZ research, station and map localization |
 | `v0.10.0` | World Revision 6, expanded archipelago, forests, marsh, terrain, atmosphere and landmark polish |
@@ -308,7 +315,7 @@ Priorities are:
 
 *An island survival project growing one system at a time.*
 
-`EARLY ACCESS DEVELOPMENT · v0.12.0 / EA-12.0`
+`EARLY ACCESS DEVELOPMENT · v0.13.0 / EA-13.0`
 
 </div>
 

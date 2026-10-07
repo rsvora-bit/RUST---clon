@@ -1,3 +1,11 @@
+## v0.13.0 / EA-13.0 — Gameplay Depth, World Polish & UI 2.0 (2026-10-07)
+
+- Anchored gathering weak points to real hit surfaces and kept follow-up targets close in height; grounded world props and added collision to rain collectors.
+- Added derived collidable supports below raised floors and clearer snapped/ready building placement feedback without changing saved structure layouts.
+- Added selectable, gently animated menu island scenes; grouped F3 developer controls by workflow and replaced the berry-like metal-fragment icon.
+- Added restrained sparks and warm work lighting to active Recyclers, a powered generator flywheel, animated relay-cache signals and natural wildlife patrol pauses.
+- Validated legacy and historical Generation 5 saves, gathering, building, UI, Recycler processing, storm-salvage events, world art and matched HIGH performance.
+
 ## v0.12.0 / EA-12.0 — Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul (2026-10-07)
 
 - Added a project-authored Blender world-asset pipeline for modular GLB models, LOD0/1/2 exports and verified collision-proxy metadata.

@@ -1,9 +1,16 @@
-export const GAME_VERSION='0.12.0';
-export const GAME_BUILD='EA-12.0';
+export const GAME_VERSION='0.13.0';
+export const GAME_BUILD='EA-13.0';
 export const GAME_RELEASE_DATE='2026-10-07';
 
 export interface ChangeEntry {version:string;date:string;title:string;changes:string[]}
 export const CHANGELOG:ChangeEntry[]=[
+  {version:'0.13.0',date:'2026-10-07',title:'Gameplay Depth, World Polish & UI 2.0',changes:[
+    'Anchored gathering weak points to real impact surfaces and kept follow-up targets within a tight, readable height band; improved grounded world props and solid rain-collector collisions.',
+    'Added derived collidable support posts under raised floors and clearer snapped/ready building placement feedback without changing saved structure layouts.',
+    'Added selectable, gently animated menu island scenes; grouped F3 developer controls by task and replaced the berry-like metal-fragment icon.',
+    'Added restrained active-work sparks and warm light to the Recycler, a powered generator flywheel, animated relay-cache signals and natural pauses to wildlife patrols.',
+    'Validated Generation 1–4 and historical Generation 5 save compatibility, building, gathering, processing, storm salvage events, menus, world art and HIGH performance.'
+  ]},
   {version:'0.12.0',date:'2026-10-07',title:'Environment Assets, Nature, Icon Fidelity, HUD & Testing Overhaul',changes:[
     'Added an original headless Blender pipeline for modular world GLBs, three LOD levels and validated collision-proxy hints.',
     'Refined original item icons and integrated authored tree, rock, shoreline and Breakwater details with batched LOD rendering.',
