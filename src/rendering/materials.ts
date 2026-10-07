@@ -1,5 +1,24 @@
 import * as THREE from 'three';
 export interface WeatherWetnessUniform{value:number}
+/** Subtle vertex sway shared by instanced foliage and grass batches. */
+export function addInstanceWindResponse(material:THREE.Material,time:{value:number},strength:{value:number},heightScale:number,amplitude:number):void{
+  if(material.userData.tidelandWindResponse)return;
+  const previousCompile=material.onBeforeCompile,previousCacheKey=material.customProgramCacheKey;
+  material.onBeforeCompile=function(shader,renderer){
+    previousCompile.call(this,shader,renderer);
+    shader.uniforms.tidelandWindTime=time;shader.uniforms.tidelandWindStrength=strength;
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float tidelandWindTime;uniform float tidelandWindStrength;');
+    const sway=`#include <begin_vertex>
+vec3 windOrigin=(modelMatrix*vec4(0.,0.,0.,1.)).xyz;
+#ifdef USE_INSTANCING
+windOrigin=(modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xyz;
+#endif
+float windPhase=dot(windOrigin.xz,vec2(.031,.027));float windHeight=clamp(transformed.y*${heightScale.toFixed(3)},0.,1.);float windWave=sin(tidelandWindTime*1.35+windPhase+transformed.y*.17)*tidelandWindStrength*${amplitude.toFixed(3)};transformed.x+=windWave*windHeight;transformed.z+=cos(tidelandWindTime*1.07+windPhase*1.31+transformed.y*.11)*windWave*.56*windHeight;`;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',sway);
+  };
+  material.customProgramCacheKey=()=>`${previousCacheKey.call(material)}|tideland-instance-wind-v1-${heightScale.toFixed(3)}-${amplitude.toFixed(3)}`;
+  material.userData.tidelandWindResponse=true;material.needsUpdate=true;
+}
 export interface WoodSurfaceMaps{roughness:THREE.DataTexture;normal:THREE.DataTexture}
 /** Linear, tileable maps keep wood color separate from its PBR surface response. */
 export function woodSurfaceMaps(seed=4108,size=128):WoodSurfaceMaps{

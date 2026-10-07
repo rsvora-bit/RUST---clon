@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { woodSurfaceMaps } from '../src/rendering/materials';
+import { addInstanceWindResponse, woodSurfaceMaps } from '../src/rendering/materials';
 
 afterEach(()=>vi.unstubAllGlobals());
 
@@ -19,5 +19,21 @@ describe('procedural wood surface maps',()=>{
       expect(Math.min(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeGreaterThanOrEqual(142);
       expect(Math.max(...Array.from({length:64*64},(_,index)=>roughness[index*4]!))).toBeLessThanOrEqual(240);
     }finally{for(const maps of [first,repeat,variant]){maps.normal.dispose();maps.roughness.dispose();}}
+  });
+});
+
+describe('instanced vegetation wind',()=>{
+  it('injects per-instance phase and upper-canopy vertex motion once',()=>{
+    const material=new THREE.MeshStandardMaterial(),time={value:2},strength={value:.2};
+    addInstanceWindResponse(material,time,strength,.095,.34);
+    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <begin_vertex>'};
+    material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);
+    expect(shader.uniforms.tidelandWindTime?.value).toBe(time.value);
+    expect(shader.uniforms.tidelandWindStrength?.value).toBe(strength.value);
+    expect(shader.vertexShader).toContain('#ifdef USE_INSTANCING');
+    expect(shader.vertexShader).toContain('dot(windOrigin.xz,vec2(.031,.027))');
+    expect(shader.vertexShader).toContain('transformed.x+=windWave*windHeight');
+    const before=shader.vertexShader;addInstanceWindResponse(material,time,strength,.095,.34);
+    expect(material.onBeforeCompile).toBeDefined();expect(shader.vertexShader).toBe(before);material.dispose();
   });
 });
