@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {groundTexture,leavesTexture,leafMassTexture,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
+import {groundTexture,leavesTexture,leafMassTexture,rockSurfaceMaps,terrainDetailNormalTexture,terrainMaterial} from '../src/world/materials';
 
 type TestCanvas=HTMLCanvasElement&{pixelData?:Uint8ClampedArray;strokes:string[];fills:string[];rects:string[]};
 function installCanvasStub():TestCanvas[]{
@@ -95,6 +95,20 @@ describe('terrain micro-normal map',()=>{
       const unique=new Set(Array.from({length:64*64},(_,index)=>`${pixels[index*4]},${pixels[index*4+1]},${pixels[index*4+2]}`));
       expect(unique.size).toBeGreaterThan(500);
     }finally{first.dispose();repeat.dispose();other.dispose();}
+  });
+});
+
+describe('stone micro-surface maps',()=>{
+  it('keeps rock normal and roughness data linear, varied, and deterministic',()=>{
+    const first=rockSurfaceMaps(773,48),repeat=rockSurfaceMaps(773,48),variant=rockSurfaceMaps(774,48);
+    try{
+      expect(first.normal.colorSpace).toBe(THREE.NoColorSpace);expect(first.roughness.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.normal.wrapS).toBe(THREE.RepeatWrapping);
+      expect(first.normal.image.data).toEqual(repeat.normal.image.data);expect(first.roughness.image.data).toEqual(repeat.roughness.image.data);
+      expect(first.normal.image.data).not.toEqual(variant.normal.image.data);
+      const rough=first.roughness.image.data as Uint8Array;
+      expect(new Set(Array.from({length:48*48},(_,index)=>rough[index*4]!)).size).toBeGreaterThan(8);
+    }finally{for(const map of [first,repeat,variant]){map.normal.dispose();map.roughness.dispose();}}
   });
 });
 

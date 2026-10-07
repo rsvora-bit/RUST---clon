@@ -46,6 +46,18 @@ export function terrainDetailNormalTexture(seed=8241,size=256):THREE.DataTexture
   }
   const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(224,224);map.anisotropy=8;map.needsUpdate=true;return map;
 }
+/** Shared-shape, linear-space micro relief and roughness variation for stone. */
+export function rockSurfaceMaps(seed=773,size=128):{normal:THREE.DataTexture;roughness:THREE.DataTexture}{
+  const rand=randomSource(seed),waves=Array.from({length:13},()=>({x:2+Math.floor(rand()*43),y:2+Math.floor(rand()*43),phase:rand()*Math.PI*2,amplitude:.008+rand()*.018})),normalData=new Uint8Array(size*size*4),roughData=new Uint8Array(size*size*4),tau=Math.PI*2;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const u=x/size,v=y/size;let dx=0,dy=0,rough=.88;
+    for(let j=0;j<waves.length;j++){const w=waves[j]!,phase=tau*(w.x*u+w.y*v)+w.phase,s=Math.sin(phase),slope=Math.cos(phase)*w.amplitude*tau;dx+=slope*w.x;dy+=slope*w.y;rough+=s*([.012,.019,.026,.034][j%4]!);}
+    const nx=-dx*.15,ny=-dy*.15,nz=1,length=Math.hypot(nx,ny,nz),i=(y*size+x)*4;normalData[i]=Math.round((nx/length*.5+.5)*255);normalData[i+1]=Math.round((ny/length*.5+.5)*255);normalData[i+2]=Math.round((nz/length*.5+.5)*255);normalData[i+3]=255;
+    const value=Math.round(Math.max(.70,Math.min(.99,rough))*255);roughData[i]=roughData[i+1]=roughData[i+2]=value;roughData[i+3]=255;
+  }
+  const create=(data:Uint8Array)=>{const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.NoColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(3,3);map.anisotropy=4;map.needsUpdate=true;return map;};
+  return{normal:create(normalData),roughness:create(roughData)};
+}
 export function barkTexture(revision6=false):THREE.CanvasTexture {
   const [c,ctx]=canvas(512),rand=randomSource(449);ctx.fillStyle=revision6?'#88765d':'#75664f';ctx.fillRect(0,0,512,512);
   const streaks=revision6?['#625442','#ad9575','#9a8364','#7b674d']:['#50483a','#998568','#87765b','#695a43'];
@@ -180,7 +192,8 @@ export function stoneWeatherShader(enabled:boolean):{uniform:string;diffuse:stri
   return{uniform:'uniform float surfaceWetness;',diffuse:`float stoneWet=surfaceWetness*${enabled?'1.':'0.'};diffuseColor.rgb*=mix(1.,.78,clamp(stoneWet*.58,0.,.58));`,roughness:'roughnessFactor=mix(roughnessFactor,.56,clamp(stoneWet*.58,0.,.58));'};
 }
 export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{value:number}):THREE.MeshStandardMaterial {
-  const tex=groundTexture('rock',773),wetnessUniform=surfaceWetness??{value:0};const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.92,metalness:.015,bumpMap:tex,bumpScale:.075});
+  const tex=groundTexture('rock',773),detail=rockSurfaceMaps((Number(tint)^773)>>>0),wetnessUniform=surfaceWetness??{value:0};const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
+  mat.userData.textures=[tex,detail.roughness,detail.normal];
   if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
   const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;');shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;diffuseColor.rgb*=.78+stoneDetail*1.1;${weather.diffuse}`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\n${weather.roughness}`);};return mat;
 }
