@@ -20,6 +20,7 @@ try{
   await page.mouse.move(1,1);
   await page.waitForFunction(()=>document.querySelector('[data-telemetry-body="world"]')?.textContent?.includes('WORLD ASSET LOD'),{timeout:15000});
   const assetLod=await page.locator('[data-telemetry-body="world"]').innerText();check('F3 world telemetry identifies active tree, rock and shoreline LOD assets',/TREES LOD[012]/.test(assetLod)&&/ROCKS LOD[012]/.test(assetLod)&&/SHORE LOD[012]/.test(assetLod));
+  await clickControl('[data-dev="grounding"]');check('F3 exposes a working terrain grounding overlay toggle',await page.locator('[data-dev="grounding"]').getAttribute('aria-pressed')==='true');await clickControl('[data-dev="grounding"]');check('terrain grounding overlay can be disabled after inspection',await page.locator('[data-dev="grounding"]').getAttribute('aria-pressed')==='false');
   check('isolated test world starts with save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED');
   check('real item catalog and current POI list populate',await page.locator('[data-test-item] option').count()>40&&await page.locator('[data-test-poi] option').count()>=5);
   await page.locator('[data-test-item]').selectOption('fieldShotgun');await clickControl('[data-test-action="weapon-kit"]');
