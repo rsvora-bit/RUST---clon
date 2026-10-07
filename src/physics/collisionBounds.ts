@@ -53,10 +53,9 @@ export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): Collisi
   };
 }
 
-/** Build a yaw-oriented proxy from upright local geometry and its instance transform. */
-export function collisionBoundsFromGeometry(geometry: THREE.BufferGeometry, transform: THREE.Matrix4, padding = 0.06): CollisionBounds {
-  if (!geometry.boundingBox) geometry.computeBoundingBox();
-  const bounds=geometry.boundingBox!,worldBounds=new THREE.Box3().copy(bounds).applyMatrix4(transform),localCenter=bounds.getCenter(new THREE.Vector3()),center=localCenter.clone().applyMatrix4(transform),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
+/** Build a yaw-oriented proxy from upright local bounds and their instance transform. */
+export function collisionBoundsFromLocalBox(bounds:THREE.Box3,transform:THREE.Matrix4,padding=.06):CollisionBounds {
+  const worldBounds=new THREE.Box3().copy(bounds).applyMatrix4(transform),localCenter=bounds.getCenter(new THREE.Vector3()),center=localCenter.clone().applyMatrix4(transform),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
   transform.decompose(position,quaternion,scale);const rotation=new THREE.Euler().setFromQuaternion(quaternion,'YXZ').y,c=Math.cos(rotation),s=Math.sin(rotation),half=new THREE.Vector3();
   // Project the transformed local bounds onto the collider's yaw axes. This
   // keeps tilted/rotated rocks enclosed without the oversized world AABB that
@@ -67,6 +66,19 @@ export function collisionBoundsFromGeometry(geometry: THREE.BufferGeometry, tran
   }
   const verticalCenter=(worldBounds.min.y+worldBounds.max.y)*.5,verticalHalf=(worldBounds.max.y-worldBounds.min.y)*.5;
   return {position:{x:center.x,y:verticalCenter,z:center.z},halfExtents:{x:Math.max(.05,half.x+padding),y:Math.max(.05,verticalHalf+padding),z:Math.max(.05,half.z+padding)},rotation};
+}
+
+/** Build a stable proxy around the union of several visual LOD bounds. */
+export function collisionBoundsFromGeometries(geometries:readonly THREE.BufferGeometry[],transform:THREE.Matrix4,padding=.06):CollisionBounds {
+  const bounds=new THREE.Box3().makeEmpty();
+  for(const geometry of geometries){if(!geometry.boundingBox)geometry.computeBoundingBox();if(geometry.boundingBox)bounds.union(geometry.boundingBox);}
+  return collisionBoundsFromLocalBox(bounds,transform,padding);
+}
+
+/** Build a yaw-oriented proxy from upright local geometry and its instance transform. */
+export function collisionBoundsFromGeometry(geometry: THREE.BufferGeometry, transform: THREE.Matrix4, padding = 0.06): CollisionBounds {
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  return collisionBoundsFromLocalBox(geometry.boundingBox!,transform,padding);
 }
 
 /** Two thin side walls for a long, open hull, derived from its authored bounds. */

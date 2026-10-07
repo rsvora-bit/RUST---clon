@@ -171,14 +171,13 @@ export function surfaceAlignedQuaternion(normal:THREE.Vector3,yaw:number):THREE.
 }
 /** Vertically seats a transformed resource mesh against the sampled terrain.
  * This only adjusts rendered geometry; callers keep gameplay positions/colliders. */
-export function terrainContactOffset(geometry:THREE.BufferGeometry,matrix:THREE.Matrix4,heightAt:(x:number,z:number)=>number,embed=.035):number {
-  const position=geometry.getAttribute('position');if(!position)return 0;
-  const point=new THREE.Vector3();let lowestClearance=Infinity;
-  for(let i=0;i<position.count;i++){
+export function terrainContactOffset(geometry:THREE.BufferGeometry|readonly THREE.BufferGeometry[],matrix:THREE.Matrix4,heightAt:(x:number,z:number)=>number,embed=.035):number {
+  const geometries=Array.isArray(geometry)?geometry:[geometry],point=new THREE.Vector3();let lowestClearance=Infinity;
+  for(const level of geometries){const position=level.getAttribute('position');if(!position)continue;for(let i=0;i<position.count;i++){
     point.fromBufferAttribute(position,i).applyMatrix4(matrix);
     const ground=heightAt(point.x,point.z);if(ground<=-9.9)continue;
     lowestClearance=Math.min(lowestClearance,point.y-ground);
-  }
+  }}
   return Number.isFinite(lowestClearance)?embed-lowestClearance:0;
 }
 export function bushGeometry():THREE.BufferGeometry {

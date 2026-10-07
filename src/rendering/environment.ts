@@ -8,7 +8,7 @@ import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '..
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
 import {addInstanceWindResponse,addWeatherSurfaceResponse,woodSurfaceMaps} from './materials';
-import {collisionBoundsFromGeometry,collisionBoundsFromObject,treeAssetCollision,treeTrunkCollision} from '../physics/collisionBounds';
+import {collisionBoundsFromGeometries,collisionBoundsFromGeometry,collisionBoundsFromObject,treeAssetCollision,treeTrunkCollision} from '../physics/collisionBounds';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,liftFoliageBaseColor,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
@@ -288,7 +288,7 @@ export class Environment {
         const merged=parts.length?mergeGeometries(parts,false):null;parts.forEach(geometry=>geometry.dispose());if(!merged){valid=false;break;}merged.computeBoundingSphere();levels.push(merged);
       }
       if(!valid||levels.length!==3){levels.forEach(geometry=>geometry.dispose());continue;}for(const geometry of levels){geometry.computeBoundingBox();this.geometries.add(geometry);}batch.generatedLods=levels;batch.mesh.geometry=levels[this.quality==='low'?2:this.quality==='medium'?1:0]!;batch.mesh.userData.generatedWorldAsset=assetId;
-      const matrix=new THREE.Matrix4();for(let index=0;index<batch.mesh.count;index++){batch.mesh.getMatrixAt(index,matrix);matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.position.y+=terrainContactOffset(levels[0]!,matrix,(x,z)=>this.heightAt(x,z),this.matrixDummy.scale.y*.14);this.matrixDummy.updateMatrix();batch.mesh.setMatrixAt(index,this.matrixDummy.matrix);const collider=batch.collisionRefs[index];if(collider)Object.assign(collider,collisionBoundsFromGeometry(levels[0]!,this.matrixDummy.matrix,.08));}batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.computeBoundingSphere();integrated+=batch.mesh.count;
+      const matrix=new THREE.Matrix4();for(let index=0;index<batch.mesh.count;index++){batch.mesh.getMatrixAt(index,matrix);matrix.decompose(this.matrixDummy.position,this.matrixDummy.quaternion,this.matrixDummy.scale);this.matrixDummy.position.y+=terrainContactOffset(levels,matrix,(x,z)=>this.heightAt(x,z),this.matrixDummy.scale.y*.14);this.matrixDummy.updateMatrix();batch.mesh.setMatrixAt(index,this.matrixDummy.matrix);const collider=batch.collisionRefs[index];if(collider)Object.assign(collider,collisionBoundsFromGeometries(levels,this.matrixDummy.matrix,.08));}batch.mesh.instanceMatrix.needsUpdate=true;batch.mesh.computeBoundingSphere();integrated+=batch.mesh.count;
     }
     return integrated;
   }

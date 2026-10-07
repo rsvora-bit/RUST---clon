@@ -1,6 +1,6 @@
 import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 import {rockGeometry} from '../src/world/models';
 
@@ -94,6 +94,19 @@ describe('visual collision bounds', () => {
       try{const delta={x:axis.x*-sign*.14,y:0,z:axis.z*-sign*.14};for(let step=0;step<50;step++)physics.move(delta);const player=physics.position(),coordinate=(player.x-proxy.position.x)*axis.x+(player.z-proxy.position.z)*axis.z;expect(coordinate*sign).toBeGreaterThan(extent-.40);}
       finally{physics.dispose();geometry.dispose();}
     }}finally{floor.dispose();}
+  });
+
+  it('keeps live rock collision around a protruding low-detail LOD and blocks that side',()=>{
+    const floor=new THREE.PlaneGeometry(40,40,1,1);floor.rotateX(-Math.PI/2);
+    const levels=[new THREE.BoxGeometry(2,2,2),new THREE.BoxGeometry(2.2,2,2.4),new THREE.BoxGeometry(2,2,3.4)];
+    levels[1]!.translate(.08,0,-.12);levels[2]!.translate(0,0,.38);levels.forEach(geometry=>geometry.computeBoundingBox());
+    const transform=new THREE.Matrix4().compose(new THREE.Vector3(0,1.1,0),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/4),new THREE.Vector3(1.1,.9,1.25));
+    const lowLodProxy=collisionBoundsFromGeometries(levels,transform,.08),lod0Proxy=collisionBoundsFromGeometry(levels[0]!,transform,.08),angle=lowLodProxy.rotation??0,axis={x:Math.sin(angle),z:Math.cos(angle)},position=new THREE.Vector3(),point=new THREE.Vector3(),c=Math.cos(angle),s=Math.sin(angle);
+    expect(lowLodProxy.halfExtents.z).toBeGreaterThan(lod0Proxy.halfExtents.z+.3);
+    for(const geometry of levels){const vertices=geometry.getAttribute('position');for(let index=0;index<vertices.count;index++){point.fromBufferAttribute(vertices,index).applyMatrix4(transform);const dx=point.x-lowLodProxy.position.x,dz=point.z-lowLodProxy.position.z;expect(Math.abs(dx*c-dz*s)).toBeLessThanOrEqual(lowLodProxy.halfExtents.x);expect(Math.abs(dx*s+dz*c)).toBeLessThanOrEqual(lowLodProxy.halfExtents.z);expect(Math.abs(point.y-lowLodProxy.position.y)).toBeLessThanOrEqual(lowLodProxy.halfExtents.y);}}
+    const physics=new PhysicsWorld(floor,[lowLodProxy],{x:axis.x*(lowLodProxy.halfExtents.z+2),y:0,z:axis.z*(lowLodProxy.halfExtents.z+2)});
+    try{for(let step=0;step<40;step++)physics.move({x:-axis.x*.12,y:0,z:-axis.z*.12});const player=physics.position();position.set(player.x-lowLodProxy.position.x,0,player.z-lowLodProxy.position.z);const depth=position.x*axis.x+position.z*axis.z;expect(depth).toBeGreaterThan(lowLodProxy.halfExtents.z-.42);expect(depth).toBeLessThan(lowLodProxy.halfExtents.z+.46);}
+    finally{physics.dispose();floor.dispose();levels.forEach(geometry=>geometry.dispose());}
   });
 
   it('places narrow hull side proxies on both authored visual edges',()=>{
