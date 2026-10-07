@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {rockGeometry} from '../world/models';
 import {flameMaterial} from './Flame';
 import type {ItemId} from '../core/types';
-import {woodMaterial,stoneMaterial} from './materials';
+import {metalSurfaceMaps,woodMaterial,stoneMaterial} from './materials';
 
 const smoothPalm=(y:number)=>Math.max(0,1-Math.abs(y-.25));
 function cleaverSurfaceTexture(){
@@ -30,6 +30,11 @@ function weatheredMetalTexture(){
     data[at]=Math.max(0,Math.min(255,steel+oxide));data[at+1]=Math.max(0,Math.min(255,steel+brush*.12-oxide*.34));data[at+2]=Math.max(0,Math.min(255,steel-brush*.18-oxide*.51));data[at+3]=255;
   }
   const map=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(2.8,2.8);map.anisotropy=4;map.needsUpdate=true;return map;
+}
+function detailedMetal(color:string,roughness:number,metalness:number,seed:number,baseColorMap?:THREE.Texture){
+  const maps=metalSurfaceMaps(seed);if(baseColorMap)maps.color.dispose();
+  const material=new THREE.MeshStandardMaterial({color,map:baseColorMap??maps.color,roughness,metalness,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.075,.075)});
+  material.userData.textures=[...(baseColorMap?[baseColorMap]:[maps.color]),maps.roughness,maps.normal];return material;
 }
 const hiddenItems:ItemId[]=['wood','stone','metal','ore','fiber','scrap','gears','wiring','machineParts','techParts','pistolAmmo','shotgunShells','campfire','storage','furnace','bedroll','workbench1','workbench2','workbench3','generator','powerSwitch','lamp'];
 
@@ -66,14 +71,14 @@ export class HeldItem {
   private wood=woodMaterial('#665238');
   private stone=stoneMaterial();
   private pickaxeStone=this.stone.clone();
-  private metal=new THREE.MeshStandardMaterial({color:'#8a8f89',map:weatheredMetalTexture(),roughness:.72,metalness:.32});
-  private shellCasing=new THREE.MeshStandardMaterial({color:'#a04d34',roughness:.78,metalness:.08});
-  private brass=new THREE.MeshStandardMaterial({color:'#a88a4b',roughness:.56,metalness:.38});
+  private metal=detailedMetal('#8a8f89',.72,.48,967,weatheredMetalTexture());
+  private shellCasing=detailedMetal('#a04d34',.78,.16,968);
+  private brass=detailedMetal('#a88a4b',.56,.54,969);
   private cylinderBore=new THREE.MeshStandardMaterial({color:'#252724',roughness:1});
-  private rust=new THREE.MeshStandardMaterial({color:'#895d43',roughness:.91,metalness:.12});
+  private rust=detailedMetal('#895d43',.91,.2,970);
   private wrap=new THREE.MeshStandardMaterial({color:'#5c5141',roughness:1});
-  private cleaverBlade=new THREE.MeshStandardMaterial({map:cleaverSurfaceTexture(),roughness:.78,metalness:.36});
-  private quarrySteel=new THREE.MeshStandardMaterial({map:maulSurfaceTexture(),roughness:.72,metalness:.31});
+  private cleaverBlade=detailedMetal('#92918a',.78,.46,971,cleaverSurfaceTexture());
+  private quarrySteel=detailedMetal('#949188',.72,.48,972,maulSurfaceTexture());
 
   constructor(){
     this.pickaxeStone.color.set('#d0cab5');this.pickaxeStone.emissive.set('#4b483a');this.pickaxeStone.emissiveIntensity=.48;this.pickaxeStone.side=THREE.DoubleSide;
