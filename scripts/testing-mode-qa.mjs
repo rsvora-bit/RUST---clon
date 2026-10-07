@@ -16,6 +16,9 @@ try{
   check('F3 test controls are organized into readable developer groups',groups.map(group=>group.id).join(',')==='items,player,building,world'&&groups[0].title==='INVENTORY / PROGRESSION'&&groups[1].actions.includes('health')&&groups[2].actions.includes('build-toggle')&&groups[3].actions.includes('teleport'));
   await page.locator('[data-action="launchTestWorld"]').click();
   await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing'&&document.querySelector('[data-dev="testing"]')?.getAttribute('aria-pressed')==='true',{timeout:180000});
+  // The live telemetry intentionally stops replacing panel contents while a
+  // Testing Mode control has focus. Blur the launch button before reading it.
+  await page.evaluate(()=>document.activeElement instanceof HTMLElement&&document.activeElement.blur());
   if(await page.locator('.diagnostics').isHidden())await page.keyboard.press('F3');
   await page.mouse.move(1,1);
   await page.waitForFunction(()=>document.querySelector('[data-telemetry-body="world"]')?.textContent?.includes('WORLD ASSET LOD'),{timeout:15000});
