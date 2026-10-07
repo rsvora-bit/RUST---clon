@@ -51,6 +51,8 @@ describe('instanced vegetation wind',()=>{
     expect(shader.uniforms.tidelandWindStrength?.value).toBe(strength.value);
     expect(shader.vertexShader).toContain('#ifdef USE_INSTANCING');
     expect(shader.vertexShader).toContain('dot(windOrigin.xz,vec2(.031,.027))');
+    expect(shader.vertexShader).toContain('float windHash=fract(sin(dot(windOrigin.xz,vec2(127.1,311.7)))*43758.5453)');
+    expect(shader.vertexShader).toContain('float windGust=.78+windHash*.44');
     expect(shader.vertexShader).toContain('transformed.x+=windWave*windHeight');
     const before=shader.vertexShader;addInstanceWindResponse(material,time,strength,.095,.34);
     expect(material.onBeforeCompile).toBeDefined();expect(shader.vertexShader).toBe(before);material.dispose();

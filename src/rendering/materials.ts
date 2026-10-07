@@ -13,7 +13,7 @@ vec3 windOrigin=(modelMatrix*vec4(0.,0.,0.,1.)).xyz;
 #ifdef USE_INSTANCING
 windOrigin=(modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.)).xyz;
 #endif
-float windPhase=dot(windOrigin.xz,vec2(.031,.027));float windHeight=clamp(transformed.y*${heightScale.toFixed(3)},0.,1.);float windWave=sin(tidelandWindTime*1.35+windPhase+transformed.y*.17)*tidelandWindStrength*${amplitude.toFixed(3)};transformed.x+=windWave*windHeight;transformed.z+=cos(tidelandWindTime*1.07+windPhase*1.31+transformed.y*.11)*windWave*.56*windHeight;`;
+float windHash=fract(sin(dot(windOrigin.xz,vec2(127.1,311.7)))*43758.5453);float windPhase=dot(windOrigin.xz,vec2(.031,.027))+windHash*6.2831853;float windGust=.78+windHash*.44;float windHeight=clamp(transformed.y*${heightScale.toFixed(3)},0.,1.);float windWave=sin(tidelandWindTime*1.35+windPhase+transformed.y*.17)*tidelandWindStrength*${amplitude.toFixed(3)}*windGust;transformed.x+=windWave*windHeight;transformed.z+=cos(tidelandWindTime*1.07+windPhase*1.31+transformed.y*.11)*windWave*.56*windHeight;`;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',sway);
   };
   material.customProgramCacheKey=()=>`${previousCacheKey.call(material)}|tideland-instance-wind-v1-${heightScale.toFixed(3)}-${amplitude.toFixed(3)}`;
