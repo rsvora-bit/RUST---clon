@@ -229,7 +229,7 @@ export class Environment {
         trunks.setColorAt(index,trunkColor);crowns.setColorAt(index,crownColor);masses?.setColorAt(index,crownColor);
         this.instances.set(node.id,[{mesh:trunks,index,matrix:m},{mesh:crowns,index,matrix:crownMatrix},...(masses?[{mesh:masses,index,matrix:crownMatrix}]:[])]);
         const hit=new THREE.Mesh(hitGeometry,this.invisible);hit.userData.species=species;this.place(hit,node);
-        const collision={...treeTrunkCollision(node.position,node.scale,species),nodeId:node.id,rainSurface:false};this.colliders.push(collision);
+        const collision={...(this.worldRevision>=6?collisionBoundsFromGeometry(trunk,m,.08):treeTrunkCollision(node.position,node.scale,species)),nodeId:node.id,rainSurface:false};this.colliders.push(collision);
         batchInstances.push({id:node.id,x:node.position.x,z:node.position.z,matrix:m,crownMatrix,active:true,visible:true,renderIndex:index,trunkColor,crownColor,collision});
       });if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;if(masses?.instanceColor)masses.instanceColor.needsUpdate=true;if(trunks.instanceColor)trunks.instanceColor.needsUpdate=true;trunks.computeBoundingSphere();crowns.computeBoundingSphere();masses?.computeBoundingSphere();this.treeBatches.push({trunks,crowns,masses,species,fullCount:entries.length,instances:batchInstances});for(const tree of batchInstances)this.treeInstancesById.set(tree.id,tree);
     }
