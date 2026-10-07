@@ -26,6 +26,14 @@ describe('seeded island wildlife',()=>{
     expect(reloaded).toHaveLength(9);expect(reloaded.map(a=>a.id)).not.toContain(first[0]!.id);
     expect(reloaded.map(a=>a.id)).toContain(first[1]!.id);expect(reloaded.find(a=>a.id===first[1]!.id)?.health).toBe(37);
   });
+  it('uses deterministic brief pauses when wildlife selects the next wandering waypoint',()=>{
+    const a=createWildlifePopulation(context)[0]!,b=createWildlifePopulation(context)[0]!,interval=4+a.seed%4,player={x:a.home.x+30,y:a.home.y,z:a.home.z};
+    a.wanderTime=b.wanderTime=interval-.05;const start={...a.position};
+    tickWildlife(a,.1,player,()=>3,vi.fn(),false);tickWildlife(b,.1,player,()=>3,vi.fn(),false);
+    expect(a.wanderCycle).toBe(1);expect(a.wanderPause).toBeGreaterThan(0);expect(a.position).toEqual(start);expect([a.position,a.wanderX,a.wanderZ,a.wanderPause]).toEqual([b.position,b.wanderX,b.wanderZ,b.wanderPause]);
+    const pause=a.wanderPause;tickWildlife(a,pause,player,()=>3,vi.fn(),false);tickWildlife(b,pause,player,()=>3,vi.fn(),false);expect(a.position).toEqual(start);tickWildlife(a,.1,player,()=>3,vi.fn(),false);tickWildlife(b,.1,player,()=>3,vi.fn(),false);
+    expect(Math.hypot(a.position.x-start.x,a.position.z-start.z)).toBeGreaterThan(0);expect(a.position).toEqual(b.position);
+  });
   it('adds a small deterministic deer population only to suitable Gen5 warm grassland and preserves old fauna placement',()=>{
     const warmGrass={...context,biomeAt:()=>'TEMPERATE GRASSLAND',temperatureAt:()=>.68,moistureAt:()=>.56,slopeAt:()=>.12},first=createWildlifePopulation(warmGrass),again=createWildlifePopulation(warmGrass),deer=first.filter(actor=>actor.species==='islandDeer');
     expect(deer).toHaveLength(2);expect(deer.map(actor=>[actor.id,actor.position])).toEqual(again.filter(actor=>actor.species==='islandDeer').map(actor=>[actor.id,actor.position]));
