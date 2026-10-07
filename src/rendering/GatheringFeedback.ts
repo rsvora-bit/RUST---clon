@@ -4,7 +4,7 @@ import type {ResourceNode,Vec3} from '../core/types';
 type WeakKind='tree'|'stone'|'metal'|'sulfur'|'hqmetal';
 type Spot={nodeId:string;kind:WeakKind;position:THREE.Vector3;root:THREE.Group;sequence:number;age:number};
 type HitMark={root:THREE.Group;material:THREE.MeshBasicMaterial;life:number;max:number};
-export interface GatherStrike {point:THREE.Vector3;weakSpot:boolean}
+export interface GatherStrike {point:THREE.Vector3;normal?:THREE.Vector3;weakSpot:boolean}
 
 const eligible=(kind:ResourceNode['kind']):kind is WeakKind=>kind==='tree'||kind==='stone'||kind==='metal'||kind==='sulfur'||kind==='hqmetal';
 const hash=(value:string):number=>{let h=2166136261;for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
@@ -26,14 +26,22 @@ export class GatheringFeedback {
     const spot=this.spots.get(node.id);
     if(!spot)return {point:point.clone(),weakSpot:false};
     const radius=(node.kind==='tree'?.27:.32)*Math.max(.72,node.scale);
-    return {point:point.clone(),weakSpot:ray.distanceSqToPoint(spot.position)<=radius*radius};
+    // Compare against the actual surface impact. Distance-to-ray alone accepts
+    // hits anywhere along the ray, including a different face of the same node.
+    const along=spot.position.clone().sub(ray.origin).dot(ray.direction);
+    const closest=ray.at(Math.max(0,along),new THREE.Vector3());
+    const visibleTarget=closest.distanceToSquared(spot.position)<=radius*radius;
+    return {point:point.clone(),weakSpot:visibleTarget&&point.distanceToSquared(spot.position)<=radius*radius};
   }
 
-  onHit(node:ResourceNode,point:Vec3,weakSpot:boolean,depleted:boolean):void{
+  onHit(node:ResourceNode,point:Vec3,weakSpot:boolean,depleted:boolean,normal?:THREE.Vector3):void{
     this.hitMark(point,node.kind,weakSpot);
     if(depleted){this.removeSpot(node.id);return;}
     if(!eligible(node.kind))return;
-    if(!this.spots.has(node.id)||weakSpot)this.placeSpot(node);
+    // Use the real mesh intersection as the anchor. The previous placement
+    // guessed a point from the node center, which could put markers inside or
+    // well above irregular rocks and tree trunks.
+    if(!this.spots.has(node.id)||weakSpot)this.placeSpot(node,point,normal);
   }
 
   spotPosition(nodeId:string):Vec3|null{
@@ -59,17 +67,18 @@ export class GatheringFeedback {
 
   dispose():void{this.clear();this.red.dispose();this.glow.dispose();this.bar.dispose();this.sparkBar.dispose();this.ring.dispose();}
 
-  private placeSpot(node:ResourceNode):void{
+  private placeSpot(node:ResourceNode,point:Vec3,normal?:THREE.Vector3):void{
     let spot=this.spots.get(node.id);
     if(!spot){const root=node.kind==='tree'?this.treeMarker():this.rockMarker();root.name=`${node.kind} weak spot`;this.scene.add(root);spot={nodeId:node.id,kind:node.kind as WeakKind,position:new THREE.Vector3(),root,sequence:0,age:0};this.spots.set(node.id,spot);}else spot.sequence++;
     const seed=hash(`${node.id}:${spot.sequence}`),angle=unit(seed,1)*Math.PI*2;
-    if(node.kind==='tree'){
-      const radius=.41*node.scale,vertical=(1.35+unit(seed,2)*2.65)*node.scale;
-      spot.position.set(node.position.x+Math.cos(angle)*radius,node.position.y+vertical,node.position.z+Math.sin(angle)*radius);
-    }else{
-      const radius=(.24+unit(seed,2)*.28)*node.scale,vertical=(.48+unit(seed,3)*.38)*node.scale;
-      spot.position.set(node.position.x+Math.cos(angle)*radius,node.position.y+vertical,node.position.z+Math.sin(angle)*radius);
-    }
+    // Keep subsequent weak points close to the successful impact on the same
+    // visible surface. Small tangent offsets retain feedback without the old
+    // center-based height guesses that caused floating markers.
+    const offset=spot.sequence===0?0:(.07+unit(seed,2)*.04)*Math.max(.72,node.scale);
+    const tangent=new THREE.Vector3(Math.cos(angle),0,Math.sin(angle));
+    if(normal)tangent.addScaledVector(normal,-tangent.dot(normal)).normalize();
+    spot.position.set(point.x+tangent.x*offset,point.y+tangent.y*offset,point.z+tangent.z*offset);
+    if(normal)spot.position.addScaledVector(normal,0.012);
     spot.root.position.copy(spot.position);spot.age=0;
   }
 

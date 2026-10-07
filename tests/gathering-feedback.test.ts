@@ -10,6 +10,8 @@ describe('gathering weak spots',()=>{
     fx.onHit(tree,{x:0,y:1.6,z:0},false,false);const spot=fx.spotPosition(tree.id);expect(spot).not.toBeNull();
     const origin=camera.position.clone(),target=new THREE.Vector3(spot!.x,spot!.y,spot!.z),ray=new THREE.Ray(origin,target.sub(origin).normalize());
     expect(fx.capture(tree,ray,new THREE.Vector3(0,1.6,0)).weakSpot).toBe(true);
+    const nearerPoint=ray.at(2,new THREE.Vector3());
+    expect(fx.capture(tree,ray,nearerPoint).weakSpot).toBe(false);
     const before={...spot!};fx.onHit(tree,{x:before.x,y:before.y,z:before.z},true,false);const moved=fx.spotPosition(tree.id)!;
     expect(Math.hypot(moved.x-before.x,moved.y-before.y,moved.z-before.z)).toBeGreaterThan(.05);fx.dispose();
   });

@@ -290,14 +290,16 @@ export class GameApp {
     this.ray.setFromCamera(this.screenCenter,this.camera);this.ray.far=PLAYER.INTERACT_DISTANCE+1;
     const hit=object?this.ray.intersectObject(object,true)[0]:undefined;
     const fallback=new THREE.Vector3(node.position.x,node.position.y+(node.kind==='tree'?1.8:.55)*node.scale,node.position.z);
-    return this.gatheringFeedback.capture(node,this.ray.ray,hit?.point??fallback);
+    let normal:THREE.Vector3|undefined;
+    if(hit?.face){normal=hit.face.normal.clone().applyMatrix3(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld)).normalize();if(normal.dot(this.ray.ray.direction)>0)normal.negate();}
+    return {...this.gatheringFeedback.capture(node,this.ray.ray,hit?.point??fallback),normal};
   }
   private gather(node:ResourceNode,animate=true,strike?:GatherStrike){
     if(this.cooldown>0)return;const actual=strike??this.resourceStrike(node,this.environment.nodeObjects.get(node.id));const active=this.simulation.state.inventory[this.simulation.state.activeSlot]?.itemId;
     const result=this.simulation.gather(node,actual.weakSpot);if(result.amount<=0)return;this.syncHeld();
     this.cooldown=['fiber','berries','wood'].includes(node.kind)?.22:.62;if(animate)this.held.hit();if(['tree','stone','metal','wood'].includes(node.kind))this.held.impact();
     const kind=node.kind==='tree'||node.kind==='wood'?'wood':node.kind==='stone'?'stone':node.kind==='metal'||node.kind==='sulfur'||node.kind==='hqmetal'?'metal':node.kind as 'fiber'|'berries';
-    this.impactFx.burst(actual.point,kind,actual.weakSpot?1.55:1);this.gatheringFeedback.onHit(node,actual.point,actual.weakSpot,result.depleted);this.ui.resourceHit(node.kind,result.amount,result.depleted,actual.weakSpot);
+    this.impactFx.burst(actual.point,kind,actual.weakSpot?1.55:1);this.gatheringFeedback.onHit(node,actual.point,actual.weakSpot,result.depleted,actual.normal);this.ui.resourceHit(node.kind,result.amount,result.depleted,actual.weakSpot);
     if(['tree','stone','metal','sulfur','hqmetal'].includes(node.kind))this.audio.gather((active==='rock'||active==='hatchet'||active==='pickaxe'?active:null) as GatherTool|null,(node.kind==='sulfur'||node.kind==='hqmetal'?'metal':node.kind) as 'tree'|'stone'|'metal',actual.weakSpot);else this.audio.play('pickup');
     if(result.depleted&&node.kind==='tree'){this.environment.fallTree(node.id,this.simulation.state.player.position);this.audio.treeFall();}else if(!result.depleted)this.environment.hitNode(node.id,actual.weakSpot?1.45:1);
     this.environment.syncNodes(this.simulation.state.nodeChanges);if(result.depleted)this.physics.removeNodeCollider(node.id);
