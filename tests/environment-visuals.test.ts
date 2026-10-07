@@ -179,6 +179,18 @@ describe('environment visual building blocks',()=>{
     }finally{atmosphere.dispose();height.dispose();}
   });
 
+  it('keeps surfaces wet briefly after rainfall and then dries them gradually',()=>{
+    const state=new GameSimulation(731942,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather;
+    Object.assign(w,{kind:'rain',remaining:3600,blend:1,rain:0,storm:0,mist:0});
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),camera=new THREE.Vector3();
+    try{
+      atmosphere.update(0,10,camera);const during=weather.update(5,state,atmosphere,camera,'low').surfaceWetness;expect(during).toBeGreaterThan(.65);
+      Object.assign(w,{kind:'clear',remaining:3600,rain:0,storm:0,mist:0});const drying=weather.update(5,state,atmosphere,camera,'low').surfaceWetness;
+      expect(drying).toBeGreaterThan(0);expect(drying).toBeLessThan(during);
+      expect(weather.update(30,state,atmosphere,camera,'low').surfaceWetness).toBe(0);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
+  });
+
   it('adds deterministic, brief lightning flashes only during storms',()=>{
     const seed=731942,bucket=Array.from({length:2000},(_,index)=>index).find(index=>stormLightningRoll(seed,index)>.88)!;
     expect(bucket).toBeDefined();expect(stormLightningRoll(seed,bucket)).toBe(stormLightningRoll(seed,bucket));expect(stormLightningRoll(seed,bucket)).toBeGreaterThanOrEqual(0);expect(stormLightningRoll(seed,bucket)).toBeLessThan(1);
