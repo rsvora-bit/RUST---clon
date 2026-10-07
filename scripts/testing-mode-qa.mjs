@@ -23,6 +23,13 @@ try{
   await clickControl('[data-dev="grounding"]');check('F3 exposes a working terrain grounding overlay toggle',await page.locator('[data-dev="grounding"]').getAttribute('aria-pressed')==='true');await clickControl('[data-dev="grounding"]');check('terrain grounding overlay can be disabled after inspection',await page.locator('[data-dev="grounding"]').getAttribute('aria-pressed')==='false');
   check('isolated test world starts with save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED');
   check('real item catalog and current POI list populate',await page.locator('[data-test-item] option').count()>40&&await page.locator('[data-test-poi] option').count()>=5);
+  check('Testing Mode exposes representative tree, rock and shipwreck targets',await page.locator('[data-test-poi] option[value="asset:tree"]').count()===1&&await page.locator('[data-test-poi] option[value="asset:rock"]').count()===1&&await page.locator('[data-test-poi] option[value="asset:shipwreck"]').count()===1);
+  for(const [asset,target] of [['tree',()=>page.evaluate(()=>window.__TIDELAND.nodes().find(node=>node.kind==='tree')?.position)],['rock',()=>page.evaluate(()=>window.__TIDELAND.worldArt().outcropInstances[0]?.position)],['shipwreck',()=>page.evaluate(()=>window.__TIDELAND.landmarks().find(poi=>poi.kind===5)?.position)]]){
+    const position=await target();assert.ok(position,`${asset} sample exists`);await page.locator('[data-test-poi]').selectOption(`asset:${asset}`);await clickControl('[data-test-action="teleport"]');
+    const player=await page.evaluate(()=>window.__TIDELAND.sim().state.player.position),distance=Math.hypot(player.x-position.x,player.z-position.z);
+    const maxDistance=asset==='shipwreck'?9.5:7.5;
+    check(`asset teleport places the player beside the representative ${asset}`,distance>2.5&&distance<maxDistance&&Math.abs(player.y)<100);
+  }
   await page.locator('[data-test-item]').selectOption('fieldShotgun');await clickControl('[data-test-action="weapon-kit"]');
   const weaponState=await page.evaluate(()=>({slot:window.__TIDELAND.sim().state.inventory[0],ammo:window.__TIDELAND.sim().count('shotgunShells')}));check('weapon kit equips real shotgun and supplies ammunition',weaponState.slot?.itemId==='fieldShotgun'&&weaponState.ammo>=32);
   await clickControl('[data-test-action="unlock"]');check('all current research unlocks in test state',await page.evaluate(()=>window.__TIDELAND.sim().state.progression.tech.unlocked.length===10));
