@@ -1,6 +1,6 @@
 import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, longHullSideCollisionsFromLods, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 import {rockGeometry} from '../src/world/models';
 
@@ -122,5 +122,14 @@ describe('visual collision bounds', () => {
     const terrain=new THREE.PlaneGeometry(40,40,1,1);terrain.rotateX(-Math.PI/2);const sides=longHullSideCollisions(new THREE.Box3(new THREE.Vector3(-4,0,-.78),new THREE.Vector3(4,1.4,.78)));
     for(const side of [1,-1]){const physics=new PhysicsWorld(terrain,sides,{x:0,y:0,z:side*2.5});try{for(let step=0;step<32;step++)physics.move({x:0,y:0,z:-side*.15});const player=physics.position();expect(player.z*side).toBeGreaterThan(.80);expect(player.z*side).toBeLessThan(1.45);}finally{physics.dispose();}}
     terrain.dispose();
+  });
+
+  it('keeps long-hull side collision around every rendered LOD and blocks a low-LOD protrusion',()=>{
+    const floor=new THREE.PlaneGeometry(40,40,1,1);floor.rotateX(-Math.PI/2);const make=(width:number,height:number,depth:number,z:number)=>{const level=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth));mesh.position.z=z;level.add(mesh);return level;},levels=[make(8,1.4,1.5,0),make(8.1,1.45,1.75,.12),make(8.2,1.5,2.25,.52)],sides=longHullSideCollisionsFromLods(levels);
+    try{
+      const union=new THREE.Box3();for(const level of levels)union.union(new THREE.Box3().setFromObject(level,true));const farSide=union.max.z-.12;
+      expect(sides).toHaveLength(2);expect(sides[1]!.position.z).toBeCloseTo(farSide);expect(sides[1]!.halfExtents.x).toBeCloseTo(union.getSize(new THREE.Vector3()).x*.5-.1);
+      const physics=new PhysicsWorld(floor,sides,{x:0,y:0,z:3});for(let step=0;step<40;step++)physics.move({x:0,y:0,z:-.12});expect(physics.position().z).toBeGreaterThan(union.max.z-.55);physics.dispose();
+    }finally{floor.dispose();for(const level of levels)level.traverse(object=>{if(object instanceof THREE.Mesh)object.geometry.dispose();});}
   });
 });

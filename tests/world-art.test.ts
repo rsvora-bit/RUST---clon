@@ -14,6 +14,12 @@ import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
+  it('derives Breakwater hull side collision from the union of all rendered LODs',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),asset=new THREE.Group();
+    for(const [index,depth,offset] of [[0,1.4,0],[1,1.8,.1],[2,2.3,.4]] as const){const lod=new THREE.Group();lod.name=`LOD${index}`;const mesh=new THREE.Mesh(new THREE.BoxGeometry(8,1.4,depth),new THREE.MeshBasicMaterial());mesh.position.z=offset;lod.add(mesh);asset.add(lod);}
+    try{world.populate(new GameSimulation(seed,terrain.spawn).state);expect(world.useGeneratedWreckHull(asset)).toBe(true);const hullSides=world.collisionBoxes().filter(box=>box.halfExtents.x>3.8);expect(hullSides).toHaveLength(2);expect(hullSides[0]!.halfExtents.x).toBeGreaterThan(3.8);expect(Math.max(...hullSides.map(box=>box.position.z))-Math.min(...hullSides.map(box=>box.position.z))).toBeGreaterThan(2.0);}
+    finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('avoids per-blade shadow-map sampling for the dense revision-6 grass field while preserving legacy behavior',()=>{
     expect(grassReceivesShadows(1)).toBe(true);
     expect(grassReceivesShadows(5)).toBe(true);

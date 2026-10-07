@@ -14,7 +14,7 @@ import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
 import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {longHullSideCollisions} from '../physics/collisionBounds';
+import {longHullSideCollisionsFromLods} from '../physics/collisionBounds';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp','Stormwatch Station','Breakwater Cargo Wreck','Tidal Survey Pier','Highland Relay'];
@@ -332,8 +332,7 @@ export class WorldSurvival {
     legacyHull.visible=false;
     if(!this.attachLodAsset(asset,poiRoot,'Breakwater Blender shipwreck hull LOD',{x:0,y:.20,z:0},1,0,[0,48,118]))return false;
     poiRoot.updateWorldMatrix(true,true);const lod=poiRoot.getObjectByName('Breakwater Blender shipwreck hull LOD');
-    const lod0=lod instanceof T.LOD?lod.levels[0]?.object:null;
-    if(lod0){lod0.updateWorldMatrix(true,true);this.generatedWreckSides=longHullSideCollisions(new T.Box3().setFromObject(lod0));}
+    if(lod instanceof T.LOD)this.generatedWreckSides=longHullSideCollisionsFromLods(lod.levels.map(level=>level.object));
     return true;
   }
   /** Adds authored visual debris around the same POI without changing physics or saved stations. */

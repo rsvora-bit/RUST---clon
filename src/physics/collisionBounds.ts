@@ -90,6 +90,13 @@ export function longHullSideCollisions(box: THREE.Box3, thickness = 0.12, inset 
   }));
 }
 
+/** Keep open-hull side collision stable when authored render LODs extend beyond LOD0. */
+export function longHullSideCollisionsFromLods(levels:readonly THREE.Object3D[],thickness=.12,inset=.10):CollisionBounds[]{
+  const bounds=new THREE.Box3().makeEmpty();
+  for(const level of levels){level.updateWorldMatrix(true,true);bounds.union(new THREE.Box3().setFromObject(level,true));}
+  return bounds.isEmpty()?[]:longHullSideCollisions(bounds,thickness,inset);
+}
+
 /** Measure all rendered child meshes after their complete world transform. */
 export function collisionBoundsFromObject(object: THREE.Object3D, padding = 0.06): CollisionBounds {
   object.updateWorldMatrix(true, true);
