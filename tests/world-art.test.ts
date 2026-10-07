@@ -6,7 +6,7 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {grassSurfaceCover,surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
+import {climateTreeAssetVariant,grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
@@ -155,6 +155,16 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(treeSpeciesForBiome('SNOW / ALPINE',.3,.1,0,true,climate(.35),30)).toBe(0);
     expect(treeSpeciesForBiome('ROCKY MOUNTAIN',.3,0,.8,false,climate(.8),65)).toBe(2);
     expect(palmSuitability(climate(.8,.9),3,'COAST')).toBe(0);
+  });
+  it('selects authored alpine, marsh, coastal and alternate broadleaf assets deterministically',()=>{
+    expect(climateTreeAssetVariant(0,'SNOW / ALPINE',.3,.48,33,.2)).toBe(6);
+    expect(climateTreeAssetVariant(1,'WETLAND / MARSH',.58,.78,5,.4)).toBe(7);
+    expect(climateTreeAssetVariant(4,'COAST',.63,.56,2,.3)).toBe(8);
+    expect(climateTreeAssetVariant(0,'TEMPERATE GRASSLAND',.62,.54,7,.1)).toBe(8);
+    expect(climateTreeAssetVariant(0,'TEMPERATE GRASSLAND',.31,.54,7,.1)).toBe(0);
+    expect(climateTreeAssetVariant(1,'TEMPERATE FOREST',.62,.68,16,.1)).toBe(9);
+    expect(climateTreeAssetVariant(5,'COAST',.82,.32,2,.1)).toBe(5);
+    expect(climateTreeAssetVariant(0,'SNOW / ALPINE',.3,.48,33,.95)).toBe(0);
   });
   it('concentrates the revision-6 tree budget in forests while preserving legacy placement weights',()=>{
     expect(revisionTreeCover(.7,.8,6)).toBeCloseTo(.91);

@@ -32,11 +32,22 @@ export function revisionTreeCover(cover:number,forest:number,revision:number):nu
 /** Stable per-tree foliage tones widen Rev6 forest variation without changing legacy palettes. */
 export function treeCrownTint(species:number,hueRoll:number,brightnessRoll:number,revision:number):THREE.Color {
   if(species===5)return new THREE.Color().setHSL(.25+(hueRoll-.5)*.05,.24,.70+brightnessRoll*.12);
-  if(species===1||species===4)return new THREE.Color().setHSL(.275+(hueRoll-.5)*(revision>=6?.10:.045),revision>=6?.23:.18,(revision>=6?.65:.58)+brightnessRoll*(revision>=6?.20:.13));
+  if([1,4,7,8,9].includes(species))return new THREE.Color().setHSL(.275+(hueRoll-.5)*(revision>=6?.10:.045),revision>=6?.23:.18,(revision>=6?.65:.58)+brightnessRoll*(revision>=6?.20:.13));
   return new THREE.Color().setHSL(.29+(hueRoll-.5)*(revision>=6?.075:.035),revision>=6?.27:.22,(revision>=6?.61:.62)+brightnessRoll*(revision>=6?.21:.14));
 }
 /** Revision-6 wetland reeds form fuller, tighter stands while keeping the total instance budget fixed. */
 export function marshReedClumpSize(roll:number):number{return 5+Math.floor(Math.max(0,Math.min(.999999,roll))*4);}
+/** Deterministically selects authored Rev6 silhouettes within compatible climate bands. */
+export function climateTreeAssetVariant(species:number,biome:string,temperature:number,moisture:number,elevation:number,roll:number):number{
+  if(species===5)return species;
+  const deciduous=species===1||species===4||species===7||species===8||species===9;
+  if((biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN'||elevation>42)&&![5,6].includes(species)&&roll<.58)return 6;
+  if(biome==='WETLAND / MARSH'&&deciduous&&moisture>.57&&roll<.72)return 7;
+  const maritimeLowland=['COAST','TEMPERATE GRASSLAND','TEMPERATE FOREST'].includes(biome)&&elevation<13&&moisture>.40;
+  if(maritimeLowland&&temperature>.48&&roll<.42)return 8;
+  if(biome==='TEMPERATE FOREST'&&deciduous&&roll<.27)return 9;
+  return species;
+}
 export function treeSpeciesForBiome(biome:string,forest:number,palmRoll:number,broadRoll:number,variant:boolean,climate?:ClimateSample,elevation=0):number{if(climate){const suitability=palmSuitability(climate,elevation,biome);if(palmRoll<suitability*.68)return 5;if(climate.temperature<.42||elevation>40||biome==='SNOW / ALPINE')return variant?0:2;return broadRoll<(.20+smoothstep(.45,.68,climate.moisture)*.48)?(variant?1:4):(forest>.5?(variant?0:2):3);}const palm=(biome==='ARID'||biome==='COAST')&&palmRoll<.68,broad=!palm&&broadRoll<(.27+(biome==='COAST'?.18:0));return palm?5:broad?(variant?1:4):(biome==='SNOW / ALPINE'||forest>.5?(variant?0:2):3);}
 
 /** The render adapter for deterministic island data; gameplay mutations arrive through syncNodes. */
@@ -209,11 +220,12 @@ export class Environment {
       // Blue-noise rejection gives each trunk natural breathing room inside groves.
       let overlaps=false;if(useTreeGrid){for(let dz=-1;dz<=1&&!overlaps;dz++)for(let dx=-1;dx<=1&&!overlaps;dx++)for(const t of treeGrid.get(`${Math.floor(x/4)+dx},${Math.floor(z/4)+dz}`)??[])if(Math.hypot(t.x-x,t.z-z)<4){overlaps=true;break;}}else overlaps=treeNodes.some(t=>Math.hypot(t.node.position.x-x,t.node.position.z-z)<4);if(overlaps)continue;
       const variant=Math.sin(x*12.9898+z*78.233)>0;
-      const species=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,climate,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3));
+      const selectedSpecies=g5?treeSpeciesForBiome(biome,forest,rand(),rand(),variant,climate,h):(rand()<(.27+(h<16?.18:0))?(variant?1:4):(forest>.5?(variant?0:2):3)),variantRoll=this.terrain.noise.at(x*.037+this.seed*.001,z*.041-this.seed*.001),species=g5&&this.worldRevision>=6&&climate?climateTreeAssetVariant(selectedSpecies,biome,climate.temperature,climate.moisture,h,variantRoll):selectedSpecies;
       rememberTree({node:this.addNode('tree',x,z,.72+rand()*.57,rand()*6.28,300),species});
     }
-    for(let species=0;species<6;species++){
-      const palm=species===5,broad=species===1||species===4||palm,leafMassTree=broad&&!palm,pineVariant=species===2?1:species===3?2:0,entries=treeNodes.filter(t=>t.species===species),variant=species===4?1:0,trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():broad?broadleafGeometry(variant,this.worldRevision>=6,this.worldRevision>=6?'leaves':'all'):pineGeometry(pineVariant,this.worldRevision>=6)),massGeometry=this.worldRevision>=6?(leafMassTree?this.own(broadleafGeometry(variant,true,'masses')):!palm?this.own(pineMassGeometry(pineVariant)):undefined):undefined;
+    for(let species=0;species<10;species++){
+      const entries=treeNodes.filter(t=>t.species===species);if(!entries.length)continue;
+      const palm=species===5,broad=[1,4,7,8,9].includes(species),leafMassTree=broad,pineVariant=species===2?1:species===3?2:species===6?1:0,variant=species===4||species===8||species===9?1:0,trunk=this.own(palm?palmTrunkGeometry():trunkGeometry(broad,species===2||species===4?1:species===3?2:0)),crown=this.own(palm?palmGeometry():broad?broadleafGeometry(variant,this.worldRevision>=6,this.worldRevision>=6?'leaves':'all'):pineGeometry(pineVariant,this.worldRevision>=6)),massGeometry=this.worldRevision>=6?(leafMassTree?this.own(broadleafGeometry(variant,true,'masses')):!palm?this.own(pineMassGeometry(pineVariant)):undefined):undefined;
       if(this.worldRevision>=6){const lateral=palm?1.08:broad?1.28:1.18;for(const geometry of [crown,massGeometry].filter((entry):entry is THREE.BufferGeometry=>!!entry)){const position=geometry.getAttribute('position');for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)*lateral,position.getY(i),position.getZ(i)*lateral);position.needsUpdate=true;geometry.computeVertexNormals();}}
       // Instanced canopy tinting needs a neutral per-vertex color channel;
       // without it Three.js multiplies the foliage texture by an undefined
@@ -238,7 +250,7 @@ export class Environment {
   /** Replace procedural tree silhouettes with the original Blender LOD0 meshes while retaining one instanced batch per surface. */
   useGeneratedTreeModels(models:Record<string,THREE.Object3D>):number {
     if(this.terrain.generation!==5||this.worldRevision<6)return 0;
-    const assetBySpecies:Record<number,string>={0:'conifer_a',1:'broadleaf_a',2:'conifer_b',3:'conifer_c',4:'broadleaf_c',5:'palm_tree_a'};let integrated=0;
+    const assetBySpecies:Record<number,string>={0:'conifer_a',1:'broadleaf_a',2:'conifer_b',3:'conifer_c',4:'broadleaf_c',5:'palm_tree_a',6:'alpine_conifer',7:'marsh_tree',8:'coastal_tree',9:'broadleaf_b'};let integrated=0;
     for(const batch of this.treeBatches){
       const assetId=assetBySpecies[batch.species],asset=models[assetId],lod=asset?.getObjectByName('LOD0');if(!asset||!lod)continue;
       asset.updateMatrixWorld(true);const generatedLods:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[]=[],foliageMaterials=new Map<string,THREE.Material>();let trunkMaterial:THREE.Material|undefined,valid=true;
