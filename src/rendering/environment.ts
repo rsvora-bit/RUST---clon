@@ -119,6 +119,7 @@ export class Environment {
   get fallingTreeCount():number{return this.fallingTrees.size;}
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
   get grassChunkCount():number{return this.grassChunks.length;}
+  get groundDecalStats():{name:string;instances:number;fullCount:number}[]{return this.decalMeshes.map(mesh=>({name:mesh.name,instances:mesh.count,fullCount:this.detailMeshes.find(detail=>detail.mesh===mesh)?.fullCount??mesh.count}));}
   get outcropInstances():{position:Vec3;scale:Vec3}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();
     return this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&object.name==='Weathered granite outcrops').flatMap(mesh=>Array.from({length:mesh.count},(_,index)=>{mesh.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return{position:{x:position.x,y:position.y,z:position.z},scale:{x:scale.x,y:scale.y,z:scale.z}};}));
