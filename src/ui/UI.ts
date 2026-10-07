@@ -30,6 +30,7 @@ const labels: Record<PieceType, string> = { foundation:'Foundation',wall:'Wall',
 
 export class UI {
   screen: Screen = 'menu';
+  get diagnosticsVisible():boolean{return this.diagnosticVisible;}
   private root: HTMLDivElement;
   private actions: UIActions;
   private state: GameState | null = null;
@@ -303,7 +304,7 @@ export class UI {
     const lineRows=(lines:string[])=>lines.map(line=>{const split=line.search(/\s{2,}|\s\/\s/);const label=split>0?line.slice(0,split).trim():line,value=split>0?line.slice(split).trim():'';return `<div><span>${esc(label)}</span><b>${esc(value)}</b></div>`;}).join('');
     const draw=findLine('DRAW CALLS'),drawMatch=draw?.match(/([\d,]+)\s+DRAW CALLS\s+\/\s+([\d,]+)\s+TRIANGLES/i);
     const performance=panel.querySelector<HTMLElement>('[data-telemetry-body="performance"]');if(performance)performance.innerHTML=metric('FPS',String(Math.round(hud.fps)))+metric('FRAME',`${(1000/Math.max(hud.fps,1)).toFixed(1)} ms`)+metric('DRAW CALLS',drawMatch?.[1]??'—')+metric('TRIANGLES',drawMatch?.[2]??'—');
-    const world=panel.querySelector<HTMLElement>('[data-telemetry-body="world"]'),entities=findLine('ENTITIES')?.replace(/^ENTITIES\s+/,'')??'—';if(world)world.innerHTML=metric('BUILD',`v${GAME_VERSION} / ${GAME_BUILD}`,true)+metric('SEED',String(state.seed))+metric('BIOME',hud.biome.toUpperCase())+metric('WORLD TIME',state.timeOfDay.toFixed(2))+metric('STRUCTURES',String(state.structures.length))+metric('ENTITIES',entities,true);
+    const world=panel.querySelector<HTMLElement>('[data-telemetry-body="world"]'),entities=findLine('ENTITIES')?.replace(/^ENTITIES\s+/,'')??'—',assetLod=findLine('ASSET LOD')?.replace(/^ASSET LOD\s+/,'')??'—';if(world)world.innerHTML=metric('BUILD',`v${GAME_VERSION} / ${GAME_BUILD}`,true)+metric('SEED',String(state.seed))+metric('BIOME',hud.biome.toUpperCase())+metric('WORLD TIME',state.timeOfDay.toFixed(2))+metric('STRUCTURES',String(state.structures.length))+metric('ENTITIES',entities,true)+metric('WORLD ASSET LOD',assetLod,true);
     const playerPrefixes=['POSITION','VELOCITY','MOVE FWD','AUTO-RUN','GROUND','SPEED','CROUCH'];const cameraPrefixes=['CAMERA BASIS','EYES','LOCAL','YAW','PITCH','QUAT','CAM FWD','ANGLE','EYE XZ OFFSET','FOV V'];
     const playerLines=raw.filter(line=>playerPrefixes.some(prefix=>line.startsWith(prefix))),cameraLines=raw.filter(line=>cameraPrefixes.some(prefix=>line.startsWith(prefix)));
     const player=panel.querySelector<HTMLElement>('[data-telemetry-body="player"]');if(player)player.innerHTML=lineRows(playerLines.length?playerLines:[`POSITION  ${state.player.position.x.toFixed(1)}, ${state.player.position.y.toFixed(1)}, ${state.player.position.z.toFixed(1)}`]);

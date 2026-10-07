@@ -16,6 +16,10 @@ try{
   check('F3 test controls are organized into readable developer groups',groups.map(group=>group.id).join(',')==='items,player,building,world'&&groups[0].title==='INVENTORY / PROGRESSION'&&groups[1].actions.includes('health')&&groups[2].actions.includes('build-toggle')&&groups[3].actions.includes('teleport'));
   await page.locator('[data-action="launchTestWorld"]').click();
   await page.waitForFunction(()=>window.__TIDELAND.getScreen()==='playing'&&document.querySelector('[data-dev="testing"]')?.getAttribute('aria-pressed')==='true',{timeout:180000});
+  if(await page.locator('.diagnostics').isHidden())await page.keyboard.press('F3');
+  await page.mouse.move(1,1);
+  await page.waitForFunction(()=>document.querySelector('[data-telemetry-body="world"]')?.textContent?.includes('WORLD ASSET LOD'),{timeout:15000});
+  const assetLod=await page.locator('[data-telemetry-body="world"]').innerText();check('F3 world telemetry identifies active tree, rock and shoreline LOD assets',/TREES LOD[012]/.test(assetLod)&&/ROCKS LOD[012]/.test(assetLod)&&/SHORE LOD[012]/.test(assetLod));
   check('isolated test world starts with save lock',await page.locator('[data-testing-status]').innerText()==='SAVES LOCKED');
   check('real item catalog and current POI list populate',await page.locator('[data-test-item] option').count()>40&&await page.locator('[data-test-poi] option').count()>=5);
   await page.locator('[data-test-item]').selectOption('fieldShotgun');await clickControl('[data-test-action="weapon-kit"]');
