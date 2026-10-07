@@ -405,7 +405,7 @@ export class GameApp {
       const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.43,.4,.88,20,1,true),barrelMat);barrel.position.y=.44;barrel.castShadow=true;g.add(barrel);
       for(const h of [.08,.78]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.415,.024,6,20),ringMat);ring.rotation.x=Math.PI/2;ring.position.y=h;g.add(ring);}
       const water=new THREE.Mesh(new THREE.CircleGeometry(.39,20),new THREE.MeshStandardMaterial({color:'#6096a3',roughness:.15,metalness:.35}));water.rotation.x=-Math.PI/2;water.position.y=.70;g.add(water);this.scene.add(g);this.rainBarrels.push(g);
-      const id=`rain-collector-${index}`;this.interactions.register({id,kind:'water',object:g,position:()=>g.position,enabled:()=>true,info:()=>({title:'Rain collector',action:'DRINK FRESH WATER',key:keyLabel(this.settings.keybinds.interact),detail:'A little kindness left behind.'}),interact:()=>{this.simulation.state.player.stats.thirst=Math.min(100,this.simulation.state.player.stats.thirst+35);this.ui.notify('Hydration +35');this.audio.play('eat');}});
+      const id=`rain-collector-${index}`;this.physics.setStructure(id,[{position:{x:position.x,y:position.y+.44,z:position.z},halfExtents:{x:.43,y:.44,z:.43},rotation:g.rotation.y}]);this.interactions.register({id,kind:'water',object:g,position:()=>g.position,enabled:()=>true,info:()=>({title:'Rain collector',action:'DRINK FRESH WATER',key:keyLabel(this.settings.keybinds.interact),detail:'A little kindness left behind.'}),interact:()=>{this.simulation.state.player.stats.thirst=Math.min(100,this.simulation.state.player.stats.thirst+35);this.ui.notify('Hydration +35');this.audio.play('eat');}});
     });
   }
   private footstepSurface():FootstepSurface{
