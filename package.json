@@ -1,6 +1,6 @@
 {
   "name": "tideland-survival",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "icons:render": "node scripts/render-icons.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run --pool=threads --maxWorkers=1 --minWorkers=1",
+    "test": "vitest run --pool=threads --maxWorkers=1",
     "test:browser": "node scripts/polish-qa.mjs",
     "test:menu-settings": "node scripts/menu-settings-qa.mjs",
     "test:death": "node scripts/death-respawn-qa.mjs",
@@ -50,7 +50,7 @@
     "typescript": "~5.9.3",
     "vite": "^7.1.5",
     "@types/three": "^0.180.0",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.11",
     "@playwright/test": "^1.55.0"
   }
 }

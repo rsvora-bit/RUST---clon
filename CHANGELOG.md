@@ -1,3 +1,10 @@
+## v0.14.1 / EA-14.1 — Physical World & Foliage Stabilization (2026-10-08)
+
+- Kept generated collision proxies stable across visual LODs and added live four-side movement checks for every major boulder variant.
+- Preserved authored tree material groups during batching so foliage and bark receive the correct shared materials and vertex colors.
+- Varied generated meadow grass silhouettes while keeping the geometry budget unchanged; added focused regression tests.
+- No save schema, world-generation identity or gameplay resource state changed. Validation: 537 unit tests, production build, world-art/save, collision, tree-culling, Testing Mode and matched Chrome/Metal HIGH performance checks passed.
+
 ## v0.14.0 / EA-14.0 — Visual Fidelity & Physical World Overhaul (2026-10-07)
 
 - Improved weathered PBR detail for wood, metal, rock and terrain, with reduced texture stretch on steep ground and restrained biome-aware moss, mud and snow variation.
