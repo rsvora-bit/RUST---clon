@@ -1,6 +1,6 @@
 import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromObject, longHullSideCollisions, longHullSideCollisionsFromLods, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromLodObjects, collisionBoundsFromObject, longHullSideCollisions, longHullSideCollisionsFromLods, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 import {rockGeometry} from '../src/world/models';
 
@@ -78,6 +78,13 @@ describe('visual collision bounds', () => {
     }
     expect(proxy.halfExtents.x*proxy.halfExtents.z).toBeLessThan((worldBounds.max.x-worldBounds.min.x)*(worldBounds.max.z-worldBounds.min.z)*.72);
     rock.dispose();
+  });
+
+  it('unions all world-transformed LOD objects into one collision envelope',()=>{
+    const root=new THREE.Group();root.position.set(12,3,-8);const near=new THREE.Group(),far=new THREE.Group(),nearMesh=new THREE.Mesh(new THREE.BoxGeometry(2,2,2)),farMesh=new THREE.Mesh(new THREE.BoxGeometry(4,2,3));far.position.set(1.5,0,.5);near.add(nearMesh);far.add(farMesh);root.add(near,far);
+    const bounds=collisionBoundsFromLodObjects([near,far],.1)!;
+    expect(bounds.position).toEqual({x:13.25,y:3,z:-7.5});expect(bounds.halfExtents).toEqual({x:2.35,y:1.1,z:1.6});
+    nearMesh.geometry.dispose();farMesh.geometry.dispose();
   });
 
   it('blocks the player when approaching the rotated rock proxy from its side',()=>{
