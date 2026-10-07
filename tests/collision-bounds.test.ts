@@ -54,6 +54,19 @@ describe('visual collision bounds', () => {
     trunk.dispose();
   });
 
+  it('keeps a sloped rotated rock enclosed without an inflated world-axis footprint',()=>{
+    const rock=new THREE.BoxGeometry(4,2,1),yaw=new THREE.Quaternion().setFromEuler(new THREE.Euler(.13,.72,-.09)),transform=new THREE.Matrix4().compose(new THREE.Vector3(7,3,-11),yaw,new THREE.Vector3(1.1,.9,1.25));rock.computeBoundingBox();
+    const proxy=collisionBoundsFromGeometry(rock,transform,.08),worldBounds=new THREE.Box3().copy(rock.boundingBox!).applyMatrix4(transform),position=rock.getAttribute('position'),point=new THREE.Vector3(),c=Math.cos(proxy.rotation??0),s=Math.sin(proxy.rotation??0);
+    for(let i=0;i<position.count;i++){
+      point.fromBufferAttribute(position,i).applyMatrix4(transform);const dx=point.x-proxy.position.x,dz=point.z-proxy.position.z;
+      expect(Math.abs(dx*c-dz*s)).toBeLessThanOrEqual(proxy.halfExtents.x+1e-5);
+      expect(Math.abs(dx*s+dz*c)).toBeLessThanOrEqual(proxy.halfExtents.z+1e-5);
+      expect(Math.abs(point.y-proxy.position.y)).toBeLessThanOrEqual(proxy.halfExtents.y+1e-5);
+    }
+    expect(proxy.halfExtents.x*proxy.halfExtents.z).toBeLessThan((worldBounds.max.x-worldBounds.min.x)*(worldBounds.max.z-worldBounds.min.z)*.72);
+    rock.dispose();
+  });
+
   it('places narrow hull side proxies on both authored visual edges',()=>{
     const sides=longHullSideCollisions(new THREE.Box3(new THREE.Vector3(-4,-.7,.02),new THREE.Vector3(4,.7,1.58)));
     expect(sides).toHaveLength(2);

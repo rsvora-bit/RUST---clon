@@ -33,9 +33,17 @@ export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): Collisi
 /** Build a yaw-oriented proxy from upright local geometry and its instance transform. */
 export function collisionBoundsFromGeometry(geometry: THREE.BufferGeometry, transform: THREE.Matrix4, padding = 0.06): CollisionBounds {
   if (!geometry.boundingBox) geometry.computeBoundingBox();
-  const bounds=geometry.boundingBox!,center=bounds.getCenter(new THREE.Vector3()).applyMatrix4(transform),size=bounds.getSize(new THREE.Vector3()),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
-  transform.decompose(position,quaternion,scale);const rotation=new THREE.Euler().setFromQuaternion(quaternion,'YXZ').y;
-  return {position:{x:center.x,y:center.y,z:center.z},halfExtents:{x:Math.max(.05,size.x*Math.abs(scale.x)*.5+padding),y:Math.max(.05,size.y*Math.abs(scale.y)*.5+padding),z:Math.max(.05,size.z*Math.abs(scale.z)*.5+padding)},rotation};
+  const bounds=geometry.boundingBox!,worldBounds=new THREE.Box3().copy(bounds).applyMatrix4(transform),localCenter=bounds.getCenter(new THREE.Vector3()),center=localCenter.clone().applyMatrix4(transform),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();
+  transform.decompose(position,quaternion,scale);const rotation=new THREE.Euler().setFromQuaternion(quaternion,'YXZ').y,c=Math.cos(rotation),s=Math.sin(rotation),half=new THREE.Vector3();
+  // Project the transformed local bounds onto the collider's yaw axes. This
+  // keeps tilted/rotated rocks enclosed without the oversized world AABB that
+  // blocks empty space around their visible silhouette.
+  for(let corner=0;corner<8;corner++){
+    const point=new THREE.Vector3(corner&1?bounds.max.x:bounds.min.x,corner&2?bounds.max.y:bounds.min.y,corner&4?bounds.max.z:bounds.min.z).applyMatrix4(transform),dx=point.x-center.x,dz=point.z-center.z;
+    half.x=Math.max(half.x,Math.abs(dx*c-dz*s));half.z=Math.max(half.z,Math.abs(dx*s+dz*c));
+  }
+  const verticalCenter=(worldBounds.min.y+worldBounds.max.y)*.5,verticalHalf=(worldBounds.max.y-worldBounds.min.y)*.5;
+  return {position:{x:center.x,y:verticalCenter,z:center.z},halfExtents:{x:Math.max(.05,half.x+padding),y:Math.max(.05,verticalHalf+padding),z:Math.max(.05,half.z+padding)},rotation};
 }
 
 /** Two thin side walls for a long, open hull, derived from its authored bounds. */
