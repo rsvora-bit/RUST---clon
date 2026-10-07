@@ -7,13 +7,15 @@ describe('gathering weak spots',()=>{
   it('creates a target after the first hit and recognizes a centered weak-spot strike',()=>{
     const scene=new THREE.Scene(),fx=new GatheringFeedback(scene),camera=new THREE.PerspectiveCamera();camera.position.set(0,2,5);
     const tree:ResourceNode={id:'tree-test',kind:'tree',position:{x:0,y:0,z:0},capacity:300,remaining:300,rotation:0,scale:1};
-    fx.onHit(tree,{x:0,y:1.6,z:0},false,false);const spot=fx.spotPosition(tree.id);expect(spot).not.toBeNull();
+    const surfaceNormal=new THREE.Vector3(0,0,1);fx.onHit(tree,{x:0,y:1.6,z:0},false,false,surfaceNormal);const spot=fx.spotPosition(tree.id);expect(spot).not.toBeNull();
+    expect(spot!.x).toBeCloseTo(0);expect(spot!.y).toBeCloseTo(1.6);expect(spot!.z).toBeCloseTo(.012);
     const origin=camera.position.clone(),target=new THREE.Vector3(spot!.x,spot!.y,spot!.z),ray=new THREE.Ray(origin,target.sub(origin).normalize());
     expect(fx.capture(tree,ray,new THREE.Vector3(0,1.6,0)).weakSpot).toBe(true);
     const nearerPoint=ray.at(2,new THREE.Vector3());
     expect(fx.capture(tree,ray,nearerPoint).weakSpot).toBe(false);
-    const before={...spot!};fx.onHit(tree,{x:before.x,y:before.y,z:before.z},true,false);const moved=fx.spotPosition(tree.id)!;
-    expect(Math.hypot(moved.x-before.x,moved.y-before.y,moved.z-before.z)).toBeGreaterThan(.05);fx.dispose();
+    const before={...spot!};fx.onHit(tree,{x:before.x,y:before.y,z:before.z},true,false,surfaceNormal);const moved=fx.spotPosition(tree.id)!;
+    const continuity=Math.hypot(moved.x-before.x,moved.y-before.y,moved.z-before.z);
+    expect(continuity).toBeGreaterThan(.06);expect(continuity).toBeLessThan(.12);expect(Math.abs(moved.y-before.y)).toBeLessThan(.001);fx.dispose();
   });
 
   it('uses explicit tool yields and a 50 percent weak-spot bonus in simulation',()=>{
