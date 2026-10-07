@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { addInstanceWindResponse, disposeMaterialTextures, metalMaterial, metalSurfaceMaps, woodSurfaceMaps } from '../src/rendering/materials';
+import { addInstanceWindResponse, disposeMaterialTextures, metalMaterial, metalSurfaceMaps, stoneMaterial, woodSurfaceMaps } from '../src/rendering/materials';
 
 afterEach(()=>vi.unstubAllGlobals());
 
@@ -39,6 +39,15 @@ describe('weathered salvage-metal surface maps',()=>{
     const material=metalMaterial(0x64706b,.88,.3,842),textures=material.userData.textures as THREE.Texture[];let disposed=0;
     textures.forEach(texture=>texture.addEventListener('dispose',()=>disposed++));
     expect(material.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(material.normalScale.x).toBeCloseTo(.085);expect(material.metalness).toBeCloseTo(.3);disposeMaterialTextures(material);expect(disposed).toBe(3);
+  });
+});
+
+describe('shared built-stone PBR material',()=>{
+  it('uses separate deterministic albedo, linear roughness and normal textures',()=>{
+    const context={fillStyle:'#000',fillRect:vi.fn()} as unknown as CanvasRenderingContext2D,canvas={width:0,height:0,getContext:()=>context};vi.stubGlobal('document',{createElement:()=>canvas});
+    const material=stoneMaterial(),textures=material.userData.textures as THREE.Texture[];let disposed=0;textures.forEach(texture=>texture.addEventListener('dispose',()=>disposed++));
+    expect(material.map?.colorSpace).toBe(THREE.SRGBColorSpace);expect(material.normalMap?.colorSpace).toBe(THREE.NoColorSpace);expect(material.roughnessMap?.colorSpace).toBe(THREE.NoColorSpace);expect(material.normalScale.x).toBeCloseTo(.11);expect(material.roughness).toBeCloseTo(.94);expect(textures).toHaveLength(3);
+    disposeMaterialTextures(material);expect(disposed).toBe(3);
   });
 });
 

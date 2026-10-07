@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {rockSurfaceMaps} from '../world/materials';
 export interface WeatherWetnessUniform{value:number}
 /** Subtle vertex sway shared by instanced foliage and grass batches. */
 export function addInstanceWindResponse(material:THREE.Material,time:{value:number},strength:{value:number},heightScale:number,amplitude:number):void{
@@ -90,6 +91,6 @@ export function stoneMaterial(){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d')!;let n=356;const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
   c.fillStyle='#8a887e';c.fillRect(0,0,256,256);
   for(let i=0;i<15000;i++){const v=Math.floor(80+rand()*110);c.fillStyle=`rgba(${v},${v-2},${v-8},${.08+rand()*.18})`;c.fillRect(rand()*256,rand()*256,rand()*9+1,rand()*7+1);}
-  const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;
-  return new THREE.MeshStandardMaterial({color:'#b2ad98',map:t,roughness:1,bumpMap:t,bumpScale:.13});
+  const t=new THREE.CanvasTexture(canvas);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;const detail=rockSurfaceMaps(356,128),material=new THREE.MeshStandardMaterial({color:'#b2ad98',map:t,roughness:.94,roughnessMap:detail.roughness,normalMap:detail.normal,normalScale:new THREE.Vector2(.11,.11)});
+  material.userData.textures=[t,detail.roughness,detail.normal];return material;
 }
