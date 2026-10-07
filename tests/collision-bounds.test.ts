@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromObject, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromObject, longHullSideCollisions, treeTrunkCollision } from '../src/physics/collisionBounds';
 
 describe('visual collision bounds', () => {
   it('contains every vertex after instance rotation, slope alignment and non-uniform scale', () => {
@@ -40,5 +40,14 @@ describe('visual collision bounds', () => {
     });
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 5).halfExtents.y).toBe(3.9);
     expect(treeTrunkCollision({ x: 4, y: 2, z: -3 }, 1, 4).halfExtents.y).toBe(4.25);
+  });
+
+  it('places narrow hull side proxies on both authored visual edges',()=>{
+    const sides=longHullSideCollisions(new THREE.Box3(new THREE.Vector3(-4,-.7,.02),new THREE.Vector3(4,.7,1.58)));
+    expect(sides).toHaveLength(2);
+    expect(sides[0]?.position.x).toBe(0);expect(sides[0]?.position.y).toBe(0);expect(sides[0]?.position.z).toBeCloseTo(.14);
+    expect(sides[1]?.position.x).toBe(0);expect(sides[1]?.position.y).toBe(0);expect(sides[1]?.position.z).toBeCloseTo(1.46);
+    expect(sides[0]?.halfExtents.x).toBeCloseTo(3.9);
+    expect(sides[0]?.halfExtents.z).toBe(.12);
   });
 });

@@ -29,6 +29,15 @@ export function collisionBoundsFromBox(box: THREE.Box3, padding = 0.06): Collisi
   };
 }
 
+/** Two thin side walls for a long, open hull, derived from its authored bounds. */
+export function longHullSideCollisions(box: THREE.Box3, thickness = 0.12, inset = 0.10): CollisionBounds[] {
+  const center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3()),halfLength=Math.max(.05,size.x*.5-inset),halfHeight=Math.max(.05,size.y*.5-inset),halfThickness=Math.max(.05,thickness);
+  return [box.min.z+halfThickness,box.max.z-halfThickness].map(z=>({
+    position:{x:center.x,y:center.y,z},
+    halfExtents:{x:halfLength,y:halfHeight,z:halfThickness},
+  }));
+}
+
 /** Measure all rendered child meshes after their complete world transform. */
 export function collisionBoundsFromObject(object: THREE.Object3D, padding = 0.06): CollisionBounds {
   object.updateWorldMatrix(true, true);
