@@ -57,7 +57,7 @@ export class GameApp {
   readonly ui:UI;readonly input:Input;readonly audio:AudioMixer;readonly held=new HeldItem();readonly impactFx:ImpactFX;readonly gatheringFeedback:GatheringFeedback;readonly postFX:WorldPostFX;readonly torchLight=new THREE.PointLight(0xffd0a0,0,14,2);readonly interactions=new InteractionSystem();
   environment!:Environment;physics!:PhysicsWorld;player!:PlayerController;simulation!:GameSimulation;structures!:StructureRenderer;worldItems!:WorldItems;debug:DebugView;
   private settings:Settings=loadSettings();private screen:Screen='menu';private activeWorld=false;private activeSaveSlot:number|null=null;private building=false;private buildPiece:PieceType='foundation';private buildRotation=0;private candidate:BuildCandidate|null=null;
-  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();private wildlifeSightOrigin=new THREE.Vector3();private wildlifeSightDirection=new THREE.Vector3();private readonly wildlifeSightBlockers:THREE.Object3D[]=[];private readonly wildlifeSightHits:THREE.Intersection[]=[];
+  private ray=new THREE.Raycaster();private screenCenter=new THREE.Vector2();private groundMesh!:THREE.Mesh;private targetPoint=new THREE.Vector3();private direction=new THREE.Vector3();private wildlifeSightOrigin=new THREE.Vector3();private wildlifeSightDirection=new THREE.Vector3();private readonly wildlifeSightBlockers:THREE.Object3D[]=[];private readonly wildlifeSightHits:THREE.Intersection[]=[];private readonly interactionOccluders:THREE.Object3D[]=[];
   private pendingHit:{node:ResourceNode;remaining:number;strike:GatherStrike}|null=null;
   private bowDrawStarted:number|null=null;private arrows:LiveArrow[]=[];
   private readonly arrowShaftGeometry=new THREE.CylinderGeometry(.012,.018,.72,6);private readonly arrowHeadGeometry=new THREE.ConeGeometry(.045,.14,6);
@@ -444,7 +444,7 @@ export class GameApp {
       if(this.simulation.state.player.stats.health<=0)this.handleDeathLifecycle('survival');
       this.player.renderCamera(this.accumulator/(1/60));
       this.autoSave+=dt;if(this.autoSave>60){if(this.activeSaveSlot!==null)this.save(false,false);this.autoSave=0;}
-      if(this.screen==='playing'){this.updateBuild();this.interactions.update(this.camera,PLAYER.INTERACT_DISTANCE,[this.groundMesh,...this.structures.objects.values()].filter(o=>o!==this.interactions.current?.object));if(this.leftDown&&!this.building&&this.interactions.current?.kind==='resource'&&this.cooldown<=0)this.use();}
+      if(this.screen==='playing'){this.updateBuild();this.interactionOccluders.length=0;this.interactionOccluders.push(this.groundMesh);const interactionTarget=this.interactions.current?.object;for(const object of this.structures.objects.values())if(object!==interactionTarget)this.interactionOccluders.push(object);this.interactions.update(this.camera,PLAYER.INTERACT_DISTANCE,this.interactionOccluders);if(this.leftDown&&!this.building&&this.interactions.current?.kind==='resource'&&this.cooldown<=0)this.use();}
       else this.structures.preview(null);
       const bowDraw=this.bowDrawStarted===null?0:Math.min(1,(performance.now()-this.bowDrawStarted)/1150),reloadProgress=this.reloadRemaining>0?1-this.reloadRemaining/(FIREARMS[this.activeItem() as keyof typeof FIREARMS]?.reloadSeconds??1):0;
       this.held.update(dt,this.player.speed,this.player.sprinting,this.player.crouching,bowDraw,reloadProgress);
