@@ -46,9 +46,10 @@ describe('event cache rendering',()=>{
   });
   it('spins the generator flywheel only while its powered status is on',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
-    const scene=new THREE.Scene(),renderer=new StationRenderer(scene),generator=createStation('generator-test','generator',{x:0,y:0,z:0});
-    generator.active=true;generator.inventory[0]={itemId:'wood',count:1};renderer.sync([generator]);const fan=renderer.objects.get(generator.id)!.getObjectByName('generator-fan')!;
-    renderer.update([generator],1,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(9);expect(renderer.smokePuffCount).toBe(2);
+    const scene=new THREE.Scene(),renderer=new StationRenderer(scene),generator=createStation('generator-test','generator',{x:0,y:0,z:0},Math.PI/2);
+    generator.active=true;generator.inventory[0]={itemId:'wood',count:1};renderer.sync([generator]);const group=renderer.objects.get(generator.id)!,fan=group.getObjectByName('generator-fan')!;
+    expect(group.getObjectByName('generator-exhaust')).toBeTruthy();renderer.update([generator],1,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(9);expect(renderer.smokePuffCount).toBe(2);
+    const smoke=scene.getObjectByName('Batched station smoke') as THREE.InstancedMesh,matrix=new THREE.Matrix4(),smokePosition=new THREE.Vector3();smoke.getMatrixAt(0,matrix);smokePosition.setFromMatrixPosition(matrix);expect(smokePosition.x).toBeCloseTo(-.15,1);expect(smokePosition.z).toBeCloseTo(-.27,1);
     generator.active=false;renderer.update([generator],2,new THREE.Vector3(0,0,2));expect(fan.rotation.z).toBe(0);expect(renderer.smokePuffCount).toBe(0);renderer.dispose();
   });
   it('batches nearby active furnace and campfire smoke, then clears it when cold or distant',()=>{
