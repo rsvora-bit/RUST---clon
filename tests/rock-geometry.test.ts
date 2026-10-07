@@ -43,9 +43,11 @@ describe('procedural rock geometry',()=>{
     const legacy=rockGeometry(114,true),revision6=rockGeometry(114,true,true),repeat=rockGeometry(114,true,true);
     try{
       expect(Array.from(revision6.getAttribute('position').array)).not.toEqual(Array.from(legacy.getAttribute('position').array));
+      expect(Array.from(revision6.getAttribute('normal').array)).not.toEqual(Array.from(legacy.getAttribute('normal').array));
       expect(Array.from(revision6.getAttribute('position').array)).toEqual(Array.from(repeat.getAttribute('position').array));
       expect(revision6.getAttribute('position').count).toBe(legacy.getAttribute('position').count);
       expect((revision6.index?.count??revision6.getAttribute('position').count)).toBe(legacy.index?.count??legacy.getAttribute('position').count);
+      const positions=revision6.getAttribute('position'),normals=revision6.getAttribute('normal'),indices=revision6.index,minFaceAlignment=()=>{let minimum=1;for(let triangle=0;triangle<(indices?.count??positions.count);triangle+=3){const points=[0,1,2].map(offset=>new THREE.Vector3().fromBufferAttribute(positions,indices?indices.getX(triangle+offset):triangle+offset)),face=points[1]!.clone().sub(points[0]!).cross(points[2]!.clone().sub(points[0]!)).normalize();for(let offset=0;offset<3;offset++){const normal=new THREE.Vector3().fromBufferAttribute(normals,indices?indices.getX(triangle+offset):triangle+offset).normalize();minimum=Math.min(minimum,normal.dot(face));}}return minimum;};expect(minFaceAlignment()).toBeGreaterThan(.84);
     }finally{legacy.dispose();revision6.dispose();repeat.dispose();}
   });
 
