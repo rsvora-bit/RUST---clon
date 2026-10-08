@@ -21,4 +21,14 @@ describe('world atmosphere coordinates',()=>{
       expect(fragment).not.toContain('swellNormal');
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
+  it('uses the rain ring for both water shading and its subtle ripple highlight',()=>{
+    const heightMap=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),heightMap,720,731942,6);
+    try{
+      const fragment=atmosphere.ocean.material.fragmentShader;
+      expect(fragment).toContain('float rainDerivative=rainBand>.012&&rainBand<.055?');
+      expect(fragment).toContain('rainGradient.x*(2.*eps)');expect(fragment).toContain('rainGradient.y*(2.*eps)');
+      expect(fragment).toContain('float rainRing=(1.-smoothstep(.012,.055,rainBand))*rainFade');
+      expect(fragment.match(/vec2 rainCell=floor\(p\*\.31\)/g)).toHaveLength(1);
+    }finally{atmosphere.dispose();heightMap.dispose();}
+  });
 });
