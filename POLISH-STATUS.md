@@ -261,6 +261,8 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 
 ## Revision-6 Breakwater crate grounding correction — 2026-10-08
 
-- Rechecked the crate against the Revision-6 deck plate after adding its collider. The deck top is at local y=1.29; because the crate is tilted, its center must be at y=2.18 for its lowest corner to rest on the plate. Corrected the Rev6 visual and collision together; the Revision-5 layout remains unchanged.
-- Updated the Rapier approach test to stand on the actual raised deck plane and assert the visible marker and collider share the grounded placement. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory).
+- Rechecked the crate against the overlapping cargo stack: its Revision-6 footprint sits on the first cargo container, whose top is at local y=1.83. Set the tilted crate center to y=2.72 and added a transformed-geometry assertion for ground contact; its oriented Rapier proxy now shares that elevation. Revision-5 placement remains unchanged.
+- Updated the Rapier approach test to stand at the cargo top and assert the visible crate contacts that surface. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory).
 - Overall completion remains approximately **41%**; this fixes one physical inconsistency and does not close the broader visual, performance or release requirements.
+- Continued the same Revision-6 Breakwater audit: grounded the exhaust stack/cap on the raised deck and added collision proxies for both, the two mooring bollards and four torn rails. Legacy revision geometry and collider sets remain unchanged; regression coverage checks the proxy count, exhaust alignment and actual Rapier blocking at the stack.
+- Final block validation: `npm test` **566/566 PASS** (58 files), `npm run build` **PASS** (existing >500 kB Vite chunk advisory), `git diff --check` PASS. This extends the physical consistency audit but leaves the terrain/material/weather/performance and release work open; overall estimate moves to approximately **42%**.

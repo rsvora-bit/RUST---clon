@@ -233,17 +233,17 @@ export class WorldSurvival {
         for(const [x,z] of [[-1.70,.08],[-1.41,.13],[-1.45,.17]] as const){const marker=new T.Mesh(new T.CylinderGeometry(.009,.009,.006,6),this.display);marker.name='Breakwater coastal chart waypoint';marker.position.set(x,1.669,z);g.add(marker);}
         const seat=this.box(g,-1.48,1.50,-.08,.31,.08,.28,this.wood);seat.name='Breakwater bridge operator seat';
         const seatBack=this.box(g,-1.48,1.70,-.20,.31,.35,.07,this.wood);seatBack.name='Breakwater bridge operator seat';seatBack.rotation.x=-.10;
-        const stack=new T.Mesh(new T.CylinderGeometry(.10,.14,.72,7),this.rust);stack.name='Breakwater exhaust stack';stack.position.set(-2.24,2.23,-.2);stack.castShadow=true;g.add(stack);
-        this.box(g,-2.24,2.61,-.2,.28,.07,.28,this.metal).name='Breakwater exhaust cap';
+        const stack=new T.Mesh(new T.CylinderGeometry(.10,.14,.72,7),this.rust);stack.name='Breakwater exhaust stack';stack.position.set(-2.24,revisionSixBridge?1.65:2.23,-.2);stack.castShadow=true;g.add(stack);
+        this.box(g,-2.24,revisionSixBridge?2.02:2.61,-.2,.28,.07,.28,this.metal).name='Breakwater exhaust cap';
         for(const x of [-3.15,3.62]){const bollard=this.box(g,x,1.42,.68,.15,.37,.15,this.metal);bollard.name='Breakwater mooring bollard';}
         for(let i=0;i<8;i++){const seam=this.box(g,-2.7+i*.7,1.31,-.73,.035,.018,1.38,this.rust);seam.name='Breakwater deck seam';}
         for(const [x,z] of [[-3.15,-.35],[-2.3,.48],[-1.2,-.5],[.1,.54],[2.5,-.5],[3.35,.42]] as const){const rib=this.box(g,x,.62,z,.09,1.28,.09,this.metal);rib.rotation.z=(x<0?-.13:.13)+(z<0?.04:-.04);rib.name='Breakwater exposed hull rib';}
         for(const x of [-3.15,-2.55,2.8,3.45]){const rail=this.box(g,x,1.48,.02,.075,.72,.075,this.rust);rail.rotation.z=x<0?-.19:.14;rail.name='Breakwater torn rail';}
-        // Revision 6 sits on the raised deck plate (top y=1.29). Account for
-        // the crate's tilt when placing its center so the lower corner rests
-        // on the deck instead of being visibly buried in it. Legacy placement
-        // remains unchanged for earlier revisions.
-        const crate=this.box(g,revisionSixBridge?.45:-2.0,revisionSixBridge?2.18:1.52,revisionSixBridge?-.65:-.1,1.05,.72,.82,this.paint);crate.name='Breakwater tilted equipment crate';crate.rotation.z=.17;crate.rotation.y=-.13;
+        // Revision 6 stacks this crate on the visible cargo container. Account
+        // for the tilted box bounds so its lower corner rests at the container
+        // top (y=1.83) instead of intersecting the cargo. Legacy placement is
+        // unchanged for earlier revisions.
+        const crate=this.box(g,revisionSixBridge?.45:-2.0,revisionSixBridge?2.72:1.52,revisionSixBridge?-.65:-.1,1.05,.72,.82,this.paint);crate.name='Breakwater tilted equipment crate';crate.rotation.z=.17;crate.rotation.y=-.13;
         for(let i=0;i<7;i++){const corrugation=this.box(g,2.25+i*.13,1.47,-.77,.035,.68,.035,this.metal);corrugation.name='Breakwater container ribs';}
         for(const [x,z] of [[-4.3,-.7],[-3.7,1.0],[3.8,-.95],[4.25,.84]] as const){const debris=this.box(g,x,.16,z,.85,.18,.22,this.wood);debris.rotation.y=(x+z)*.12;debris.rotation.z=(x<0?.1:-.14);debris.name='Breakwater shore debris';}
         const cable=new T.Mesh(new T.CylinderGeometry(.018,.024,4.2,5),this.wood);cable.name='Breakwater slack mooring cable';cable.position.set(-3.5,1.05,-.38);cable.rotation.set(.24,.18,Math.PI/2.8);g.add(cable);
@@ -417,7 +417,13 @@ export class WorldSurvival {
         );
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
           // The tilted deck crate is solid salvage, not a walk-through visual prop.
-          result.push({position:{x:p.position.x+.45,y:p.position.y+2.18,z:p.position.z-.65},halfExtents:{x:1.05,y:.72,z:.82},rotation:-.13,rotationZ:.17});
+          result.push({position:{x:p.position.x+.45,y:p.position.y+2.72,z:p.position.z-.65},halfExtents:{x:1.05,y:.72,z:.82},rotation:-.13,rotationZ:.17});
+          // The exhaust, bollards and broken rails are large visible metal
+          // fixtures on the Revision-6 wreck and should not be walk-through.
+          result.push({position:{x:p.position.x-2.24,y:p.position.y+1.65,z:p.position.z-.2},halfExtents:{x:.14,y:.36,z:.14}});
+          result.push({position:{x:p.position.x-2.24,y:p.position.y+2.02,z:p.position.z-.2},halfExtents:{x:.28,y:.07,z:.28}});
+          for(const x of [-3.15,3.62])result.push({position:{x:p.position.x+x,y:p.position.y+1.42,z:p.position.z+.68},halfExtents:{x:.15,y:.37,z:.15}});
+          for(const x of [-3.15,-2.55,2.8,3.45])result.push({position:{x:p.position.x+x,y:p.position.y+1.48,z:p.position.z+.02},halfExtents:{x:.075,y:.72,z:.075},rotationZ:x<0?-.19:.14});
           // The exposed cargo derrick is a solid landmark. Keep its collider
           // aligned with the rendered leaning mast; legacy wreck layouts stay intact.
           result.push({position:{x:p.position.x+.72,y:p.position.y+8.75,z:p.position.z+.36},halfExtents:{x:.15,y:8.4,z:.15},rotationZ:-.11});
