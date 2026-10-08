@@ -373,3 +373,8 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Lowered the baseline ridge floor only for Revision 6 and raised its hero peak to preserve world scale. This emphasizes valleys between the existing deterministic mountain groups; mesh topology, layer count, legacy generations and draw-call count are unchanged.
 - Added a geometry regression comparing inner ridge valleys across revisions, alongside existing determinism, peak, bounds, angular-gap and topology checks. Focused environment/world-art tests: **63/63 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory); `git diff --check`: **PASS**.
 - A trial live tree-collision probe was discarded because the seeded terrain provided no valid near-level approach for the chosen trunk proxies. Its first path crossed a steep descent and passed below the visible trunk, so it is not evidence of a collision defect. Tree collision still needs a controlled, valid gameplay probe before that part of the audit can be marked complete.
+
+## v0.14 continuation — live tree trunk collision QA — 2026-10-08
+
+- Added `npm run test:tree-collision`, a screenshot-free browser probe that searches the deterministic Revision-6 world for level approaches and checks actual Rapier player movement against live trunk colliders. It validated **9 authored tree species** (species 0, 1, 2, 3, 4, 5, 7, 8, 9); all blocked the player at the trunk and browser errors were zero.
+- The probe pauses the simulation while applying direct character-controller steps, limits travel to the intended trunk side, and excludes other tree/rock/resource colliders from the path. This avoids the misleading downhill/adjacent-obstacle results from the initial discarded experiment.
