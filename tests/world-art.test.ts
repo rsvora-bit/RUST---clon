@@ -346,7 +346,7 @@ describe('v0.9.1 world art stabilization',()=>{
     expect(rainPuddleSuitability(climate(.55,.74),22,.02,.91)).toBe(0);
     expect(rainPuddleSuitability(climate(.55,.74),6,.36,.91)).toBe(0);
     expect(rainPuddleSuitability(climate(.55,.74),6,.02,.12)).toBe(0);
-    expect(rainPuddleOpacity(0)).toBe(0);expect(rainPuddleOpacity(.35)).toBeGreaterThan(0);expect(rainPuddleOpacity(1)).toBeCloseTo(.70);
+    expect(rainPuddleOpacity(0)).toBe(0);expect(rainPuddleOpacity(.35)).toBeGreaterThan(0);expect(rainPuddleOpacity(1)).toBeCloseTo(.88);
     expect(rainPuddleOpacity(.2)).toBeLessThan(rainPuddleOpacity(.55));
   });
   it('finds enough seeded lowland puddle sites without moving terrain or roads',()=>{

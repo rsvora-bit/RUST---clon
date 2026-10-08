@@ -29,4 +29,4 @@ export function rainPuddleSuitability(c:ClimateSample,elevation:number,slope:num
     *(1-smoothstep(.035,.15,slope))*smoothstep(.48,.72,c.moisture)
     *(1-climate.arid)*(1-climate.snow)*smoothstep(.36,.62,patch);
 }
-export function rainPuddleOpacity(wetness:number):number{return smoothstep(.08,.62,wetness)*.70;}
+export function rainPuddleOpacity(wetness:number):number{return smoothstep(.08,.62,wetness)*.88;}
