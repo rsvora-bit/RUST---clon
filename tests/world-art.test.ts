@@ -46,6 +46,15 @@ describe('v0.9.1 world art stabilization',()=>{
     }
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('blocks the main Revision-6 utility and quarry props without changing legacy layouts',()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),pois=[{id:'poi-utility',name:'Utility Shack',kind:0,position:{x:120,y:12,z:80}},{id:'poi-quarry',name:'Quarry Outpost',kind:2,position:{x:-120,y:18,z:-80}}],layout={pois,trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed);
+    try{
+      const utility=current.collisionBoxes().filter(box=>Math.hypot(box.position.x-pois[0]!.position.x,box.position.z-pois[0]!.position.z)<5),quarry=current.collisionBoxes().filter(box=>Math.hypot(box.position.x-pois[1]!.position.x,box.position.z-pois[1]!.position.z)<6);
+      expect(utility).toHaveLength(3);expect(utility[1]).toMatchObject({position:{x:pois[0]!.position.x+1.05,y:pois[0]!.position.y+.78,z:pois[0]!.position.z-.55},halfExtents:{x:1.18,y:.12,z:.72}});expect(utility[2]).toMatchObject({position:{x:pois[0]!.position.x+.94,y:pois[0]!.position.y+1.08,z:pois[0]!.position.z-.55},halfExtents:{x:.29,y:.24,z:.29}});
+      expect(quarry).toHaveLength(6);expect(quarry.slice(2,5).map(box=>box.position)).toEqual([0,1,2].map(i=>({x:pois[1]!.position.x+3,y:pois[1]!.position.y+.35,z:pois[1]!.position.z+i*.7})));expect(quarry[5]).toMatchObject({position:{x:pois[1]!.position.x-1.35,y:pois[1]!.position.y+.55,z:pois[1]!.position.z+.62},halfExtents:{x:.43,y:.525,z:.07}});
+      expect(legacy.collisionBoxes()).toHaveLength(2);
+    }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('adds a batched exposed relay control station only to new revision-6 worlds',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),poi={id:'poi-1',name:'Collapsed relay site',kind:1,position:{x:120,y:12,z:80}},layout={pois:[poi],trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed);
     try{

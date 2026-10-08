@@ -427,6 +427,21 @@ export class WorldSurvival {
           {position:{x:p.position.x+2.45,y:p.position.y+.74,z:p.position.z+.15},halfExtents:{x:.44,y:.67,z:.38}},
         );
       }
+      else if(p.kind===0){
+        result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6)result.push(
+          {position:{x:p.position.x+1.05,y:p.position.y+.78,z:p.position.z-.55},halfExtents:{x:1.18,y:.12,z:.72}},
+          {position:{x:p.position.x+.94,y:p.position.y+1.08,z:p.position.z-.55},halfExtents:{x:.29,y:.24,z:.29}},
+        );
+      }
+      else if(p.kind===2){
+        result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+          result.push({position:{x:p.position.x+.55,y:p.position.y+.88,z:p.position.z-.43},halfExtents:{x:.775,y:.05,z:.425}});
+          for(let i=0;i<3;i++)result.push({position:{x:p.position.x+3,y:p.position.y+.35,z:p.position.z+i*.7},halfExtents:{x:.5,y:.35,z:.25}});
+          result.push({position:{x:p.position.x-1.35,y:p.position.y+.55,z:p.position.z+.62},halfExtents:{x:.43,y:.525,z:.07}});
+        }
+      }
       else if(p.kind!==3)result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});
     }
     return result;
