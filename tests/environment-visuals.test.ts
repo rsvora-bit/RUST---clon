@@ -167,6 +167,14 @@ describe('environment visual building blocks',()=>{
     }finally{atmosphere.dispose();height.dispose();}
   });
 
+  it('applies stronger atmospheric perspective to farther Revision-6 mountain layers',()=>{
+    const height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height,1664,731942,6);
+    try{
+      atmosphere.update(0,10,new THREE.Vector3());const fog=atmosphere.fog.color,far=(atmosphere.horizon.children[0] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshLambertMaterial>).material.color,near=(atmosphere.horizon.children[2] as THREE.Mesh<THREE.BufferGeometry,THREE.MeshLambertMaterial>).material.color,distance=(color:THREE.Color)=>Math.hypot(color.r-fog.r,color.g-fog.g,color.b-fog.b);
+      expect(distance(far)).toBeLessThan(distance(near));
+    }finally{atmosphere.dispose();height.dispose();}
+  });
+
   it('shares Rev6 mist across sky and opaque horizon, then restores clear weather without affecting legacy worlds',()=>{
     for(const revision of [5,6]){
       const scene=new THREE.Scene(),height=new THREE.DataTexture(new Uint8Array(64),4,4,THREE.RGBAFormat),atmosphere=new Atmosphere(scene,height,1664,731942,revision),weather=new Weather(scene),state=new GameSimulation(731942,{x:0,y:4,z:0}).state,w=ensureProgression(state).weather,camera=new THREE.Vector3();

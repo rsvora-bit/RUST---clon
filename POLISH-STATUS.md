@@ -353,3 +353,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added live QA for upright orientation and made the cliff collision probe follow sampled terrain height along its approach. That removes false failures caused by sliding sideways on steep ground while still testing real Rapier blocking.
 - Verification: focused visual/collision tests **88/88 PASS**; production build **PASS** (existing Vite bundle-size advisory); live `test:rock-collision` **PASS**: 20 cliff instances/colliders, upright orientation, a real blocked cliff approach, all four resource rock types blocked, 12/12 large-boulder approaches, all four LOD presets, zero browser errors. One targeted diagnostic image was inspected from `/tmp`; no QA artifact is in the repository.
 - The inspected broader world view still shows a cleanly procedural, ring-like distant mountain silhouette. Treat horizon/mountain fidelity as unfinished; this local rock correction does not change the overall estimate beyond approximately **52%**.
+
+## Revision-6 distant mountain haze depth — 2026-10-08
+
+- Fixed atmospheric perspective ordering for the three distant massif layers. The farthest layer is built at the largest radius, but its haze factor was lower than the nearer layer; the factors now increase with actual layer distance while retaining day/night, storm tint and legacy-generation behavior.
+- Added a regression comparing each layer's fog-color distance in daytime Rev6. Focused environment/world-art tests: **62/62 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory). No world layout, gameplay or save state changes.
+- This corrects one depth cue, but the larger mountain silhouettes remain procedurally stylized and need broader art work/visual QA. Overall v0.14 completion remains approximately **52%**.
