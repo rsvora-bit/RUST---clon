@@ -3,6 +3,30 @@ import {Noise,randomSource} from './noise';
 
 function canvas(size:number):[HTMLCanvasElement,CanvasRenderingContext2D]{const c=document.createElement('canvas');c.width=c.height=size;const ctx=c.getContext('2d');if(!ctx)throw new Error('Canvas 2D unavailable');return [c,ctx];}
 function texture(c:HTMLCanvasElement,repeat=1):THREE.CanvasTexture {const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(repeat,repeat);t.anisotropy=8;return t;}
+/** Match opposite edge pixels with a short feather so repeated ground maps do not form visible tile seams. */
+function seamlessGroundEdges(ctx:CanvasRenderingContext2D,size:number,feather=18):void {
+  const image=ctx.getImageData(0,0,size,size),source=image.data,output=new Uint8ClampedArray(source),width=Math.min(feather,Math.floor(size/4));
+  const blend=(a:number,b:number,t:number)=>Math.round(a+(b-a)*t);
+  for(let y=0;y<size;y++)for(let offset=0;offset<width;offset++){
+    const left=(y*size+offset)*4,right=(y*size+size-1-offset)*4,t=offset/(width-1),smooth=t*t*(3-2*t);
+    for(let channel=0;channel<3;channel++){
+      const midpoint=(source[left+channel]!+source[right+channel]!)/2;
+      output[left+channel]=blend(midpoint,source[left+channel]!,smooth);
+      output[right+channel]=blend(midpoint,source[right+channel]!,smooth);
+    }
+  }
+  source.set(output);
+  const verticalSource=source.slice();
+  for(let x=0;x<size;x++)for(let offset=0;offset<width;offset++){
+    const top=(offset*size+x)*4,bottom=((size-1-offset)*size+x)*4,t=offset/(width-1),smooth=t*t*(3-2*t);
+    for(let channel=0;channel<3;channel++){
+      const midpoint=(verticalSource[top+channel]!+verticalSource[bottom+channel]!)/2;
+      source[top+channel]=blend(midpoint,verticalSource[top+channel]!,smooth);
+      source[bottom+channel]=blend(midpoint,verticalSource[bottom+channel]!,smooth);
+    }
+  }
+  ctx.putImageData(image,0,0);
+}
 export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',seed:number,worldRevision=0):THREE.CanvasTexture {
   const [c,ctx]=canvas(512),n=new Noise(seed),rand=randomSource(seed),revision6Snow=kind==='snow'&&worldRevision>=6;const img=ctx.createImageData(512,512);
   const base=kind==='grass'?[88,98,69]:kind==='dry'?[139,122,76]:kind==='sand'?[172,162,138]:kind==='dirt'?[101,82,58]:kind==='snow'?(revision6Snow?[190,204,210]:[211,218,218]):[108,107,96];
@@ -30,6 +54,7 @@ export function groundTexture(kind:'grass'|'dry'|'sand'|'rock'|'dirt'|'snow',see
     }
   }
   for(let i=0;i<2200;i++){const x=rand()*512,y=rand()*512,r=.3+rand()*(kind==='sand'?1.3:3);ctx.fillStyle=i%2?'rgba(25,27,21,.18)':'rgba(218,210,181,.24)';ctx.beginPath();ctx.ellipse(x,y,r,r*.63,rand()*6.28,0,Math.PI*2);ctx.fill();}
+  seamlessGroundEdges(ctx,512);
   return texture(c);
 }
 /** Seamless, linear-space tangent normals for sub-meter terrain grain. */

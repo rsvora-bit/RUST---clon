@@ -10,6 +10,7 @@ function installCanvasStub():TestCanvas[]{
     let ctx:{fillStyle:string;strokeStyle:string};
     ctx={fillStyle:'#000',strokeStyle:'#000',
       createImageData:(width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),
+      getImageData:()=>({data:(canvas.pixelData??new Uint8ClampedArray(canvas.width*canvas.height*4)).slice()}),
       putImageData:(image:ImageData)=>{canvas.pixelData=image.data.slice();},
       fillRect:()=>canvas.rects.push(ctx.fillStyle),
       beginPath:()=>{},moveTo:()=>{},lineTo:()=>{},quadraticCurveTo:()=>{},
@@ -34,6 +35,19 @@ describe('revision-6 alpine snow texture',()=>{
       expect(canvases[0]!.fills).toHaveLength(2200);
       expect(canvases[2]!.fills).toHaveLength(6400);
     }finally{legacy.dispose();legacyRepeat.dispose();revision6.dispose();}
+  });
+});
+
+describe('seamless procedural ground maps',()=>{
+  it('matches opposite edge texels after terrain detail is drawn',()=>{
+    const canvases=installCanvasStub(),first=groundTexture('rock',541),repeat=groundTexture('rock',541),pixels=canvases[0]!.pixelData!,again=canvases[1]!.pixelData!;
+    try{
+      expect(pixels).toEqual(again);
+      const at=(x:number,y:number,channel:number)=>pixels[(y*512+x)*4+channel]!;
+      for(let y=0;y<512;y+=13)for(let channel=0;channel<3;channel++)expect(at(0,y,channel)).toBe(at(511,y,channel));
+      for(let x=0;x<512;x+=13)for(let channel=0;channel<3;channel++)expect(at(x,0,channel)).toBe(at(x,511,channel));
+      expect(new Set(Array.from({length:512*512},(_,index)=>pixels[index*4]!)).size).toBeGreaterThan(20);
+    }finally{first.dispose();repeat.dispose();}
   });
 });
 
