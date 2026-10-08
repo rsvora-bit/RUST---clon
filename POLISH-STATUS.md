@@ -428,3 +428,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added `npm run test:tidal-pier-collision`, a screenshot-free live Rapier probe that locates an unobstructed player-sized area on the Revision-6 survey-pier deck, drops the player from above and checks they settle on the collidable surface.
 - Result: deck top **3.200 m**, player grounded at **3.225 m**, browser/application errors **0**. QA script syntax and TypeScript/production build pass (existing Vite >500 kB advisory). Test server stopped.
 - Main purpose is repeatable physical-world regression coverage; no gameplay/save behavior changed. Remaining props/POIs still need audit; release gates remain open.
+
+## v0.14 material follow-up — activate temperate rock moss mask — 2026-10-08
+
+- Corrected the Revision-6 stone moss height threshold. The earlier mask assumed a unit-range texture, but the generated rock albedo is a dark sRGB texture sampled in linear space (roughly 0.14 average), so its `.48–.68` threshold suppressed moss nearly everywhere. The threshold is now `.10–.19`, aligned to the actual map range; climate, upward-normal and elevation guards remain.
+- `tests/weather-materials.test.ts`: **6/6 PASS**; production build PASS (existing Vite large-chunk advisory); live ANGLE Metal `test:rock-collision` PASS across five rock variants, 20/20 approach sides, 20 cliff colliders and four resource types; **0 application errors**. Vite stopped.
+- This correction makes the already-added climate/texture mask capable of showing on temperate and wetland rock; broad visual QA/release gates remain open.

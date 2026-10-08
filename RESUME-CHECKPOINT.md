@@ -2428,3 +2428,8 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Added `scripts/tidal-pier-collision-qa.mjs` and `test:tidal-pier-collision`. It selects a clear point on the Revision-6 pier deck, performs live Rapier downward movement and verifies the player is grounded on the deck collider without browser errors or screenshots.
 - Result: deck surface **3.200 m**, player settled at **3.225 m**; zero browser/application errors. `npm run build` PASS with existing Vite chunk-size advisory; `node --check` and `git diff --check` PASS; Vite stopped.
 - Pending: stage only `package.json`, `scripts/tidal-pier-collision-qa.mjs`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`; commit/push on `codex/v0.14.2-water-weather`, then continue the open v0.14 work. No version/release/main/tag/Pages actions.
+
+## Current continuation — activate rock moss texture mask — 2026-10-08
+
+- Found and fixed a threshold bug in `src/world/materials.ts`: Rev6 rock moss had a `.48–.68` threshold despite the generated rock albedo sampling in linear space near `.14`, which suppressed the treatment. Threshold is now `.10–.19`; climate/tint, upward-facing and elevation masks remain. Updated `tests/weather-materials.test.ts`.
+- Validation: focused weather/materials tests **6/6 PASS**; production build **PASS** (existing Vite advisory); live ANGLE Metal `npm run test:rock-collision` **PASS** (five authored variants, 20/20 approaches, 20 cliffs, four resource types, zero app errors); server stopped. Pending: diff review/check, stage only source/test/status/checkpoint, commit and push existing branch; continue v0.14 work. No main/release changes.

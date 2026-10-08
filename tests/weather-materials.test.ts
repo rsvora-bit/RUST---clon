@@ -85,7 +85,7 @@ describe('weather surface response',()=>{
       expect(newShader.fragmentShader).not.toContain('vec3 bn=pow(abs(vStoneNormal),vec3(4.))');
       expect(oldShader.fragmentShader).not.toContain('stoneDx');
       expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
-      expect(newShader.fragmentShader).toContain('smoothstep(.48,.68,stoneHeight)');
+      expect(newShader.fragmentShader).toContain('smoothstep(.10,.19,stoneHeight)');
       expect(newShader.fragmentShader).toContain('smoothstep(.48,.82,max(0.,vStoneWorldNormal.y))');
       expect(newShader.fragmentShader).toContain('vStoneMossClimate');
       expect(newShader.fragmentShader).toContain('roughnessFactor=mix(roughnessFactor,.96,stoneMoss*.35)');
