@@ -20,8 +20,11 @@ try{
   await page.evaluate(()=>window.__TIDELAND.dev('day'));
 
   const approach=await page.evaluate(()=>{
-    const api=window.__TIDELAND,art=api.worldArt(),boxes=art.generatedRockColliderBounds??[],trees=api.nodes().filter(n=>n.kind==='tree').map(n=>n.position);
+    const api=window.__TIDELAND,art=api.worldArt(),boxes=art.generatedRockColliderBounds??[],cliffs=art.cliffInstances??[],cliffBoxes=art.generatedCliffColliderBounds??[],trees=api.nodes().filter(n=>n.kind==='tree').map(n=>n.position);
     if(api.world().revision<6||art.generatedRockModels?.assets?.join(',')!=='large_boulder_a,large_boulder_b,large_boulder_c'||!boxes.length)throw Error('Revision-6 authored boulders or live colliders are missing');
+    if(art.generatedCliffModels?.assets?.join(',')!=='cliff_slab_a,cliff_slab_b'||art.generatedCliffModels.batches!==2||cliffs.length<8||cliffBoxes.length!==cliffs.length)throw Error('Revision-6 authored cliff slabs or live colliders are missing');
+    for(const cliff of cliffs){if(api.height(cliff.position.x,cliff.position.z)<22||api.slope(cliff.position.x,cliff.position.z)<.45)throw Error(`Cliff slab is outside its intended rocky slope band: ${JSON.stringify(cliff)}`);}
+    if(cliffs.some(cliff=>cliffs.filter(other=>Math.hypot(other.position.x-cliff.position.x,other.position.z-cliff.position.z)<7.5).length<3))throw Error('Cliff slabs are not grouped into readable outcrops');
     const distanceToSegment=(p,start,direction,length)=>{const along=(p.x-start.x)*direction.x+(p.z-start.z)*direction.z,t=Math.max(0,Math.min(length,along));return{along,lateral:Math.hypot(p.x-start.x-direction.x*t,p.z-start.z-direction.z*t)};};
     const plans=new Map();
     boxes.forEach((box,index)=>{
@@ -39,14 +42,19 @@ try{
     const selected=[...plans.values()];if(selected.length!==12)throw Error(`Expected a clear dry approach to each side of all 3 authored rock variants; found ${selected.length}/12`);
     const plan=selected[0],y=api.height(plan.start.x,plan.start.z);
     api.dev('testing');api.dev('god');api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});api.lookAt({x:plan.start.x+plan.axis.x,y:y+1.72,z:plan.start.z+plan.axis.z});api.setCapturePaused(false);
-    return{plans:selected.map(({index,asset,side,axis,distance,start,extent,lateralExtent,box})=>({index,asset,side,axis,distance,start,extent,lateralExtent,center:box.position})),assets:art.generatedRockModels.assets};
+    return{plans:selected.map(({index,asset,side,axis,distance,start,extent,lateralExtent,box})=>({index,asset,side,axis,distance,start,extent,lateralExtent,center:box.position})),assets:art.generatedRockModels.assets,cliffs,cliffBoxes};
   });
+  console.log(`PASS ${approach.cliffs.length} authored cliff slabs on rocky high slopes with ${approach.cliffBoxes.length} stable collider bounds`);
   const results=await page.evaluate(({plans})=>{const api=window.__TIDELAND;return plans.map(plan=>{const y=api.height(plan.start.x,plan.start.z);api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});for(let i=0;i<10;i++)api.physicsMoveForTest({x:0,y:-.04,z:0});for(let i=0;i<100;i++)api.physicsMoveForTest({x:plan.axis.x*.12,y:0,z:plan.axis.z*.12});const p=api.physics().position,dx=p.x-plan.center.x,dz=p.z-plan.center.z,depth=dx*plan.axis.x+dz*plan.axis.z,lateral=Math.abs(dx*plan.axis.z-dz*plan.axis.x);return{asset:plan.asset,side:plan.side,position:p,depth,lateral,extent:plan.extent,lateralExtent:plan.lateralExtent};});},approach);
   for(const result of results){
     assert.ok(result.depth<-(result.extent+.10),`Player did not remain outside ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
     assert.ok(result.depth>-(result.extent+1.35),`Player did not stop near ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
     assert.ok(result.lateral<result.lateralExtent+.45,`Player moved beyond the tested collider face on ${result.asset} ${result.side}: ${JSON.stringify(result)}`);
   }
+  const lods=await page.evaluate(()=>{const api=window.__TIDELAND,previous=api.cameraState().settings.quality,result={};for(const preset of ['low','medium','high','ultra']){api.settingsForTest({quality:preset});const art=api.worldArt();result[preset]={models:art.generatedCliffModels,colliders:art.generatedCliffColliderBounds};}api.settingsForTest({quality:previous});return result;});
+  assert.deepEqual(lods.low.models.assets,['cliff_slab_a','cliff_slab_b']);assert.deepEqual([lods.low.models.lod,lods.medium.models.lod,lods.high.models.lod,lods.ultra.models.lod],[2,1,0,0]);
+  for(const preset of ['medium','high','ultra'])assert.deepEqual(lods[preset].colliders,approach.cliffBoxes,`cliff colliders must stay fixed at ${preset.toUpperCase()}`);
+  console.log(`PASS cliff slab quality LODs · ${Math.round(lods.high.models.triangles).toLocaleString()} HIGH / ${Math.round(lods.ultra.models.triangles).toLocaleString()} ULTRA triangles`);
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('PASS live player movement is blocked on all four sides of all authored Revision-6 boulder variants');
   console.log(JSON.stringify({assets:approach.assets,checkedSides:results.length,results:results.map(({asset,side,depth,extent,lateral})=>({asset,side,depth,extent,lateral})),applicationErrors:errors.length},null,2));
