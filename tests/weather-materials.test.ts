@@ -1,9 +1,15 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {addWeatherSurfaceResponse} from '../src/rendering/materials';
+import {addWeatherSurfaceResponse,materialWithSurfaceFamily} from '../src/rendering/materials';
 import {stoneMaterial} from '../src/world/materials';
 
 describe('weather surface response',()=>{
+  it('reuses shared PBR maps on authored GLB surfaces while preserving their palette and metalness',()=>{
+    const map=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1),normal=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1),roughness=new THREE.DataTexture(new Uint8Array([220,220,220,255]),1,1),family=new THREE.MeshStandardMaterial({map,normalMap:normal,roughnessMap:roughness,roughness:.84,metalness:.12}),source=new THREE.MeshStandardMaterial({color:0x315a78,roughness:.42,metalness:.68});source.name='Tideland oxidized steel';
+    const result=materialWithSurfaceFamily(source,family,'oxidized-metal');
+    expect(result).not.toBe(source);expect(result.map).toBe(map);expect(result.normalMap).toBe(normal);expect(result.roughnessMap).toBe(roughness);expect(result.color.equals(source.color)).toBe(true);expect(result.roughness).toBe(.84);expect(result.metalness).toBe(.68);expect(result.userData.tidelandSurfaceFamily).toBe('oxidized-metal');expect(source.map).toBeNull();
+  });
+
   it('chains existing material hooks and applies live wetness to diffuse and roughness',()=>{
     const material=new THREE.MeshStandardMaterial();
     const priorCompile=vi.fn();

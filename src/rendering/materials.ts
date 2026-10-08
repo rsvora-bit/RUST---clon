@@ -79,6 +79,16 @@ export function metalSurfaceMaps(seed=5823,size=128):MetalSurfaceMaps{
 export function metalMaterial(color:number,roughness:number,metalness:number,seed:number):THREE.MeshStandardMaterial{
   const maps=metalSurfaceMaps(seed),material=new THREE.MeshStandardMaterial({color,map:maps.color,roughness,metalness,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.085,.085)});material.userData.textures=[maps.color,maps.roughness,maps.normal];return material;
 }
+/** Reuse a shared Tideland PBR texture family while retaining an authored GLB material's palette and metal response. */
+export function materialWithSurfaceFamily(source:THREE.Material,family:THREE.MeshStandardMaterial,familyName:string):THREE.MeshStandardMaterial{
+  const material=family.clone();
+  if(source instanceof THREE.MeshStandardMaterial){
+    material.color.copy(source.color);material.roughness=Math.max(family.roughness,source.roughness);material.metalness=source.metalness;
+    material.side=source.side;material.vertexColors=source.vertexColors;material.transparent=source.transparent;material.opacity=source.opacity;material.alphaTest=source.alphaTest;
+  }
+  material.name=`${source.name||'Authored surface'} · Tideland ${familyName}`;material.userData.tidelandSurfaceFamily=familyName;
+  return material;
+}
 export function disposeMaterialTextures(material:THREE.Material):void{
   const record=material as THREE.MeshStandardMaterial,textures=new Set<THREE.Texture>();
   for(const key of ['map','normalMap','roughnessMap','metalnessMap','bumpMap','alphaMap','aoMap','emissiveMap','lightMap','displacementMap'] as const){const value=record[key];if(value)textures.add(value);}

@@ -4,12 +4,11 @@ import type {Environment} from '../rendering/environment';
 import type {GameState,ItemId,Vec3,WorldRevision} from '../core/types';
 import {ensureProgression} from './progression';
 import {createStation,type Station} from './stations';
-import {woodMaterial} from '../rendering/materials';
 import {randomSource} from '../world/noise';
 import {fillPoiLoot,fillSalvageLoot,fillSecureCacheLoot,initializeWorldEconomy,rollPoiLootTier,type LootTier} from './economy';
 import type {IslandTerrain} from '../terrain/island';
 import {TerrainRoadRouter,roadGeometry} from '../terrain/roads';
-import {addWeatherSurfaceResponse,disposeMaterialTextures,fabricMaterial,metalMaterial} from '../rendering/materials';
+import {addWeatherSurfaceResponse,disposeMaterialTextures,fabricMaterial,materialWithSurfaceFamily,metalMaterial,woodMaterial} from '../rendering/materials';
 import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
 import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
@@ -350,7 +349,7 @@ export class WorldSurvival {
   }
   private attachLodAsset(asset:T.Object3D,parent:T.Object3D,name:string,position:Vec3,scale:number,yaw:number,distances:number[]):boolean{
     const levels=[0,1,2].map(index=>asset.getObjectByName(`LOD${index}`)).filter((item):item is T.Object3D=>item!==undefined);if(levels.length!==3)return false;
-    asset.traverse(object=>{if(object instanceof T.Mesh)for(const material of Array.isArray(object.material)?object.material:[object.material])this.generatedAssetMaterials.add(material);});
+    const replacements=new Map<T.Material,T.Material>();asset.traverse(object=>{if(!(object instanceof T.Mesh))return;const original=Array.isArray(object.material)?object.material:[object.material],mapped=original.map(source=>{this.generatedAssetMaterials.add(source);const materialName=source.name.toLowerCase(),family=materialName.includes('wood')||materialName.includes('timber')||materialName.includes('grain')?this.wood:materialName.includes('rust')||materialName.includes('corrod')||materialName.includes('oxid')?this.rust:materialName.includes('enamel')||materialName.includes('paint')?this.paint:materialName.includes('steel')||materialName.includes('iron')||materialName.includes('metal')?this.metal:undefined;if(!family)return source;let replacement=replacements.get(source);if(!replacement){const familyName=family===this.wood?'weathered-wood':family===this.paint?'painted-metal':family===this.rust?'oxidized-metal':'salvage-metal';replacement=materialWithSurfaceFamily(source,family,familyName);replacements.set(source,replacement);this.generatedAssetMaterials.add(replacement);}return replacement;});object.material=Array.isArray(object.material)?mapped:mapped[0]!;});
     const lod=new T.LOD();lod.name=name;lod.position.set(position.x,position.y,position.z);lod.scale.setScalar(scale);lod.rotation.y=yaw;
     for(const [index,level] of levels.entries()){level.traverse(object=>{if(object instanceof T.Mesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=true;}});lod.addLevel(level,distances[index]!);}
     parent.add(lod);return true;

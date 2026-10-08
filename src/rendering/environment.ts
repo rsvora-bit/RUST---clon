@@ -7,7 +7,7 @@ import type {ClimateSample} from '../terrain/island';
 import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
 import {Atmosphere} from '../world/atmosphere';
-import {addInstanceWindResponse,addWeatherSurfaceResponse,treeBarkMaterial,woodSurfaceMaps} from './materials';
+import {addInstanceWindResponse,addWeatherSurfaceResponse,materialWithSurfaceFamily,treeBarkMaterial,woodMaterial,woodSurfaceMaps} from './materials';
 import {collisionBoundsFromGeometries,collisionBoundsFromGeometry,collisionBoundsFromObject,treeAssetCollision,treeTrunkCollision} from '../physics/collisionBounds';
 import {randomSource,smoothstep} from '../world/noise';
 import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,liftFoliageBaseColor,stoneMaterial,rockMaterialStyle,rockInstanceTint,terrainMaterial,groundDecalTexture} from '../world/materials';
@@ -119,6 +119,7 @@ export class Environment {
   readonly layout?:WorldLayout;
   private readonly roadCells=new Map<string,Vec3[]>();
   private readonly bark:THREE.MeshStandardMaterial;
+  private readonly shoreWood:THREE.MeshStandardMaterial;
   private readonly stone:THREE.MeshStandardMaterial;
   private readonly outcrop:THREE.MeshStandardMaterial;
   private readonly metal:THREE.MeshStandardMaterial;
@@ -172,11 +173,11 @@ export class Environment {
     if(this.layout)for(const trail of this.layout.trails)for(const p of trail){const key=`${Math.floor(p.x/16)},${Math.floor(p.z/16)}`;const cell=this.roadCells.get(key)??[];cell.push(p);this.roadCells.set(key,cell);}
     const terrainMat=terrainMaterial(this.worldRevision);this.surfaceWetness=terrainMat.userData.surfaceWetness as {value:number};const ground=new THREE.Mesh(this.terrainGeometry,terrainMat);ground.name='Island ground';ground.receiveShadow=true;this.root.add(ground);this.materials.add(terrainMat);this.geometries.add(this.terrainGeometry);
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed,this.worldRevision);
-    this.generatedBarkMaps=woodSurfaceMaps(449);this.bark=treeBarkMaterial(barkTexture(this.worldRevision>=6),this.generatedBarkMaps);addWeatherSurfaceResponse(this.bark,this.surfaceWetness,.58,.58);
+    this.generatedBarkMaps=woodSurfaceMaps(449);this.bark=treeBarkMaterial(barkTexture(this.worldRevision>=6),this.generatedBarkMaps);addWeatherSurfaceResponse(this.bark,this.surfaceWetness,.58,.58);this.shoreWood=woodMaterial('#696858');addWeatherSurfaceResponse(this.shoreWood,this.surfaceWetness,.48,.50);
     this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pineMass=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x080d06,emissiveIntensity:.04,flatShading:true,vertexColors:true});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
     const rockStyle=rockMaterialStyle(this.worldRevision),rockWetness=this.worldRevision>=6?this.surfaceWetness:undefined;this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors,rockWetness);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors,rockWetness);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors,rockWetness);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors,rockWetness);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors,rockWetness);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
-    [this.bark,this.leaves,this.leafMass,this.pineMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
+    [this.bark,this.shoreWood,this.leaves,this.leafMass,this.pineMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
     if(!deferPopulation)this.populateNow();
   }
   private populateNow():void {
@@ -325,7 +326,7 @@ export class Environment {
       const geometry=parts.length===1?parts[0]!:parts.length?mergeGeometries(parts,true):null;if(parts.length>1)parts.forEach(part=>part.dispose());if(!geometry)break;geometry.computeBoundingSphere();lods.push(geometry);sourceMaterials??=partMaterials;
     }
     if(lods.length!==3||!sourceMaterials?.length){lods.forEach(geometry=>geometry.dispose());return 0;}
-    const materials=sourceMaterials.map(source=>{const material=source instanceof THREE.MeshStandardMaterial?source.clone():new THREE.MeshStandardMaterial({color:0x82765e,roughness:.94});material.roughness=Math.max(.82,material.roughness);addWeatherSurfaceResponse(material,this.surfaceWetness,.48,.50);this.materials.add(material);return material;});
+    const materials=sourceMaterials.map(source=>{const material=materialWithSurfaceFamily(source,this.shoreWood,'weathered-wood');addWeatherSurfaceResponse(material,this.surfaceWetness,.48,.50);this.materials.add(material);return material;});
     lods.forEach(geometry=>this.geometries.add(geometry));batch.generatedLods=lods;const lodIndex=this.quality==='low'?2:this.quality==='medium'?1:0;batch.mesh.geometry=lods[lodIndex]!;batch.mesh.material=materials;batch.mesh.userData.generatedWorldAsset='driftwood_a';batch.mesh.userData.generatedWorldLod=lodIndex;batch.mesh.computeBoundingSphere();this.shoreDriftwoodBatch=batch;return batch.mesh.count;
   }
   private populateRocks():void {
