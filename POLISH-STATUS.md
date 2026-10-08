@@ -209,3 +209,8 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Combined with the prior outcrop tint fix, current broad completion estimate is **about 34%**. Wider material/asset audit, world visuals, performance comparisons, full regression QA, and release gates remain open.
 
 - Follow-up completed the Revision-6 rock normal strategy: local-UV normal maps are now disabled and disposed only for world-space-detail stone materials; their legacy counterpart retains its original normal map. The world-space relief and roughness map remain active. `weather-materials`, `terrain-materials`, and `rock-geometry`: **20/20 PASS**; build PASS; headless WebGL New Game reached `playing` with zero page/console errors. No screenshots captured; temporary Vite server stopped.
+
+## Revision-6 forest deadfall grounding — 2026-10-08
+
+- Replaced the fixed `0.165 × scale` log lift with a geometry-aware contact correction after terrain alignment and instance scaling. The full trunk plus broken branch vertices now settle against the sampled height field, reducing floating/buried ends on curved ground; no gameplay collision or save data changes.
+- Added a curved-terrain regression for the actual fallen-log geometry and slope-aligned transform. `environment-visuals`, `foliage-geometry`, `world-art`: **71/71 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory); `git diff --check`: **PASS**. Overall goal estimate remains approximately **36%**.

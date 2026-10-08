@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
-import {fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../src/world/models';
+import {fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry,surfaceAlignedQuaternion,terrainContactOffset} from '../src/world/models';
 import {Atmosphere} from '../src/world/atmosphere';
 import {naturalWeatherKind,Weather,rainStreakLength,stormLightningRoll,WEATHER} from '../src/survival/Weather';
 import {mountainLayer} from '../src/world/horizon';
@@ -54,6 +54,12 @@ describe('environment visual building blocks',()=>{
       expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
       expect(Array.from(log.getAttribute('normal').array).every(Number.isFinite)).toBe(true);
     }finally{log.dispose();}
+  });
+
+  it('seats tilted fallen logs against the sampled curved terrain instead of using a fixed lift',()=>{
+    const log=fallenLogGeometry(),heightAt=(x:number,z:number)=>1.7+Math.sin(x*.17)*.34+Math.cos(z*.21)*.22,position=new THREE.Vector3(8,heightAt(8,-5),-5),gradeX=(heightAt(9.5,-5)-heightAt(6.5,-5))/3,gradeZ=(heightAt(8,-3.5)-heightAt(8,-6.5))/3,normal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize(),transform=new THREE.Matrix4().compose(position,surfaceAlignedQuaternion(normal,1.23),new THREE.Vector3(.86,.86,.86));
+    try{const correction=terrainContactOffset(log,transform,heightAt,.025),elements=transform.elements;transform.setPosition(elements[12]!,elements[13]!+correction,elements[14]!);const vertices=log.getAttribute('position'),point=new THREE.Vector3();let clearance=Infinity;for(let i=0;i<vertices.count;i++){point.fromBufferAttribute(vertices,i).applyMatrix4(transform);clearance=Math.min(clearance,point.y-heightAt(point.x,point.z));}expect(clearance).toBeCloseTo(.025,4);}
+    finally{log.dispose();}
   });
 
   it('builds a deterministic shallow marsh bowl with a silty vertex-color edge',()=>{

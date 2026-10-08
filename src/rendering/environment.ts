@@ -471,8 +471,8 @@ export class Environment {
         positions.push({x,y:y+.035,z,s:.72+rand()*.62,r:rand()*Math.PI*2});
       }
     }
-    const mesh=new THREE.InstancedMesh(this.own(fallenLogGeometry()),this.bark,positions.length);mesh.name='Forest fallen logs';mesh.castShadow=false;mesh.receiveShadow=false;
-    positions.forEach((p,i)=>{const gradeX=(this.heightAt(p.x+1.5,p.z)-this.heightAt(p.x-1.5,p.z))/3,gradeZ=(this.heightAt(p.x,p.z+1.5)-this.heightAt(p.x,p.z-1.5))/3,normal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(p.x,p.y+.165*p.s,p.z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,p.r));this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.055+rand()*.035,.22+rand()*.12,.43+rand()*.11));});
+    const geometry=this.own(fallenLogGeometry()),mesh=new THREE.InstancedMesh(geometry,this.bark,positions.length);mesh.name='Forest fallen logs';mesh.castShadow=false;mesh.receiveShadow=false;
+    positions.forEach((p,i)=>{const gradeX=(this.heightAt(p.x+1.5,p.z)-this.heightAt(p.x-1.5,p.z))/3,gradeZ=(this.heightAt(p.x,p.z+1.5)-this.heightAt(p.x,p.z-1.5))/3,normal=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,p.r));this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();this.matrixDummy.position.y+=terrainContactOffset(geometry,this.matrixDummy.matrix,(x,z)=>this.heightAt(x,z),.025);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.055+rand()*.035,.22+rand()*.12,.43+rand()*.11));});
     if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum:'medium'});
   }
 
