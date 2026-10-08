@@ -74,7 +74,8 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('float relief=(micro-.5)*.10');
       expect(newShader.fragmentShader).toContain('float steepSurface=smoothstep(.14,.48,1.-abs(vGroundNormal.y))');
       expect(newShader.fragmentShader).toContain('vec3 grassTri=texture2D(grassTex,uvX).rgb*blend.x');
-      expect(newShader.fragmentShader).toContain('dirtCol=mix(dirtCol,dirtTri,steepSurface*.84)');
+      expect(newShader.fragmentShader).toContain('grassCol=mix(grassCol,mix(grassTri,rockCol,.58),steepSurface*.78)');
+      expect(newShader.fragmentShader).toContain('dirtCol=mix(dirtCol,mix(dirtTri,rockCol,.68),steepSurface*.84)');
       expect(oldShader.fragmentShader).not.toContain('float steepSurface=');
       expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.zy*.48).rgb*blend.x');
       expect(newShader.fragmentShader).toContain('texture2D(snowTex,gp.xz*.48).rgb*blend.y');
