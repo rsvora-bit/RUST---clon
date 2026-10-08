@@ -517,3 +517,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Extended the shared Revision-6 wetness signal to procedural leaf, palm and pine foliage materials, including fallback canopy masses used when authored tree assets are unavailable. Legacy revisions are unchanged. This adds no geometry, batches, draw calls, world-layout changes or save data.
 - Full suite: **593/593 PASS (58 files)** before this slice; focused weather/material and world-art tests after it: **51/51 PASS**; production build PASS with the existing Vite >500 kB advisory. Screenshot-free ANGLE Metal world-art QA: **120/120 PASS**, including archived v0.9.0/v0.9.1 saves, four quality presets, weather transitions, deterministic reload and zero browser/WebGL errors.
 - No performance benchmark rerun: the change only adds a lightweight diffuse color expression to existing shared Lambert materials; draw calls and geometry are unchanged. Overall overhaul remains incomplete (~56%). No version bump, main merge, tag, GitHub Release or Pages deployment.
+
+## v0.14 continuation — rain-reactive forest floor — 2026-10-08
+
+- Added the same shared wetness treatment to Revision-6 fern, dry-meadow, forest-shrub and marsh-reed materials. The diagnostic/browser assertion now verifies the full procedural foliage set is wired. Older revisions remain unchanged; placement, instancing, density presets, geometry and save layout are untouched.
+- Focused tests **51/51 PASS**; full suite **593/593 PASS (58 files)**; production build PASS with the known Vite large-chunk advisory; screenshot-free ANGLE Metal world-art QA **120/120 PASS**, zero browser/WebGL errors across archived saves, weather and all four presets.
+- This remains a visual polish increment; no benchmark rerun because there are no new batches, draw calls or geometry. The broader v0.14 goal is still incomplete (~56%); version, main, tag, Release and Pages are unchanged.

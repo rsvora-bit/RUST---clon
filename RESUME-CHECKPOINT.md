@@ -2518,3 +2518,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Full suite **593/593 PASS (58 files)** before this slice; focused tests **51/51 PASS** after it; production build PASS (known large-bundle advisory); screenshot-free ANGLE Metal world-art QA **120/120 PASS**, no browser/WebGL errors. The SwiftShader attempt stalled before its first assertion and was stopped; the same harness passed with ANGLE Metal.
 - Changed files: `src/rendering/environment.ts`, `src/app/GameApp.ts`, `scripts/world-art-qa.mjs`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`.
 - Next: inspect diff, then commit and push only those five files to the existing feature branch. Full suite rerun after the change passed **593/593**. Do not bump release version, merge main, tag, publish a Release or touch Pages. Keep unrelated iCloud ` 2` duplicates and `artifacts/` untouched. The overall v0.14 goal remains incomplete (~56%).
+
+## Follow-up — wet forest-floor materials — 2026-10-08
+
+- Continued on `codex/v0.14.2-water-weather` after commit `a26e46ed815e7362b247199818f6b60f8b09cc66`.
+- Extended Revision-6 live rain shading to ferns, dry-meadow tufts, forest shrubs and marsh reeds. Legacy revisions, placement, density/preset behavior, geometry, draw calls, saves and gameplay remain unchanged.
+- Validation: focused **51/51**, full suite **593/593**, build PASS (known bundle warning), screenshot-free ANGLE Metal world-art QA **120/120**, no browser/WebGL errors.
+- Current uncommitted files: `src/rendering/environment.ts`, `scripts/world-art-qa.mjs`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`. Next: review and commit/push only these four files, then continue the broader v0.14 visual/physical audit. Do not release, merge main, tag or deploy Pages. Preserve all untracked iCloud ` 2` files and `artifacts/`; overall goal incomplete (~56%).

@@ -124,6 +124,7 @@ export class Environment {
   private readonly fallingTrees=new Map<string,TreeFall>();
   private populated=false;
   private readonly grassCoveredBy=new Set<string>();
+  private readonly weatherResponsiveFoliage:THREE.Material[]=[];
   private readonly matrixDummy=new THREE.Object3D();
   private readonly hiddenMatrix=new THREE.Matrix4().makeScale(0,0,0);
   private readonly hitRotation=new THREE.Matrix4();
@@ -189,7 +190,7 @@ export class Environment {
   get rainPuddlePositions():Vec3[]{return this.rainPuddleLocations.map(point=>({...point}));}
   get rainPuddleOpacity():number{return this.rainPuddleMaterial?.opacity??0;}
   get treeFoliageWeatherResponse():boolean{return this.generatedTreeFoliageMaterial?.userData.tidelandWeatherResponse===true;}
-  get proceduralFoliageWeatherResponse():boolean{return[this.leaves,this.leafMass,this.pineMass,this.pine,this.palm].every(material=>material.userData.tidelandWeatherResponse===true);}
+  get proceduralFoliageWeatherResponse():boolean{return this.worldRevision<6||this.weatherResponsiveFoliage.length>=8&&this.weatherResponsiveFoliage.every(material=>material.userData.tidelandWeatherResponse===true);}
   get grassWeatherResponse():boolean{return this.grassMaterials.length>0&&this.grassMaterials.every(material=>material.userData.tidelandWeatherResponse===true);}
   get understoryLocations():{name:string;positions:Vec3[];visiblePositions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
@@ -206,7 +207,7 @@ export class Environment {
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed,this.worldRevision);
     this.generatedBarkMaps=woodSurfaceMaps(449);this.bark=treeBarkMaterial(barkTexture(this.worldRevision>=6),this.generatedBarkMaps);addWeatherSurfaceResponse(this.bark,this.surfaceWetness,.58,.58);this.shoreWood=woodMaterial('#696858');addWeatherSurfaceResponse(this.shoreWood,this.surfaceWetness,.48,.50);
     this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pineMass=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x080d06,emissiveIntensity:.04,flatShading:true,vertexColors:true});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
-    if(this.worldRevision>=6){addWeatherSurfaceResponse(this.leafMass,this.surfaceWetness,.42,.68);addWeatherSurfaceResponse(this.pineMass,this.surfaceWetness,.42,.68);}
+    this.addFoliageWeatherResponse(this.leafMass,.42);this.addFoliageWeatherResponse(this.pineMass,.42);
     const rockStyle=rockMaterialStyle(this.worldRevision),rockWetness=this.worldRevision>=6?this.surfaceWetness:undefined;this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors,rockWetness);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors,rockWetness);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors,rockWetness);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors,rockWetness);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors,rockWetness);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
     [this.bark,this.shoreWood,this.leaves,this.leafMass,this.pineMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
@@ -251,7 +252,11 @@ export class Environment {
     const material=new THREE.MeshLambertMaterial({map:tex,color,alphaTest:.38,
       transparent:false,depthWrite:true,side:THREE.DoubleSide,
       emissive:0xffffff,emissiveMap:tex,emissiveIntensity});
-    addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);if(this.worldRevision>=6)addWeatherSurfaceResponse(material,this.surfaceWetness,.48,.68);return material;
+    addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);this.addFoliageWeatherResponse(material,.48);return material;
+  }
+
+  private addFoliageWeatherResponse(material:THREE.Material,strength=.48):void {
+    if(this.worldRevision<6)return;addWeatherSurfaceResponse(material,this.surfaceWetness,strength,.68);this.weatherResponsiveFoliage.push(material);
   }
 
   private own<T extends THREE.BufferGeometry>(g:T):T {this.geometries.add(g);return g;}
@@ -541,7 +546,7 @@ export class Environment {
   private populateUnderstory():void {
     const revision6=this.worldRevision>=6,rand=randomSource(this.seed+4421),fernG=this.own(fernGeometry(revision6)),twigG=this.own(twigGeometry()),tuftG=this.own(grassGeometry(revision6));
     const fernM=new THREE.MeshLambertMaterial({color:revision6?0x6d8050:0x526d40,side:THREE.DoubleSide});
-    const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.materials.add(fernM);this.materials.add(tuftM);
+    const tuftM=new THREE.MeshLambertMaterial({color:0xd5c39a,vertexColors:true,side:THREE.DoubleSide});this.addFoliageWeatherResponse(fernM,.43);this.addFoliageWeatherResponse(tuftM,.38);this.materials.add(fernM);this.materials.add(tuftM);
     const fernPos:{x:number;y:number;z:number;s:number;r:number}[]=[],twigPos:{x:number;y:number;z:number;s:number;r:number}[]=[],tuftPos:{x:number;y:number;z:number;s:number;r:number}[]=[];
     const fernTarget=revision6?2800:720,twigTarget=revision6?780:620,tuftTarget=revision6?850:680;
     for(let i=0;i<(revision6?34000:12500)&&(fernPos.length<fernTarget||twigPos.length<twigTarget||tuftPos.length<tuftTarget);i++){
@@ -553,7 +558,7 @@ export class Environment {
     const shrubPos:typeof fernPos=[];
     if(revision6){
       const shrubRand=randomSource(this.seed+77119),shrubG=this.own(forestShrubGeometry()),shrubM=new THREE.MeshLambertMaterial({color:0xffffff}),target=1400,span=this.terrain.generation===5?this.terrain.size*.94:640;
-      this.materials.add(shrubM);
+      this.addFoliageWeatherResponse(shrubM,.46);this.materials.add(shrubM);
       for(let tries=0;tries<42000&&shrubPos.length<target;tries++){
         const x=(shrubRand()-.5)*span,z=(shrubRand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
         if(h<3.6||h>31||slope>.5||Math.hypot(x-this.spawn.x,z-this.spawn.z)<18||!this.roadClear(x,z,4))continue;
@@ -609,7 +614,7 @@ export class Environment {
       }
     }
     if(!positions.length)return;
-    const geometry=this.own(reedGeometry()),material=new THREE.MeshLambertMaterial({color:0xc4b27c}),mesh=new THREE.InstancedMesh(geometry,material,positions.length);this.materials.add(material);mesh.name='Marsh reeds';mesh.castShadow=false;mesh.receiveShadow=true;
+    const geometry=this.own(reedGeometry()),material=new THREE.MeshLambertMaterial({color:0xc4b27c}),mesh=new THREE.InstancedMesh(geometry,material,positions.length);this.addFoliageWeatherResponse(material,.40);this.materials.add(material);mesh.name='Marsh reeds';mesh.castShadow=false;mesh.receiveShadow=true;
     positions.forEach((p,i)=>{this.matrixDummy.position.set(p.x,p.y,p.z);this.matrixDummy.rotation.set(0,p.r,0);this.matrixDummy.scale.setScalar(p.s);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);mesh.setColorAt(i,new THREE.Color().setHSL(.19+rand()*.07,.22+rand()*.16,.56+rand()*.16));});mesh.computeBoundingSphere();this.root.add(mesh);this.detailMeshes.push({mesh,fullCount:positions.length,minimum:'low'});
   }
 
