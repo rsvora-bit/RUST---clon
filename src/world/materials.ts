@@ -205,9 +205,14 @@ export function stoneWeatherShader(enabled:boolean):{uniform:string;diffuse:stri
   return{uniform:'uniform float surfaceWetness;',diffuse:`float stoneWet=surfaceWetness*${enabled?'1.':'0.'};diffuseColor.rgb*=mix(1.,.78,clamp(stoneWet*.58,0.,.58));`,roughness:'roughnessFactor=mix(roughnessFactor,.56,clamp(stoneWet*.58,0.,.58));'};
 }
 export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{value:number}):THREE.MeshStandardMaterial {
-  const tex=groundTexture('rock',773),detail=rockSurfaceMaps((Number(tint)^773)>>>0),wetnessUniform=surfaceWetness??{value:0},worldSpaceDetail=!!surfaceWetness;const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
+  const tex=groundTexture('rock',773),detail=rockSurfaceMaps((Number(tint)^773)>>>0),wetnessUniform=surfaceWetness??{value:0},worldSpaceDetail=!!surfaceWetness;
+  // Revision 6 derives its subtle normal relief from the same world-space
+  // triplanar field as albedo; retaining a local UV normal map would stretch it
+  // differently on each scaled instance. Keep the UV map for legacy worlds.
+  if(worldSpaceDetail)detail.normal.dispose();
+  const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:worldSpaceDetail?null:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
   mat.customProgramCacheKey=()=>`tideland-stone-detail-v1-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
-  mat.userData.textures=[tex,detail.roughness,detail.normal];
+  mat.userData.textures=worldSpaceDetail?[tex,detail.roughness]:[tex,detail.roughness,detail.normal];
   if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
   const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{
     shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal;');

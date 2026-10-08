@@ -58,6 +58,9 @@ describe('weather surface response',()=>{
       expect(newShader.vertexShader).toContain('stoneWorldPosition=instanceMatrix*stoneWorldPosition');
       expect(newShader.vertexShader).toContain('vStonePos=(modelMatrix*stoneWorldPosition).xyz');
       expect(newShader.uniforms.surfaceWetness?.value).toBe(.35);
+      expect(legacy.normalMap).toBeTruthy();
+      expect(revision6.normalMap).toBeNull();
+      expect((revision6.userData.textures as THREE.Texture[]).length).toBe(2);
       expect(newShader.fragmentShader).toContain('texture2D(map,vStonePos.yz*.7)');
       expect(oldShader.fragmentShader).not.toContain('stoneDx');
       expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
