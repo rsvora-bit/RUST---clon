@@ -13,6 +13,7 @@ describe('authored tree material groups',()=>{
       0,0,1, 0,0,1, 0,0,1,
       0,0,1, 0,0,1, 0,0,1,
     ],3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,1,0,0,1,0,0,1,0,0,1],2));
     geometry.addGroup(0,3,0);geometry.addGroup(3,3,1);
     const bark=new THREE.MeshStandardMaterial({color:0x523e2a});bark.name='Tideland furrowed bark';
     const foliage=new THREE.MeshStandardMaterial({color:0x33552d});foliage.name='Tideland shaded leaf';
@@ -23,6 +24,8 @@ describe('authored tree material groups',()=>{
     expect(parts.trunk).toHaveLength(1);expect(parts.foliage).toHaveLength(1);
     expect(parts.trunk[0]!.getAttribute('position').count).toBe(3);
     expect(parts.foliage[0]!.getAttribute('position').count).toBe(3);
+    expect(parts.trunk[0]!.getAttribute('uv').count).toBe(3);
+    expect(parts.foliage[0]!.getAttribute('uv')).toBeUndefined();
     expect(parts.trunk[0]!.getAttribute('color').getX(0)).toBeGreaterThan(.9);
     expect(parts.foliage[0]!.getAttribute('color').getY(0)).toBeGreaterThan(parts.foliage[0]!.getAttribute('color').getX(0));
 

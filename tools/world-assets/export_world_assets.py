@@ -157,16 +157,18 @@ def broadleaf_foliage(kind, centers, seed):
             angle=rng.uniform(0,math.tau);vertical=rng.uniform(-.68,.92)
             direction=Vector((math.cos(angle),math.sin(angle),vertical)).normalized()
             base=Vector(center)+Vector((rng.uniform(-.20,.20),rng.uniform(-.18,.18),rng.uniform(-.15,.17)))
-            length=rng.uniform(.58,.98)*(1.08 if kind=="coastal_tree" else 1)
-            width=rng.uniform(.16,.28);tip=base+direction*length
+            length=rng.uniform(.52,.86)*(1.08 if kind=="coastal_tree" else 1)
+            width=rng.uniform(.14,.245);tip=base+direction*length
             side=direction.cross(Vector((0,0,1)))
             if side.length<.1:side=direction.cross(Vector((0,1,0)))
             side.normalize();front=direction.cross(side).normalized()
             mid=base+direction*length*.48
             left=mid-side*width;right=mid+side*width
-            ridge=mid+front*width*.30;under=mid-front*width*.24
-            start=len(verts);verts.extend([tuple(base),tuple(left),tuple(ridge),tuple(right),tuple(tip),tuple(under)])
-            local=((0,1,2),(0,2,3),(1,4,2),(2,4,3),(0,2,1),(0,3,2),(1,2,4),(2,3,4))
+            ridge=mid+front*width*.30
+            start=len(verts);verts.extend([tuple(base),tuple(left),tuple(ridge),tuple(right),tuple(tip)])
+            # The authored leaf materials export as double-sided. Keep one
+            # gently ridged face winding and let the material render its back.
+            local=((0,1,2),(0,2,3),(1,4,2),(2,4,3))
             faces.extend(tuple(start+index for index in face) for face in local)
             shade=0 if rng.random()<.57 else 1 if rng.random()<.58 else 2
             material_indices.extend([shade]*len(local))
@@ -260,8 +262,8 @@ def tree(kind):
             angle=i*2.399963+rng.uniform(-.22,.22)
             radius=rng.uniform(.62,1.28) if i%3 else rng.uniform(1.18,1.82)
             z=h*rng.uniform(.62,.96);loc=(lean*z/h+math.cos(angle)*radius,math.sin(angle)*radius*.72,z)
-            clusters.append((loc,radius,16 if kind.startswith("broadleaf") else 13))
-        clusters.append(((lean*.8,0,h*.81),.8,38))
+            clusters.append((loc,radius,20 if kind.startswith("broadleaf") else 18))
+        clusters.append(((lean*.8,0,h*.81),.8,46))
         broadleaf_foliage(kind,clusters,seed)
     else:
         tiers=9 if alpine else 11+variant

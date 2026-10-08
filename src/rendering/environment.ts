@@ -63,6 +63,9 @@ export function splitTreeAssetMesh(mesh:THREE.Mesh,relative:THREE.Matrix4):TreeA
     const base=material instanceof THREE.MeshStandardMaterial||material instanceof THREE.MeshLambertMaterial||material instanceof THREE.MeshBasicMaterial?material.color:new THREE.Color(0xffffff),isTrunk=/bark|timber|wood/i.test(material.name),tint=base.clone();
     if(isTrunk){const barkReference=new THREE.Color().setRGB(.2,.15,.095,THREE.SRGBColorSpace);tint.setRGB(Math.min(1.35,tint.r/barkReference.r),Math.min(1.35,tint.g/barkReference.g),Math.min(1.35,tint.b/barkReference.b));}
     else{tint.copy(liftFoliageBaseColor(tint));if(/needle/i.test(material.name))tint.setRGB(tint.r*.9,tint.g*.94,tint.b*.66);}
+    // Generated tree foliage has no sampled texture; its material uses only
+    // base color, vertex color and position for wind. Keep UVs on bark only.
+    if(!isTrunk)geometry.deleteAttribute('uv');
     const existing=geometry.getAttribute('color'),vertexCount=geometry.getAttribute('position').count,colors=new Float32Array(vertexCount*3);for(let i=0;i<vertexCount;i++){const r=existing?.getX(i)??1,g=existing?.getY(i)??1,b=existing?.getZ(i)??1;colors[i*3]=r*tint.r;colors[i*3+1]=g*tint.g;colors[i*3+2]=b*tint.b;}
     geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));(isTrunk?parts.trunk:parts.foliage).push(geometry);
   }
