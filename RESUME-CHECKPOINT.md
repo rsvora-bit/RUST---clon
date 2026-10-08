@@ -2379,3 +2379,8 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Latest focused validation: environment/world-art tests **63/63 PASS**; production build **PASS** (existing Vite chunk-size advisory); `test:tree-collision` **PASS**, `test:shipwreck-collision` **PASS**, `test:rock-collision` **PASS**, `test:tree-culling` **PASS**, full `test:world-art` **97/97 PASS**. Browser/WebGL errors: zero in these probes. Vite stopped. The complete unit suite is intentionally deferred to final validation.
 - Overall v0.14 estimate: **about 54%**. Still open: physical audit for remaining wreck upper geometry, stations and props; larger visual fidelity work across terrain/rocks/vegetation/water/sky/weather/station details; matched real-hardware performance; then complete tests, documentation/versioning, CI, immutable tag, release, and Pages verification.
 - `git status` has only untracked user/iCloud data ending in ` 2` plus `artifacts/`; no tracked modifications remain. Do not stage or alter those files. Continue on this same branch, and do not bump version, merge, tag, create a release, or alter Pages until the full checklist passes.
+
+## v0.14 continuation — upper Breakwater derrick collision — 2026-10-08
+
+- Rozšířil jsem `scripts/shipwreck-collision-qa.mjs`: kromě čtyř near-level živých přístupů na dolní trup nyní hledá šikmý horní stožár a testuje ho ve výšce mimo kolizní rozsah paluby. Kolizní cesta je izolovaná od ostatních POI proxy.
+- Výsledek live QA: dolní trup **4/4** přístupů blokuje hráče, horní derrick mast také blokuje hráče, browser/WebGL errors **0**. `node --check` PASS; produkční build PASS (dosavadní Vite chunk advisory); Vite server ukončen. Změněn pouze QA script a tento checkpoint.
