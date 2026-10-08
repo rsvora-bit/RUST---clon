@@ -79,6 +79,15 @@ export function metalSurfaceMaps(seed=5823,size=128):MetalSurfaceMaps{
 export function metalMaterial(color:number,roughness:number,metalness:number,seed:number):THREE.MeshStandardMaterial{
   const maps=metalSurfaceMaps(seed),material=new THREE.MeshStandardMaterial({color,map:maps.color,roughness,metalness,roughnessMap:maps.roughness,normalMap:maps.normal,normalScale:new THREE.Vector2(.085,.085)});material.userData.textures=[maps.color,maps.roughness,maps.normal];return material;
 }
+export type AuthoredSurfaceFamily='weathered-wood'|'oxidized-metal'|'painted-metal'|'salvage-metal';
+export function authoredSurfaceFamilyForName(name:string):AuthoredSurfaceFamily|undefined{
+  const normalized=name.toLowerCase();
+  if(normalized.includes('wood')||normalized.includes('timber')||normalized.includes('grain'))return 'weathered-wood';
+  if(normalized.includes('rust')||normalized.includes('corrod')||normalized.includes('corros')||normalized.includes('oxid'))return 'oxidized-metal';
+  if(normalized.includes('enamel')||normalized.includes('paint'))return 'painted-metal';
+  if(normalized.includes('steel')||normalized.includes('iron')||normalized.includes('metal'))return 'salvage-metal';
+  return undefined;
+}
 /** Reuse a shared Tideland PBR texture family while retaining an authored GLB material's palette and metal response. */
 export function materialWithSurfaceFamily(source:THREE.Material,family:THREE.MeshStandardMaterial,familyName:string):THREE.MeshStandardMaterial{
   const material=family.clone();

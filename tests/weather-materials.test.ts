@@ -1,9 +1,19 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
-import {addWeatherSurfaceResponse,materialWithSurfaceFamily} from '../src/rendering/materials';
+import {addWeatherSurfaceResponse,authoredSurfaceFamilyForName,materialWithSurfaceFamily} from '../src/rendering/materials';
 import {stoneMaterial} from '../src/world/materials';
 
 describe('weather surface response',()=>{
+  it('classifies the authored Breakwater wood, corrosion, enamel and steel materials',()=>{
+    expect(authoredSurfaceFamilyForName('Tideland salt-worn timber')).toBe('weathered-wood');
+    expect(authoredSurfaceFamilyForName('Tideland soaked end grain')).toBe('weathered-wood');
+    expect(authoredSurfaceFamilyForName('Tideland exposed timber')).toBe('weathered-wood');
+    expect(authoredSurfaceFamilyForName('Tideland oxidized steel')).toBe('oxidized-metal');
+    expect(authoredSurfaceFamilyForName('Tideland flaking drum corrosion')).toBe('oxidized-metal');
+    expect(authoredSurfaceFamilyForName('Tideland faded harbor drum enamel')).toBe('painted-metal');
+    expect(authoredSurfaceFamilyForName('Tideland drum bung recess')).toBeUndefined();
+  });
+
   it('reuses shared PBR maps on authored GLB surfaces while preserving their palette and metalness',()=>{
     const map=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1),normal=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1),roughness=new THREE.DataTexture(new Uint8Array([220,220,220,255]),1,1),family=new THREE.MeshStandardMaterial({map,normalMap:normal,roughnessMap:roughness,roughness:.84,metalness:.12}),source=new THREE.MeshStandardMaterial({color:0x315a78,roughness:.42,metalness:.68});source.name='Tideland oxidized steel';
     const result=materialWithSurfaceFamily(source,family,'oxidized-metal');

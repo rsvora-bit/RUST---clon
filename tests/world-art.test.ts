@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-vi.mock('../src/rendering/materials',()=>{let materialId=0;return{addWeatherSurfaceResponse:()=>{},disposeMaterialTextures:()=>{},fabricMaterial:()=>({uuid:`fabric-${++materialId}`,dispose(){},userData:{}}),metalMaterial:()=>({uuid:`metal-${++materialId}`,dispose(){},userData:{}}),woodMaterial:()=>({uuid:`wood-${++materialId}`,dispose(){},userData:{}})};});
+vi.mock('../src/rendering/materials',()=>{let materialId=0;return{addWeatherSurfaceResponse:()=>{},authoredSurfaceFamilyForName:()=>undefined,disposeMaterialTextures:()=>{},fabricMaterial:()=>({uuid:`fabric-${++materialId}`,dispose(){},userData:{}}),metalMaterial:()=>({uuid:`metal-${++materialId}`,dispose(){},userData:{}}),woodMaterial:()=>({uuid:`wood-${++materialId}`,dispose(){},userData:{}})};});
 vi.mock('../src/world/materials',()=>({groundTexture:()=>({dispose(){}})}));
 import {IslandTerrain} from '../src/terrain/island';
 import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
