@@ -99,6 +99,7 @@ export class Environment {
   private readonly outcropBatches:{mesh:THREE.InstancedMesh;variant:number;collisionRefs:(NaturalCollider|undefined)[];generatedLods?:THREE.BufferGeometry[]}[]=[];
   private readonly cliffBatches:{mesh:THREE.InstancedMesh;variant:number;collisionRefs:NaturalCollider[];generatedLods?:THREE.BufferGeometry[]}[]=[];
   private readonly shorePebbleBatches:{mesh:THREE.InstancedMesh;variant:number;generatedLods?:THREE.BufferGeometry[]}[]=[];
+  private readonly resourceRockMeshes:{mesh:THREE.Mesh;nodeId:string;variant:number;generatedLods:THREE.BufferGeometry[]}[]=[];
   private shoreDriftwoodBatch?:{mesh:THREE.InstancedMesh;generatedLods?:THREE.BufferGeometry[]};
   private readonly treeInstancesById=new Map<string,{active:boolean}>();
   private readonly grassMaterials:THREE.MeshLambertMaterial[]=[];
@@ -164,6 +165,7 @@ export class Environment {
   get resourceRockColliderBounds():{position:Vec3;halfExtents:Vec3;rotation:number;asset:string;nodeId:string}[]{const kinds=new Map(this.nodes.map(node=>[node.id,node.kind]));return this.colliders.flatMap(collider=>{const kind=collider.nodeId?kinds.get(collider.nodeId):undefined;return collider.nodeId&&(kind==='stone'||kind==='metal'||kind==='sulfur'||kind==='hqmetal')?[{position:{...collider.position},halfExtents:{...collider.halfExtents},rotation:collider.rotation??0,asset:kind,nodeId:collider.nodeId}]:[];});}
   get generatedShoreModelStats():{instances:number;triangles:number;lod:number;asset:string|null}{const batch=this.shoreDriftwoodBatch,mesh=batch?.mesh;return{instances:mesh?.count??0,triangles:mesh?((mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3)*mesh.count:0,lod:this.quality==='low'?2:this.quality==='medium'?1:0,asset:mesh?.userData.generatedWorldAsset??null};}
   get generatedShorePebbleStats():{instances:number;batches:number;triangles:number;lod:number;assets:string[]}{const batches=this.shorePebbleBatches.filter(batch=>batch.mesh.userData.generatedWorldAsset);return{instances:batches.reduce((sum,batch)=>sum+batch.mesh.count,0),batches:batches.length,triangles:batches.reduce((sum,batch)=>sum+(batch.mesh.geometry.index?.count??batch.mesh.geometry.getAttribute('position').count)/3*batch.mesh.count,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0,assets:[...new Set(batches.map(batch=>batch.mesh.userData.generatedWorldAsset as string))].sort()};}
+  get generatedResourceRockStats():{instances:number;batches:number;triangles:number;lod:number;assets:string[]}{const meshes=this.resourceRockMeshes.filter(batch=>batch.mesh.userData.generatedWorldAsset);return{instances:meshes.length,batches:new Set(meshes.map(batch=>batch.mesh.userData.generatedWorldAsset)).size,triangles:meshes.reduce((sum,batch)=>sum+(batch.mesh.geometry.index?.count??batch.mesh.geometry.getAttribute('position').count)/3,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0,assets:[...new Set(meshes.map(batch=>batch.mesh.userData.generatedWorldAsset as string))].sort()};}
   get treeCrownScales():[number,number,number][]{const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();return this.treeBatches.flatMap(batch=>Array.from({length:batch.crowns.count},(_,index)=>{batch.crowns.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return[scale.x,scale.y,scale.z] as [number,number,number];}));}
   get renderedTreeIds():string[]{return this.treeBatches.flatMap(batch=>batch.instances.filter(tree=>tree.visible).map(tree=>tree.id));}
   get fallingTreeCount():number{return this.fallingTrees.size;}
@@ -320,7 +322,31 @@ export class Environment {
     }
     this.cullClock=0;return integrated;
   }
-  /** Use the authored fractured-stone library for decorative outcrops without changing harvest nodes or collider placement. */
+  /** Convert authored ore-rock material groups into one shared, biome-ready mesh per LOD. */
+  private authoredResourceRockLods(asset:THREE.Object3D,variant:number):THREE.BufferGeometry[]|null {
+    asset.updateMatrixWorld(true);const levels:THREE.BufferGeometry[]=[];
+    for(const lodName of ['LOD0','LOD1','LOD2']){
+      const lod=asset.getObjectByName(lodName);if(!lod){levels.forEach(geometry=>geometry.dispose());return null;}lod.updateMatrixWorld(true);
+      const inverseLod=lod.matrixWorld.clone().invert(),parts:THREE.BufferGeometry[]=[];
+      lod.traverse(object=>{
+        if(!(object instanceof THREE.Mesh))return;
+        const source=object.geometry,sourceMaterials=Array.isArray(object.material)?object.material:[object.material];
+        for(const group of source.groups.length?source.groups:[{start:0,count:source.index?.count??source.getAttribute('position').count,materialIndex:0}]){
+          const material=sourceMaterials[group.materialIndex??0];if(!material)continue;
+          const expanded=source.index?source.toNonIndexed():source.clone(),geometry=new THREE.BufferGeometry();
+          for(const [name,attribute] of Object.entries(expanded.attributes) as [string,THREE.BufferAttribute][]){const first=group.start*attribute.itemSize,last=(group.start+group.count)*attribute.itemSize;geometry.setAttribute(name,new THREE.BufferAttribute(attribute.array.slice(first,last) as THREE.TypedArray,attribute.itemSize,attribute.normalized));}
+          expanded.dispose();geometry.clearGroups();geometry.applyMatrix4(inverseLod.clone().multiply(object.matrixWorld));geometry.scale(.58,.58,.58);
+          const materialName=material.name.toLowerCase(),base=materialName.includes('moss')?[.80,.97,.72]:materialName.includes('fracture')?[1.10,1.06,.99]:[.97,.98,1.01],position=geometry.getAttribute('position'),colors=new Float32Array(position.count*3);
+          for(let i=0;i<position.count;i++){const x=position.getX(i),y=position.getY(i),z=position.getZ(i),noise=.96+.05*Math.sin(x*19.7+y*13.1+z*17.9+variant*4.3);colors[i*3]=base[0]!*noise;colors[i*3+1]=base[1]!*noise;colors[i*3+2]=base[2]!*noise;}
+          geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));parts.push(geometry);
+        }
+      });
+      const merged=parts.length?mergeGeometries(parts,false):null;parts.forEach(geometry=>geometry.dispose());
+      if(!merged){levels.forEach(geometry=>geometry.dispose());return null;}merged.computeBoundingSphere();levels.push(merged);
+    }
+    levels.forEach(geometry=>this.geometries.add(geometry));return levels;
+  }
+  /** Use the authored fractured-stone library for landscape and harvest visuals without changing resource identity or collider placement. */
   useGeneratedRockModels(models:Record<string,THREE.Object3D>):number {
     if(this.terrain.generation!==5||this.worldRevision<6)return 0;
     const assetIds=['large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock'];let integrated=0;
@@ -348,6 +374,15 @@ export class Environment {
         const merged=parts.length?mergeGeometries(parts,false):null;parts.forEach(geometry=>geometry.dispose());if(!merged){valid=false;break;}merged.computeBoundingSphere();levels.push(merged);
       }
       if(!valid||levels.length!==3){levels.forEach(geometry=>geometry.dispose());continue;}for(const geometry of levels)this.geometries.add(geometry);batch.generatedLods=levels;const lodIndex=this.quality==='low'?2:this.quality==='medium'?1:0;batch.mesh.geometry=levels[lodIndex]!;batch.mesh.userData.generatedWorldAsset=assetId;batch.mesh.userData.generatedWorldLod=lodIndex;batch.mesh.computeBoundingSphere();integrated+=batch.mesh.count;
+    }
+    const resourceIds=['medium_rock_a','medium_rock_b','medium_rock_c'],resourceLods=new Map<number,THREE.BufferGeometry[]>(),resourceMaterial=(kind:ResourceNode['kind'])=>kind==='stone'?this.stone:kind==='metal'?this.metal:kind==='sulfur'?this.sulfur:this.hqmetal;
+    for(const node of this.nodes){if(!['stone','metal','sulfur','hqmetal'].includes(node.kind))continue;const group=this.nodeObjects.get(node.id);if(!group)continue;
+      const baseMeshes=group.children.filter((object):object is THREE.Mesh=>object instanceof THREE.Mesh).slice(0,2);if(baseMeshes.length<2)continue;
+      const variant=Math.floor(Math.abs(Math.sin(node.position.x*12.9898+node.position.z*78.233))*resourceIds.length),assetId=resourceIds[variant]!,asset=models[assetId];if(!asset)continue;
+      let levels=resourceLods.get(variant);if(!levels){levels=this.authoredResourceRockLods(asset,variant)??undefined;if(!levels)continue;resourceLods.set(variant,levels);}
+      const lodIndex=this.quality==='low'?2:this.quality==='medium'?1:0,mesh=new THREE.Mesh(levels[lodIndex]!,resourceMaterial(node.kind));mesh.name='Authored resource rock';mesh.castShadow=mesh.receiveShadow=true;mesh.userData.nodeId=node.id;mesh.userData.generatedWorldAsset=assetId;mesh.userData.generatedWorldLod=lodIndex;
+      group.remove(...baseMeshes);group.add(mesh);group.updateMatrixWorld(true);group.position.y+=terrainContactOffset(levels,mesh.matrixWorld,(x,z)=>this.heightAt(x,z),.035);group.updateMatrixWorld(true);
+      this.resourceRockMeshes.push({mesh,nodeId:node.id,variant,generatedLods:levels});integrated++;
     }
     return integrated;
   }
@@ -637,7 +672,7 @@ export class Environment {
   }
   setQuality(quality:'low'|'medium'|'high'|'ultra'):void {
     this.quality=quality;this.atmosphere.setQuality(quality);this.grassDistanceUniform.value=scaledFoliageDistance(quality==='low'?62:quality==='medium'?86:quality==='high'?112:128,this.foliageDistance);
-    const treeLod=quality==='ultra'?0:quality==='high'?1:2,rockLod=quality==='low'?2:quality==='medium'?1:0;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;batch.trunks.userData.generatedWorldLod=treeLod;batch.crowns.userData.generatedWorldLod=treeLod;}}for(const batch of [...this.outcropBatches,...this.cliffBatches]){const level=batch.generatedLods?.[rockLod];if(level){batch.mesh.geometry=level;batch.mesh.userData.generatedWorldLod=rockLod;}}const shoreLod=this.shoreDriftwoodBatch?.generatedLods?.[rockLod];if(shoreLod&&this.shoreDriftwoodBatch){this.shoreDriftwoodBatch.mesh.geometry=shoreLod;this.shoreDriftwoodBatch.mesh.userData.generatedWorldLod=rockLod;}for(const batch of this.shorePebbleBatches){const level=batch.generatedLods?.[rockLod];if(level){batch.mesh.geometry=level;batch.mesh.userData.generatedWorldLod=rockLod;}}
+    const treeLod=quality==='ultra'?0:quality==='high'?1:2,rockLod=quality==='low'?2:quality==='medium'?1:0;for(const batch of this.treeBatches){const level=batch.generatedLods?.[treeLod];if(level){batch.trunks.geometry=level.trunk;batch.crowns.geometry=level.foliage;batch.trunks.userData.generatedWorldLod=treeLod;batch.crowns.userData.generatedWorldLod=treeLod;}}for(const batch of [...this.outcropBatches,...this.cliffBatches]){const level=batch.generatedLods?.[rockLod];if(level){batch.mesh.geometry=level;batch.mesh.userData.generatedWorldLod=rockLod;}}const shoreLod=this.shoreDriftwoodBatch?.generatedLods?.[rockLod];if(shoreLod&&this.shoreDriftwoodBatch){this.shoreDriftwoodBatch.mesh.geometry=shoreLod;this.shoreDriftwoodBatch.mesh.userData.generatedWorldLod=rockLod;}for(const batch of this.shorePebbleBatches){const level=batch.generatedLods?.[rockLod];if(level){batch.mesh.geometry=level;batch.mesh.userData.generatedWorldLod=rockLod;}}for(const batch of this.resourceRockMeshes){batch.mesh.geometry=batch.generatedLods[rockLod]!;batch.mesh.userData.generatedWorldLod=rockLod;}
     const fraction=(quality==='low'?.30:quality==='medium'?.58:quality==='high'?.82:1)*this.foliageDensity;for(const c of this.grassChunks)c.mesh.count=Math.floor(c.fullCount*fraction);
     const rank={low:0,medium:1,high:2,ultra:3} as const;for(const d of this.detailMeshes){const allowed=rank[quality]>=rank[d.minimum],f=quality==='low'?.25:quality==='medium'?.55:quality==='high'?.82:1;d.mesh.count=allowed?Math.floor(d.fullCount*f):0;}
     this.root.traverse(o=>{if(o instanceof THREE.InstancedMesh&&(o.name==='Oak canopy'||o.name==='Pine canopy'||o.name==='Oak canopy masses'))o.castShadow=quality==='ultra'||(this.worldRevision<6&&quality==='high');});this.cullClock=0;
