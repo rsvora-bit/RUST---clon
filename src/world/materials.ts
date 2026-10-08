@@ -73,9 +73,9 @@ export function terrainDetailNormalTexture(seed=8241,size=256):THREE.DataTexture
 }
 /** Shared-shape, linear-space micro relief and roughness variation for stone. */
 export function rockSurfaceMaps(seed=773,size=128):{normal:THREE.DataTexture;roughness:THREE.DataTexture}{
-  const rand=randomSource(seed),waves=Array.from({length:13},()=>({x:2+Math.floor(rand()*43),y:2+Math.floor(rand()*43),phase:rand()*Math.PI*2,amplitude:.008+rand()*.018})),normalData=new Uint8Array(size*size*4),roughData=new Uint8Array(size*size*4),tau=Math.PI*2;
+  const rand=randomSource(seed),waves=Array.from({length:17},()=>({x:2+Math.floor(rand()*53),y:2+Math.floor(rand()*53),phase:rand()*Math.PI*2,amplitude:.006+rand()*.018})),normalData=new Uint8Array(size*size*4),roughData=new Uint8Array(size*size*4),tau=Math.PI*2;
   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-    const u=x/size,v=y/size;let dx=0,dy=0,rough=.88;
+    const u=x/size,v=y/size;let dx=0,dy=0,rough=.82;
     for(let j=0;j<waves.length;j++){const w=waves[j]!,phase=tau*(w.x*u+w.y*v)+w.phase,s=Math.sin(phase),slope=Math.cos(phase)*w.amplitude*tau;dx+=slope*w.x;dy+=slope*w.y;rough+=s*([.012,.019,.026,.034][j%4]!);}
     const nx=-dx*.15,ny=-dy*.15,nz=1,length=Math.hypot(nx,ny,nz),i=(y*size+x)*4;normalData[i]=Math.round((nx/length*.5+.5)*255);normalData[i+1]=Math.round((ny/length*.5+.5)*255);normalData[i+2]=Math.round((nz/length*.5+.5)*255);normalData[i+3]=255;
     const value=Math.round(Math.max(.70,Math.min(.99,rough))*255);roughData[i]=roughData[i+1]=roughData[i+2]=value;roughData[i+3]=255;
@@ -205,10 +205,13 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
       float mossClimate=max(vGroundClimate.z*.62,vGroundClimate.w*.84)*(1.-vGroundClimate.x*.82)*(1.-vGroundClimate.y*.92);${mossField}float mossMask=smoothstep(.49,.72,mossNoise)*mossClimate*(1.-smoothstep(.22,.66,vGroundWeights.y))*(1.-smoothstep(.36,.82,vGroundWeights.x));mossMask*=revision6Moss*.32;vec3 mossTint=groundColor*vec3(.76,.91,.67);groundColor=mix(groundColor,mossTint,mossMask);
       // Reuse existing macro/micro fields to break up uniform Rev6 marsh mud
       // without adding texture fetches or changing any legacy revision.
-      float mirePatch=macro*.62+micro*.38;float mireWetness=revision6Moss*smoothstep(.12,.46,vGroundClimate.w)*smoothstep(.34,.72,mirePatch);float mireSediment=smoothstep(.25,.78,mirePatch);vec3 mireTint=groundColor*mix(vec3(.54,.70,.68),vec3(.78,.80,.69),mireSediment);groundColor=mix(groundColor,mireTint,mireWetness*.62);diffuseColor.rgb*=groundColor;`);
+      float mirePatch=macro*.62+micro*.38;float mireWetness=revision6Moss*smoothstep(.12,.46,vGroundClimate.w)*smoothstep(.34,.72,mirePatch);float mireSediment=smoothstep(.25,.78,mirePatch);vec3 mireTint=groundColor*mix(vec3(.54,.70,.68),vec3(.78,.80,.69),mireSediment);groundColor=mix(groundColor,mireTint,mireWetness*.62);
+      // Revision 6 gives each ground family a different specular response,
+      // reusing existing climate and moisture fields without extra samples.
+      float sandRoughness=mix(.90,.54,sandWet);float rockRoughness=mix(.94,.68,wet*.72);float grassRoughness=mix(.94,.88,vGroundClimate.x);grassRoughness=mix(grassRoughness,.84,shelteredSnow*.72);grassRoughness=mix(grassRoughness,.83,vGroundClimate.w*.56);float groundRoughness=sandRoughness*vGroundWeights.x+rockRoughness*vGroundWeights.y+grassRoughness*vGroundWeights.z;groundRoughness=mix(groundRoughness,.83,exposedSnow);groundRoughness=mix(groundRoughness,.82,mireWetness*.7);groundRoughness=mix(groundRoughness,.97,mossMask*.55);diffuseColor.rgb*=groundColor;`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       float viewDist=length(vViewPosition);if(viewDist<72.){${reliefField}vec3 dx=dFdx(vViewPosition),dy=dFdy(vViewPosition);vec3 r1=cross(dy,normal),r2=cross(normal,dx);float det=dot(dx,r1);normal=normalize(abs(det)*normal-sign(det)*(dFdx(relief)*r1+dFdy(relief)*r2));}`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat surfaceWet= max(max(surfaceWetness*.68,(1.-smoothstep(.08,2.6,vGroundPosition.y))*.46),max(vGroundClimate.w*.50,mireWetness*.45)); roughnessFactor=mix(roughnessFactor,.48,surfaceWet);roughnessFactor=mix(roughnessFactor,.94,mossMask*.65);');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,groundRoughness,revision6Moss);float surfaceWet= max(max(surfaceWetness*.68,(1.-smoothstep(.08,2.6,vGroundPosition.y))*.46),max(vGroundClimate.w*.50,mireWetness*.45)); roughnessFactor=mix(roughnessFactor,.48,surfaceWet);roughnessFactor=mix(roughnessFactor,.94,mossMask*.65);');
   };return mat;
 }
 export function rockMaterialStyle(worldRevision:number):{resourceTint:number;outcropTint:number;vertexColors:boolean} {
@@ -219,7 +222,7 @@ export function rockMaterialStyle(worldRevision:number):{resourceTint:number;out
 export function rockInstanceTint(biome:string,x:number,z:number,tone:number):THREE.Color {
   const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID';
   const hue=alpine?.58:arid?.105:.17,saturation=alpine?.10:arid?.18:.14;
-  const variation=Math.sin(x*1.71+z*.93)*.018,lightness=.66+THREE.MathUtils.clamp(tone,0,1)*.12;
+  const variation=Math.sin(x*1.71+z*.93)*.018,lightness=.58+THREE.MathUtils.clamp(tone,0,1)*.13;
   return new THREE.Color().setHSL(hue+variation,saturation,lightness);
 }
 /** Keep authored leaf hue/value relationships while preventing a dark GLB base factor from multiplying instance tint into near-black foliage. */
@@ -236,7 +239,7 @@ export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{v
   // differently on each scaled instance. Keep the UV map for legacy worlds.
   if(worldSpaceDetail)detail.normal.dispose();
   const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:worldSpaceDetail?null:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
-  mat.customProgramCacheKey=()=>`tideland-stone-detail-v1-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
+  mat.customProgramCacheKey=()=>`tideland-stone-detail-v2-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
   mat.userData.textures=worldSpaceDetail?[tex,detail.roughness]:[tex,detail.roughness,detail.normal];
   if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
   const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{
@@ -245,7 +248,7 @@ export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{v
       shader.vertexShader=shader.vertexShader.replace('#include <defaultnormal_vertex>','#include <defaultnormal_vertex>\nmat3 stoneViewRotation=mat3(viewMatrix);vStoneNormal=normalize(vec3(dot(stoneViewRotation[0],transformedNormal),dot(stoneViewRotation[1],transformedNormal),dot(stoneViewRotation[2],transformedNormal)));');
       shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvec4 stoneWorldPosition=vec4(transformed,1.);\n#ifdef USE_INSTANCING\nstoneWorldPosition=instanceMatrix*stoneWorldPosition;\n#endif\nvStonePos=(modelMatrix*stoneWorldPosition).xyz;');
     }else shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;float stoneHeight=dot(stoneDetail,vec3(.333));diffuseColor.rgb*=.78+stoneDetail*1.1;${weather.diffuse}`);if(worldSpaceDetail)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>\n// World-space relief stays consistent as an instanced boulder changes scale.\nvec3 stoneDx=dFdx(vViewPosition),stoneDy=dFdy(vViewPosition),stoneR1=cross(stoneDy,normal),stoneR2=cross(normal,stoneDx);float stoneDet=dot(stoneDx,stoneR1);normal=normalize(abs(stoneDet)*normal-sign(stoneDet)*(.035*(dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2)));`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\n${weather.roughness}`);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 bn=pow(abs(vStoneNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;float stoneHeight=dot(stoneDetail,vec3(.333));diffuseColor.rgb*=.74+stoneDetail*1.05;${weather.diffuse}`);if(worldSpaceDetail)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>\n// World-space relief stays consistent as an instanced boulder changes scale.\nvec3 stoneDx=dFdx(vViewPosition),stoneDy=dFdy(vViewPosition),stoneR1=cross(stoneDy,normal),stoneR2=cross(normal,stoneDx);float stoneDet=dot(stoneDx,stoneR1);normal=normalize(abs(stoneDet)*normal-sign(stoneDet)*(.075*(dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2)));`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\n${weather.roughness}`);
   };return mat;
 }
 

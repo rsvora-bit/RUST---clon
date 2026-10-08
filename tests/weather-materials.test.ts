@@ -82,8 +82,8 @@ describe('weather surface response',()=>{
       expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
       expect(newShader.fragmentShader).toContain('stoneDx=dFdx(vViewPosition)');
       expect(newShader.fragmentShader).toContain('dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2');
-      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v1-world-weather');
-      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v1-local-static');
+      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v2-world-weather');
+      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v2-local-static');
     }finally{
       for(const material of [legacy,revision6])for(const texture of material.userData.textures as THREE.Texture[])texture.dispose();
       vi.unstubAllGlobals();

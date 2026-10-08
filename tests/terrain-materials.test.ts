@@ -92,6 +92,11 @@ describe('revision-6 tidal terrain band',()=>{
       expect(newShader.fragmentShader).toContain('mireSediment=smoothstep(.25,.78,mirePatch)');
       expect(newShader.fragmentShader).toContain('mix(vec3(.54,.70,.68),vec3(.78,.80,.69),mireSediment)');
       expect(newShader.fragmentShader).toContain('mireWetness*.45');
+      expect(newShader.fragmentShader).toContain('float sandRoughness=mix(.90,.54,sandWet)');
+      expect(newShader.fragmentShader).toContain('float rockRoughness=mix(.94,.68,wet*.72)');
+      expect(newShader.fragmentShader).toContain('groundRoughness=sandRoughness*vGroundWeights.x+rockRoughness*vGroundWeights.y+grassRoughness*vGroundWeights.z');
+      expect(newShader.fragmentShader).toContain('roughnessFactor=mix(roughnessFactor,groundRoughness,revision6Moss)');
+      expect(oldShader.uniforms.revision6Moss?.value).toBe(0);
       expect(revision6.userData.textures).toHaveLength(8);
       expect(revision6.normalMap).toBe(revision6.userData.textures[7]);
       expect(revision6.normalScale.x).toBeCloseTo(.16);
