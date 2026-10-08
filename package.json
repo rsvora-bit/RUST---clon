@@ -33,6 +33,7 @@
     "test:rock-collision": "node scripts/rock-collision-qa.mjs",
     "test:tree-collision": "node scripts/tree-collision-qa.mjs",
     "test:shipwreck-collision": "node scripts/shipwreck-collision-qa.mjs",
+    "test:tidal-pier-collision": "node scripts/tidal-pier-collision-qa.mjs",
     "test:tidal-pier": "node scripts/tidal-pier-qa.mjs",
     "test:tree-culling": "node scripts/tree-culling-qa.mjs",
     "test:performance": "node scripts/world-performance-qa.mjs",

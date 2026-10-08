@@ -422,3 +422,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - This is a targeted water performance stabilization; wider v0.14 visual/physical QA and release gates remain unfinished. No version/release/main/tag/Pages actions.
 - Additional matched local ANGLE Metal preset samples (HIGH benchmark setup, same seed/view, 240 frames, uncapped, post-FX configured by each preset): LOW **265.39 FPS / 3.768 ms / 197 draws / 844,841 triangles / 2,033 nodes**, menu **3.654 s**, new-game **143 ms**, zero errors/precompile timeout; ULTRA **155.61 FPS / 6.426 ms / 286 draws / 7,737,985 triangles / 2,033 nodes**, menu **4.573 s**, new-game **135 ms**, zero browser errors. ULTRA emitted the existing 2-second GPU shader-precompile warning and continued incremental warm-up; performance is measured after startup.
 - `npm run test:highland-relay`: **6/6 PASS**, including cache placement, live interaction, relay card unlock, zero browser/application errors. No screenshots; Vite stopped.
+
+## v0.14 continuation — live Tidal Survey Pier deck collision QA — 2026-10-08
+
+- Added `npm run test:tidal-pier-collision`, a screenshot-free live Rapier probe that locates an unobstructed player-sized area on the Revision-6 survey-pier deck, drops the player from above and checks they settle on the collidable surface.
+- Result: deck top **3.200 m**, player grounded at **3.225 m**, browser/application errors **0**. QA script syntax and TypeScript/production build pass (existing Vite >500 kB advisory). Test server stopped.
+- Main purpose is repeatable physical-world regression coverage; no gameplay/save behavior changed. Remaining props/POIs still need audit; release gates remain open.
