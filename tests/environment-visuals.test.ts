@@ -109,10 +109,18 @@ describe('environment visual building blocks',()=>{
     const data=new Uint8Array(4*4*4);const height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat);height.needsUpdate=true;const scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height);
     expect(atmosphere.sky.material.uniforms.weather).toBeTruthy();expect(atmosphere.sky.material.uniforms.storm.value).toBe(0);expect(atmosphere.ocean.material.uniforms.storm.value).toBe(0);expect(atmosphere.ocean.material.uniforms.heightMap.value).toBe(height);expect(atmosphere.ocean.material.vertexShader).toContain('storm*sin(p.x*.014-p.z*.021');expect(atmosphere.ocean.material.fragmentShader).toContain('stormCrest=smoothstep');
     atmosphere.update(0,0,new THREE.Vector3());expect(atmosphere.daylightAmount).toBeLessThan(.1);const nightFill=atmosphere.fill.intensity;expect(nightFill).toBeGreaterThan(1.35);expect(atmosphere.fill.groundColor.r).toBeGreaterThan(.4);expect(atmosphere.sun.position.y).toBeGreaterThan(atmosphere.sun.target.position.y);
-    atmosphere.sky.material.uniforms.weather.value=.65;atmosphere.update(0,10,new THREE.Vector3());expect(atmosphere.ocean.material.uniforms.weather.value).toBeCloseTo(.65);
     atmosphere.sky.material.uniforms.storm.value=.8;atmosphere.update(0,12,new THREE.Vector3());expect(atmosphere.daylightAmount).toBeGreaterThan(.9);expect(atmosphere.fill.intensity).toBeGreaterThan(1.9);expect(atmosphere.fill.intensity).toBeGreaterThan(nightFill);expect(atmosphere.ocean.material.uniforms.storm.value).toBeCloseTo(.8);
     atmosphere.setQuality('ultra');expect(atmosphere.sun.castShadow).toBe(true);expect(atmosphere.sun.shadow.mapSize.x).toBe(3072);
     atmosphere.setQuality('low');expect(atmosphere.sun.castShadow).toBe(false);atmosphere.dispose();height.dispose();
+  });
+
+  it('keeps the ocean rain signal owned by Weather instead of replacing it with the sky blend',()=>{
+    const data=new Uint8Array(64),height=new THREE.DataTexture(data,4,4,THREE.RGBAFormat),scene=new THREE.Scene(),atmosphere=new Atmosphere(scene,height),weather=new Weather(scene),state=new GameSimulation(731942,{x:0,y:4,z:0}).state,weatherState=ensureProgression(state).weather,camera=new THREE.Vector3();
+    Object.assign(weatherState,{kind:'rain',remaining:300,blend:1,rain:1,storm:0,mist:0});
+    try{
+      weather.update(0,state,atmosphere,camera,'high');expect(atmosphere.ocean.material.uniforms.weather.value).toBeCloseTo(.6);
+      atmosphere.update(0,12,camera);expect(atmosphere.ocean.material.uniforms.weather.value).toBeCloseTo(.6);
+    }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 
   it('enables long ocean swells only for Revision 6 without changing legacy water',()=>{
