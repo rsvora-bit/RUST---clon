@@ -250,7 +250,7 @@ describe('environment visual building blocks',()=>{
       const dryPositions=position.array.slice();weatherState.kind='storm';weatherState.remaining=3600;weatherState.rain=1;weatherState.storm=1;weatherState.blend=1;
       atmosphere.update(1/60,10,camera);weather.update(1/60,state,atmosphere,camera,'low');
       expect(scene.children.some(child=>child instanceof THREE.LineSegments&&child.visible)).toBe(true);expect(position.version).toBe(1);expect(geometry.drawRange.count).toBe(700);expect(position.array.slice(350*6)).toEqual(dryPositions.slice(350*6));
-      expect((weather as unknown as {material:THREE.LineBasicMaterial}).material.opacity).toBeCloseTo(.21);
+      expect((weather as unknown as {material:THREE.LineBasicMaterial}).material.opacity).toBeCloseTo(.29);
     }finally{weather.dispose();atmosphere.dispose();height.dispose();}
   });
 

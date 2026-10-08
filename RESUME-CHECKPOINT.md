@@ -2504,3 +2504,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Focused tests **51/51 PASS**; full `npm test` **593/593 PASS (58 files)**; build PASS (known large-bundle advisory); ANGLE Metal screenshot-free world-art QA **119/119 PASS**, zero browser/WebGL errors.
 - Parent/current benchmark: **229.51 → 229.39 FPS**, **4.357 → 4.359 ms**, **263 → 263 draws**, **2,125,054 → 2,125,054 triangles**, **2,033 → 2,033 nodes**; +0.05% frame time within noise, no compile timeout/errors.
 - Pending: inspect diff, commit and push only these shader/material/test/diagnostic plus status/checkpoint files to `codex/v0.14.2-water-weather`, then continue the larger v0.14 visual/physical work. Preserve unrelated iCloud ` 2` files and `artifacts/`. No version bump, main merge, tag, release or Pages deploy. Overall goal remains incomplete (~56%).
+
+## Readable rain streaks — 2026-10-08
+
+- Tuned rain-line tint/alpha after ordinary gameplay QA showed rain was barely visible: color `0x899da4` → `0xa5b7bf`, opacity `rain*(.14 + storm*.07)` → `rain*(.21 + storm*.08)`. No particle count, weather simulation, draw-call, gameplay or save changes. One temporary test-world screenshot confirmed visible but restrained streaks; no browser errors.
+- Validation: environment-visual tests **24/24 PASS**; full suite **593/593 PASS (58 files)**; production build PASS (existing chunk-size advisory).
+- Next: inspect diff and checkpoint only `src/survival/Weather.ts`, `tests/environment-visuals.test.ts`, plus these status/checkpoint files on `codex/v0.14.2-water-weather`; preserve unrelated iCloud ` 2`/`artifacts/`. Goal remains incomplete (~56%), do not release or touch main/tag/Pages.
