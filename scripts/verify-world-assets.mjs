@@ -35,6 +35,8 @@ const driftwoodBounds=lodBounds(readGlb('driftwood_a').json,'driftwood_a','LOD0'
 const driftwoodSize=driftwoodBounds.getSize(new THREE.Vector3());
 assert.ok(driftwoodSize.x>driftwoodSize.y*1.5,`driftwood remains horizontally authored (${driftwoodSize.toArray().map(value=>value.toFixed(3)).join(' × ')})`);
 assert.ok(driftwoodSize.y<1.1,`driftwood does not become vertically stretched (${driftwoodSize.y.toFixed(3)} m)`);
+const crateBounds=lodBounds(readGlb('salvage_crate_a').json,'salvage_crate_a','LOD0');
+assert.ok(crateBounds.min.y>=-.03&&crateBounds.min.y<.08,`salvage crate origin stays at its base (${crateBounds.min.y.toFixed(3)} m)`);
 for(const id of catalog){
   const{bytes,json}=readGlb(id),names=new Set(json.nodes.map(node=>node.name));
   for(const level of ['LOD0','LOD1','LOD2'])assert.ok(names.has(level),`${id} contains ${level}`);
