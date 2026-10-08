@@ -481,6 +481,13 @@ def create(name):
     bpy.context.view_layer.objects.active=meshes[0]
     if len(meshes)>1:bpy.ops.object.join()
     source=bpy.context.object;source.name=name+" LOD0 mesh"
+    # Joining preserves the active object's transform while expressing every
+    # other part relative to it. Bake that transform into the merged vertices
+    # before resetting it, or assets whose first part is rotated/offset (for
+    # example rod-built driftwood) are silently reoriented around the origin.
+    bpy.context.view_layer.objects.active=source
+    source.select_set(True)
+    bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
     source.data.validate(verbose=False,clean_customdata=True)
     source.data.update()
     source.location=(0,0,0);source.rotation_euler=(0,0,0);source.scale=(1,1,1)

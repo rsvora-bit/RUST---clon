@@ -35,6 +35,10 @@ box that contains LOD0, LOD1, and LOD2 in glTF Y-up coordinates. This keeps
 lower-detail silhouettes inside their authoring proxy. These are coarse hints
 for future static integrations, not replacements for the hand-authored
 gameplay colliders currently owned by `WorldSurvival` and `PhysicsWorld`.
+After joining an asset's parts, the exporter bakes the active part's location,
+rotation, and scale into the merged vertices before clearing object transforms.
+This preserves authored geometry orientation and origin for assets assembled
+from rotated primitives, including the horizontal shoreline driftwood.
 
 Regenerate and check file sizes with:
 

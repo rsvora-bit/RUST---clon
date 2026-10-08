@@ -29,6 +29,12 @@ for(const id of catalog){
   const shape=proxy.shapes[0];if(shape.type==='box')assert.ok(shape.center.length===3&&shape.halfExtents.length===3&&shape.halfExtents.every(value=>Number.isFinite(value)&&value>0),`${id} has valid box bounds`);else assert.ok(shape.type==='capsule'&&shape.axis==='y'&&shape.center.length===3&&shape.radius>0&&shape.halfHeight>0,`${id} has a valid tree trunk capsule`);
   if(shape.type==='box'){const json=readGlb(id).json,levels=['LOD0','LOD1','LOD2'].map(level=>lodBounds(json,id,level)),union=levels.reduce((bounds,levelBounds)=>bounds.union(levelBounds),new THREE.Box3().makeEmpty()),visualCenter=union.getCenter(new THREE.Vector3()),visualHalf=union.getSize(new THREE.Vector3()).multiplyScalar(.5),proxyCenter=new THREE.Vector3(...shape.center),proxyHalf=new THREE.Vector3(...shape.halfExtents);assert.ok(proxy.source==='LOD0/LOD1/LOD2',`${id} box proxy accounts for every visual LOD`);assert.ok(proxyCenter.distanceTo(visualCenter)<.04,`${id} collision proxy center aligns with the all-LOD bounds`);for(const axis of ['x','y','z']){assert.ok(proxyHalf[axis]>=visualHalf[axis]-.01,`${id} collision proxy contains all LOD ${axis} extents`);assert.ok(proxyHalf[axis]<=visualHalf[axis]*1.25+.04,`${id} collision proxy does not excessively inflate all-LOD ${axis} extent`);for(const [index,bounds] of levels.entries()){assert.ok(bounds.min[axis]>=proxyCenter[axis]-proxyHalf[axis]-.01,`${id} LOD${index} ${axis} minimum is inside proxy`);assert.ok(bounds.max[axis]<=proxyCenter[axis]+proxyHalf[axis]+.01,`${id} LOD${index} ${axis} maximum is inside proxy`);}}}
 }
+// Driftwood is authored as several near-horizontal shoreline logs. Catch
+// accidental active-object transform loss in the Blender join/export stage.
+const driftwoodBounds=lodBounds(readGlb('driftwood_a').json,'driftwood_a','LOD0');
+const driftwoodSize=driftwoodBounds.getSize(new THREE.Vector3());
+assert.ok(driftwoodSize.x>driftwoodSize.y*1.5,`driftwood remains horizontally authored (${driftwoodSize.toArray().map(value=>value.toFixed(3)).join(' × ')})`);
+assert.ok(driftwoodSize.y<1.1,`driftwood does not become vertically stretched (${driftwoodSize.y.toFixed(3)} m)`);
 for(const id of catalog){
   const{bytes,json}=readGlb(id),names=new Set(json.nodes.map(node=>node.name));
   for(const level of ['LOD0','LOD1','LOD2'])assert.ok(names.has(level),`${id} contains ${level}`);
