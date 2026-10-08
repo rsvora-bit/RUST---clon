@@ -21,7 +21,7 @@ try{
 
   const approach=await page.evaluate(()=>{
     const api=window.__TIDELAND,art=api.worldArt(),boxes=art.generatedRockColliderBounds??[],cliffs=art.cliffInstances??[],cliffBoxes=art.generatedCliffColliderBounds??[],trees=api.nodes().filter(n=>n.kind==='tree').map(n=>n.position);
-    if(api.world().revision<6||art.generatedRockModels?.assets?.join(',')!=='large_boulder_a,large_boulder_b,large_boulder_c'||!boxes.length)throw Error('Revision-6 authored boulders or live colliders are missing');
+    if(api.world().revision<6||art.generatedRockModels?.assets?.join(',')!=='alpine_rock,coastal_rock,large_boulder_a,large_boulder_b,large_boulder_c'||art.generatedRockModels.batches!==5||!boxes.length)throw Error('Revision-6 authored biome rocks and boulder colliders are missing');
     if(art.generatedCliffModels?.assets?.join(',')!=='cliff_slab_a,cliff_slab_b'||art.generatedCliffModels.batches!==2||cliffs.length<8||cliffBoxes.length!==cliffs.length)throw Error('Revision-6 authored cliff slabs or live colliders are missing');
     for(const cliff of cliffs){if(api.height(cliff.position.x,cliff.position.z)<22||api.slope(cliff.position.x,cliff.position.z)<.45)throw Error(`Cliff slab is outside its intended rocky slope band: ${JSON.stringify(cliff)}`);if(cliff.up.y<.999)throw Error(`Cliff slab leans with the terrain instead of keeping its ledge face upright: ${JSON.stringify(cliff)}`);}
     if(cliffs.some(cliff=>cliffs.filter(other=>Math.hypot(other.position.x-cliff.position.x,other.position.z-cliff.position.z)<7.5).length<3))throw Error('Cliff slabs are not grouped into readable outcrops');
@@ -39,7 +39,7 @@ try{
         if(valid){const side=`${axisIndex}:${sign}`,key=`${box.asset}:${side}`,candidate={box,index,asset:box.asset,side,axis:toward,distance,start,extent:axis.extent,lateralExtent:axisIndex===0?box.halfExtents.z:box.halfExtents.x};if(!plans.has(key)||plans.get(key).extent<candidate.extent)plans.set(key,candidate);}
       }
     });
-    const selected=[...plans.values()];if(selected.length!==12)throw Error(`Expected a clear dry approach to each side of all 3 authored rock variants; found ${selected.length}/12`);
+    const selected=[...plans.values()];if(selected.length!==20)throw Error(`Expected clear dry approaches to each side of all 5 authored rock variants; found ${selected.length}/20`);
     const cliffPlans=[];
     cliffBoxes.forEach((box,index)=>{const yaw=box.rotation??0,axes=[{x:Math.cos(yaw),z:-Math.sin(yaw),extent:box.halfExtents.x,lateralExtent:box.halfExtents.z},{x:Math.sin(yaw),z:Math.cos(yaw),extent:box.halfExtents.z,lateralExtent:box.halfExtents.x}];
       for(let axisIndex=0;axisIndex<2;axisIndex++)for(const sign of [-1,1]){const axis=axes[axisIndex],direction={x:axis.x*sign,z:axis.z*sign},distance=3,start={x:box.position.x-direction.x*(axis.extent+distance),z:box.position.z-direction.z*(axis.extent+distance)};let valid=true;
@@ -94,6 +94,6 @@ try{
   for(const preset of ['medium','high','ultra'])assert.deepEqual(lods[preset].colliders,approach.cliffBoxes,`cliff colliders must stay fixed at ${preset.toUpperCase()}`);
   console.log(`PASS cliff slab quality LODs · ${Math.round(lods.high.models.triangles).toLocaleString()} HIGH / ${Math.round(lods.ultra.models.triangles).toLocaleString()} ULTRA triangles`);
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('PASS live player movement is blocked on all four sides of all authored Revision-6 boulder variants');
+  console.log('PASS live player movement is blocked on all four sides of all five authored Revision-6 rock variants');
   console.log(JSON.stringify({assets:approach.assets,checkedSides:results.length,results:results.map(({asset,side,depth,extent,lateral})=>({asset,side,depth,extent,lateral})),applicationErrors:errors.length},null,2));
 }finally{await browser.close();}

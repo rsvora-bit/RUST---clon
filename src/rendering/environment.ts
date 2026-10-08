@@ -49,6 +49,13 @@ export function climateTreeAssetVariant(species:number,biome:string,temperature:
   return species;
 }
 export function treeSpeciesForBiome(biome:string,forest:number,palmRoll:number,broadRoll:number,variant:boolean,climate?:ClimateSample,elevation=0):number{if(climate){const suitability=palmSuitability(climate,elevation,biome);if(palmRoll<suitability*.68)return 5;if(climate.temperature<.42||elevation>40||biome==='SNOW / ALPINE')return variant?0:2;return broadRoll<(.20+smoothstep(.45,.68,climate.moisture)*.48)?(variant?1:4):(forest>.5?(variant?0:2):3);}const palm=(biome==='ARID'||biome==='COAST')&&palmRoll<.68,broad=!palm&&broadRoll<(.27+(biome==='COAST'?.18:0));return palm?5:broad?(variant?1:4):(biome==='SNOW / ALPINE'||forest>.5?(variant?0:2):3);}
+/** Revision-6 rock batches use climate-appropriate authored variants without consuming extra seeded randomness. */
+export function climateRockAssetVariant(biome:string,temperature:number,elevation:number,roll:number,revision6=true):number{
+  const base=Math.floor(THREE.MathUtils.clamp(roll,0,.999999)*3);if(!revision6)return base;
+  if(biome==='COAST'&&temperature>=.25&&elevation<9&&roll<.72)return 3;
+  if((biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN'||elevation>31)&&(temperature<.68||elevation>31)&&roll<.68)return 4;
+  return base;
+}
 
 type TreeAssetParts={trunk:THREE.BufferGeometry[];foliage:THREE.BufferGeometry[]};
 /** Split authored GLB material groups before merging so bark and canopy never inherit the first GLB material by accident. */
@@ -148,7 +155,7 @@ export class Environment {
   }
   get generatedRockModelStats():{instances:number;batches:number;triangles:number;lod:number;assets:string[]}{const batches=this.outcropBatches.filter(batch=>batch.mesh.userData.generatedWorldAsset),meshes=batches.map(batch=>batch.mesh);return{instances:meshes.reduce((sum,mesh)=>sum+mesh.count,0),batches:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0,assets:[...new Set(batches.map(batch=>batch.mesh.userData.generatedWorldAsset as string))].sort()};}
   /** Snapshot only when requested by world-art QA; runtime colliders remain independent from the selected render LOD. */
-  get generatedRockColliderBounds():{position:Vec3;halfExtents:Vec3;rotation:number;asset:string}[]{const assets=['large_boulder_a','large_boulder_b','large_boulder_c'];return this.outcropBatches.flatMap(batch=>batch.collisionRefs.flatMap(collider=>collider?[{position:{...collider.position},halfExtents:{...collider.halfExtents},rotation:collider.rotation??0,asset:assets[batch.variant]!}]:[]));}
+  get generatedRockColliderBounds():{position:Vec3;halfExtents:Vec3;rotation:number;asset:string}[]{const assets=['large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock'];return this.outcropBatches.flatMap(batch=>batch.collisionRefs.flatMap(collider=>collider?[{position:{...collider.position},halfExtents:{...collider.halfExtents},rotation:collider.rotation??0,asset:assets[batch.variant]!}]:[]));}
   get generatedCliffModelStats():{instances:number;batches:number;triangles:number;lod:number;assets:string[]}{const meshes=this.cliffBatches.filter(batch=>batch.mesh.userData.generatedWorldAsset).map(batch=>batch.mesh);return{instances:meshes.reduce((sum,mesh)=>sum+mesh.count,0),batches:meshes.length,triangles:meshes.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count??mesh.geometry.getAttribute('position').count)/3*mesh.count,0),lod:this.quality==='low'?2:this.quality==='medium'?1:0,assets:[...new Set(meshes.map(mesh=>mesh.userData.generatedWorldAsset as string))].sort()};}
   get cliffInstances():{position:Vec3;scale:Vec3;up:Vec3;asset:string}[]{const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);return this.cliffBatches.flatMap(batch=>Array.from({length:batch.mesh.count},(_,index)=>{batch.mesh.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);up.set(0,1,0).applyQuaternion(rotation);return{position:{x:position.x,y:position.y,z:position.z},scale:{x:scale.x,y:scale.y,z:scale.z},up:{x:up.x,y:up.y,z:up.z},asset:['cliff_slab_a','cliff_slab_b'][batch.variant]!};}));}
   get generatedCliffColliderBounds():{position:Vec3;halfExtents:Vec3;rotation:number;asset:string}[]{return this.cliffBatches.flatMap(batch=>batch.collisionRefs.map(collider=>({position:{...collider.position},halfExtents:{...collider.halfExtents},rotation:collider.rotation??0,asset:['cliff_slab_a','cliff_slab_b'][batch.variant]!})));}
@@ -161,9 +168,9 @@ export class Environment {
   get grassInstanceCount():number{return this.grassChunks.reduce((n,chunk)=>n+chunk.fullCount,0);}
   get grassChunkCount():number{return this.grassChunks.length;}
   get groundDecalStats():{name:string;instances:number;fullCount:number}[]{return this.decalMeshes.map(mesh=>({name:mesh.name,instances:mesh.count,fullCount:this.detailMeshes.find(detail=>detail.mesh===mesh)?.fullCount??mesh.count}));}
-  get outcropInstances():{position:Vec3;scale:Vec3}[]{
-    const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3();
-    return this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&object.name==='Weathered granite outcrops').flatMap(mesh=>Array.from({length:mesh.count},(_,index)=>{mesh.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return{position:{x:position.x,y:position.y,z:position.z},scale:{x:scale.x,y:scale.y,z:scale.z}};}));
+  get outcropInstances():{position:Vec3;scale:Vec3;asset:string;biome:string;temperature:number}[]{
+    const matrix=new THREE.Matrix4(),position=new THREE.Vector3(),rotation=new THREE.Quaternion(),scale=new THREE.Vector3(),assets=['large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock'],batches=this.outcropBatches.length?this.outcropBatches:this.root.children.filter((object):object is THREE.InstancedMesh=>object instanceof THREE.InstancedMesh&&object.name==='Weathered granite outcrops').map(mesh=>({mesh,variant:mesh.userData.rockVariant as number??0}));
+    return batches.flatMap(batch=>Array.from({length:batch.mesh.count},(_,index)=>{batch.mesh.getMatrixAt(index,matrix);matrix.decompose(position,rotation,scale);return{position:{x:position.x,y:position.y,z:position.z},scale:{x:scale.x,y:scale.y,z:scale.z},asset:batch.mesh.userData.generatedWorldAsset as string??assets[batch.variant]??`procedural_rock_${batch.variant}`,biome:this.biomeAt(position.x,position.z),temperature:this.terrain.climateAt(position.x,position.z).temperature};}));
   }
   get reedInstanceCount():number{const reeds=this.root.getObjectByName('Marsh reeds');return reeds instanceof THREE.InstancedMesh?reeds.count:0;}
   get marshReedLocations():Vec3[]{return this.reedLocations;}
@@ -314,7 +321,7 @@ export class Environment {
   /** Use the authored fractured-stone library for decorative outcrops without changing harvest nodes or collider placement. */
   useGeneratedRockModels(models:Record<string,THREE.Object3D>):number {
     if(this.terrain.generation!==5||this.worldRevision<6)return 0;
-    const assetIds=['large_boulder_a','large_boulder_b','large_boulder_c'];let integrated=0;
+    const assetIds=['large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock'];let integrated=0;
     for(const batch of this.outcropBatches){const assetId=assetIds[batch.variant]!,asset=models[assetId];if(!asset)continue;asset.updateMatrixWorld(true);const levels:THREE.BufferGeometry[]=[];let valid=true;
       for(const lodName of ['LOD0','LOD1','LOD2']){const lod=asset.getObjectByName(lodName);if(!lod){valid=false;break;}lod.updateMatrixWorld(true);const inverseLod=lod.matrixWorld.clone().invert(),parts:THREE.BufferGeometry[]=[];
         lod.traverse(object=>{if(!(object instanceof THREE.Mesh))return;const material=Array.isArray(object.material)?object.material[0]:object.material,geometry=object.geometry.clone();geometry.applyMatrix4(inverseLod.clone().multiply(object.matrixWorld));geometry.scale(.38,.22,.40);const materialName=material?.name.toLowerCase()??'',tint=materialName.includes('moss')?[.76,.94,.70]:materialName.includes('fracture')?[1.13,1.08,1.02]:[1,1,1],colors=new Float32Array(geometry.getAttribute('position').count*3);for(let i=0;i<colors.length;i+=3){colors[i]=tint[0]!;colors[i+1]=tint[1]!;colors[i+2]=tint[2]!;}geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));geometry.clearGroups();parts.push(geometry);});
@@ -348,7 +355,7 @@ export class Environment {
     lods.forEach(geometry=>this.geometries.add(geometry));batch.generatedLods=lods;const lodIndex=this.quality==='low'?2:this.quality==='medium'?1:0;batch.mesh.geometry=lods[lodIndex]!;batch.mesh.material=materials;batch.mesh.userData.generatedWorldAsset='driftwood_a';batch.mesh.userData.generatedWorldLod=lodIndex;batch.mesh.computeBoundingSphere();this.shoreDriftwoodBatch=batch;return batch.mesh.count;
   }
   private populateRocks():void {
-    const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];
+    const rand=randomSource(this.seed+283),revision6Shape=this.terrain.generation===5&&this.worldRevision>=6,geos=[this.own(rockGeometry(51,revision6Shape,revision6Shape)),this.own(rockGeometry(114,revision6Shape,revision6Shape)),this.own(rockGeometry(221,revision6Shape,revision6Shape))];if(revision6Shape)geos.push(this.own(rockGeometry(316,true,true)),this.own(rockGeometry(417,true,true)));
     const boulders:{x:number;y:number;z:number;sx:number;sy:number;sz:number;rot:number;variant:number}[]=[];
     const anchors=this.terrain.generation>=4
       ? [[this.spawn.x-31,this.spawn.z-24,3.7,3.2,3.4],[this.spawn.x+34,this.spawn.z-27,4.1,3.6,3.9]] as const
@@ -364,7 +371,7 @@ export class Environment {
         if(this.nodes.some(n=>n.kind==='tree'&&Math.hypot(n.position.x-x,n.position.z-z)<4.8))continue;
         if(boulders.some(b=>Math.hypot(b.x-x,b.z-z)<3.1))continue;
         const biome=this.biomeAt(x,z),rocky=h>24||slope>.47||biome==='ROCKY MOUNTAIN';if(rand()>(rocky?.22:biome==='ARID'?.065:.035))continue;
-        const size=rocky?1.25+rand()*3.8:.65+rand()*1.45;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.45),sy:size*(.7+rand()*.48),sz:size*(.8+rand()*.45),rot:rand()*6.28,variant:Math.floor(rand()*3)});
+        const size=rocky?1.25+rand()*3.8:.65+rand()*1.45;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.45),sy:size*(.7+rand()*.48),sz:size*(.8+rand()*.45),rot:rand()*6.28,variant:climateRockAssetVariant(biome,this.terrain.climateAt(x,z).temperature,h,rand(),revision6Shape)});
       }
     }else for(let i=0;i<950;i++){
       const x=(rand()-.5)*570,z=(rand()-.5)*570,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z);
@@ -372,8 +379,8 @@ export class Environment {
       const rocky=h>22||slope>.44;if(rand()>(rocky?.62:.10))continue;
       const size=rocky?1.8+rand()*5:.7+rand()*1.8;boulders.push({x,y:h-size*.12,z,sx:size*(.8+rand()*.5),sy:size*(.7+rand()*.55),sz:size*(.8+rand()*.5),rot:rand()*6.28,variant:Math.floor(rand()*3)});
     }
-    for(let v=0;v<3;v++){
-      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.outcrop,rocks.length),collisionRefs:(NaturalCollider|undefined)[]=new Array(rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);if(revision6Shape){const gradeX=(this.heightAt(r.x+2,r.z)-this.heightAt(r.x-2,r.z))*.25,gradeZ=(this.heightAt(r.x,r.z+2)-this.heightAt(r.x,r.z-2))*.25,surface=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(surface,r.rot)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler((rand()-.5)*.12,0,(rand()-.5)*.14)));}else this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();
+    for(let v=0;v<(revision6Shape?5:3);v++){
+      const rocks=boulders.filter(b=>b.variant===v),mesh=new THREE.InstancedMesh(geos[v]!,this.outcrop,rocks.length),collisionRefs:(NaturalCollider|undefined)[]=new Array(rocks.length);mesh.castShadow=mesh.receiveShadow=true;mesh.name='Weathered granite outcrops';mesh.userData.rockVariant=v;rocks.forEach((r,i)=>{this.matrixDummy.position.set(r.x,r.y,r.z);if(revision6Shape){const gradeX=(this.heightAt(r.x+2,r.z)-this.heightAt(r.x-2,r.z))*.25,gradeZ=(this.heightAt(r.x,r.z+2)-this.heightAt(r.x,r.z-2))*.25,surface=new THREE.Vector3(-gradeX,1,-gradeZ).normalize();this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(surface,r.rot)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler((rand()-.5)*.12,0,(rand()-.5)*.14)));}else this.matrixDummy.rotation.set((rand()-.5)*.18,r.rot,(rand()-.5)*.2);this.matrixDummy.scale.set(r.sx,r.sy,r.sz);this.matrixDummy.updateMatrix();
         // The original fixed center offset only worked for one rock scale and
         // flat ground. Seat each shared instance against its sampled terrain.
         this.matrixDummy.position.y+=terrainContactOffset(geos[v]!,this.matrixDummy.matrix,(x,z)=>this.heightAt(x,z),.035);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);
