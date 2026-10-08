@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 vi.mock('../src/rendering/materials',()=>{let materialId=0;return{addWeatherSurfaceResponse:()=>{},authoredSurfaceFamilyForName:()=>undefined,disposeMaterialTextures:()=>{},fabricMaterial:()=>({uuid:`fabric-${++materialId}`,dispose(){},userData:{}}),metalMaterial:()=>({uuid:`metal-${++materialId}`,dispose(){},userData:{}}),woodMaterial:()=>({uuid:`wood-${++materialId}`,dispose(){},userData:{}})};});
-vi.mock('../src/world/materials',()=>({groundTexture:()=>({dispose(){}})}));
+vi.mock('../src/world/materials',async importOriginal=>{const actual=await importOriginal<typeof import('../src/world/materials')>();return{...actual,groundTexture:()=>({dispose(){}})}});
 import {IslandTerrain} from '../src/terrain/island';
 import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
@@ -50,6 +50,16 @@ describe('v0.9.1 world art stabilization',()=>{
   it('selects authored coast and alpine rock variants from biome climate while preserving legacy variants',()=>{
     expect(climateRockAssetVariant('COAST',.72,2,.2)).toBe(3);expect(climateRockAssetVariant('COAST',.2,2,.2)).toBe(0);expect(climateRockAssetVariant('SNOW / ALPINE',.24,38,.3)).toBe(4);expect(climateRockAssetVariant('ROCKY MOUNTAIN',.48,42,.5)).toBe(4);
     expect(climateRockAssetVariant('TEMPERATE GRASSLAND',.55,14,.8)).toBe(2);for(const roll of [.01,.34,.67,.99])expect(climateRockAssetVariant('COAST',.8,2,roll,false)).toBe(Math.floor(roll*3));
+  });
+  it('batches deterministic mountain stone debris and switches all three authored LODs without adding colliders',()=>{
+    const environment=Object.create(Environment.prototype) as Environment,material=new THREE.MeshStandardMaterial({vertexColors:true}),models:Record<string,THREE.Object3D>={},position={x:12,y:8,z:-6},geometries=new Set<THREE.BufferGeometry>();
+    const asset=new THREE.Group();for(const index of [0,1,2]){const lod=new THREE.Group();lod.name=`LOD${index}`;lod.add(new THREE.Mesh(new THREE.DodecahedronGeometry(.8-index*.12,0),material));asset.add(lod);}models.broken_stone=asset;
+    Object.assign(environment,{terrain:{generation:5},worldRevision:6,nodes:[],nodeObjects:new Map<string,THREE.Object3D>(),resourceRockMeshes:[],outcropBatches:[],cliffBatches:[],shorePebbleBatches:[],brokenStonePositions:[position],quality:'high',geometries,stone:material,metal:material,sulfur:material,hqmetal:material,outcrop:material,matrixDummy:new THREE.Object3D(),heightAt:()=>8,biomeAt:()=> 'ROCKY MOUNTAIN',root:new THREE.Group(),atmosphere:{setQuality(){}},grassDistanceUniform:{value:1},foliageDistance:1,treeBatches:[],grassChunks:[],detailMeshes:[],foliageDensity:1,cullClock:0});
+    try{
+      expect(environment.useGeneratedRockModels(models)).toBe(1);expect(environment.generatedBrokenStoneStats).toMatchObject({instances:1,lod:0,asset:'broken_stone',positions:[position]});
+      const batch=environment.root.getObjectByName('Mountain broken-stone debris') as THREE.InstancedMesh;expect(batch).toBeInstanceOf(THREE.InstancedMesh);expect(batch.castShadow).toBe(false);expect(batch.geometry.getAttribute('color').count).toBe(batch.geometry.getAttribute('position').count);expect(batch.userData.generatedWorldLod).toBe(0);
+      environment.setQuality('low');expect(environment.generatedBrokenStoneStats.lod).toBe(2);expect(batch.userData.generatedWorldLod).toBe(2);expect(batch.count).toBe(1);
+    }finally{for(const geometry of geometries)geometry.dispose();material.dispose();}
   });
   it('derives Breakwater hull side collision from the union of all rendered LODs',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed),asset=new THREE.Group();
