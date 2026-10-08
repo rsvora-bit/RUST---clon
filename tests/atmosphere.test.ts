@@ -19,6 +19,8 @@ describe('world atmosphere coordinates',()=>{
       for(const wave of ['p.x*.095+p.z*.043+clock*.55','p.z*.077-p.x*.023+clock*.38','p.x*.037-p.z*.12-clock*.46','weather*sin(p.x*.06+p.z*.04+clock)','storm*sin(p.x*.014-p.z*.021+clock*.28)','sin(p.x*.024+p.z*.017+clock*.21)','sin(p.z*.018-p.x*.009-clock*.17)','sin(p.x*.032+p.z*.009+clock*.18)','sin(p.z*.019-p.x*.014-clock*.13)'])expect(vertex).toContain(wave);
       for(const wave of ['p.x*.095+p.y*.043+clock*.55','p.y*.077-p.x*.023+clock*.38','p.x*.037-p.y*.12-clock*.46','weather*sin(p.x*.06+p.y*.04+clock)','storm*sin(p.x*.014-p.y*.021+clock*.28)','sin(p.x*.024+p.y*.017+clock*.21)','sin(p.y*.018-p.x*.009-clock*.17)','sin(p.x*.032+p.y*.009+clock*.18)','sin(p.y*.019-p.x*.014-clock*.13)'])expect(fragment).toContain(wave);
       expect(fragment).not.toContain('swellNormal');
+      expect(fragment).toContain('float near=1.-smoothstep(55.,270.,length(cameraPos.xz-p)),w=storm>.001?waves(p):0.');
+      expect(fragment).toContain('if(normalScale>.025)normal=normalize');
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
   it('uses the rain ring for both water shading and its subtle ripple highlight',()=>{
@@ -27,7 +29,7 @@ describe('world atmosphere coordinates',()=>{
       const fragment=atmosphere.ocean.material.fragmentShader;
       expect(fragment).toContain('float rainDerivative=rainBand>.012&&rainBand<.055?');
       expect(fragment).toContain('rainGradient.x*(2.*eps)');expect(fragment).toContain('rainGradient.y*(2.*eps)');
-      expect(fragment).toContain('float rainRing=(1.-smoothstep(.012,.055,rainBand))*rainFade');
+      expect(fragment).toContain('rainRing=(1.-smoothstep(.012,.055,rainBand))*rainFade');
       expect(fragment.match(/vec2 rainCell=floor\(p\*\.31\)/g)).toHaveLength(1);
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
@@ -48,9 +50,18 @@ describe('world atmosphere coordinates',()=>{
       const fragment=atmosphere.ocean.material.fragmentShader;
       expect(fragment).toContain('vec3 reflectedDirection=reflect(-view,normal)');
       expect(fragment).toContain('float reflectedAltitude=smoothstep(-.16,.52,reflectedDirection.y)');
-      expect(fragment).toContain('float reflectedCloud=waterDetail>.4?n(reflectedUv+vec2(clock*.002,-clock*.001)):0.');
+      expect(fragment).toContain('float reflectedCloud=waterDetail>.4&&near>.015?n(reflectedUv+vec2(clock*.002,-clock*.001)):0.');
       expect(fragment).toContain('dot(reflectedDirection,sunDir)');
       expect(fragment).toContain('skyReflect=mix(skyReflect,reflectedSky,revision6)');
+    }finally{atmosphere.dispose();heightMap.dispose();}
+  });
+  it('limits fine wave normals, rain ripples and cloud reflections to nearby water',()=>{
+    const heightMap=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),heightMap,720,731942,6);
+    try{
+      const fragment=atmosphere.ocean.material.fragmentShader;
+      expect(fragment).toContain('vec3 normal=vec3(0.,1.,0.);if(normalScale>.025)');
+      expect(fragment).toContain('if(near>.015&&weather>.001){vec2 rainCell');
+      expect(fragment).toContain('float reflectedCloud=waterDetail>.4&&near>.015?');
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
 });
