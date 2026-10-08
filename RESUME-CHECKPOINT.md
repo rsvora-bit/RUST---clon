@@ -2525,3 +2525,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Extended Revision-6 live rain shading to ferns, dry-meadow tufts, forest shrubs and marsh reeds. Legacy revisions, placement, density/preset behavior, geometry, draw calls, saves and gameplay remain unchanged.
 - Validation: focused **51/51**, full suite **593/593**, build PASS (known bundle warning), screenshot-free ANGLE Metal world-art QA **120/120**, no browser/WebGL errors.
 - This slice is committed and pushed as `9a953868aa3252d8d1a20bfaa4fd43e04d4167ab`; HEAD matches `origin/codex/v0.14.2-water-weather`. Tracked working tree is clean. Continue the broader v0.14 visual/physical audit; do not release, merge main, tag or deploy Pages. Preserve all untracked iCloud ` 2` files and `artifacts/`; overall goal incomplete (~56%).
+
+## Current continuation — Revision-6 understory wind response — 2026-10-08
+
+- Branch `codex/v0.14.2-water-weather`; starting HEAD `f8a5a9c2e00271bd4de4aeb816f415c344e6bcd8`.
+- Added low-amplitude instanced wind sway to ferns, dry meadow tufts, forest shrubs, fallback canopy masses and marsh reeds through existing shared shader hooks. No geometry, draw calls, saves, layout or legacy-generation behavior changed.
+- Validation: focused tests **51/51 PASS**; full suite **593/593 PASS**; build PASS (known chunk advisory); screenshot-free ANGLE Metal world-art QA **121/121 PASS**, zero browser/WebGL errors. Matched benchmark (HIGH, seed `731942`, `(0,0)`, 1280×900, uncapped, 240 frames, post-FX on): preceding **229.39 FPS / 4.359 ms / 263 draws / 2,125,054 tris / 2,033 nodes**; current **229.55 FPS / 4.356 ms / 263 draws / 2,125,054 tris / 2,033 nodes**; no precompile timeout.
+- Current code files: `src/rendering/environment.ts`, `src/app/GameApp.ts`, `scripts/world-art-qa.mjs`. Next: inspect and checkpoint only these plus the two status files, then continue the broad v0.14 visual/physical audit. Do not bump version, merge main, tag, publish a Release or touch Pages. Preserve iCloud ` 2` duplicates and `artifacts/`; goal remains incomplete (~56%).

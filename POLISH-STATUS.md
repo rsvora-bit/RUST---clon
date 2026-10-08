@@ -523,3 +523,10 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added the same shared wetness treatment to Revision-6 fern, dry-meadow, forest-shrub and marsh-reed materials. The diagnostic/browser assertion now verifies the full procedural foliage set is wired. Older revisions remain unchanged; placement, instancing, density presets, geometry and save layout are untouched.
 - Focused tests **51/51 PASS**; full suite **593/593 PASS (58 files)**; production build PASS with the known Vite large-chunk advisory; screenshot-free ANGLE Metal world-art QA **120/120 PASS**, zero browser/WebGL errors across archived saves, weather and all four presets.
 - This remains a visual polish increment; no benchmark rerun because there are no new batches, draw calls or geometry. The broader v0.14 goal is still incomplete (~56%); version, main, tag, Release and Pages are unchanged.
+
+## v0.14 continuation — wind response for Revision-6 understory — 2026-10-08
+
+- Added subtle instanced wind sway to Revision-6 ferns, dry meadow tufts, forest shrubs, fallback canopy masses and marsh reeds, using the existing shared wind uniforms/shader hook. Sway amplitudes are lower than the main grass and tree response. Legacy generations and layout/save data are unchanged; no new batches or geometry.
+- Focused tests **51/51 PASS**; full suite **593/593 PASS (58 files)**; production build PASS with the existing >500 kB advisory; screenshot-free ANGLE Metal world-art QA **121/121 PASS**, zero browser/WebGL errors, all presets and archived saves.
+- Matched HIGH ANGLE Metal, seed `731942`, camera `(0,0)`, 1280×900, uncapped, 240 frames, post-FX on: preceding checkpoint **229.39 FPS / 4.359 ms / 263 draws / 2,125,054 triangles / 2,033 nodes**; current **229.55 FPS / 4.356 ms / 263 draws / 2,125,054 triangles / 2,033 nodes**. Frame-time change is below 0.1% and within measurement noise; no shader precompile timeout or errors.
+- Overall v0.14 remains incomplete (~56%); broad terrain/material/atmosphere review, full prop audit, release versioning, CI, immutable tag/Release and Pages validation remain open. No release/main/tag/Pages changes.
