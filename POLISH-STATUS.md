@@ -442,3 +442,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Campfire and bedroll were deliberately excluded from “must block” movement assertions: both are low-profile, step-over gameplay objects, and their existing mesh-derived collider bounds remain checked by the full geometry-envelope test. No runtime collision or save behavior changed.
 - `npm test -- tests/station-renderer.test.ts`: **21/21 PASS**. The initial broader probe also confirmed campfire/bedroll are traversable; this is expected given their low physical profiles, not a collider defect.
 - Scope is physical QA coverage only. Overall v0.14 work remains around **56%**; visual fidelity and final release gates remain unfinished. No main, version, tag, Release, or Pages changes.
+
+## v0.14 continuation — screenshot-free Tidal Survey Pier browser QA — 2026-10-08
+
+- Updated `scripts/tidal-pier-qa.mjs` to honor the repository-wide `TIDELAND_QA_SCREENSHOTS=0` switch and to allow the long, cold-start browser flow more than Playwright's 30-second default action timeout. No screenshot was created.
+- `TIDELAND_QA_SCREENSHOTS=0 npm run test:tidal-pier`: **PASS**; deterministic Generation-5 Revision-6 world includes the Tidal Survey Pier, New Game flow completed, zero application/WebGL errors. The earlier 30-second attempt timed out during this machine's slow startup; increasing the locator timeout allowed the same flow to finish successfully.
+- `npm run test:tidal-pier-collision`: **PASS**, player grounded at 3.225 m on the 3.200 m deck; `npm run test:assets:world`: **PASS**, 31 GLBs, 31 collision proxies and LOD0/1/2, all under 512 KiB. Vite server stopped after QA.

@@ -2441,3 +2441,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Expanded the live Rapier station collision test to **13 blocking station/container types**, up from six. Geometry containment still covers all 15 station kinds. Campfire and bedroll remain step-over objects; the first exploratory assertion correctly showed they are traversable due to their low profile, so they are excluded from wall-like blocking expectations.
 - `npm test -- tests/station-renderer.test.ts`: **21/21 PASS** after the test scope was corrected. No runtime, gameplay, save, or rendering files changed.
 - Next: run production build and diff checks, commit and push only `tests/station-renderer.test.ts`, `POLISH-STATUS.md`, and `RESUME-CHECKPOINT.md`; then resume visible world/material work. Do not bump release version or touch main/tag/Release/Pages. Goal remains active and incomplete (~56%).
+
+## v0.14 continuation — screenshot-free full pier browser QA — 2026-10-08
+
+- On `codex/v0.14.2-water-weather`, added the shared `TIDELAND_QA_SCREENSHOTS=0` switch to `scripts/tidal-pier-qa.mjs` and raised the page's default action timeout to 150 seconds because the first cold-start attempt exceeded Playwright's 30-second default. No screenshot was generated.
+- `TIDELAND_QA_SCREENSHOTS=0 npm run test:tidal-pier`: **PASS**; Revision-6 seeded pier found, New Game flow reached gameplay, zero application/WebGL errors. `npm run test:tidal-pier-collision`: **PASS**, ground contact at 3.225 m / deck 3.200 m. `npm run test:assets:world`: **PASS**, 31 GLBs + 31 collision proxies + three LODs, all <512 KiB. Dev server stopped.
+- This gives gameplay/collision/asset evidence without imagery. Continue substantive material/world work; full v0.14 remains incomplete (~56%). Do not touch main/release/tag/Pages.
