@@ -6,7 +6,7 @@ import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
 import {grassSurfaceCover,surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
-import {climateRockAssetVariant,climateTreeAssetVariant,grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
+import {Environment,climateRockAssetVariant,climateTreeAssetVariant,grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
 import {validateGameState} from '../src/save/storage';
@@ -15,6 +15,27 @@ import {collisionBoundsFromLodObjectsOriented} from '../src/physics/collisionBou
 
 const climate=(temperature:number,moisture=.45)=>({temperature,moisture,continentalness:.2});
 describe('v0.9.1 world art stabilization',()=>{
+  it('integrates authored shore pebble variants into the existing three instanced batches and switches LODs',()=>{
+    const environment=Object.create(Environment.prototype) as Environment,material=new THREE.MeshBasicMaterial(),variants=['small_rock_a','small_rock_b','small_rock_c'],counts=[4,5,6],batches=variants.map((asset,variant)=>({mesh:new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),material,counts[variant]!),variant})),models:Record<string,THREE.Object3D>={};
+    Object.assign(environment,{terrain:{generation:5},worldRevision:6,outcropBatches:[],cliffBatches:[],shorePebbleBatches:batches,quality:'high',geometries:new Set<THREE.BufferGeometry>()});
+    for(const asset of variants){
+      const root=new THREE.Group();
+      for(const lodIndex of [0,1,2]){
+        const lod=new THREE.Group();lod.name=`LOD${lodIndex}`;
+        const names=['Tideland fractured granite','Tideland exposed fracture planes','Tideland rock moss'];
+        const sourceMaterials=Array.from({length:6},(_,index)=>{const sourceMaterial=new THREE.MeshBasicMaterial();sourceMaterial.name=names[index%names.length]!;return sourceMaterial;});
+        const mesh=new THREE.Mesh(new THREE.BoxGeometry(1-lodIndex*.12,1-lodIndex*.08,1-lodIndex*.1),sourceMaterials);
+        lod.add(mesh);root.add(lod);
+      }
+      models[asset]=root;
+    }
+    const geometrySet=(environment as unknown as {geometries:Set<THREE.BufferGeometry>}).geometries;
+    try{
+      expect(environment.useGeneratedRockModels(models)).toBe(15);expect(environment.generatedShorePebbleStats).toMatchObject({instances:15,batches:3,assets:variants,lod:0});
+      for(const batch of batches){expect(batch.mesh.userData.generatedWorldAsset).toBe(variants[batch.variant]);expect(batch.mesh.userData.generatedWorldLod).toBe(0);expect(batch.mesh.geometry.getAttribute('color').count).toBe(batch.mesh.geometry.getAttribute('position').count);expect(batch.mesh.geometry.index!.count/3).toBe(12);}
+      (environment as unknown as {quality:string}).quality='low';expect(environment.useGeneratedRockModels(models)).toBe(15);expect(environment.generatedShorePebbleStats.lod).toBe(2);expect(batches.every(batch=>batch.mesh.userData.generatedWorldLod===2)).toBe(true);
+    }finally{for(const geometry of geometrySet)geometry.dispose();for(const batch of batches)batch.mesh.geometry.dispose();material.dispose();}
+  });
   it('selects authored coast and alpine rock variants from biome climate while preserving legacy variants',()=>{
     expect(climateRockAssetVariant('COAST',.72,2,.2)).toBe(3);expect(climateRockAssetVariant('COAST',.2,2,.2)).toBe(0);expect(climateRockAssetVariant('SNOW / ALPINE',.24,38,.3)).toBe(4);expect(climateRockAssetVariant('ROCKY MOUNTAIN',.48,42,.5)).toBe(4);
     expect(climateRockAssetVariant('TEMPERATE GRASSLAND',.55,14,.8)).toBe(2);for(const roll of [.01,.34,.67,.99])expect(climateRockAssetVariant('COAST',.8,2,roll,false)).toBe(Math.floor(roll*3));
