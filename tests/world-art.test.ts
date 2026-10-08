@@ -46,13 +46,18 @@ describe('v0.9.1 world art stabilization',()=>{
     }
     finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
-  it('blocks the main Revision-6 utility and quarry props without changing legacy layouts',()=>{
+  it('blocks the main Revision-6 utility and quarry props without changing legacy layouts',async()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),pois=[{id:'poi-utility',name:'Utility Shack',kind:0,position:{x:120,y:12,z:80}},{id:'poi-quarry',name:'Quarry Outpost',kind:2,position:{x:-120,y:18,z:-80}}],layout={pois,trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed);
     try{
       const utility=current.collisionBoxes().filter(box=>Math.hypot(box.position.x-pois[0]!.position.x,box.position.z-pois[0]!.position.z)<5),quarry=current.collisionBoxes().filter(box=>Math.hypot(box.position.x-pois[1]!.position.x,box.position.z-pois[1]!.position.z)<6);
       expect(utility).toHaveLength(3);expect(utility[1]).toMatchObject({position:{x:pois[0]!.position.x+1.05,y:pois[0]!.position.y+.78,z:pois[0]!.position.z-.55},halfExtents:{x:1.18,y:.12,z:.72}});expect(utility[2]).toMatchObject({position:{x:pois[0]!.position.x+.94,y:pois[0]!.position.y+1.08,z:pois[0]!.position.z-.55},halfExtents:{x:.29,y:.24,z:.29}});
       expect(quarry).toHaveLength(6);expect(quarry.slice(2,5).map(box=>box.position)).toEqual([0,1,2].map(i=>({x:pois[1]!.position.x+3,y:pois[1]!.position.y+.35,z:pois[1]!.position.z+i*.7})));expect(quarry[5]).toMatchObject({position:{x:pois[1]!.position.x-1.35,y:pois[1]!.position.y+.55,z:pois[1]!.position.z+.62},halfExtents:{x:.43,y:.525,z:.07}});
       expect(legacy.collisionBoxes()).toHaveLength(2);
+      await initPhysics();
+      const tableFloor=new THREE.PlaneGeometry(24,24,2,2);tableFloor.rotateX(-Math.PI/2);tableFloor.translate(pois[0]!.position.x,pois[0]!.position.y,pois[0]!.position.z);
+      const approachTable=new PhysicsWorld(tableFloor,[utility[1]!],{x:pois[0]!.position.x+1.05,y:pois[0]!.position.y,z:pois[0]!.position.z+3});try{for(let step=0;step<32;step++)approachTable.move({x:0,y:0,z:-.1});expect(approachTable.position().z).toBeGreaterThan(pois[0]!.position.z+.35);expect(approachTable.position().z).toBeLessThan(pois[0]!.position.z+1.1);}finally{approachTable.dispose();tableFloor.dispose();}
+      const crateFloor=new THREE.PlaneGeometry(24,24,2,2);crateFloor.rotateX(-Math.PI/2);crateFloor.translate(pois[1]!.position.x,pois[1]!.position.y,pois[1]!.position.z);
+      const approachCrate=new PhysicsWorld(crateFloor,[quarry[2]!],{x:pois[1]!.position.x+6,y:pois[1]!.position.y,z:pois[1]!.position.z});try{for(let step=0;step<32;step++)approachCrate.move({x:-.1,y:0,z:0});expect(approachCrate.position().x).toBeGreaterThan(pois[1]!.position.x+3.4);expect(approachCrate.position().x).toBeLessThan(pois[1]!.position.x+4.5);}finally{approachCrate.dispose();crateFloor.dispose();}
     }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('adds a batched exposed relay control station only to new revision-6 worlds',()=>{
