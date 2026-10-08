@@ -295,3 +295,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Auditing the runtime call order corrected an earlier assumption: `Weather.update()` already supplies the rain/storm-specific ocean uniform after `Atmosphere.update()`. Removed the redundant sky-blend assignment and added a regression proving a rain signal of `0.6` survives an atmosphere update with sky blend `1.0`.
 - Validation: atmosphere/environment visual tests **27/27 PASS**; `npm run build` PASS (existing large-chunk advisory); screenshot-free `npm run test:world` **23/23 PASS**, zero app/console errors, including Gen-5 reload and Generation-4 compatibility. Temporary Vite server stopped; no save data or world-generation identity changed.
 - Overall weighted estimate: approximately **47%**. Major terrain, vegetation, rocks, lighting/atmosphere, wetness/VFX, station detail, matched v0.13 performance and final release gates remain incomplete. Changes are on `codex/v0.14.2-water-weather`; main/tags/Release/Pages unchanged.
+
+## Matched v0.13.0 → v0.14.1 Metal performance check — 2026-10-08
+
+- Same Chrome/ANGLE Metal run, HIGH preset, `1280×720`, seed `731942`, viewpoint `(0,0)`, uncapped, 240 frames, post-FX enabled. Baseline was the archived v0.13.0 Pages build; candidate was the current v0.14.1 branch after shoreline changes. No screenshots.
+- v0.13.0 → v0.14.1: **252.80 → 235.46 FPS**; **3.956 → 4.247 ms/frame** (**+7.4% frame time**, within the requested 10–15% tolerance); **262 → 264 draw calls**; **2,360,569 → 2,044,445 triangles** (−13.4%); **2,033 → 2,033 nodes**. Menu ready **4.072 → 3.815 s**, prepared-game transition **144 → 139 ms**. Both runs reported zero browser errors and no GPU precompile timeout.
+- Relative comparison on this local Metal device/configuration only; not a cross-device FPS promise. Measurement output is temporary under `/tmp/tideland-v14-performance` and is not part of the repository.
