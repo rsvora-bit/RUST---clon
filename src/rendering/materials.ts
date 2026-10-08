@@ -91,6 +91,12 @@ export function authoredSurfaceFamilyForName(name:string):AuthoredSurfaceFamily|
 /** Reuse a shared Tideland PBR texture family while retaining an authored GLB material's palette and metal response. */
 export function materialWithSurfaceFamily(source:THREE.Material,family:THREE.MeshStandardMaterial,familyName:string):THREE.MeshStandardMaterial{
   const material=family.clone();
+  // Three.Material.copy JSON-clones userData, which turns Texture entries into
+  // plain metadata objects. Restore the live shared map references before the
+  // environment's ownership/disposal bookkeeping sees this material.
+  material.userData.textures=['map','normalMap','roughnessMap','metalnessMap','bumpMap','alphaMap','aoMap','emissiveMap','lightMap','displacementMap']
+    .map(key=>(material as unknown as Record<string,unknown>)[key])
+    .filter((value):value is THREE.Texture=>value instanceof THREE.Texture);
   if(source instanceof THREE.MeshStandardMaterial){
     material.color.copy(source.color);material.roughness=Math.max(family.roughness,source.roughness);material.metalness=source.metalness;
     material.side=source.side;material.vertexColors=source.vertexColors;material.transparent=source.transparent;material.opacity=source.opacity;material.alphaTest=source.alphaTest;

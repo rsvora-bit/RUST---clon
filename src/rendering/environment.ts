@@ -623,6 +623,6 @@ export class Environment {
   }
   dispose():void {
     this.scene.remove(this.root);this.atmosphere.dispose();this.terrain.heightTexture.dispose();for(const g of this.geometries)g.dispose();
-    const textures=new Set<THREE.Texture>();for(const mat of this.materials){const textured=mat as THREE.MeshStandardMaterial;if(textured.map)textures.add(textured.map);if(Array.isArray(mat.userData.textures))for(const tex of mat.userData.textures)textures.add(tex);mat.dispose();}for(const tex of textures)tex.dispose();this.root.clear();
+    const textures=new Set<THREE.Texture>();for(const mat of this.materials){const textured=mat as THREE.MeshStandardMaterial;for(const key of ['map','normalMap','roughnessMap','metalnessMap','bumpMap','alphaMap','aoMap','emissiveMap','lightMap','displacementMap'] as const){const tex=textured[key];if(tex instanceof THREE.Texture)textures.add(tex);}if(Array.isArray(mat.userData.textures))for(const tex of mat.userData.textures)if(tex instanceof THREE.Texture)textures.add(tex);mat.dispose();}for(const tex of textures)tex.dispose();this.root.clear();
   }
 }

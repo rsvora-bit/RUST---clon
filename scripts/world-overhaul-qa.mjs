@@ -21,7 +21,9 @@ const continueGame=async()=>{await page.locator('[data-action="continue"]').clic
 
 try{
   await boot();pass('Current build is visible',(await page.locator('.menu-footer').innerText()).includes(`v${expectedVersion}`));
-  await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
+  // Reuse the deterministic menu preview seed. Leaving this field empty selects
+  // a random seed and forces a second full 1664m world build plus GPU warm-up.
+  await page.locator('#world-seed').fill('731942');await page.locator('[data-action="new"]').click();await page.locator('[data-save-action="new"][data-save-slot="1"]').click();await wait(()=>window.__TIDELAND.getScreen()==='playing');
   const world=await page.evaluate(()=>window.__TIDELAND.world());
   pass('New game uses generation 5',world.generation===5);pass('World Revision 6 uses 1664m / 500 terrain',world.revision===6&&world.size===1664&&world.resolution===500);
   pass('Archipelago has deterministic satellite islands',world.satellites.length>=3&&world.satellites.length<=7);pass('World POIs and roads are generated',world.pois.length>=3&&world.trails.length===world.pois.length&&world.trails.every(r=>r.length>20));

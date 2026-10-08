@@ -15,9 +15,9 @@ describe('weather surface response',()=>{
   });
 
   it('reuses shared PBR maps on authored GLB surfaces while preserving their palette and metalness',()=>{
-    const map=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1),normal=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1),roughness=new THREE.DataTexture(new Uint8Array([220,220,220,255]),1,1),family=new THREE.MeshStandardMaterial({map,normalMap:normal,roughnessMap:roughness,roughness:.84,metalness:.12}),source=new THREE.MeshStandardMaterial({color:0x315a78,roughness:.42,metalness:.68});source.name='Tideland oxidized steel';
+    const map=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1),normal=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1),roughness=new THREE.DataTexture(new Uint8Array([220,220,220,255]),1,1),family=new THREE.MeshStandardMaterial({map,normalMap:normal,roughnessMap:roughness,roughness:.84,metalness:.12}),source=new THREE.MeshStandardMaterial({color:0x315a78,roughness:.42,metalness:.68});family.userData.textures=[map,normal,roughness];source.name='Tideland oxidized steel';
     const result=materialWithSurfaceFamily(source,family,'oxidized-metal');
-    expect(result).not.toBe(source);expect(result.map).toBe(map);expect(result.normalMap).toBe(normal);expect(result.roughnessMap).toBe(roughness);expect(result.color.equals(source.color)).toBe(true);expect(result.roughness).toBe(.84);expect(result.metalness).toBe(.68);expect(result.userData.tidelandSurfaceFamily).toBe('oxidized-metal');expect(source.map).toBeNull();
+    expect(result).not.toBe(source);expect(result.map).toBe(map);expect(result.normalMap).toBe(normal);expect(result.roughnessMap).toBe(roughness);expect(result.color.equals(source.color)).toBe(true);expect(result.roughness).toBe(.84);expect(result.metalness).toBe(.68);expect(result.userData.tidelandSurfaceFamily).toBe('oxidized-metal');expect(result.userData.textures).toEqual([map,normal,roughness]);expect(result.userData.textures.every((value:unknown)=>value instanceof THREE.Texture)).toBe(true);expect(source.map).toBeNull();
   });
 
   it('chains existing material hooks and applies live wetness to diffuse and roughness',()=>{
@@ -54,7 +54,7 @@ describe('weather surface response',()=>{
   it('uses world-space triplanar stone detail for Revision 6 instances while keeping legacy projection unchanged',()=>{
     vi.stubGlobal('document',{createElement:()=>{
       const canvas={width:0,height:0},context={
-        createImageData:(width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),putImageData:()=>{},
+        createImageData:(width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),getImageData:(_x:number,_y:number,width:number,height:number)=>({width,height,data:new Uint8ClampedArray(width*height*4)}),putImageData:()=>{},
         beginPath:()=>{},moveTo:()=>{},lineTo:()=>{},quadraticCurveTo:()=>{},ellipse:()=>{},fill:()=>{},stroke:()=>{},fillRect:()=>{},
         fillStyle:'#000',strokeStyle:'#000',lineWidth:1,lineCap:'butt',
       };
