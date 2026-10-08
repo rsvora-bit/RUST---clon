@@ -252,3 +252,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Updated `scripts/rock-collision-qa.mjs` to launch the menu's already-prepared Revision-6 preview through F3 Testing Mode. This avoids generating a second random New Game, preserves all save slots, and still exercises the live authored rock meshes, their collider batches and actual character-controller movement.
 - The previous New Game flow timed out waiting for `playing` after its 180-second limit. With the prepared-world path, Chrome/Metal QA passed **12/12 approaches** (all four sides of `large_boulder_a`, `_b`, and `_c`) with **zero application/browser errors**. No screenshots were captured. `node --check scripts/rock-collision-qa.mjs` PASS; collision/world-art unit tests **55/55 PASS**; world asset package **31 GLBs + 31 collision proxies PASS**.
 - Estimated overall goal completion: approximately **40%**. The rock-side walk-through criterion now has both direct Rapier unit coverage and live browser movement evidence; the broader terrain, vegetation, water, atmosphere, materials and release requirements remain open.
+
+## Revision-6 Breakwater deck crate collision and access — 2026-10-08
+
+- Added an oriented Rapier proxy for the tilted Breakwater equipment crate and moved only its Revision-6 visual placement to the open starboard/aft deck. The original Revision-5 placement and collider layout are unchanged.
+- Actual character-controller movement now blocks against the Rev6 crate. Regression checks also confirm that the revised position keeps the wheelhouse doorway open and the coastal boarding route traversable. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory).
+- Estimated overall completion: approximately **41%**. A previously walk-through solid deck prop is now physically consistent without sacrificing access; the remaining visual overhaul and final release gates remain incomplete.
