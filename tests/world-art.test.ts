@@ -157,6 +157,25 @@ describe('v0.9.1 world art stabilization',()=>{
       try{for(let frame=0;frame<600;frame++){const p=physics.position(),dx=poi.position.x-p.x,dz=poi.position.z-p.z,distance=Math.hypot(dx,dz);if(grounded){if(!started||p.y<poi.position.y+.82){vertical=5.8;started=true;}else vertical=-1.2;}else vertical-=19/60;const speed=distance>1?4.4:0;grounded=physics.move({x:distance>1?dx/distance*speed/60:0,y:vertical/60,z:distance>1?dz/distance*speed/60:0});}expect(Math.hypot(physics.position().x-poi.position.x,physics.position().z-poi.position.z)).toBeLessThan(2.5);expect(physics.position().y).toBeGreaterThan(poi.position.y+.82);}finally{physics.dispose();}
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
+  it('blocks the Revision-6 Tidal pier mast and housing while keeping the deck accessible',async()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),poi={id:'poi-tidal',name:'Tidal Survey Pier',kind:6,position:{x:120,y:12,z:80}},layout={pois:[poi],trails:[]},env=(worldRevision:number)=>({terrain,spawn:terrain.spawn,colliders:[],worldRevision,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment),current=new WorldSurvival(env(6),new THREE.Scene(),seed),legacy=new WorldSurvival(env(5),new THREE.Scene(),seed);
+    try{
+      const currentBoxes=current.collisionBoxes(),pierBoxes=currentBoxes.filter(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<4);
+      expect(pierBoxes).toHaveLength(5);expect(legacy.collisionBoxes()).toHaveLength(1);
+      expect(pierBoxes.slice(1).map(box=>box.position)).toEqual([
+        {x:poi.position.x-1.45,y:poi.position.y+1.44,z:poi.position.z+.2},
+        {x:poi.position.x+2.62,y:poi.position.y+1.75,z:poi.position.z-1.08},
+        {x:poi.position.x+2.2,y:poi.position.y+4.3,z:poi.position.z-.1},
+        {x:poi.position.x+.78,y:poi.position.y+1.17,z:poi.position.z+.23},
+      ]);
+      await initPhysics();const floor=new THREE.PlaneGeometry(24,24,2,2);floor.rotateX(-Math.PI/2);floor.translate(poi.position.x,poi.position.y+.94,poi.position.z);
+      const approach=(box:import('../src/physics/PhysicsWorld').CollisionBox,start:{x:number;z:number},motion:{x:number;z:number})=>{const physics=new PhysicsWorld(floor,[box],{x:start.x,y:poi.position.y+.94,z:start.z});try{for(let step=0;step<32;step++)physics.move({x:motion.x,y:0,z:motion.z});return physics.position();}finally{physics.dispose();}};
+      try{
+        const housing=approach(pierBoxes[1]!,{x:poi.position.x-3.4,z:poi.position.z+.2},{x:.1,z:0});expect(housing.x).toBeGreaterThan(poi.position.x-2.2);expect(housing.x).toBeLessThan(poi.position.x-1.2);
+        const mast=approach(pierBoxes[3]!,{x:poi.position.x+4.2,z:poi.position.z-.1},{x:-.1,z:0});expect(mast.x).toBeGreaterThan(poi.position.x+2.45);expect(mast.x).toBeLessThan(poi.position.x+3.2);
+      }finally{floor.dispose();}
+    }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
   it('reaches the Revision-6 Highland Relay control cabinet from ridge terrain',async()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),poi=layout.pois.find(entry=>entry.kind===7)!,env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
     try{

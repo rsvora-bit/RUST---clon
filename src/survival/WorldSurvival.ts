@@ -415,7 +415,15 @@ export class WorldSurvival {
           for(const x of [-1.955,-1.005])result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});
           result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});
         }
-      }else if(p.kind===6)result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});
+      }else if(p.kind===6){
+        result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6)result.push(
+          {position:{x:p.position.x-1.45,y:p.position.y+1.44,z:p.position.z+.2},halfExtents:{x:.4,y:.45,z:.36}},
+          {position:{x:p.position.x+2.62,y:p.position.y+1.75,z:p.position.z-1.08},halfExtents:{x:.09,y:.73,z:.09}},
+          {position:{x:p.position.x+2.2,y:p.position.y+4.3,z:p.position.z-.1},halfExtents:{x:.10,y:3.6,z:.10}},
+          {position:{x:p.position.x+.78,y:p.position.y+1.17,z:p.position.z+.23},halfExtents:{x:.61,y:.22,z:.41}},
+        );
+      }
       else if(p.kind===7){
         // Match the three visible ridge-tower legs instead of a phantom center post.
         // Keep the live colliders aligned with the authored leg lean, rather than
