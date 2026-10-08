@@ -2,10 +2,11 @@ import {describe,it,expect,vi} from 'vitest';
 vi.mock('../src/rendering/materials',()=>{let materialId=0;return{addWeatherSurfaceResponse:()=>{},authoredSurfaceFamilyForName:()=>undefined,disposeMaterialTextures:()=>{},fabricMaterial:()=>({uuid:`fabric-${++materialId}`,dispose(){},userData:{}}),metalMaterial:()=>({uuid:`metal-${++materialId}`,dispose(){},userData:{}}),woodMaterial:()=>({uuid:`wood-${++materialId}`,dispose(){},userData:{}})};});
 vi.mock('../src/world/materials',async importOriginal=>{const actual=await importOriginal<typeof import('../src/world/materials')>();return{...actual,groundTexture:()=>({dispose(){}})}});
 import {IslandTerrain} from '../src/terrain/island';
+import {randomSource} from '../src/world/noise';
 import {generateWorldLayout,WorldSurvival} from '../src/survival/WorldSurvival';
 import * as THREE from 'three';
 import {roadGeometry} from '../src/terrain/roads';
-import {grassSurfaceCover,surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
+import {grassSurfaceCover,rainPuddleOpacity,rainPuddleSuitability,surfaceClimate,palmSuitability,vegetationCover} from '../src/world/climate';
 import {Environment,climateRockAssetVariant,climateTreeAssetVariant,grassReceivesShadows,marshReedClumpSize,revisionTreeCover,treeCrownTint,treeSpeciesForBiome} from '../src/rendering/environment';
 import {mountainLayer} from '../src/world/horizon';
 import {GameSimulation} from '../src/simulation/GameSimulation';
@@ -338,6 +339,19 @@ describe('v0.9.1 world art stabilization',()=>{
     const transition=Array.from({length:41},(_,i)=>grassSurfaceCover(climate(.50,.4+i*.01),12,.1));
     expect(transition.every(value=>value>=0&&value<=1)).toBe(true);
     expect(Math.max(...transition.slice(1).map((value,index)=>Math.abs(value-transition[index]!)))).toBeLessThan(.06);
+  });
+  it('restricts temporary rain puddles to damp lowland basins and fades them with wetness',()=>{
+    expect(rainPuddleSuitability(climate(.55,.74),6,.02,.91)).toBeGreaterThan(.75);
+    expect(rainPuddleSuitability(climate(.82,.24),6,.02,.91)).toBeLessThan(.08);
+    expect(rainPuddleSuitability(climate(.55,.74),22,.02,.91)).toBe(0);
+    expect(rainPuddleSuitability(climate(.55,.74),6,.36,.91)).toBe(0);
+    expect(rainPuddleSuitability(climate(.55,.74),6,.02,.12)).toBe(0);
+    expect(rainPuddleOpacity(0)).toBe(0);expect(rainPuddleOpacity(.35)).toBeGreaterThan(0);expect(rainPuddleOpacity(1)).toBeCloseTo(.70);
+    expect(rainPuddleOpacity(.2)).toBeLessThan(rainPuddleOpacity(.55));
+  });
+  it('finds enough seeded lowland puddle sites without moving terrain or roads',()=>{
+    const terrain=new IslandTerrain(731942,5,6),rand=randomSource(731942+39217);let candidates=0;
+    try{for(let tries=0;tries<320*38;tries++){const x=(rand()-.5)*terrain.size*.90,z=(rand()-.5)*terrain.size*.90,y=terrain.heightAt(x,z),slope=terrain.slopeAt(x,z),climate=terrain.climateAtSample(x,z,y),patch=terrain.noise.fbm(x*.041+83,z*.041-29,3);if(rainPuddleSuitability(climate,y,slope,patch)>.20)candidates++;}expect(candidates).toBeGreaterThan(0);}finally{terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('groups revision-6 reeds into deterministic denser stands within the same total instance budget',()=>{
     expect([0,.25,.5,.75,.999].map(marshReedClumpSize)).toEqual([5,6,7,8,8]);

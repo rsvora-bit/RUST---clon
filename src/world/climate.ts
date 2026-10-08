@@ -21,3 +21,12 @@ export function vegetationCover(c:ClimateSample,elevation:number,slope:number,we
 export function grassSurfaceCover(c:ClimateSample,elevation:number,slope:number,wetlandNoise=0){
   const w=surfaceClimate(c,elevation,slope,wetlandNoise);return (1-w.forest*.30)*(1-w.arid*.80)*(1-w.snow*.94)*(1-w.marsh*.52);
 }
+/** Favor shallow, damp lowland basins for temporary rainwater without adding
+ * persistent world state or placing puddles on beaches, steep ground, or snow. */
+export function rainPuddleSuitability(c:ClimateSample,elevation:number,slope:number,patch:number):number{
+  const climate=surfaceClimate(c,elevation,slope);
+  return smoothstep(3.35,4.6,elevation)*(1-smoothstep(10.5,14.5,elevation))
+    *(1-smoothstep(.035,.15,slope))*smoothstep(.48,.72,c.moisture)
+    *(1-climate.arid)*(1-climate.snow)*smoothstep(.36,.62,patch);
+}
+export function rainPuddleOpacity(wetness:number):number{return smoothstep(.08,.62,wetness)*.70;}

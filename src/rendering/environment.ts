@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WORLD} from '../config/balance';
 import {generateWorldLayout,type WorldLayout} from '../survival/WorldSurvival';
-import {grassSurfaceCover,palmSuitability,surfaceClimate,vegetationCover} from '../world/climate';
+import {grassSurfaceCover,palmSuitability,rainPuddleOpacity,rainPuddleSuitability,surfaceClimate,vegetationCover} from '../world/climate';
 import type {ClimateSample} from '../terrain/island';
 import type {ResourceNode,Vec3,Structure,WorldGeneration,WorldRevision} from '../core/types';
 import {IslandTerrain} from '../terrain/island';
@@ -95,6 +95,8 @@ export class Environment {
   private readonly grassChunks:GrassChunk[]=[];
   private readonly reedLocations:Vec3[]=[];
   private readonly marshPoolLocations:Vec3[]=[];
+  private readonly rainPuddleLocations:Vec3[]=[];
+  private rainPuddleMaterial?:THREE.MeshStandardMaterial;
   private readonly treeBatches:{trunks:THREE.InstancedMesh;crowns:THREE.InstancedMesh;masses?:THREE.InstancedMesh;species:number;fullCount:number;generatedLods?:{trunk:THREE.BufferGeometry;foliage:THREE.BufferGeometry}[];instances:{id:string;x:number;z:number;matrix:THREE.Matrix4;crownMatrix:THREE.Matrix4;active:boolean;visible:boolean;renderIndex:number;trunkColor:THREE.Color;crownColor:THREE.Color;collision:NaturalCollider}[]}[]=[];
   private readonly outcropBatches:{mesh:THREE.InstancedMesh;variant:number;collisionRefs:(NaturalCollider|undefined)[];generatedLods?:THREE.BufferGeometry[]}[]=[];
   private readonly cliffBatches:{mesh:THREE.InstancedMesh;variant:number;collisionRefs:NaturalCollider[];generatedLods?:THREE.BufferGeometry[]}[]=[];
@@ -183,6 +185,9 @@ export class Environment {
   get marshReedLocations():Vec3[]{return this.reedLocations;}
   get marshPoolCount():number{const pools=this.root.getObjectByName('Marsh pools');return pools instanceof THREE.InstancedMesh?pools.count:0;}
   get marshPoolPositions():Vec3[]{return this.marshPoolLocations;}
+  get rainPuddleCount():number{const puddles=this.root.getObjectByName('Rain puddles');return puddles instanceof THREE.InstancedMesh?puddles.count:0;}
+  get rainPuddlePositions():Vec3[]{return this.rainPuddleLocations.map(point=>({...point}));}
+  get rainPuddleOpacity():number{return this.rainPuddleMaterial?.opacity??0;}
   get understoryLocations():{name:string;positions:Vec3[];visiblePositions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
     const read=(mesh:THREE.InstancedMesh,count:number)=>Array.from({length:count},(_,i)=>{mesh.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);return{x:position.x,y:position.y,z:position.z};});
@@ -205,7 +210,7 @@ export class Environment {
   }
   private populateNow():void {
     if(this.populated)return;
-    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateForestDeadfall();this.populateMarshReeds();this.populateGrass();this.populateShore();this.populateGroundDecals();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
+    this.populateTrees();this.populateRocks();this.populatePlants();this.populateUnderstory();this.populateForestDeadfall();this.populateMarshReeds();this.populateGrass();this.populateShore();this.populateGroundDecals();this.populateRainPuddles();this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
   }
   private removeTreeInstance(id:string):void {
     const tree=this.treeInstancesById.get(id);if(!tree)return;tree.active=false;
@@ -230,7 +235,7 @@ export class Environment {
     await stage(56,'Growing wetland reeds','Planting climate-aware marsh cover');this.populateMarshReeds();this.populateMarshPools();
     await stage(59,'Seeding windblown grass','Preparing vegetation chunks and distance culling');this.populateGrass();
     await stage(63,'Finishing the shoreline','Placing pebbles, driftwood and tidal seaweed');this.populateShore();
-    await stage(64,'Painting terrain detail','Scattering low-cost soil, leaf-litter and rock decals');this.populateGroundDecals();
+    await stage(64,'Painting terrain detail','Scattering low-cost soil, leaf-litter and rock decals');this.populateGroundDecals();this.populateRainPuddles();
     this.setQuality('high');this.update(0,9.4,new THREE.Vector3(this.spawn.x,this.spawn.y,this.spawn.z));this.populated=true;
     await stage(65,'World vegetation ready','Terrain resources are ready for gameplay systems');
   }
@@ -639,6 +644,23 @@ export class Environment {
     }
   }
 
+  /** One deterministic, instanced wet-ground layer; it fades with the shared
+   * surface wetness signal instead of becoming permanent save data. */
+  private populateRainPuddles():void {
+    if(this.terrain.generation!==5||this.worldRevision<6)return;
+    const rand=randomSource(this.seed+39217),target=320,span=this.terrain.size*.90,matrices:THREE.Matrix4[]=[],normal=new THREE.Vector3();
+    for(let tries=0;matrices.length<target&&tries<target*38;tries++){
+      const x=(rand()-.5)*span,z=(rand()-.5)*span,h=this.heightAt(x,z),slope=this.terrain.slopeAt(x,z),climate=this.terrain.climateAtSample(x,z,h),patch=this.terrain.noise.fbm(x*.041+83,z*.041-29,3);
+      if(rainPuddleSuitability(climate,h,slope,patch)<.20||Math.hypot(x-this.spawn.x,z-this.spawn.z)<24||!this.roadClear(x,z,4.2))continue;
+      const nearby=this.layout?.pois.some(poi=>Math.hypot(x-poi.position.x,z-poi.position.z)<12)??false;if(nearby)continue;
+      const gradeX=(this.heightAt(x+2,z)-this.heightAt(x-2,z))*.25,gradeZ=(this.heightAt(x,z+2)-this.heightAt(x,z-2))*.25;normal.set(-gradeX,1,-gradeZ).normalize();
+      this.matrixDummy.position.set(x,h+.038,z);this.matrixDummy.quaternion.copy(surfaceAlignedQuaternion(normal,rand()*Math.PI*2));this.matrixDummy.scale.set(1+rand()*2,1,.65+rand()*1.1);this.matrixDummy.updateMatrix();matrices.push(this.matrixDummy.matrix.clone());this.rainPuddleLocations.push({x,y:h+.038,z});
+    }
+    if(!matrices.length)return;
+    const texture=groundDecalTexture(39217,'puddle'),material=new THREE.MeshStandardMaterial({name:'Temporary rainwater puddles',map:texture,color:0xa7c0bd,transparent:true,opacity:0,depthWrite:false,roughness:.26,metalness:.055,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),geometry=this.own(new THREE.CircleGeometry(1,20));geometry.rotateX(-Math.PI/2);
+    const mesh=new THREE.InstancedMesh(geometry,material,matrices.length);mesh.name='Rain puddles';mesh.castShadow=false;mesh.receiveShadow=false;matrices.forEach((matrix,index)=>{mesh.setMatrixAt(index,matrix);mesh.setColorAt(index,new THREE.Color().setHSL(.49+rand()*.035,.08+rand()*.07,.78+rand()*.12));});mesh.computeBoundingSphere();this.root.add(mesh);this.materials.add(material);this.rainPuddleMaterial=material;this.detailMeshes.push({mesh,fullCount:matrices.length,minimum:'medium'});
+  }
+
   private populateShore():void {
     const rand=randomSource(this.seed+29119),stones:[THREE.Matrix4[],THREE.Matrix4[],THREE.Matrix4[]]=[[],[],[]],wood:THREE.Matrix4[]=[],weed:THREE.Matrix4[]=[],revision6=this.terrain.generation===5&&this.worldRevision>=6;
     // The larger revision-six archipelago needs a fuller, still batched tidal
@@ -695,7 +717,7 @@ export class Environment {
   }
   setFoliageDensity(value:number):void {this.foliageDensity=Math.max(.25,Math.min(1,value));this.setQuality(this.quality);}
   setFoliageDistance(value:number):void {this.foliageDistance=Math.max(.5,Math.min(1.5,value));this.setQuality(this.quality);}
-  setWeatherWetness(rain:number,storm=0):void {this.surfaceWetness.value=THREE.MathUtils.clamp(rain*.58+storm*.42,0,1);}
+  setWeatherWetness(rain:number,storm=0):void {this.surfaceWetness.value=THREE.MathUtils.clamp(rain*.58+storm*.42,0,1);if(this.rainPuddleMaterial)this.rainPuddleMaterial.opacity=rainPuddleOpacity(this.surfaceWetness.value);}
   syncNodes(nodeChanges:Record<string,number>):void {
     for(const node of this.nodes){
       const remaining=nodeChanges[node.id]??node.remaining;node.remaining=remaining;
