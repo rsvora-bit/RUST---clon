@@ -45,7 +45,10 @@ describe('independent water and weather effect quality settings',()=>{
       atmosphere.setWaterQuality('medium');expect(detail.value).toBe(.68);
       atmosphere.setWaterQuality('high');expect(detail.value).toBe(1);
       expect(atmosphere.ocean.material.fragmentShader).toContain('if(waterDetail>.4)choppy');
-      expect(atmosphere.ocean.material.fragmentShader).toContain('if(revision6>.5&&waterDetail>.4)');
+      expect(atmosphere.ocean.material.fragmentShader).toContain('mix(.24,.36,waterDetail)');
+      expect(atmosphere.ocean.material.fragmentShader).toContain('near*(.72+waterDetail*.28+storm*.75)');
+      expect(atmosphere.ocean.material.fragmentShader).toContain('*weather*waterDetail');
+      expect(atmosphere.ocean.material.fragmentShader).toContain('if(waterDetail>.4)foamNoise');
     }finally{atmosphere.dispose();height.dispose();}
   });
 
