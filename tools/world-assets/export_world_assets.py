@@ -176,6 +176,41 @@ def broadleaf_foliage(kind, centers, seed):
     for polygon,index in zip(mesh.polygons,material_indices):polygon.material_index=index
     return obj
 
+def needle_bough(start, end, radius, seed):
+    """Build one rounded, irregular needle mass aligned with its branch."""
+    start,end=Vector(start),Vector(end)
+    axis=end-start
+    length=axis.length
+    if length<.05:return
+    axis.normalize()
+    reference=Vector((0,0,1))
+    side=axis.cross(reference)
+    if side.length<.1:side=axis.cross(Vector((0,1,0)))
+    side.normalize();up=side.cross(axis).normalized()
+    # A rounded low-poly section keeps the crown from reading as a stack of
+    # flat triangular plates. Uneven rings soften the tips without adding a
+    # separate material or another draw call.
+    rings=((.04,.12),(.26,.72),(.55,1.0),(.84,.72),(1.12,.025))
+    sides=6;verts=[];faces=[]
+    for ring,(along,falloff) in enumerate(rings):
+        center=start+axis*(length*along)
+        for index in range(sides):
+            angle=math.tau*index/sides+seed*.013+ring*.07
+            irregular=1+.075*math.sin(index*3.7+ring*1.9+seed*.021)
+            point=center+side*(math.cos(angle)*radius*falloff*irregular)+up*(math.sin(angle)*radius*.78*falloff*irregular)
+            verts.append(tuple(point))
+    for ring in range(len(rings)-1):
+        for index in range(sides):
+            a=ring*sides+index;b=ring*sides+(index+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+    mesh=bpy.data.meshes.new("branch-following tapered needle sleeve")
+    mesh.from_pydata(verts,[],faces)
+    mesh.materials.append(NEEDLE)
+    for polygon in mesh.polygons:polygon.use_smooth=True
+    mesh.update()
+    obj=bpy.data.objects.new("irregular tapered needle bough",mesh);bpy.context.collection.objects.link(obj)
+    return obj
+
 def tree(kind):
     broadleaf=kind.startswith("broadleaf") or kind in ("marsh_tree","coastal_tree")
     alpine=kind=="alpine_conifer"
@@ -229,29 +264,21 @@ def tree(kind):
         clusters.append(((lean*.8,0,h*.81),.8,38))
         broadleaf_foliage(kind,clusters,seed)
     else:
-        tiers=8 if alpine else 9+variant
+        tiers=9 if alpine else 11+variant
+        tier_spacing=(h-2.2)/tiers
         for tier in range(tiers):
-            z=1.35+tier*(h-2.2)/tiers
-            radius=(1-tier/(tiers+.8))*rng.uniform(2.15,2.85)*(0.83 if alpine else 1)
+            # Break up the mechanically even whorls while keeping each
+            # crown inside its authored bounds and gradually tapered.
+            z=1.2+(tier+rng.uniform(-.22,.22))*tier_spacing
+            radius=(1-tier/(tiers+.8))*rng.uniform(2.2,2.95)*(0.83 if alpine else 1)
             whorl=4+(tier%2)
             for branch in range(whorl):
                 angle=branch*math.tau/whorl+tier*1.71+rng.uniform(-.20,.20)
                 length=radius*rng.uniform(.78,1.12)
-                start=(lean*z/h,0,z);end=(start[0]+math.cos(angle)*length,math.sin(angle)*length,z-rng.uniform(.18,.48))
+                start=(lean*z/h,0,z);end=(start[0]+math.cos(angle)*length,math.sin(angle)*length,z+rng.uniform(-.18,.42))
                 rod("layered needle bough",start,end,.055 if alpine else .065, BARK,6)
-                for offset in (.64,):
-                    center=tuple(start[j]*(1-offset)+end[j]*offset for j in range(3))
-                    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=center)
-                    needles=bpy.context.object;needles.name="volumetric needle spray";needles.scale=(length*.30,length*.23,.20 if alpine else .25)
-                    for vertex in needles.data.vertices:vertex.co*=1+.08*math.sin(vertex.co.x*7+vertex.co.z*4+tier)
-                    for face in needles.data.polygons:face.use_smooth=True
-                    needles.data.materials.append(NEEDLE)
-                if rng.random()<.28:
-                    center=tuple(start[j]*.30+end[j]*.70 for j in range(3))
-                    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=center)
-                    needles=bpy.context.object;needles.name="secondary needle spray";needles.scale=(length*.21,length*.18,.15 if alpine else .19)
-                    for face in needles.data.polygons:face.use_smooth=True
-                    needles.data.materials.append(NEEDLE)
+                crownFullness=.82+.18*math.sin(math.pi*(tier+1)/(tiers+1))
+                needle_bough(start,end,min(.48,length*(.18 if alpine else .22))*crownFullness,seed+tier*31+branch*7)
 
 def palm_tree():
     """A wind-shaped coastal palm with one fibrous bole and feathered fronds."""
@@ -492,7 +519,11 @@ def create(name):
     source.data.update()
     source.location=(0,0,0);source.rotation_euler=(0,0,0);source.scale=(1,1,1)
     root=bpy.data.objects.new(name,None);bpy.context.scene.collection.objects.link(root)
-    levels=(1.0,.48,.16)
+    conifer=name in ("conifer_a","conifer_b","conifer_c","alpine_conifer")
+    # Conifer LOD0 keeps its close-up branch detail. The medium-distance
+    # version is more aggressively reduced so the denser crown does not
+    # inflate the visible forest's upload or frame cost.
+    levels=(1.0,.30 if conifer else .48,.16)
     lod_objects=[]
     for index,ratio in enumerate(levels):
         obj=source if index==0 else source.copy()

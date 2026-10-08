@@ -51,6 +51,13 @@ for(const id of treeIds){
   const lod0=triangles('LOD0'),lod1=triangles('LOD1'),lod2=triangles('LOD2');
   assert.ok(lod0>lod1&&lod1>lod2,`${id} reduces geometry at every LOD (${lod0}/${lod1}/${lod2} triangles)`);
 }
+for(const id of ['conifer_a','conifer_b','conifer_c','alpine_conifer']){
+  const{json}=readGlb(id),root=json.nodes.find(node=>node.name==='LOD0'||node.name===`${id} LOD0`),primitives=json.meshes[root.mesh].primitives;
+  assert.equal(primitives.length,2,`${id} remains one trunk and one foliage batch`);
+  assert.deepEqual(primitives.map(primitive=>json.materials[primitive.material]?.name).sort(),['Tideland furrowed bark','Tideland alpine needle'].sort(),`${id} retains its shared bark/needle material pair`);
+  const triangles=level=>{const node=json.nodes.find(item=>item.name===level||item.name===`${id} ${level}`);return json.meshes[node.mesh].primitives.reduce((sum,primitive)=>sum+json.accessors[primitive.indices].count/3,0);};
+  assert.ok(triangles('LOD0')<=5000&&triangles('LOD1')<=1650&&triangles('LOD2')<=750,`${id} stays within the conifer LOD triangle budget (${triangles('LOD0')}/${triangles('LOD1')}/${triangles('LOD2')})`);
+}
 assert.notDeepEqual(readGlb('broadleaf_a').bytes,readGlb('broadleaf_b').bytes,'broadleaf variants use separately modeled geometry');
 assert.notDeepEqual(readGlb('conifer_a').bytes,readGlb('conifer_c').bytes,'conifer variants use separately modeled geometry');
 const rockIds=['small_rock_a','small_rock_b','small_rock_c','medium_rock_a','medium_rock_b','medium_rock_c','large_boulder_a','large_boulder_b','large_boulder_c','coastal_rock','alpine_rock','cliff_slab_a','cliff_slab_b','broken_stone'];
