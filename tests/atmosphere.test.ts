@@ -42,4 +42,15 @@ describe('world atmosphere coordinates',()=>{
       expect(fragment).not.toContain('smoothstep(-.12,1.05,foamEdge)');
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
+  it('approximates directional sky, cloud and sun reflections for revision-six water',()=>{
+    const heightMap=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),heightMap,720,731942,6);
+    try{
+      const fragment=atmosphere.ocean.material.fragmentShader;
+      expect(fragment).toContain('vec3 reflectedDirection=reflect(-view,normal)');
+      expect(fragment).toContain('float reflectedAltitude=smoothstep(-.16,.52,reflectedDirection.y)');
+      expect(fragment).toContain('float reflectedCloud=waterDetail>.4?n(reflectedUv+vec2(clock*.002,-clock*.001)):0.');
+      expect(fragment).toContain('dot(reflectedDirection,sunDir)');
+      expect(fragment).toContain('skyReflect=mix(skyReflect,reflectedSky,revision6)');
+    }finally{atmosphere.dispose();heightMap.dispose();}
+  });
 });

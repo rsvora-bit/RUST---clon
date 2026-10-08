@@ -393,3 +393,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added direct Rapier controller regressions for six solid station bodies: storage, furnace, workbench III, recycler, generator and Homestead Beacon. Each probe approaches the rendered-mesh-derived collision envelope along its rotated local axis on a flat test surface and asserts the player stops at the physical boundary, not at an unrelated world collider.
 - Focused `tests/station-renderer.test.ts`: **14/14 PASS**; `npm run build`: **PASS** with the existing large JavaScript chunk advisory; `git diff --check`: **PASS**. No save data, runtime gameplay, visuals, or world-generation state changed. No screenshots taken.
 - This adds meaningful station collision evidence to the physical audit; smaller/low-profile stations, world props, and the wider visual fidelity goals remain open. Overall estimate stays approximately **54%**. Main, release tags, GitHub Release and Pages remain unchanged.
+
+## v0.14 continuation — directional ocean reflection — 2026-10-08
+
+- Revision-6 water now derives its reflected sky from the actual view/reflection direction, with a restrained moving cloud approximation and a narrow sun response. LOW water quality skips the cloud sample; old world revisions retain their previous shading. No extra geometry, texture assets, world layout, or save data.
+- `tests/atmosphere.test.ts`: **5/5 PASS**; `npm run build`: **PASS**; screenshot-free `npm run test:world`: passed generation/biomes/roads, storm sky/ocean/fog transition, fall checks, Rev6 save/reload, Generation-4 legacy reload and zero application-console errors. Dev server stopped. Existing large-JS-chunk advisory remains.
+- Overall estimate: approximately **55%**. Water shading has a targeted improvement; terrain close-up fidelity, broader materials/vegetation, prop audit, matched hardware performance and all release gates remain open. Main/release/Pages unchanged.

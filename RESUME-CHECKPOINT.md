@@ -2392,3 +2392,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `npm test -- tests/station-renderer.test.ts`: **14/14 PASS**. `npm run build`: **PASS** (existing Vite large-chunk advisory). `git diff --check`: **PASS**. No screenshots, save changes, runtime changes, or release actions.
 - Stage only the test plus `POLISH-STATUS.md` and this checkpoint; preserve all untracked iCloud ` 2` files and `artifacts/`. Commit and push only to the existing feature branch.
 - Continue the physical audit across low-profile stations, props and wreck structures, then substantive world visual work, matched hardware performance, final suite/release gates. Overall estimate remains approximately **54%**; v0.14 is not release-ready. Main, tags, GitHub Release and Pages are unchanged.
+
+## v0.14 continuation — directional ocean reflection — 2026-10-08
+
+- Started from synchronized feature-branch checkpoint `891e45de049d17d13c91aa4ec052b498b001e9d9` on `codex/v0.14.2-water-weather`.
+- Updated `src/world/atmosphere.ts`: Revision-6 water now approximates directional sky/cloud reflection and a restrained sun response; LOW water quality skips the cloud sample and legacy shading remains unchanged. Added GLSL-source regression coverage in `tests/atmosphere.test.ts`.
+- Validation: `npm test -- tests/atmosphere.test.ts` **5/5 PASS**; `npm run build` **PASS** (existing large-chunk advisory); screenshot-free `npm run test:world` passed current Gen5/revision, biome/road, storm atmosphere, fall damage, Gen5 save/reload, Gen4 legacy reload and zero browser console errors. Dev server stopped; no screenshots captured.
+- Next: commit/push only `src/world/atmosphere.ts`, `tests/atmosphere.test.ts`, `POLISH-STATUS.md`, and this checkpoint to the existing feature branch. Then continue actual environment/material work and physical props audit. Overall estimate approximately **55%**; do not version-bump, merge, tag, release or touch Pages until all v0.14 gates are proven. Preserve user iCloud duplicates and `artifacts/`.
