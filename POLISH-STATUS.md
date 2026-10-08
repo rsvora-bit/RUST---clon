@@ -246,3 +246,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added a Revision-6-only cuboid proxy for the visible leaning Breakwater cargo derrick mast. The proxy follows the rendered mast's `-0.11` Z rotation and full 16.8 m length, closing the walk-through gap without changing legacy revisions or save data.
 - Added a Rapier movement regression proving the player is blocked at the mast, plus updated the Breakwater proxy-count assertion. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory).
 - Estimated overall goal completion: approximately **39%**. The remaining asset/material audit and most terrain, rocks, vegetation, water, atmosphere, weather, performance comparison and final release checks are still outstanding. No release/tag/Pages changes.
+
+## Live authored boulder collision QA — 2026-10-08
+
+- Updated `scripts/rock-collision-qa.mjs` to launch the menu's already-prepared Revision-6 preview through F3 Testing Mode. This avoids generating a second random New Game, preserves all save slots, and still exercises the live authored rock meshes, their collider batches and actual character-controller movement.
+- The previous New Game flow timed out waiting for `playing` after its 180-second limit. With the prepared-world path, Chrome/Metal QA passed **12/12 approaches** (all four sides of `large_boulder_a`, `_b`, and `_c`) with **zero application/browser errors**. No screenshots were captured. `node --check scripts/rock-collision-qa.mjs` PASS; collision/world-art unit tests **55/55 PASS**; world asset package **31 GLBs + 31 collision proxies PASS**.
+- Estimated overall goal completion: approximately **40%**. The rock-side walk-through criterion now has both direct Rapier unit coverage and live browser movement evidence; the broader terrain, vegetation, water, atmosphere, materials and release requirements remain open.

@@ -11,10 +11,12 @@ try{
   await page.goto(base);
   await page.waitForFunction(()=>window.__TIDELAND);
   await page.locator('.loading-screen').waitFor({state:'hidden'});
-  await page.locator('[data-action="new"]').click();
-  await page.locator('[data-save-action="new"][data-save-slot="1"]').click();
-  if(await page.locator('.new-game-confirm').isVisible())await page.locator('[data-action="confirmNew"]').click();
-  await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing');
+  // The menu already owns a prepared Revision-6 preview world. Launch it in
+  // temporary Testing Mode instead of generating a second random world; this
+  // exercises the live authored collider batches without touching a save slot.
+  await page.keyboard.press('F3');
+  await page.locator('[data-action="launchTestWorld"]').click();
+  await page.waitForFunction(()=>window.__TIDELAND?.getScreen()==='playing'&&document.querySelector('[data-dev="testing"]')?.getAttribute('aria-pressed')==='true');
   await page.evaluate(()=>window.__TIDELAND.dev('day'));
 
   const approach=await page.evaluate(()=>{
