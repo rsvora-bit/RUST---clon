@@ -2365,3 +2365,9 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Added screenshot-free `npm run test:tree-collision` to `package.json` and `scripts/tree-collision-qa.mjs`. It uses the existing deterministic Testing Mode world, finds near-level unobstructed approaches, freezes the normal game tick, and checks actual Rapier controller movement against trunk proxies.
 - Result: **9 authored tree species passed** (0, 1, 2, 3, 4, 5, 7, 8, 9); player was blocked at each tested trunk side; zero browser/WebGL errors. Other initial test-probe attempts were discarded as invalid because the route descended below the trunk or ran into a second tree; no source gameplay bug was found.
 - Latest previously pushed commit: `8e1aa5a52262a4c44accb4324af650a87a96df08`. This new QA block is pending a focused syntax/run check (passed) and must be committed/pushed to the same branch. Preserve untracked iCloud ` 2` duplicates and `artifacts/`.
+
+## v0.14 continuation — Breakwater hull live collision QA — 2026-10-08
+
+- Added `worldCollisionBoxesForTest()` to the existing local Testing Mode bridge and added `npm run test:shipwreck-collision` (`scripts/shipwreck-collision-qa.mjs`). The probe locates the lower hull/deck proxy, finds unobstructed near-level sides, pauses the normal game tick, and moves the live Rapier character controller into the proxy.
+- Result: **4/4 clear Breakwater hull approaches blocked**, zero browser/WebGL errors. `node --check` passed and `npm run build` passed with the existing Vite chunk-size advisory; local Vite server stopped.
+- Along with `test:tree-collision` (9 authored tree species) and `test:rock-collision` (five boulder variants, cliff slab and four resource-node types), this adds repeatable live evidence for several major solid world asset families. Other stations, props and wreck upper structures still need audit.
