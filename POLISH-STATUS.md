@@ -435,3 +435,10 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - `tests/weather-materials.test.ts`: **6/6 PASS**; production build PASS (existing Vite large-chunk advisory); live ANGLE Metal `test:rock-collision` PASS across five rock variants, 20/20 approach sides, 20 cliff colliders and four resource types; **0 application errors**. Vite stopped.
 - This correction makes the already-added climate/texture mask capable of showing on temperate and wetland rock; broad visual QA/release gates remain open.
 - Post-correction full `npm test`: **580/580 PASS (58 files)**. Correction is pushed on `codex/v0.14.2-water-weather` as `a0dc1bd40b79dff84360733042dd60240420326e`; origin branch matched HEAD after fetch. Main, release tag, GitHub Release and Pages remain unchanged.
+
+## v0.14 continuation — full live station collision coverage — 2026-10-08
+
+- Expanded the real Rapier character-controller station test from six to **13 blocking station/container types**, covering all workbench tiers, generator, switch, lamp, Homestead Beacon, recycler, death/loot containers, and sealed cache in addition to storage/furnace. The geometry-envelope test continues to cover all 15 rendered station kinds.
+- Campfire and bedroll were deliberately excluded from “must block” movement assertions: both are low-profile, step-over gameplay objects, and their existing mesh-derived collider bounds remain checked by the full geometry-envelope test. No runtime collision or save behavior changed.
+- `npm test -- tests/station-renderer.test.ts`: **21/21 PASS**. The initial broader probe also confirmed campfire/bedroll are traversable; this is expected given their low physical profiles, not a collider defect.
+- Scope is physical QA coverage only. Overall v0.14 work remains around **56%**; visual fidelity and final release gates remain unfinished. No main, version, tag, Release, or Pages changes.
