@@ -387,3 +387,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Still open: remaining station/prop/wreck upper-structure physical audit; broad, deliberate visual QA and the larger terrain/rock/vegetation/water/sky/weather/station fidelity work; matched hardware performance comparison; final full suite, save/regression review, release documentation/versioning and all release/Pages gates. No release actions have been taken.
 - Preserve the untracked iCloud files ending in ` 2` and `artifacts/`; they are unrelated user data. Continue only on the existing feature branch.
 - Rozšířený `test:shipwreck-collision` nyní ověřuje také horní šikmý stožár Breakwateru ve výšce nad palubou. Dolní trup: **4/4** přístupy blokovány; horní stožár: blokován; browser chyby: **0**. Produkční build před live QA prošel.
+
+## v0.14 continuation — live Rapier station-body checks — 2026-10-08
+
+- Added direct Rapier controller regressions for six solid station bodies: storage, furnace, workbench III, recycler, generator and Homestead Beacon. Each probe approaches the rendered-mesh-derived collision envelope along its rotated local axis on a flat test surface and asserts the player stops at the physical boundary, not at an unrelated world collider.
+- Focused `tests/station-renderer.test.ts`: **14/14 PASS**; `npm run build`: **PASS** with the existing large JavaScript chunk advisory; `git diff --check`: **PASS**. No save data, runtime gameplay, visuals, or world-generation state changed. No screenshots taken.
+- This adds meaningful station collision evidence to the physical audit; smaller/low-profile stations, world props, and the wider visual fidelity goals remain open. Overall estimate stays approximately **54%**. Main, release tags, GitHub Release and Pages remain unchanged.

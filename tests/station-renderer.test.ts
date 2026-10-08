@@ -2,6 +2,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
 import {StationRenderer} from '../src/survival/StationRenderer';
 import {createStation} from '../src/survival/stations';
+import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 
 describe('event cache rendering',()=>{
   afterEach(()=>vi.unstubAllGlobals());
@@ -15,6 +16,19 @@ describe('event cache rendering',()=>{
     const kinds=['storage','furnace','workbench1','workbench2','workbench3','campfire','bedroll','generator','powerSwitch','lamp','homesteadCore','recycler','deathbag','loot','secureCache'] as const,stations=kinds.map((kind,index)=>createStation(`collider-audit-${kind}`,kind,{x:30+index*5,y:2,z:-20-index*3},.37)),renderer=new StationRenderer(new THREE.Scene()),excluded=new Set(['flame','power-lamp-bulb','Relay cache aerial','Relay cache signal light']);renderer.sync(stations);
     try{for(const station of stations){const group=renderer.objects.get(station.id)!,box=renderer.boxes(station)[0]!;expect(box).toBeTruthy();const c=Math.cos(station.rotation),s=Math.sin(station.rotation),point=new THREE.Vector3();group.updateWorldMatrix(true,true);group.traverse(object=>{if(!(object instanceof THREE.Mesh)||!object.visible||excluded.has(object.name)||object.name.startsWith('recycler-spark-')||!object.material.visible)return;const geometry=object.geometry;if(!geometry.boundingBox)geometry.computeBoundingBox();const bounds=geometry.boundingBox;if(!bounds)return;for(let corner=0;corner<8;corner++){point.set(corner&1?bounds.max.x:bounds.min.x,corner&2?bounds.max.y:bounds.min.y,corner&4?bounds.max.z:bounds.min.z).applyMatrix4(object.matrixWorld);const dx=point.x-box.position.x,dz=point.z-box.position.z,localX=dx*c-dz*s,localZ=dx*s+dz*c;expect(Math.abs(localX)).toBeLessThanOrEqual(box.halfExtents.x+1e-4);expect(Math.abs(point.y-box.position.y)).toBeLessThanOrEqual(box.halfExtents.y+1e-4);expect(Math.abs(localZ)).toBeLessThanOrEqual(box.halfExtents.z+1e-4);}});}}
     finally{renderer.dispose();}
+  });
+  it.each(['storage','furnace','workbench3','recycler','generator','homesteadCore'] as const)('blocks a live Rapier player against the visible %s body',async kind=>{
+    vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});
+    await initPhysics();
+    const station=createStation(`live-collider-${kind}`,kind,{x:0,y:0,z:0},.37),renderer=new StationRenderer(new THREE.Scene());renderer.sync([station]);
+    const [box]=renderer.boxes(station)!,floor=new THREE.PlaneGeometry(24,24,1,1);floor.rotateX(-Math.PI/2);
+    const axis={x:Math.cos(station.rotation),z:-Math.sin(station.rotation)},start={x:box!.position.x-axis.x*(box!.halfExtents.x+2.5),y:0,z:box!.position.z-axis.z*(box!.halfExtents.x+2.5)};
+    const physics=new PhysicsWorld(floor,[box!],start);
+    try{
+      for(let step=0;step<40;step++)physics.move({x:axis.x*.1,y:0,z:axis.z*.1});
+      const position=physics.position(),dx=position.x-box!.position.x,dz=position.z-box!.position.z,depth=dx*axis.x+dz*axis.z,lateral=Math.abs(dx*axis.z-dz*axis.x);
+      expect(depth).toBeLessThan(-(box!.halfExtents.x+.12));expect(depth).toBeGreaterThan(-(box!.halfExtents.x+.85));expect(lateral).toBeLessThan(.12);
+    }finally{physics.dispose();floor.dispose();renderer.dispose();}
   });
   it('keeps signal antenna and beacon out of the solid salvage-cache proxy',()=>{
     vi.stubGlobal('document',{createElement:()=>({width:0,height:0,getContext:()=>new Proxy({}, {get:()=>()=>{}})})});

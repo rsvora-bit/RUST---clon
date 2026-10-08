@@ -2384,3 +2384,11 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 
 - Rozšířil jsem `scripts/shipwreck-collision-qa.mjs`: kromě čtyř near-level živých přístupů na dolní trup nyní hledá šikmý horní stožár a testuje ho ve výšce mimo kolizní rozsah paluby. Kolizní cesta je izolovaná od ostatních POI proxy.
 - Výsledek live QA: dolní trup **4/4** přístupů blokuje hráče, horní derrick mast také blokuje hráče, browser/WebGL errors **0**. `node --check` PASS; produkční build PASS (dosavadní Vite chunk advisory); Vite server ukončen. Změněn pouze QA script a tento checkpoint.
+
+## v0.14 continuation — station collision regression — 2026-10-08
+
+- Continued on `codex/v0.14.2-water-weather` from synchronized checkpoint `b28f51d387aef2fc1faa4166cdc0a59d1417a409`.
+- Added a live Rapier kinematic-controller test in `tests/station-renderer.test.ts` for six rendered station bodies (storage, furnace, workbench III, recycler, generator, Homestead Beacon), with rotated placements and an isolated flat floor.
+- `npm test -- tests/station-renderer.test.ts`: **14/14 PASS**. `npm run build`: **PASS** (existing Vite large-chunk advisory). `git diff --check`: **PASS**. No screenshots, save changes, runtime changes, or release actions.
+- Stage only the test plus `POLISH-STATUS.md` and this checkpoint; preserve all untracked iCloud ` 2` files and `artifacts/`. Commit and push only to the existing feature branch.
+- Continue the physical audit across low-profile stations, props and wreck structures, then substantive world visual work, matched hardware performance, final suite/release gates. Overall estimate remains approximately **54%**; v0.14 is not release-ready. Main, tags, GitHub Release and Pages are unchanged.
