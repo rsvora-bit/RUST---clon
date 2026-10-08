@@ -38,7 +38,8 @@ gameplay colliders currently owned by `WorldSurvival` and `PhysicsWorld`.
 After joining an asset's parts, the exporter bakes the active part's location,
 rotation, and scale into the merged vertices before clearing object transforms.
 This preserves authored geometry orientation and origin for assets assembled
-from rotated primitives, including the horizontal shoreline driftwood.
+from translated or rotated primitives, including horizontal shoreline driftwood
+and the grounded salvage crate used at Breakwater.
 
 Regenerate and check file sizes with:
 
