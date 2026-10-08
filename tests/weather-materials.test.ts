@@ -1,7 +1,7 @@
 import {describe,expect,it,vi} from 'vitest';
 import * as THREE from 'three';
 import {addWeatherSurfaceResponse,authoredSurfaceFamilyForName,materialWithSurfaceFamily} from '../src/rendering/materials';
-import {stoneMaterial} from '../src/world/materials';
+import {rockInstanceTint,stoneMaterial} from '../src/world/materials';
 
 describe('weather surface response',()=>{
   it('classifies the authored Breakwater wood, corrosion, enamel and steel materials',()=>{
@@ -85,13 +85,27 @@ describe('weather surface response',()=>{
       expect(newShader.fragmentShader).not.toContain('vec3 bn=pow(abs(vStoneNormal),vec3(4.))');
       expect(oldShader.fragmentShader).not.toContain('stoneDx');
       expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
+      expect(newShader.fragmentShader).toContain('smoothstep(.48,.68,stoneHeight)');
+      expect(newShader.fragmentShader).toContain('smoothstep(.48,.82,max(0.,vStoneWorldNormal.y))');
+      expect(newShader.fragmentShader).toContain('vStoneMossClimate');
+      expect(newShader.fragmentShader).toContain('roughnessFactor=mix(roughnessFactor,.96,stoneMoss*.35)');
+      expect(newShader.vertexShader).toContain('#ifdef USE_INSTANCING_COLOR\nvStoneMossClimate=smoothstep(.08,.11,instanceColor.g-instanceColor.b);\n#endif');
       expect(newShader.fragmentShader).toContain('stoneDx=dFdx(vViewPosition)');
       expect(newShader.fragmentShader).toContain('dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2');
-      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v3-world-weather');
-      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v3-local-static');
+      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v4-world-weather');
+      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v4-local-static');
     }finally{
       for(const material of [legacy,revision6])for(const texture of material.userData.textures as THREE.Texture[])texture.dispose();
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('limits the instanced rock moss signature to temperate and wetland biomes',()=>{
+    for(const [biome,expected] of [['TEMPERATE FOREST',true],['TEMPERATE GRASSLAND',true],['WETLAND / MARSH',true],['ARID',false],['SNOW / ALPINE',false],['ROCKY MOUNTAIN',false],['COAST',false]] as const){
+      for(const x of [-100,-20,0,40,100])for(const tone of [0,.5,1]){
+        const tint=rockInstanceTint(biome,x,x*.37,tone),climate=Math.max(0,Math.min(1,(tint.g-tint.b-.08)/(.11-.08)));
+        expect(climate>.5).toBe(expected);
+      }
     }
   });
 });

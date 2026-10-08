@@ -223,7 +223,13 @@ export function rockInstanceTint(biome:string,x:number,z:number,tone:number):THR
   const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID';
   const hue=alpine?.58:arid?.105:.17,saturation=alpine?.10:arid?.18:.14;
   const variation=Math.sin(x*1.71+z*.93)*.018,lightness=.58+THREE.MathUtils.clamp(tone,0,1)*.13;
-  return new THREE.Color().setHSL(hue+variation,saturation,lightness);
+  const tint=new THREE.Color().setHSL(hue+variation,saturation,lightness);
+  // Reserve a tiny green-channel signature for the instanced shader's moss
+  // eligibility. The offset stays subtle, while separating temperate from
+  // arid/alpine rocks even across tone and hue variation.
+  if(biome==='TEMPERATE FOREST'||biome==='TEMPERATE GRASSLAND'||biome==='WETLAND / MARSH')tint.g+=.04;
+  else if(arid||biome==='COAST')tint.g-=.04;
+  return tint;
 }
 /** Keep authored leaf hue/value relationships while preventing a dark GLB base factor from multiplying instance tint into near-black foliage. */
 export function liftFoliageBaseColor(color:THREE.Color,targetPeak=.46):THREE.Color{
@@ -239,16 +245,16 @@ export function stoneMaterial(tint=0xb0ada0,vertexColors=true,surfaceWetness?:{v
   // differently on each scaled instance. Keep the UV map for legacy worlds.
   if(worldSpaceDetail)detail.normal.dispose();
   const mat=new THREE.MeshStandardMaterial({map:tex,color:tint,vertexColors,roughness:.90,roughnessMap:detail.roughness,normalMap:worldSpaceDetail?null:detail.normal,normalScale:new THREE.Vector2(.16,.16),metalness:.015});
-  mat.customProgramCacheKey=()=>`tideland-stone-detail-v3-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
+  mat.customProgramCacheKey=()=>`tideland-stone-detail-v4-${worldSpaceDetail?'world':'local'}-${surfaceWetness?'weather':'static'}`;
   mat.userData.textures=worldSpaceDetail?[tex,detail.roughness]:[tex,detail.roughness,detail.normal];
   if(surfaceWetness)mat.userData.surfaceWetness=surfaceWetness;
   const weather=stoneWeatherShader(!!surfaceWetness);mat.onBeforeCompile=shader=>{
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal; varying vec3 vStoneWorldNormal;');
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStonePos; varying vec3 vStoneNormal; varying vec3 vStoneWorldNormal; varying float vStoneMossClimate;');
     if(worldSpaceDetail){
       shader.vertexShader=shader.vertexShader.replace('#include <defaultnormal_vertex>','#include <defaultnormal_vertex>\nmat3 stoneViewRotation=mat3(viewMatrix);vStoneNormal=normalize(vec3(dot(stoneViewRotation[0],transformedNormal),dot(stoneViewRotation[1],transformedNormal),dot(stoneViewRotation[2],transformedNormal)));');
-      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvec4 stoneWorldPosition=vec4(transformed,1.);vec3 stoneWorldNormal=objectNormal;\n#ifdef USE_INSTANCING\nstoneWorldPosition=instanceMatrix*stoneWorldPosition;stoneWorldNormal=mat3(instanceMatrix)*stoneWorldNormal;\n#endif\nvStonePos=(modelMatrix*stoneWorldPosition).xyz;vStoneWorldNormal=normalize(mat3(modelMatrix)*stoneWorldNormal);');
-    }else shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;vStoneWorldNormal=normal;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal; varying vec3 vStoneWorldNormal;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`// Projection weights use the stable world-space normal, not the camera-space shading normal.\nvec3 bn=pow(abs(vStoneWorldNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;float stoneHeight=dot(stoneDetail,vec3(.333));diffuseColor.rgb*=.74+stoneDetail*1.05;${weather.diffuse}`);if(worldSpaceDetail)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>\n// World-space relief stays consistent as an instanced boulder changes scale.\nvec3 stoneDx=dFdx(vViewPosition),stoneDy=dFdy(vViewPosition),stoneR1=cross(stoneDy,normal),stoneR2=cross(normal,stoneDx);float stoneDet=dot(stoneDx,stoneR1);normal=normalize(abs(stoneDet)*normal-sign(stoneDet)*(.075*(dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2)));`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\n${weather.roughness}`);
+      shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvec4 stoneWorldPosition=vec4(transformed,1.);vec3 stoneWorldNormal=objectNormal;vStoneMossClimate=0.;\n#ifdef USE_INSTANCING\nstoneWorldPosition=instanceMatrix*stoneWorldPosition;stoneWorldNormal=mat3(instanceMatrix)*stoneWorldNormal;\n#endif\n#ifdef USE_INSTANCING_COLOR\nvStoneMossClimate=smoothstep(.08,.11,instanceColor.g-instanceColor.b);\n#endif\nvStonePos=(modelMatrix*stoneWorldPosition).xyz;vStoneWorldNormal=normalize(mat3(modelMatrix)*stoneWorldNormal);');
+    }else shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvStonePos=position;vStoneNormal=normal;vStoneWorldNormal=normal;vStoneMossClimate=0.;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${weather.uniform} varying vec3 vStonePos; varying vec3 vStoneNormal; varying vec3 vStoneWorldNormal; varying float vStoneMossClimate;`);shader.uniforms.surfaceWetness=wetnessUniform;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`// Projection weights use the stable world-space normal, not the camera-space shading normal.\nvec3 bn=pow(abs(vStoneWorldNormal),vec3(4.));bn/=max(.001,bn.x+bn.y+bn.z);vec3 stoneDetail=texture2D(map,vStonePos.yz*.7).rgb*bn.x+texture2D(map,vStonePos.xz*.7).rgb*bn.y+texture2D(map,vStonePos.xy*.7).rgb*bn.z;float stoneHeight=dot(stoneDetail,vec3(.333));diffuseColor.rgb*=.74+stoneDetail*1.05;float stoneMoss= smoothstep(.48,.68,stoneHeight)*smoothstep(.48,.82,max(0.,vStoneWorldNormal.y))*(1.-smoothstep(24.,42.,vStonePos.y))*vStoneMossClimate;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.68,.86,.53),stoneMoss*.42);${weather.diffuse}`);if(worldSpaceDetail)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>\n// World-space relief stays consistent as an instanced boulder changes scale.\nvec3 stoneDx=dFdx(vViewPosition),stoneDy=dFdy(vViewPosition),stoneR1=cross(stoneDy,normal),stoneR2=cross(normal,stoneDx);float stoneDet=dot(stoneDx,stoneR1);normal=normalize(abs(stoneDet)*normal-sign(stoneDet)*(.075*(dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2)));`);shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.96,stoneMoss*.35);\n${weather.roughness}`);
   };return mat;
 }
 
