@@ -223,3 +223,13 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 
 - Replaced the fixed `0.165 × scale` log lift with a geometry-aware contact correction after terrain alignment and instance scaling. The full trunk plus broken branch vertices now settle against the sampled height field, reducing floating/buried ends on curved ground; no gameplay collision or save data changes.
 - Added a curved-terrain regression for the actual fallen-log geometry and slope-aligned transform. `environment-visuals`, `foliage-geometry`, `world-art`: **71/71 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory); `git diff --check`: **PASS**. Overall goal estimate remains approximately **36%**.
+
+## Authored Breakwater PBR surfaces — 2026-10-08
+
+- Routed authored Breakwater hull/detail, cargo drum and instanced shoreline driftwood materials through the shared Tideland weathered-wood, oxidized-metal and painted-metal PBR families. Authored palette and metalness remain intact; existing grain/roughness/normal maps and wetness response are reused without adding draw calls.
+- Added a deterministic material-family resolver for the actual GLB material names, regression coverage for each Breakwater surface, and a read-only runtime QA summary. Screenshot-free local tree/world-art QA asserted all three families on loaded assets, retained 727 visible trees and 192 instanced outcrops, and reported zero browser/WebGL errors.
+- Validation: full `npm test` **565/565 PASS (58 files)**; `npm run build` PASS (existing large-chunk advisory); `npm run test:assets:world` **31 GLBs + 31 collision proxies PASS**; `TIDELAND_QA_SCREENSHOTS=0 npm run test:tree-culling` PASS; focused material/environment/world-art tests **64/64 PASS**.
+- The broader `test:world-art` rerun was stopped before scenarios because its first step waited several minutes for the public archived v0.9.1 app, which remained on its world-initialization screen. The archive returns HTTP 200, but that run did not verify archived-save QA; the prior recorded successful run remains the latest completed archive test.
+- Commits pushed to `codex/v0.14.2-water-weather`: `1e8772e`, `0369695`, `578e5f2`. Current branch head and origin branch head match at `578e5f283b5b8f787d820725a5e0f2e72e3653c6`. `main`, release tags and Pages remain unchanged; user-created ` 2` files and `artifacts/` remain untouched.
+- Overall weighted completion estimate: approximately **37%**. This is a broad estimate; terrain/atmosphere/props and remaining material/physical audits, v0.13 matched performance, and final release gates remain open.
+- Next: continue the highest-impact unresolved world-fidelity review; do not bump version or publish until the release criteria pass.
