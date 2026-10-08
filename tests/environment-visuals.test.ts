@@ -115,9 +115,13 @@ describe('environment visual building blocks',()=>{
       expect(rev6.ocean.material.uniforms.revision6.value).toBe(1);
       expect(rev6.ocean.material.vertexShader).toContain('revision6*(sin(p.x*.024');
       expect(rev6.ocean.material.vertexShader).toContain('sin(p.x*.032+p.z*.009+clock*.18)*.55');
-      expect(rev6.ocean.material.fragmentShader).toContain('if(revision6>.5&&waterDetail>.4)');
-      expect(rev6.ocean.material.fragmentShader).toContain('swellNormal=vec2(');
-      expect(rev6.ocean.material.fragmentShader).toContain('return choppy+revision6*(sin(p.x*.032+p.y*.009+clock*.18)*.55');
+      expect(rev6.ocean.material.fragmentShader).toContain('if(waterDetail>.4)choppy+=n(p*4.3+d*1.3)*.11');
+      expect(rev6.ocean.material.fragmentShader).toContain('rainGradient.x*(2.*eps)');
+      expect(rev6.ocean.material.fragmentShader).toContain('return choppy+baseWaves+revisionWaves');
+      expect(rev6.ocean.material.fragmentShader).toContain('depthBlend=smoothstep(0.,24.,waterDepth)');
+      expect(rev6.ocean.material.fragmentShader).toContain('vec3 depthWater=mix(shallows,deep,depthBlend)');
+      expect(rev6.ocean.material.fragmentShader).toContain('shorelineBlend=mix(legacyShallow,1.,revision6)');
+      expect(legacy.ocean.material.uniforms.revision6.value).toBe(0);
     }finally{legacy.dispose();rev6.dispose();}
   });
 
