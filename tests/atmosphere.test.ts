@@ -31,4 +31,15 @@ describe('world atmosphere coordinates',()=>{
       expect(fragment.match(/vec2 rainCell=floor\(p\*\.31\)/g)).toHaveLength(1);
     }finally{atmosphere.dispose();heightMap.dispose();}
   });
+  it('keeps revision-six shoreline foam close to the waterline with restrained contrast',()=>{
+    const heightMap=new THREE.DataTexture(new Uint8Array([0,0,0,255]),1,1,THREE.RGBAFormat),atmosphere=new Atmosphere(new THREE.Scene(),heightMap,720,731942,6);
+    try{
+      const fragment=atmosphere.ocean.material.fragmentShader;
+      expect(fragment).toContain('foamEdge=shore+(foamNoise-.5)*.14+sin(p.x*.34+p.y*.27+clock*.55)*.04');
+      expect(fragment).toContain('smoothstep(.04,.52,foamEdge)');
+      expect(fragment).toContain('smoothstep(.54,.82,foamNoise+sin(shore*7.-clock*1.4)*.06)');
+      expect(fragment).toContain('foam*(.38+.12*waterDetail)');
+      expect(fragment).not.toContain('smoothstep(-.12,1.05,foamEdge)');
+    }finally{atmosphere.dispose();heightMap.dispose();}
+  });
 });
