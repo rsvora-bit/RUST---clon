@@ -2497,3 +2497,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Focused weather/material + world-art tests **50/50 PASS**; full suite **592/592 PASS (58 files)**; build PASS (existing large-bundle advisory); ANGLE Metal screenshot-free `test:world-art` **118/118 PASS**, zero browser/WebGL errors.
 - Matched parent/current benchmark: **230.03 → 229.30 FPS**, **4.347 → 4.361 ms**, **263 → 263 draws**, **2,125,054 → 2,125,054 triangles**, **2,033 → 2,033 nodes**; +0.32% frame time within noise, no shader timeout/errors.
 - Next: checkpoint/push only `src/rendering/environment.ts`, `src/app/GameApp.ts`, `scripts/world-art-qa.mjs`, and these two status/checkpoint files, then continue the v0.14 visual/physical audit. Branch `codex/v0.14.2-water-weather`; preserve all unrelated untracked iCloud ` 2` files and `artifacts/`. Do not bump version, merge to main, tag, release or deploy Pages; goal remains incomplete (~56%).
+
+## Shared rain response for forest and grass — 2026-10-08
+
+- Extended the wet-surface helper for Lambert materials; PBR roughness injection is conditional on the shader chunk existing. Revision-6 generated tree foliage and shared grass materials now both receive subtle wet darkening through the same uniform while retaining instancing and wind response. No extra draw calls/triangles or persistent state.
+- Focused tests **51/51 PASS**; full `npm test` **593/593 PASS (58 files)**; build PASS (known large-bundle advisory); ANGLE Metal screenshot-free world-art QA **119/119 PASS**, zero browser/WebGL errors.
+- Parent/current benchmark: **229.51 → 229.39 FPS**, **4.357 → 4.359 ms**, **263 → 263 draws**, **2,125,054 → 2,125,054 triangles**, **2,033 → 2,033 nodes**; +0.05% frame time within noise, no compile timeout/errors.
+- Pending: inspect diff, commit and push only these shader/material/test/diagnostic plus status/checkpoint files to `codex/v0.14.2-water-weather`, then continue the larger v0.14 visual/physical work. Preserve unrelated iCloud ` 2` files and `artifacts/`. No version bump, main merge, tag, release or Pages deploy. Overall goal remains incomplete (~56%).

@@ -110,7 +110,7 @@ export function disposeMaterialTextures(material:THREE.Material):void{
   if(Array.isArray(material.userData.textures))for(const value of material.userData.textures)if(value instanceof THREE.Texture)textures.add(value);
   material.dispose();for(const texture of textures)texture.dispose();
 }
-export function addWeatherSurfaceResponse(material:THREE.MeshStandardMaterial,wetness:WeatherWetnessUniform,strength=.72,minRoughness=.46){
+export function addWeatherSurfaceResponse(material:THREE.Material,wetness:WeatherWetnessUniform,strength=.72,minRoughness=.46){
   if(material.userData.tidelandWeatherResponse)return;
   const previousCompile=material.onBeforeCompile,previousCacheKey=material.customProgramCacheKey;
   material.onBeforeCompile=function(shader,renderer){
@@ -119,7 +119,7 @@ export function addWeatherSurfaceResponse(material:THREE.MeshStandardMaterial,we
     shader.uniforms.tidelandWeatherWetness=wetness;
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float tidelandWeatherWetness;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>\nfloat tidelandWet=clamp(tidelandWeatherWetness*${strength.toFixed(3)},0.0,1.0);diffuseColor.rgb*=1.0-tidelandWet*.105;`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,max(${minRoughness.toFixed(3)},roughnessFactor*.76),tidelandWet*.72);`);
+    if(shader.fragmentShader.includes('#include <roughnessmap_fragment>'))shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,max(${minRoughness.toFixed(3)},roughnessFactor*.76),tidelandWet*.72);`);
   };
   material.customProgramCacheKey=()=>`${previousCacheKey.call(material)}|tideland-weather-response-v1-${strength.toFixed(3)}-${minRoughness.toFixed(3)}`;
   material.userData.tidelandWeatherResponse=true;material.userData.tidelandWeatherWetness=wetness;material.needsUpdate=true;

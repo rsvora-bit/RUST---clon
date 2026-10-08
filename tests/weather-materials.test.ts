@@ -42,6 +42,16 @@ describe('weather surface response',()=>{
     expect(shader.uniforms.tidelandWeatherWetness?.value).toBe(.8);
   });
 
+  it('applies live diffuse wetness to Lambert foliage without injecting absent PBR chunks',()=>{
+    const material=new THREE.MeshLambertMaterial(),wetness={value:0};addWeatherSurfaceResponse(material,wetness,.54,.66);
+    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'',fragmentShader:'#include <common>\n#include <color_fragment>'};
+    material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);
+    expect(shader.uniforms.tidelandWeatherWetness?.value).toBe(0);
+    expect(shader.fragmentShader).toContain('tidelandWeatherWetness*0.540');
+    expect(shader.fragmentShader).toContain('diffuseColor.rgb*=1.0-tidelandWet*.105');
+    expect(shader.fragmentShader).not.toContain('roughnessFactor');
+  });
+
   it('does not install the shader hook twice',()=>{
     const material=new THREE.MeshStandardMaterial(),wetness={value:.5};
     addWeatherSurfaceResponse(material,wetness);

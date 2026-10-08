@@ -189,6 +189,7 @@ export class Environment {
   get rainPuddlePositions():Vec3[]{return this.rainPuddleLocations.map(point=>({...point}));}
   get rainPuddleOpacity():number{return this.rainPuddleMaterial?.opacity??0;}
   get treeFoliageWeatherResponse():boolean{return this.generatedTreeFoliageMaterial?.userData.tidelandWeatherResponse===true;}
+  get grassWeatherResponse():boolean{return this.grassMaterials.length>0&&this.grassMaterials.every(material=>material.userData.tidelandWeatherResponse===true);}
   get understoryLocations():{name:string;positions:Vec3[];visiblePositions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
     const read=(mesh:THREE.InstancedMesh,count:number)=>Array.from({length:count},(_,i)=>{mesh.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);return{x:position.x,y:position.y,z:position.z};});
@@ -681,7 +682,7 @@ export class Environment {
     const chunkSize=this.worldRevision>=6?64:40;
     for(const color of (revision6?[0xffffff]:[0xffffff,0xd5c39a])){
       const mat=new THREE.MeshLambertMaterial({color,vertexColors:true,side:THREE.DoubleSide});
-      addInstanceWindResponse(mat,this.windUniform,this.windStrengthUniform,1,.13);
+      addInstanceWindResponse(mat,this.windUniform,this.windStrengthUniform,1,.13);addWeatherSurfaceResponse(mat,this.surfaceWetness,.54,.66);
       this.grassMaterials.push(mat);this.materials.add(mat);
     }
     const total=this.terrain.generation===5?(this.worldRevision>=6?84000:68000):16000;
