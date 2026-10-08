@@ -239,7 +239,11 @@ export class WorldSurvival {
         for(let i=0;i<8;i++){const seam=this.box(g,-2.7+i*.7,1.31,-.73,.035,.018,1.38,this.rust);seam.name='Breakwater deck seam';}
         for(const [x,z] of [[-3.15,-.35],[-2.3,.48],[-1.2,-.5],[.1,.54],[2.5,-.5],[3.35,.42]] as const){const rib=this.box(g,x,.62,z,.09,1.28,.09,this.metal);rib.rotation.z=(x<0?-.13:.13)+(z<0?.04:-.04);rib.name='Breakwater exposed hull rib';}
         for(const x of [-3.15,-2.55,2.8,3.45]){const rail=this.box(g,x,1.48,.02,.075,.72,.075,this.rust);rail.rotation.z=x<0?-.19:.14;rail.name='Breakwater torn rail';}
-        const crate=this.box(g,revisionSixBridge?.45:-2.0,1.52,revisionSixBridge?-.65:-.1,1.05,.72,.82,this.paint);crate.name='Breakwater tilted equipment crate';crate.rotation.z=.17;crate.rotation.y=-.13;
+        // Revision 6 sits on the raised deck plate (top y=1.29). Account for
+        // the crate's tilt when placing its center so the lower corner rests
+        // on the deck instead of being visibly buried in it. Legacy placement
+        // remains unchanged for earlier revisions.
+        const crate=this.box(g,revisionSixBridge?.45:-2.0,revisionSixBridge?2.18:1.52,revisionSixBridge?-.65:-.1,1.05,.72,.82,this.paint);crate.name='Breakwater tilted equipment crate';crate.rotation.z=.17;crate.rotation.y=-.13;
         for(let i=0;i<7;i++){const corrugation=this.box(g,2.25+i*.13,1.47,-.77,.035,.68,.035,this.metal);corrugation.name='Breakwater container ribs';}
         for(const [x,z] of [[-4.3,-.7],[-3.7,1.0],[3.8,-.95],[4.25,.84]] as const){const debris=this.box(g,x,.16,z,.85,.18,.22,this.wood);debris.rotation.y=(x+z)*.12;debris.rotation.z=(x<0?.1:-.14);debris.name='Breakwater shore debris';}
         const cable=new T.Mesh(new T.CylinderGeometry(.018,.024,4.2,5),this.wood);cable.name='Breakwater slack mooring cable';cable.position.set(-3.5,1.05,-.38);cable.rotation.set(.24,.18,Math.PI/2.8);g.add(cable);
@@ -413,7 +417,7 @@ export class WorldSurvival {
         );
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
           // The tilted deck crate is solid salvage, not a walk-through visual prop.
-          result.push({position:{x:p.position.x+.45,y:p.position.y+1.52,z:p.position.z-.65},halfExtents:{x:1.05,y:.72,z:.82},rotation:-.13,rotationZ:.17});
+          result.push({position:{x:p.position.x+.45,y:p.position.y+2.18,z:p.position.z-.65},halfExtents:{x:1.05,y:.72,z:.82},rotation:-.13,rotationZ:.17});
           // The exposed cargo derrick is a solid landmark. Keep its collider
           // aligned with the rendered leaning mast; legacy wreck layouts stay intact.
           result.push({position:{x:p.position.x+.72,y:p.position.y+8.75,z:p.position.z+.36},halfExtents:{x:.15,y:8.4,z:.15},rotationZ:-.11});

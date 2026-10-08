@@ -258,3 +258,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added an oriented Rapier proxy for the tilted Breakwater equipment crate and moved only its Revision-6 visual placement to the open starboard/aft deck. The original Revision-5 placement and collider layout are unchanged.
 - Actual character-controller movement now blocks against the Rev6 crate. Regression checks also confirm that the revised position keeps the wheelhouse doorway open and the coastal boarding route traversable. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory).
 - Estimated overall completion: approximately **41%**. A previously walk-through solid deck prop is now physically consistent without sacrificing access; the remaining visual overhaul and final release gates remain incomplete.
+
+## Revision-6 Breakwater crate grounding correction — 2026-10-08
+
+- Rechecked the crate against the Revision-6 deck plate after adding its collider. The deck top is at local y=1.29; because the crate is tilted, its center must be at y=2.18 for its lowest corner to rest on the plate. Corrected the Rev6 visual and collision together; the Revision-5 layout remains unchanged.
+- Updated the Rapier approach test to stand on the actual raised deck plane and assert the visible marker and collider share the grounded placement. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory).
+- Overall completion remains approximately **41%**; this fixes one physical inconsistency and does not close the broader visual, performance or release requirements.
