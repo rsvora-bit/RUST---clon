@@ -233,3 +233,10 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Commits pushed to `codex/v0.14.2-water-weather`: `1e8772e`, `0369695`, `578e5f2`. Current branch head and origin branch head match at `578e5f283b5b8f787d820725a5e0f2e72e3653c6`. `main`, release tags and Pages remain unchanged; user-created ` 2` files and `artifacts/` remain untouched.
 - Overall weighted completion estimate: approximately **37%**. This is a broad estimate; terrain/atmosphere/props and remaining material/physical audits, v0.13 matched performance, and final release gates remain open.
 - Next: continue the highest-impact unresolved world-fidelity review; do not bump version or publish until the release criteria pass.
+
+## Highland Relay lattice collision completion — 2026-10-08
+
+- Revision-6 Highland Relay now has ten thin Z-tilted collision boxes aligned to the visible diagonal tower braces. Legacy revisions keep the previous collider set. The existing three leaned tower-leg colliders and side control-cabinet collider are unchanged.
+- Regression coverage checks all ten brace proxy dimensions/angles, Rapier blocks the player at the central lattice, and a separate approach still reaches the side cabinet. The browser QA continues to open the generated locked-cache interaction through its access card.
+- Validation: `tests/world-art.test.ts`, `tests/collision-bounds.test.ts`, `tests/debug-bounds.test.ts` **66/66 PASS**; `npm run build` PASS (existing chunk-size advisory); `npm run test:highland-relay` **6/6 PASS**, zero browser/application errors; `git diff --check` PASS. Browser QA ran without screenshots; the Vite server was stopped.
+- Overall weighted completion estimate: approximately **38%**. Asset/physical inspection advanced, but broad visual implementation, matched v0.13 performance, final QA, and release gates remain outstanding. Main, tags and Pages are unchanged.

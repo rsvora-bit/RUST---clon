@@ -435,6 +435,14 @@ export class WorldSurvival {
           {position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z+1.55},halfExtents:{x:.08,y:5.2,z:.08}},
           {position:{x:p.position.x+2.45,y:p.position.y+.74,z:p.position.z+.15},halfExtents:{x:.44,y:.67,z:.38}},
         );
+        if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+          // These ten visible X-braces are solid steel members; keeping their
+          // tilted thin proxies prevents walking through the tower lattice.
+          for(let y=1.5;y<10;y+=2.1)for(const direction of [-1,1])result.push({
+            position:{x:p.position.x,y:p.position.y+y,z:p.position.z},
+            halfExtents:{x:1.6,y:.0375,z:.0375},rotationZ:direction*(.35+(y%2)*.24),
+          });
+        }
       }
       else if(p.kind===0){
         result.push({position:{x:p.position.x,y:p.position.y+1.2,z:p.position.z-1.6},halfExtents:{x:2.2,y:1.2,z:.12}});

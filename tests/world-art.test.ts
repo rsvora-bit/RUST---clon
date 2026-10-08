@@ -183,17 +183,29 @@ describe('v0.9.1 world art stabilization',()=>{
     const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),poi=layout.pois.find(entry=>entry.kind===7)!,env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
     try{
       const relayBoxes=world.collisionBoxes().filter(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<4);
-      expect(relayBoxes).toHaveLength(4);
-      expect(relayBoxes.map(box=>box.position)).toEqual([
+      expect(relayBoxes).toHaveLength(14);
+      expect(relayBoxes.slice(0,4).map(box=>box.position)).toEqual([
         {x:poi.position.x-1.45,y:poi.position.y+5.2,z:poi.position.z-1},
         {x:poi.position.x+1.45,y:poi.position.y+5.2,z:poi.position.z-1},
         {x:poi.position.x,y:poi.position.y+5.2,z:poi.position.z+1.55},
         {x:poi.position.x+2.45,y:poi.position.y+.74,z:poi.position.z+.15},
       ]);
-      expect(relayBoxes.map(box=>box.rotationZ??0)).toEqual([-.19,.19,0,0]);
+      expect(relayBoxes.slice(0,4).map(box=>box.rotationZ??0)).toEqual([-.19,.19,0,0]);
+      const braces=relayBoxes.slice(4);expect(braces).toHaveLength(10);expect(braces.every(box=>box.halfExtents.x===1.6&&box.halfExtents.y===.0375&&box.halfExtents.z===.0375)).toBe(true);
+      expect(braces.slice(0,2).map(box=>box.rotationZ)).toEqual([-.71,.71]);
       const approaches=Array.from({length:16},(_,i)=>({x:Math.cos(i*Math.PI/8),z:Math.sin(i*Math.PI/8)})).map(direction=>({...direction,height:terrain.heightAt(poi.position.x+direction.x*10,poi.position.z+direction.z*10)})).sort((a,b)=>b.height-a.height),approach=approaches[0]!,target={x:poi.position.x+3.55,z:poi.position.z+.15},start={x:poi.position.x+approach.x*10,z:poi.position.z+approach.z*10};
       await initPhysics();const physics=new PhysicsWorld(terrain.geometry,world.collisionBoxes(),{...start,y:terrain.heightAt(start.x,start.z)});let vertical=0,grounded=false;
       try{for(let frame=0;frame<600;frame++){const p=physics.position(),dx=target.x-p.x,dz=target.z-p.z,distance=Math.hypot(dx,dz),speed=distance>1?4.4:0;if(grounded)vertical=-1.2;else vertical-=19/60;grounded=physics.move({x:distance>1?dx/distance*speed/60:0,y:vertical/60,z:distance>1?dz/distance*speed/60:0});}expect(Math.hypot(physics.position().x-(poi.position.x+2.45),physics.position().z-(poi.position.z+.15))).toBeLessThan(3.8);expect(physics.position().y).toBeGreaterThan(poi.position.y-1);}finally{physics.dispose();}
+    }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
+  });
+  it('blocks Highland Relay lattice braces while retaining the open cabinet approach',async()=>{
+    const seed=731942,terrain=new IslandTerrain(seed,5,6),layout=generateWorldLayout(terrain,terrain.spawn,[],seed,6),poi=layout.pois.find(entry=>entry.kind===7)!,env={terrain,spawn:terrain.spawn,colliders:[],worldRevision:6,layout,heightAt:(x:number,z:number)=>terrain.heightAt(x,z)} as unknown as import('../src/rendering/environment').Environment,world=new WorldSurvival(env,new THREE.Scene(),seed);
+    try{
+      await initPhysics();const braces=world.collisionBoxes().filter(box=>Math.hypot(box.position.x-poi.position.x,box.position.z-poi.position.z)<2&&box.halfExtents.x===1.6),start={x:poi.position.x,z:poi.position.z-4},physics=new PhysicsWorld(terrain.geometry,world.collisionBoxes(),{x:start.x,y:terrain.heightAt(start.x,start.z),z:start.z});let grounded=false,vertical=0;
+      try{for(let frame=0;frame<240;frame++){if(grounded)vertical=-1.2;else vertical-=19/60;grounded=physics.move({x:0,y:vertical/60,z:.04});}expect(braces).toHaveLength(10);expect(physics.position().z).toBeLessThan(poi.position.z-.3);expect(physics.position().z).toBeGreaterThan(poi.position.z-1);
+        const approach={x:poi.position.x+4,z:poi.position.z+.15},side=new PhysicsWorld(terrain.geometry,world.collisionBoxes(),{x:approach.x,y:terrain.heightAt(approach.x,approach.z),z:approach.z});let sideGrounded=false,sideVertical=0;
+        try{for(let frame=0;frame<600;frame++){if(sideGrounded)sideVertical=-1.2;else sideVertical-=19/60;const p=side.position(),dx=poi.position.x+3.55-p.x,dz=poi.position.z+.15-p.z,distance=Math.hypot(dx,dz);sideGrounded=side.move({x:distance>1?dx/distance*4.4/60:0,y:sideVertical/60,z:distance>1?dz/distance*4.4/60:0});}expect(Math.hypot(side.position().x-(poi.position.x+2.45),side.position().z-(poi.position.z+.15))).toBeLessThan(3.8);}finally{side.dispose();}
+      }finally{physics.dispose();}
     }finally{world.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
   it('keeps the revision-six Breakwater crane readable as a distant coastal landmark',()=>{
