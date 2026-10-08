@@ -67,23 +67,28 @@ describe('weather surface response',()=>{
     const legacy=stoneMaterial(),wetness={value:.35},revision6=stoneMaterial(0xb0ada0,true,wetness);
     try{
       const oldShader=compile(legacy),newShader=compile(revision6);
-      expect(oldShader.vertexShader).toContain('vStonePos=position;vStoneNormal=normal;');
+      expect(oldShader.vertexShader).toContain('vStonePos=position;vStoneNormal=normal;vStoneWorldNormal=normal;');
       expect(oldShader.vertexShader).not.toContain('stoneWorldPosition');
       expect(newShader.vertexShader).toContain('mat3 stoneViewRotation=mat3(viewMatrix)');
       expect(newShader.vertexShader).toContain('dot(stoneViewRotation[2],transformedNormal)');
       expect(newShader.vertexShader).toContain('stoneWorldPosition=instanceMatrix*stoneWorldPosition');
       expect(newShader.vertexShader).toContain('vStonePos=(modelMatrix*stoneWorldPosition).xyz');
+      expect(newShader.vertexShader).toContain('vec3 stoneWorldNormal=objectNormal;');
+      expect(newShader.vertexShader).toContain('stoneWorldNormal=mat3(instanceMatrix)*stoneWorldNormal;');
+      expect(newShader.vertexShader).toContain('vStoneWorldNormal=normalize(mat3(modelMatrix)*stoneWorldNormal);');
       expect(newShader.uniforms.surfaceWetness?.value).toBe(.35);
       expect(legacy.normalMap).toBeTruthy();
       expect(revision6.normalMap).toBeNull();
       expect((revision6.userData.textures as THREE.Texture[]).length).toBe(2);
       expect(newShader.fragmentShader).toContain('texture2D(map,vStonePos.yz*.7)');
+      expect(newShader.fragmentShader).toContain('vec3 bn=pow(abs(vStoneWorldNormal),vec3(4.))');
+      expect(newShader.fragmentShader).not.toContain('vec3 bn=pow(abs(vStoneNormal),vec3(4.))');
       expect(oldShader.fragmentShader).not.toContain('stoneDx');
       expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
       expect(newShader.fragmentShader).toContain('stoneDx=dFdx(vViewPosition)');
       expect(newShader.fragmentShader).toContain('dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2');
-      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v2-world-weather');
-      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v2-local-static');
+      expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v3-world-weather');
+      expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v3-local-static');
     }finally{
       for(const material of [legacy,revision6])for(const texture of material.userData.textures as THREE.Texture[])texture.dispose();
       vi.unstubAllGlobals();
