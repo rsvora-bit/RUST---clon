@@ -266,3 +266,8 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Overall completion remains approximately **41%**; this fixes one physical inconsistency and does not close the broader visual, performance or release requirements.
 - Continued the same Revision-6 Breakwater audit: grounded the exhaust stack/cap on the raised deck and added collision proxies for both, the two mooring bollards and four torn rails. Legacy revision geometry and collider sets remain unchanged; regression coverage checks the proxy count, exhaust alignment and actual Rapier blocking at the stack.
 - Final block validation: `npm test` **566/566 PASS** (58 files), `npm run build` **PASS** (existing >500 kB Vite chunk advisory), `git diff --check` PASS. This extends the physical consistency audit but leaves the terrain/material/weather/performance and release work open; overall estimate moves to approximately **42%**.
+
+## Breakwater cargo collision dimensions — 2026-10-08
+
+- The two visible cargo containers used full dimensions `3.1 × 1.5 × 1.64 m`, while their collision half-extents covered only about half that size. Matched the oriented proxies to each actual box so the top, long sides and ends are all solid. This preserves their deterministic POI positions and save data; the existing four-side Rapier movement regression now exercises the model-sized bounds.
+- Focused `tests/world-art.test.ts`: **38/38 PASS**; full `npm test`: **566/566 PASS** (58 files); `npm run build`: **PASS** (existing Vite large-chunk advisory); `git diff --check`: PASS. This is another targeted physical correction, not completion of the remaining material, terrain, weather, performance or release requirements. Estimated overall completion: approximately **43%**.

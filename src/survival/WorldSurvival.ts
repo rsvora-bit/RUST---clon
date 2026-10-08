@@ -409,11 +409,11 @@ export class WorldSurvival {
       }else if(p.kind===5){
         result.push(...this.generatedWreckSides,...this.generatedWreckDetailCollisions);
         result.push({position:{x:p.position.x-.15,y:p.position.y+.34,z:p.position.z},halfExtents:{x:3.7,y:.38,z:.78}});
-        // Two separate cargo proxies follow the visible containers instead of
-        // leaving their outer ends exposed beyond one offset shared box.
+        // Two separate cargo proxies match the visible container dimensions;
+        // the former half-sized boxes let the player enter solid cargo walls.
         result.push(
-          {position:{x:p.position.x+1.05,y:p.position.y+1.08,z:p.position.z-.35},halfExtents:{x:.82,y:.39,z:.45},rotation:-.04},
-          {position:{x:p.position.x+2.25,y:p.position.y+1.08,z:p.position.z+.35},halfExtents:{x:.82,y:.39,z:.45},rotation:.06},
+          {position:{x:p.position.x+1.05,y:p.position.y+1.08,z:p.position.z-.35},halfExtents:{x:1.55,y:.75,z:.82},rotation:-.04},
+          {position:{x:p.position.x+2.25,y:p.position.y+1.08,z:p.position.z+.35},halfExtents:{x:1.55,y:.75,z:.82},rotation:.06},
         );
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
           // The tilted deck crate is solid salvage, not a walk-through visual prop.
