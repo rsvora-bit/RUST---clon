@@ -412,6 +412,9 @@ export class WorldSurvival {
           {position:{x:p.position.x+2.25,y:p.position.y+1.08,z:p.position.z+.35},halfExtents:{x:.82,y:.39,z:.45},rotation:.06},
         );
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
+          // The exposed cargo derrick is a solid landmark. Keep its collider
+          // aligned with the rendered leaning mast; legacy wreck layouts stay intact.
+          result.push({position:{x:p.position.x+.72,y:p.position.y+8.75,z:p.position.z+.36},halfExtents:{x:.15,y:8.4,z:.15},rotationZ:-.11});
           result.push({position:{x:p.position.x-.25,y:p.position.y+1.23,z:p.position.z},halfExtents:{x:2.55,y:.06,z:.725}});
           for(const x of [-1.955,-1.005])result.push({position:{x:p.position.x+x,y:p.position.y+1.44,z:p.position.z+.52},halfExtents:{x:.125,y:.15,z:.04}},{position:{x:p.position.x+x,y:p.position.y+2.60,z:p.position.z+.52},halfExtents:{x:.125,y:.54,z:.04}});
           result.push({position:{x:p.position.x-1.48,y:p.position.y+2.20,z:p.position.z-.42},halfExtents:{x:.6,y:.91,z:.04}},{position:{x:p.position.x-2.04,y:p.position.y+2.20,z:p.position.z+.04},halfExtents:{x:.04,y:.91,z:.48}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.34},halfExtents:{x:.04,y:.91,z:.24}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z-.005},halfExtents:{x:.04,y:.91,z:.11}},{position:{x:p.position.x-.92,y:p.position.y+2.20,z:p.position.z+.415},halfExtents:{x:.04,y:.91,z:.13}},{position:{x:p.position.x-1.48,y:p.position.y+3.20,z:p.position.z+.04},halfExtents:{x:.74,y:.065,z:.59}});

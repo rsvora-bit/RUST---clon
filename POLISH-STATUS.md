@@ -240,3 +240,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Regression coverage checks all ten brace proxy dimensions/angles, Rapier blocks the player at the central lattice, and a separate approach still reaches the side cabinet. The browser QA continues to open the generated locked-cache interaction through its access card.
 - Validation: `tests/world-art.test.ts`, `tests/collision-bounds.test.ts`, `tests/debug-bounds.test.ts` **66/66 PASS**; `npm run build` PASS (existing chunk-size advisory); `npm run test:highland-relay` **6/6 PASS**, zero browser/application errors; `git diff --check` PASS. Browser QA ran without screenshots; the Vite server was stopped.
 - Overall weighted completion estimate: approximately **38%**. Asset/physical inspection advanced, but broad visual implementation, matched v0.13 performance, final QA, and release gates remain outstanding. Main, tags and Pages are unchanged.
+
+## Revision-6 Breakwater derrick collision — 2026-10-08
+
+- Added a Revision-6-only cuboid proxy for the visible leaning Breakwater cargo derrick mast. The proxy follows the rendered mast's `-0.11` Z rotation and full 16.8 m length, closing the walk-through gap without changing legacy revisions or save data.
+- Added a Rapier movement regression proving the player is blocked at the mast, plus updated the Breakwater proxy-count assertion. `tests/world-art.test.ts`: **38/38 PASS**; `npm run build`: **PASS** (existing Vite large-chunk advisory).
+- Estimated overall goal completion: approximately **39%**. The remaining asset/material audit and most terrain, rocks, vegetation, water, atmosphere, weather, performance comparison and final release checks are still outstanding. No release/tag/Pages changes.
