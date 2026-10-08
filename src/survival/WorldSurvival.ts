@@ -401,6 +401,7 @@ export class WorldSurvival {
         if(this.env.terrain.generation===5&&this.env.worldRevision>=6){
           result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z-.89},halfExtents:{x:1.225,y:.615,z:.06}},{position:{x:p.position.x-1.30,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x+.40,y:p.position.y+.78,z:p.position.z+1.13},halfExtents:{x:.375,y:.615,z:.06}},{position:{x:p.position.x-.45,y:p.position.y+2.12,z:p.position.z+.12},halfExtents:{x:1.325,y:.085,z:1.425}});
           result.push({position:{x:p.position.x-.48,y:p.position.y+.35,z:p.position.z+.12},halfExtents:{x:.46,y:.35,z:.23}});
+          result.push({position:{x:p.position.x+1.72,y:p.position.y+2.25,z:p.position.z+.38},halfExtents:{x:.11,y:2.1,z:.11}});
         }else result.push({position:{x:p.position.x-.45,y:p.position.y+.78,z:p.position.z+.12},halfExtents:{x:1.25,y:.7,z:1.02}});
       }else if(p.kind===5){
         result.push(...this.generatedWreckSides,...this.generatedWreckDetailCollisions);

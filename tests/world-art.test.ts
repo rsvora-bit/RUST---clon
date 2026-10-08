@@ -74,13 +74,15 @@ describe('v0.9.1 world art stabilization',()=>{
       for(const name of ['Stormwatch field log desk','Stormwatch field desk leg','Stormwatch rain log clipboard','Stormwatch rain log trace','Stormwatch clipboard clamp'])expect(current.group.getObjectByName(name)).toBeTruthy();
       for(const name of ['Stormwatch entry left wall','Stormwatch entry right wall','Stormwatch entry jamb'])expect(current.group.getObjectByName(name)).toBeTruthy();
       expect(legacy.group.getObjectByName('Stormwatch rain log clipboard')).toBeFalsy();
-      expect(legacy.collisionBoxes()).toHaveLength(1);expect(current.collisionBoxes()).toHaveLength(5);
+      expect(legacy.collisionBoxes()).toHaveLength(1);expect(current.collisionBoxes()).toHaveLength(6);
       expect(current.collisionBoxes()).toContainEqual({position:{x:poi.position.x-.48,y:poi.position.y+.35,z:poi.position.z+.12},halfExtents:{x:.46,y:.35,z:.23}});
+      const mastBox=current.collisionBoxes().find(box=>box.position.x===poi.position.x+1.72&&box.position.z===poi.position.z+.38);expect(mastBox).toMatchObject({position:{x:poi.position.x+1.72,y:poi.position.y+2.25,z:poi.position.z+.38},halfExtents:{x:.11,y:2.1,z:.11}});
       expect(validateGameState(state)).toBe(true);
       await initPhysics();const floor=new THREE.PlaneGeometry(20,20,2,2);floor.rotateX(-Math.PI/2);floor.translate(poi.position.x,poi.position.y,poi.position.z);
       const enter=(boxes:import('../src/physics/PhysicsWorld').CollisionBox[])=>{const physics=new PhysicsWorld(floor,boxes,{x:poi.position.x-.45,y:poi.position.y,z:poi.position.z+2.5});try{for(let step=0;step<20;step++)physics.move({x:0,y:0,z:-.12});return physics.position().z;}finally{physics.dispose();}};
       expect(enter(current.collisionBoxes())).toBeGreaterThan(poi.position.z+.55);expect(enter(current.collisionBoxes())).toBeLessThan(poi.position.z+.9);
       expect(enter(legacy.collisionBoxes())).toBeGreaterThan(poi.position.z+1.3);
+      const approachMast=new PhysicsWorld(floor,[mastBox!],{x:poi.position.x+4.2,y:poi.position.y,z:poi.position.z+.38});try{for(let step=0;step<32;step++)approachMast.move({x:-.1,y:0,z:0});expect(approachMast.position().x).toBeGreaterThan(poi.position.x+1.9);expect(approachMast.position().x).toBeLessThan(poi.position.x+2.6);}finally{approachMast.dispose();}
       floor.dispose();
     }finally{current.dispose();legacy.dispose();terrain.geometry.dispose();terrain.heightTexture.dispose();}
   });
