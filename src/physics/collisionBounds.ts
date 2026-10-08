@@ -61,6 +61,14 @@ export function collisionBoundsFromLodObjects(levels:readonly THREE.Object3D[],p
   return bounds.isEmpty()?null:collisionBoundsFromBox(bounds,padding);
 }
 
+/** Enclose every LOD in its shared parent space, preserving the asset's yaw instead of inflating a rotated model into a world AABB. */
+export function collisionBoundsFromLodObjectsOriented(levels:readonly THREE.Object3D[],padding=.06):CollisionBounds|null{
+  if(!levels.length)return null;
+  const root=levels[0]!.parent??levels[0]!;root.updateWorldMatrix(true,true);const inverseRoot=root.matrixWorld.clone().invert(),bounds=new THREE.Box3().makeEmpty();
+  for(const level of levels){level.updateWorldMatrix(true,true);level.traverse(object=>{if(!(object instanceof THREE.Mesh))return;const geometry=object.geometry;if(!geometry.boundingBox)geometry.computeBoundingBox();if(geometry.boundingBox)bounds.union(new THREE.Box3().copy(geometry.boundingBox).applyMatrix4(inverseRoot.clone().multiply(object.matrixWorld)));});}
+  return bounds.isEmpty()?null:collisionBoundsFromLocalBox(bounds,root.matrixWorld,padding);
+}
+
 /** Build a yaw-oriented proxy from upright local bounds and their instance transform. */
 export function collisionBoundsFromLocalBox(bounds:THREE.Box3,transform:THREE.Matrix4,padding=.06):CollisionBounds {
   const worldBounds=new THREE.Box3().copy(bounds).applyMatrix4(transform),localCenter=bounds.getCenter(new THREE.Vector3()),center=localCenter.clone().applyMatrix4(transform),position=new THREE.Vector3(),quaternion=new THREE.Quaternion(),scale=new THREE.Vector3();

@@ -14,7 +14,7 @@ import {groundTexture} from '../world/materials';
 import {surfaceClimate} from '../world/climate';
 import {createRadioSignalEvent,updateWashedAshoreEvent} from './events';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {collisionBoundsFromLodObjects,longHullSideCollisionsFromLods} from '../physics/collisionBounds';
+import {collisionBoundsFromLodObjectsOriented,longHullSideCollisionsFromLods} from '../physics/collisionBounds';
 
 export interface Landmark {id:string;name:string;position:Vec3;kind:number}
 const NAMES=['Coastal utility shack','Collapsed relay site','Quarry outpost','Overgrown camp','Stormwatch Station','Breakwater Cargo Wreck','Tidal Survey Pier','Highland Relay'];
@@ -359,7 +359,7 @@ export class WorldSurvival {
     if(!this.attachLodAsset(asset,parent,name,position,scale,yaw,distances))return false;
     parent.updateWorldMatrix(true,true);const lod=parent.getObjectByName(name);
     if(!(lod instanceof T.LOD))return false;
-    const collision=collisionBoundsFromLodObjects(lod.levels.map(level=>level.object));if(collision)this.generatedWreckDetailCollisions.push(collision);return !!collision;
+    const collision=collisionBoundsFromLodObjectsOriented(lod.levels.map(level=>level.object));if(collision)this.generatedWreckDetailCollisions.push(collision);return !!collision;
   }
   advanceEvents(state:GameState){return updateWashedAshoreEvent(state,this.env.terrain.generation,sequence=>this.findEventCoast(state,sequence));}
   triggerRadioSignal(state:GameState,source:Vec3){

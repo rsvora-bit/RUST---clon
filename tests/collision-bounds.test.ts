@@ -1,6 +1,6 @@
 import { beforeAll,describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromLodObjects, collisionBoundsFromObject, longHullSideCollisions, longHullSideCollisionsFromLods, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
+import { collisionBoundsFromBox, collisionBoundsFromGeometries, collisionBoundsFromGeometry, collisionBoundsFromLodObjects, collisionBoundsFromLodObjectsOriented, collisionBoundsFromObject, longHullSideCollisions, longHullSideCollisionsFromLods, treeAssetCollision, treeTrunkCollision } from '../src/physics/collisionBounds';
 import {initPhysics,PhysicsWorld} from '../src/physics/PhysicsWorld';
 import {rockGeometry} from '../src/world/models';
 
@@ -95,6 +95,17 @@ describe('visual collision bounds', () => {
     const bounds=collisionBoundsFromLodObjects([near,far],.1)!;
     expect(bounds.position).toEqual({x:13.25,y:3,z:-7.5});expect(bounds.halfExtents).toEqual({x:2.35,y:1.1,z:1.6});
     nearMesh.geometry.dispose();farMesh.geometry.dispose();
+  });
+
+  it('keeps rotated authored LOD proxies aligned to their visible long axis',()=>{
+    const root=new THREE.Group();root.position.set(7,1.1,-5);root.rotation.y=.58;const levels=[new THREE.Group(),new THREE.Group(),new THREE.Group()],geometries=[new THREE.BoxGeometry(4,2,.9),new THREE.BoxGeometry(4.2,2,1),new THREE.BoxGeometry(4.1,2.1,1.1)];
+    levels.forEach((level,index)=>{level.position.z=index*.04;level.add(new THREE.Mesh(geometries[index]!));root.add(level);});root.updateMatrixWorld(true);
+    const axisAligned=collisionBoundsFromLodObjects(levels)!,oriented=collisionBoundsFromLodObjectsOriented(levels)!;
+    expect(oriented.rotation).toBeCloseTo(.58);expect(oriented.halfExtents.x).toBeLessThan(axisAligned.halfExtents.x*1.10);expect(oriented.halfExtents.z).toBeLessThan(axisAligned.halfExtents.z*.78);
+    const inverseYaw=new THREE.Matrix4().makeRotationY(-.58),origin=new THREE.Vector3(oriented.position.x,0,oriented.position.z),point=new THREE.Vector3();
+    for(const level of levels)for(const child of level.children){const geometry=(child as THREE.Mesh).geometry,positions=geometry.getAttribute('position');for(let index=0;index<positions.count;index++){point.fromBufferAttribute(positions,index).applyMatrix4(child.matrixWorld).sub(origin).applyMatrix4(inverseYaw);expect(Math.abs(point.x)).toBeLessThanOrEqual(oriented.halfExtents.x+.03);expect(Math.abs(point.z)).toBeLessThanOrEqual(oriented.halfExtents.z+.03);}}
+    const floor=new THREE.PlaneGeometry(50,50,1,1);floor.rotateX(-Math.PI/2);const axis={x:Math.sin(.58),z:Math.cos(.58)},physics=new PhysicsWorld(floor,[oriented],{x:oriented.position.x+axis.x*(oriented.halfExtents.z+2),y:0,z:oriented.position.z+axis.z*(oriented.halfExtents.z+2)});
+    try{for(let step=0;step<40;step++)physics.move({x:-axis.x*.12,y:0,z:-axis.z*.12});const player=physics.position(),depth=(player.x-oriented.position.x)*axis.x+(player.z-oriented.position.z)*axis.z;expect(depth).toBeGreaterThan(oriented.halfExtents.z-.42);expect(depth).toBeLessThan(oriented.halfExtents.z+.48);}finally{physics.dispose();floor.dispose();geometries.forEach(geometry=>geometry.dispose());}
   });
 
   it('blocks the player at the protruding face of the farthest visual LOD',()=>{
