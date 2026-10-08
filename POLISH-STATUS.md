@@ -201,3 +201,9 @@ Run browser checks while the dev server is active. The scripts default to macOS 
 - Added a regression test for deterministic, readable temperate/arid/alpine tint values. `tests/rock-geometry.test.ts` + `tests/terrain-materials.test.ts`: **17/17 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory).
 - Asset package check: `npm run test:assets:world` **PASS**, 31 GLBs and 31 collision proxy sidecars, all LODs present, files under 512 KiB.
 - This is one material correction; broad visual inspection and the rest of the asset/material, environment, performance and release gates remain open. Estimated overall completion: **about 33%**. Branch remains `codex/v0.14.2-water-weather`; no release, tag or Pages changes.
+
+## Revision-6 world-space rock relief — 2026-10-08
+
+- Added restrained derivative-based micro-relief for Revision-6 stone using the existing world-space triplanar rock albedo height. Large/small instanced outcrops now keep relief frequency tied to world position instead of stretching their local-UV normal detail with instance scale. The path adds no texture, draw call, or material and leaves legacy stone shader normals unchanged.
+- `tests/weather-materials.test.ts` + `tests/rock-geometry.test.ts`: **13/13 PASS**; `npm run build`: **PASS** (existing Vite chunk-size advisory). Headless WebGL SwiftShader New Game reached `playing` with **zero browser/page errors**. No screenshots captured; temporary Vite server stopped.
+- Combined with the prior outcrop tint fix, current broad completion estimate is **about 34%**. Wider material/asset audit, world visuals, performance comparisons, full regression QA, and release gates remain open.

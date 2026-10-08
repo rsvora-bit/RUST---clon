@@ -2268,3 +2268,10 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Files changed: `src/world/materials.ts`, `src/rendering/environment.ts`, `tests/rock-geometry.test.ts`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`.
 - Validation: targeted rock/terrain material tests **17/17 PASS**; `npm run build` **PASS**; `npm run test:assets:world` **PASS** (31 GLBs + 31 proxy sidecars, all three LODs and within size limit).
 - Next: inspect additional surface/material issues with targeted evidence, then proceed through the broader asset/physical audit, environment visuals, and final full QA. Current weighted estimate is **about 33%**; release gates remain incomplete. Keep working on the existing branch and leave user-created untracked ` 2` files and `artifacts/` untouched.
+
+## v0.14 continuation — Revision-6 rock relief checkpoint — 2026-10-08
+
+- Added low-amplitude derivative relief for Revision-6 stone using the existing world-space triplanar albedo sample. This keeps microdetail consistent as instanced boulders vary in scale without new textures or draw calls; legacy stone keeps its existing shader path.
+- Validation: focused rock/material tests **13/13 PASS**; production build **PASS** (existing chunk-size advisory); headless SwiftShader New Game reached gameplay with zero page/console errors. No screenshots captured; local Vite server stopped.
+- Latest prior checkpoint is `6c2c1faa705066de7c9690140b78135c35b53ca3` on `codex/v0.14.2-water-weather`; this relief change is currently uncommitted and must be committed/pushed after the normal diff/status check. Leave user-created untracked ` 2` files and `artifacts/` untouched.
+- Next: continue the visual/physical audit across remaining world assets and surfaces; do not bump version, tag, merge, or alter Pages until full release evidence is available. Overall weighted estimate: **about 34%**.

@@ -45,7 +45,7 @@ describe('weather surface response',()=>{
       return Object.assign(canvas,{getContext:()=>context});
     }});
     const compile=(material:THREE.MeshStandardMaterial)=>{
-      const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <defaultnormal_vertex>\n#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <map_fragment>\n#include <roughnessmap_fragment>'};
+      const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <defaultnormal_vertex>\n#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <map_fragment>\n#include <normal_fragment_maps>\n#include <roughnessmap_fragment>'};
       material.onBeforeCompile(shader as never,{} as THREE.WebGLRenderer);return shader;
     };
     const legacy=stoneMaterial(),wetness={value:.35},revision6=stoneMaterial(0xb0ada0,true,wetness);
@@ -59,6 +59,10 @@ describe('weather surface response',()=>{
       expect(newShader.vertexShader).toContain('vStonePos=(modelMatrix*stoneWorldPosition).xyz');
       expect(newShader.uniforms.surfaceWetness?.value).toBe(.35);
       expect(newShader.fragmentShader).toContain('texture2D(map,vStonePos.yz*.7)');
+      expect(oldShader.fragmentShader).not.toContain('stoneDx');
+      expect(newShader.fragmentShader).toContain('float stoneHeight=dot(stoneDetail,vec3(.333))');
+      expect(newShader.fragmentShader).toContain('stoneDx=dFdx(vViewPosition)');
+      expect(newShader.fragmentShader).toContain('dFdx(stoneHeight)*stoneR1+dFdy(stoneHeight)*stoneR2');
       expect(revision6.customProgramCacheKey()).toBe('tideland-stone-detail-v1-world-weather');
       expect(legacy.customProgramCacheKey()).toBe('tideland-stone-detail-v1-local-static');
     }finally{
