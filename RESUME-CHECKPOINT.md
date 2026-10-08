@@ -2260,3 +2260,11 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - `npm run test:browser`: gameplay regression passed movement/jump/crouch, gathering, inventory operations, crafting, building/door/collider persistence and LOW/MEDIUM/HIGH rendering samples; zero browser errors.
 - The first Recycler browser probe exposed stale test selectors, not a gameplay defect: StationUI's live title is `RECYCLER`, and HUD wet/cold/toxic pills now also carry `data-status`. Updated the harness to assert the real panel title, scope processing selectors to station `<p>` elements, and support screenshot suppression. Rerun `npm run test:salvage`: **21/21 PASS**, including input rules, processing/output, active-job save/reload, no duplicate output, Lost Pack recovery, build/Furnace regression and exactly two persistent world Recyclers; zero console errors.
 - Performance comparison is recorded above. No game save format or world-generation identity changed in these QA/script fixes. Current release remains v0.11.0 until the goal-by-goal audit and remaining final gates pass.
+
+## v0.14 continuation — outcrop material checkpoint — 2026-10-08
+
+- Latest branch before this correction: `codex/v0.14.2-water-weather`, `cbdb67a1c892b13cb156708ad544b7a7fab28d3f`, matching `origin/codex/v0.14.2-water-weather`.
+- Corrected Revision-6 instanced rock tint from overly low linear lightness (`0.18–0.28`) to deterministic, biome-aware `0.66–0.78` tint, preserving subtle alpine/arid/temperate hue differences and allowing existing PBR albedo/facet detail to read. Legacy worlds unchanged.
+- Files changed: `src/world/materials.ts`, `src/rendering/environment.ts`, `tests/rock-geometry.test.ts`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`.
+- Validation: targeted rock/terrain material tests **17/17 PASS**; `npm run build` **PASS**; `npm run test:assets:world` **PASS** (31 GLBs + 31 proxy sidecars, all three LODs and within size limit).
+- Next: inspect additional surface/material issues with targeted evidence, then proceed through the broader asset/physical audit, environment visuals, and final full QA. Current weighted estimate is **about 33%**; release gates remain incomplete. Keep working on the existing branch and leave user-created untracked ` 2` files and `artifacts/` untouched.

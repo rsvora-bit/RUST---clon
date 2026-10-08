@@ -10,7 +10,7 @@ import {Atmosphere} from '../world/atmosphere';
 import {addInstanceWindResponse,addWeatherSurfaceResponse,treeBarkMaterial,woodSurfaceMaps} from './materials';
 import {collisionBoundsFromGeometries,collisionBoundsFromGeometry,collisionBoundsFromObject,treeAssetCollision,treeTrunkCollision} from '../physics/collisionBounds';
 import {randomSource,smoothstep} from '../world/noise';
-import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,liftFoliageBaseColor,stoneMaterial,rockMaterialStyle,terrainMaterial,groundDecalTexture} from '../world/materials';
+import {barkTexture,pineTexture,palmTexture,leavesTexture,leafMassTexture as makeLeafMassTexture,liftFoliageBaseColor,stoneMaterial,rockMaterialStyle,rockInstanceTint,terrainMaterial,groundDecalTexture} from '../world/materials';
 import {pineGeometry,pineMassGeometry,broadleafGeometry,palmGeometry,palmTrunkGeometry,trunkGeometry,rockGeometry,surfaceAlignedQuaternion,terrainContactOffset,bushGeometry,grassGeometry,fiberGeometry,berryGeometry,fernGeometry,forestShrubGeometry,twigGeometry,fallenLogGeometry,seaweedGeometry,reedGeometry,marshPoolGeometry} from '../world/models';
 
 type InstanceRef={mesh:THREE.InstancedMesh;index:number;matrix:THREE.Matrix4};
@@ -358,7 +358,7 @@ export class Environment {
         // The original fixed center offset only worked for one rock scale and
         // flat ground. Seat each shared instance against its sampled terrain.
         this.matrixDummy.position.y+=terrainContactOffset(geos[v]!,this.matrixDummy.matrix,(x,z)=>this.heightAt(x,z),.035);this.matrixDummy.updateMatrix();mesh.setMatrixAt(i,this.matrixDummy.matrix);
-        const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6){const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID',hue=alpine ? .58 : arid ? .105 : .17,saturation=alpine ? .10 : arid ? .18 : .14,light=alpine ? .18 : arid ? .22 : .20;mesh.setColorAt(i,new THREE.Color().setHSL(hue+Math.sin(r.x*1.71+r.z*.93)*.018,saturation,light+tone*.10));}else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5){const collider=collisionBoundsFromGeometry(geos[v]!,this.matrixDummy.matrix,.08);this.colliders.push(collider);collisionRefs[i]=collider;}});mesh.computeBoundingSphere();this.root.add(mesh);if(revision6Shape)this.outcropBatches.push({mesh,variant:v,collisionRefs});
+        const tone=rand(),biome=this.worldRevision>=6?this.biomeAt(r.x,r.z):'';if(this.worldRevision>=6)mesh.setColorAt(i,rockInstanceTint(biome,r.x,r.z,tone));else mesh.setColorAt(i,new THREE.Color().setHSL(.12,.08,.72+tone*.24));if(r.sy>1.5){const collider=collisionBoundsFromGeometry(geos[v]!,this.matrixDummy.matrix,.08);this.colliders.push(collider);collisionRefs[i]=collider;}});mesh.computeBoundingSphere();this.root.add(mesh);if(revision6Shape)this.outcropBatches.push({mesh,variant:v,collisionRefs});
     }
     const make=(kind:'stone'|'metal'|'sulfur'|'hqmetal',x:number,z:number,size:number)=>{
       const capacity=kind==='stone'?240:kind==='metal'?180:kind==='sulfur'?160:90;

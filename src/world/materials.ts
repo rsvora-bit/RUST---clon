@@ -189,6 +189,14 @@ export function terrainMaterial(worldRevision=0):THREE.MeshStandardMaterial {
 export function rockMaterialStyle(worldRevision:number):{resourceTint:number;outcropTint:number;vertexColors:boolean} {
   const revision6=worldRevision>=6;return{resourceTint:revision6?0x999b93:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:revision6};
 }
+/** Linear vertex tint for instanced Revision-6 outcrops. Keep it near neutral
+ * because it multiplies the material albedo and the rock's authored facet colors. */
+export function rockInstanceTint(biome:string,x:number,z:number,tone:number):THREE.Color {
+  const alpine=biome==='SNOW / ALPINE'||biome==='ROCKY MOUNTAIN',arid=biome==='ARID';
+  const hue=alpine?.58:arid?.105:.17,saturation=alpine?.10:arid?.18:.14;
+  const variation=Math.sin(x*1.71+z*.93)*.018,lightness=.66+THREE.MathUtils.clamp(tone,0,1)*.12;
+  return new THREE.Color().setHSL(hue+variation,saturation,lightness);
+}
 /** Keep authored leaf hue/value relationships while preventing a dark GLB base factor from multiplying instance tint into near-black foliage. */
 export function liftFoliageBaseColor(color:THREE.Color,targetPeak=.46):THREE.Color{
   const peak=Math.max(color.r,color.g,color.b);return peak>0&&peak<targetPeak?color.clone().multiplyScalar(targetPeak/peak):color.clone();

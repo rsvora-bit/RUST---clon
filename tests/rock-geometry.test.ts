@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import * as THREE from 'three';
 import {rockGeometry,surfaceAlignedQuaternion,terrainContactOffset} from '../src/world/models';
-import {rockMaterialStyle} from '../src/world/materials';
+import {rockInstanceTint,rockMaterialStyle} from '../src/world/materials';
 
 describe('procedural rock geometry',()=>{
   it('keeps each seed deterministic while producing distinct faceted silhouettes',()=>{
@@ -55,6 +55,13 @@ describe('procedural rock geometry',()=>{
     expect(rockMaterialStyle(1)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
     expect(rockMaterialStyle(5)).toEqual({resourceTint:0xd5d0bf,outcropTint:0xd5d0bf,vertexColors:false});
     expect(rockMaterialStyle(6)).toEqual({resourceTint:0x999b93,outcropTint:0xd5d0bf,vertexColors:true});
+  });
+
+  it('keeps Revision-6 biome rock tints bright enough for layered albedo and facet colors',()=>{
+    const temperate=rockInstanceTint('TEMPERATE FOREST',0,0,.45),arid=rockInstanceTint('ARID',0,0,.45),alpine=rockInstanceTint('SNOW / ALPINE',0,0,.45),repeat=rockInstanceTint('TEMPERATE FOREST',0,0,.45);
+    expect([temperate.r,temperate.g,temperate.b]).toEqual([repeat.r,repeat.g,repeat.b]);
+    for(const color of [temperate,arid,alpine])expect(Math.min(color.r,color.g,color.b)).toBeGreaterThan(.45);
+    expect(arid.r).toBeGreaterThan(arid.b);expect(alpine.b).toBeGreaterThan(alpine.r);expect(temperate.g).toBeGreaterThan(temperate.r);
   });
 
   it('aligns only the rendered up axis to a slope and preserves yaw around it',()=>{
