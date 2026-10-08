@@ -32,7 +32,7 @@ describe('v0.9.1 world art stabilization',()=>{
     const geometrySet=(environment as unknown as {geometries:Set<THREE.BufferGeometry>}).geometries;
     try{
       expect(environment.useGeneratedRockModels(models)).toBe(15);expect(environment.generatedShorePebbleStats).toMatchObject({instances:15,batches:3,assets:variants,lod:0});
-      for(const batch of batches){expect(batch.mesh.userData.generatedWorldAsset).toBe(variants[batch.variant]);expect(batch.mesh.userData.generatedWorldLod).toBe(0);expect(batch.mesh.geometry.getAttribute('color').count).toBe(batch.mesh.geometry.getAttribute('position').count);expect(batch.mesh.geometry.index!.count/3).toBe(12);}
+      for(const batch of batches){expect(batch.mesh.userData.generatedWorldAsset).toBe(variants[batch.variant]);expect(batch.mesh.userData.generatedWorldLod).toBe(0);expect(batch.mesh.geometry.getAttribute('color').count).toBe(batch.mesh.geometry.getAttribute('position').count);expect(batch.mesh.geometry.getAttribute('position').count/3).toBe(12);}
       (environment as unknown as {quality:string}).quality='low';expect(environment.useGeneratedRockModels(models)).toBe(15);expect(environment.generatedShorePebbleStats.lod).toBe(2);expect(batches.every(batch=>batch.mesh.userData.generatedWorldLod===2)).toBe(true);
     }finally{for(const geometry of geometrySet)geometry.dispose();for(const batch of batches)batch.mesh.geometry.dispose();material.dispose();}
   });
