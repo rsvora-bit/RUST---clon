@@ -2510,3 +2510,11 @@ Původní BEFORE z 2026-09-12 zachován v `.npm-cache/graphics-v080/before/`; p�
 - Tuned rain-line tint/alpha after ordinary gameplay QA showed rain was barely visible: color `0x899da4` → `0xa5b7bf`, opacity `rain*(.14 + storm*.07)` → `rain*(.21 + storm*.08)`. No particle count, weather simulation, draw-call, gameplay or save changes. One temporary test-world screenshot confirmed visible but restrained streaks; no browser errors.
 - Validation: environment-visual tests **24/24 PASS**; full suite **593/593 PASS (58 files)**; production build PASS (existing chunk-size advisory).
 - Next: inspect diff and checkpoint only `src/survival/Weather.ts`, `tests/environment-visuals.test.ts`, plus these status/checkpoint files on `codex/v0.14.2-water-weather`; preserve unrelated iCloud ` 2`/`artifacts/`. Goal remains incomplete (~56%), do not release or touch main/tag/Pages.
+
+## Current continuation — Revision-6 rain-reactive procedural foliage — 2026-10-08
+
+- Branch: `codex/v0.14.2-water-weather`; starting HEAD `463a547c579189999b404c3d6228df01e91e34af`.
+- Added shared live rain darkening to procedural leaf, palm and pine foliage plus fallback canopy masses, gated to Revision 6. No geometry, draw-call, save, gameplay or legacy-generation changes.
+- Full suite **593/593 PASS (58 files)** before this slice; focused tests **51/51 PASS** after it; production build PASS (known large-bundle advisory); screenshot-free ANGLE Metal world-art QA **120/120 PASS**, no browser/WebGL errors. The SwiftShader attempt stalled before its first assertion and was stopped; the same harness passed with ANGLE Metal.
+- Changed files: `src/rendering/environment.ts`, `src/app/GameApp.ts`, `scripts/world-art-qa.mjs`, `POLISH-STATUS.md`, `RESUME-CHECKPOINT.md`.
+- Next: inspect diff, then commit and push only those five files to the existing feature branch. Full suite rerun after the change passed **593/593**. Do not bump release version, merge main, tag, publish a Release or touch Pages. Keep unrelated iCloud ` 2` duplicates and `artifacts/` untouched. The overall v0.14 goal remains incomplete (~56%).

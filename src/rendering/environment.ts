@@ -189,6 +189,7 @@ export class Environment {
   get rainPuddlePositions():Vec3[]{return this.rainPuddleLocations.map(point=>({...point}));}
   get rainPuddleOpacity():number{return this.rainPuddleMaterial?.opacity??0;}
   get treeFoliageWeatherResponse():boolean{return this.generatedTreeFoliageMaterial?.userData.tidelandWeatherResponse===true;}
+  get proceduralFoliageWeatherResponse():boolean{return[this.leaves,this.leafMass,this.pineMass,this.pine,this.palm].every(material=>material.userData.tidelandWeatherResponse===true);}
   get grassWeatherResponse():boolean{return this.grassMaterials.length>0&&this.grassMaterials.every(material=>material.userData.tidelandWeatherResponse===true);}
   get understoryLocations():{name:string;positions:Vec3[];visiblePositions:Vec3[]}[]{
     const matrix=new THREE.Matrix4(),position=new THREE.Vector3();
@@ -205,6 +206,7 @@ export class Environment {
     this.atmosphere=new Atmosphere(scene,this.terrain.heightTexture,this.terrain.size,seed,this.worldRevision);
     this.generatedBarkMaps=woodSurfaceMaps(449);this.bark=treeBarkMaterial(barkTexture(this.worldRevision>=6),this.generatedBarkMaps);addWeatherSurfaceResponse(this.bark,this.surfaceWetness,.58,.58);this.shoreWood=woodMaterial('#696858');addWeatherSurfaceResponse(this.shoreWood,this.surfaceWetness,.48,.50);
     this.leaves=this.foliageMaterial(leavesTexture(667,this.worldRevision>=6),this.worldRevision>=6?0xc7d09e:0xffffff,this.worldRevision>=6?.065:.095);this.leafMass=new THREE.MeshLambertMaterial({map:this.worldRevision>=6?makeLeafMassTexture():null,color:this.worldRevision>=6?0xffffff:0x788c46,emissive:this.worldRevision>=6?0x2a401b:0x0b1008,emissiveIntensity:this.worldRevision>=6?.55:.012});this.pineMass=new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x080d06,emissiveIntensity:.04,flatShading:true,vertexColors:true});this.pine=this.foliageMaterial(pineTexture(this.worldRevision>=6),0xffffff,.115);this.palm=this.foliageMaterial(palmTexture(),0xffffff,.095);
+    if(this.worldRevision>=6){addWeatherSurfaceResponse(this.leafMass,this.surfaceWetness,.42,.68);addWeatherSurfaceResponse(this.pineMass,this.surfaceWetness,.42,.68);}
     const rockStyle=rockMaterialStyle(this.worldRevision),rockWetness=this.worldRevision>=6?this.surfaceWetness:undefined;this.stone=stoneMaterial(rockStyle.resourceTint,rockStyle.vertexColors,rockWetness);this.outcrop=stoneMaterial(rockStyle.outcropTint,rockStyle.vertexColors,rockWetness);this.metal=stoneMaterial(0x8b7567,rockStyle.vertexColors,rockWetness);this.sulfur=stoneMaterial(0xb7a74a,rockStyle.vertexColors,rockWetness);this.hqmetal=stoneMaterial(0x65757d,rockStyle.vertexColors,rockWetness);
     this.fiber=new THREE.MeshStandardMaterial({color:0x5e753e,roughness:.85,side:THREE.DoubleSide});this.berries=new THREE.MeshStandardMaterial({color:0x98383c,roughness:.7});
     [this.bark,this.shoreWood,this.leaves,this.leafMass,this.pineMass,this.pine,this.palm,this.stone,this.outcrop,this.metal,this.sulfur,this.hqmetal,this.fiber,this.berries,this.invisible].forEach(m=>this.materials.add(m));
@@ -249,7 +251,7 @@ export class Environment {
     const material=new THREE.MeshLambertMaterial({map:tex,color,alphaTest:.38,
       transparent:false,depthWrite:true,side:THREE.DoubleSide,
       emissive:0xffffff,emissiveMap:tex,emissiveIntensity});
-    addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);return material;
+    addInstanceWindResponse(material,this.windUniform,this.windStrengthUniform,.095,.34);if(this.worldRevision>=6)addWeatherSurfaceResponse(material,this.surfaceWetness,.48,.68);return material;
   }
 
   private own<T extends THREE.BufferGeometry>(g:T):T {this.geometries.add(g);return g;}
