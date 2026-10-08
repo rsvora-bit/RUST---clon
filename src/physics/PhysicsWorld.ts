@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 import { PLAYER } from '../config/balance';
 import type { Vec3 } from '../core/types';
-export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;nodeId?:string;rainSurface?:boolean}
+export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;rotationZ?:number;nodeId?:string;rainSurface?:boolean}
 export class PhysicsWorld {
   readonly world:RAPIER.World;
   readonly body:RAPIER.RigidBody;
@@ -29,7 +29,7 @@ export class PhysicsWorld {
     this.world.step();
   }
   private createBox(box:CollisionBox){
-    const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),box.rotation??0);
+    const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,box.rotation??0,box.rotationZ??0));
     return this.world.createCollider(RAPIER.ColliderDesc.cuboid(box.halfExtents.x,box.halfExtents.y,box.halfExtents.z).setTranslation(box.position.x,box.position.y,box.position.z).setRotation(q).setFriction(0.8));
   }
   setStructure(id:string,boxes:CollisionBox[]){this.removeStructure(id);this.structureColliders.set(id,boxes.map(b=>this.createBox(b)));}

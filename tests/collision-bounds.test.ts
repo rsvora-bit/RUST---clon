@@ -139,6 +139,12 @@ describe('visual collision bounds', () => {
     terrain.dispose();
   });
 
+  it('applies Z-axis lean to physical collision proxies',()=>{
+    const floor=new THREE.PlaneGeometry(20,20,1,1);floor.rotateX(-Math.PI/2);
+    const physics=new PhysicsWorld(floor,[{position:{x:0,y:1,z:0},halfExtents:{x:1,y:.15,z:.3},rotationZ:Math.PI/2}],{x:-3,y:0,z:0});
+    try{for(let step=0;step<40;step++)physics.move({x:.1,y:0,z:0});expect(physics.position().x).toBeGreaterThan(-.9);}finally{physics.dispose();floor.dispose();}
+  });
+
   it('keeps long-hull side collision around every rendered LOD and blocks a low-LOD protrusion',()=>{
     const floor=new THREE.PlaneGeometry(40,40,1,1);floor.rotateX(-Math.PI/2);const make=(width:number,height:number,depth:number,z:number)=>{const level=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth));mesh.position.z=z;level.add(mesh);return level;},levels=[make(8,1.4,1.5,0),make(8.1,1.45,1.75,.12),make(8.2,1.5,2.25,.52)],sides=longHullSideCollisionsFromLods(levels);
     try{

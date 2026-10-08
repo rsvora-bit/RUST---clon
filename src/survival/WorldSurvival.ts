@@ -418,12 +418,12 @@ export class WorldSurvival {
       }else if(p.kind===6)result.push({position:{x:p.position.x,y:p.position.y+.83,z:p.position.z+.9},halfExtents:{x:3.15,y:.12,z:2.1}});
       else if(p.kind===7){
         // Match the three visible ridge-tower legs instead of a phantom center post.
-        // The two leaning legs use a slightly wider envelope because collider boxes
-        // do not tilt around Z; this contains their full rendered length safely.
+        // Keep the live colliders aligned with the authored leg lean, rather than
+        // widening their footprints or blocking the space between the tower feet.
         result.push(
-          {position:{x:p.position.x-1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.32,y:5.24,z:.16}},
-          {position:{x:p.position.x+1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.32,y:5.24,z:.16}},
-          {position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z+1.55},halfExtents:{x:.16,y:5.24,z:.16}},
+          {position:{x:p.position.x-1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.08,y:5.2,z:.08},rotationZ:-.19},
+          {position:{x:p.position.x+1.45,y:p.position.y+5.2,z:p.position.z-1},halfExtents:{x:.08,y:5.2,z:.08},rotationZ:.19},
+          {position:{x:p.position.x,y:p.position.y+5.2,z:p.position.z+1.55},halfExtents:{x:.08,y:5.2,z:.08}},
           {position:{x:p.position.x+2.45,y:p.position.y+.74,z:p.position.z+.15},halfExtents:{x:.44,y:.67,z:.38}},
         );
       }

@@ -25,6 +25,11 @@ describe('F3 world collision bounds', () => {
     expect([...lines.slice(0,6)]).toEqual([-2,-.5,1,-2,-.5,-1]);
   });
 
+  it('shows tilted collision proxies with their authored Z lean',()=>{
+    const lines=boundsLineVertices([{position:{x:0,y:0,z:0},halfExtents:{x:1,y:.5,z:2},rotationZ:Math.PI/2}]);
+    expect([...lines.slice(0,6)]).toEqual([.5,-1,-2,.5,1,-2]);
+  });
+
   it('shows proxy contact gap, origin marker and the local terrain normal',()=>{
     const box:CollisionBox={position:{x:0,y:3,z:0},halfExtents:{x:1,y:2,z:1}},lines=groundingLineVertices([box],(x)=>x*.1,{x:0,z:0});
     expect(lines).toHaveLength(24);
