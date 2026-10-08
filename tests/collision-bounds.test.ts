@@ -49,10 +49,20 @@ describe('visual collision bounds', () => {
     expect(treeAssetCollision({x:4,y:2,z:-3},1,1)).toEqual({
       position:{x:4,y:6.65,z:-3},
       halfExtents:{x:.38,y:4.27,z:.38},
+      shape:'capsule',
     });
     const palm=treeAssetCollision({x:4,y:2,z:-3},1.2,5);
     expect(palm.halfExtents.x).toBeCloseTo(.408,8);expect(palm.halfExtents.y).toBeCloseTo(5.352,8);expect(palm.halfExtents.z).toBeCloseTo(.408,8);
     expect(treeAssetCollision({x:4,y:2,z:-3},1,99)).toEqual(treeTrunkCollision({x:4,y:2,z:-3},1,99));
+  });
+
+  it('uses the authored rounded trunk profile in Rapier and keeps its base grounded',()=>{
+    const floor=new THREE.PlaneGeometry(30,30,1,1);floor.rotateX(-Math.PI/2);
+    const tree=treeAssetCollision({x:0,y:0,z:0},1,1),physics=new PhysicsWorld(floor,[tree],{x:0,y:0,z:3});
+    try{
+      for(let step=0;step<40;step++)physics.move({x:0,y:0,z:-.1});
+      const player=physics.position();expect(tree.shape).toBe('capsule');expect(player.z).toBeGreaterThan(.55);expect(player.z).toBeLessThan(1.05);
+    }finally{physics.dispose();floor.dispose();}
   });
 
   it('derives an instance proxy from the authored trunk geometry instead of foliage extents',()=>{

@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 import { PLAYER } from '../config/balance';
 import type { Vec3 } from '../core/types';
-export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;rotationZ?:number;nodeId?:string;rainSurface?:boolean}
+export interface CollisionBox {position:Vec3;halfExtents:Vec3;rotation?:number;rotationZ?:number;shape?:'cuboid'|'capsule';nodeId?:string;rainSurface?:boolean}
 export class PhysicsWorld {
   readonly world:RAPIER.World;
   readonly body:RAPIER.RigidBody;
@@ -17,7 +17,7 @@ export class PhysicsWorld {
     const positions = new Float32Array(terrain.getAttribute('position').array);
     const indices = terrain.index ? new Uint32Array(terrain.index.array) : new Uint32Array(Array.from({length:positions.length/3},(_,i)=>i));
     this.world.createCollider(RAPIER.ColliderDesc.trimesh(positions,indices).setFriction(0.9));
-    for(const p of props) { const collider=this.createBox(p);if(p.nodeId)this.naturalColliders.set(p.nodeId,collider);if(p.rainSurface===false)this.excludedRainSurfaces.add(collider.handle); }
+    for(const p of props) { const collider=this.createCollider(p);if(p.nodeId)this.naturalColliders.set(p.nodeId,collider);if(p.rainSurface===false)this.excludedRainSurfaces.add(collider.handle); }
     this.body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(spawn.x,spawn.y+PLAYER.HEIGHT/2,spawn.z));
     this.collider=this.world.createCollider(RAPIER.ColliderDesc.capsule(PLAYER.HEIGHT/2-PLAYER.RADIUS,PLAYER.RADIUS),this.body);
     this.controller=this.world.createCharacterController(0.025);
@@ -28,11 +28,12 @@ export class PhysicsWorld {
     this.world.timestep=1/60;
     this.world.step();
   }
-  private createBox(box:CollisionBox){
+  private createCollider(box:CollisionBox){
     const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,box.rotation??0,box.rotationZ??0));
-    return this.world.createCollider(RAPIER.ColliderDesc.cuboid(box.halfExtents.x,box.halfExtents.y,box.halfExtents.z).setTranslation(box.position.x,box.position.y,box.position.z).setRotation(q).setFriction(0.8));
+    const shape=box.shape==='capsule'?RAPIER.ColliderDesc.capsule(box.halfExtents.y,box.halfExtents.x):RAPIER.ColliderDesc.cuboid(box.halfExtents.x,box.halfExtents.y,box.halfExtents.z);
+    return this.world.createCollider(shape.setTranslation(box.position.x,box.position.y,box.position.z).setRotation(q).setFriction(0.8));
   }
-  setStructure(id:string,boxes:CollisionBox[]){this.removeStructure(id);this.structureColliders.set(id,boxes.map(b=>this.createBox(b)));}
+  setStructure(id:string,boxes:CollisionBox[]){this.removeStructure(id);this.structureColliders.set(id,boxes.map(b=>this.createCollider(b)));}
   removeStructure(id:string){for(const c of this.structureColliders.get(id)??[])this.world.removeCollider(c,true);this.structureColliders.delete(id);}
   hasStructure(id:string){return this.structureColliders.has(id);}
   removeNodeCollider(id:string){const collider=this.naturalColliders.get(id);if(collider){this.world.removeCollider(collider,true);this.naturalColliders.delete(id);this.excludedRainSurfaces.delete(collider.handle);}}

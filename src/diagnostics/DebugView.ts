@@ -9,25 +9,35 @@ export function boundsLineVertices(boxes: readonly CollisionBox[]): Float32Array
   const edges = [
     [0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7],
   ] as const;
-  const values = new Float32Array(boxes.length * edges.length * 6);
-  let offset = 0;
+  const values:number[]=[];
+  const line=(a:THREE.Vector3,b:THREE.Vector3)=>values.push(a.x,a.y,a.z,b.x,b.y,b.z);
   for (const box of boxes) {
     const {x,y,z}=box.position, {x:hx,y:hy,z:hz}=box.halfExtents;
     const rotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,box.rotation??0,box.rotationZ??0));
+    if(box.shape==='capsule'){
+      const radius=hx,segments=12,latitudes=4,point=(phi:number,theta:number,cap:1|-1)=>new THREE.Vector3(Math.cos(phi)*radius*Math.sin(theta),cap*(hy+radius*Math.cos(theta)),Math.sin(phi)*radius*Math.sin(theta)).applyQuaternion(rotation).add(new THREE.Vector3(x,y,z));
+      for(const cap of [1,-1] as const)for(let latitude=1;latitude<=latitudes;latitude++){const theta=latitude*Math.PI/(2*latitudes);for(let segment=0;segment<segments;segment++){const a=point(segment*Math.PI*2/segments,theta,cap),b=point((segment+1)*Math.PI*2/segments,theta,cap);line(a,b);}}
+      for(let segment=0;segment<segments;segment++){
+        const phi=segment*Math.PI*2/segments,upper=point(phi,Math.PI/2,1),lower=point(phi,Math.PI/2,-1);line(upper,lower);
+        for(let latitude=0;latitude<latitudes;latitude++){line(point(phi,latitude*Math.PI/(2*latitudes),1),point(phi,(latitude+1)*Math.PI/(2*latitudes),1));line(point(phi,latitude*Math.PI/(2*latitudes),-1),point(phi,(latitude+1)*Math.PI/(2*latitudes),-1));}
+      }
+      continue;
+    }
     const corners = [
       [-hx,-hy,-hz],[hx,-hy,-hz],[-hx,-hy,hz],[hx,-hy,hz],
       [-hx,hy,-hz],[hx,hy,-hz],[-hx,hy,hz],[hx,hy,hz],
     ].map(([lx,ly,lz])=>{const p=new THREE.Vector3(lx!,ly!,lz!).applyQuaternion(rotation);return [x+p.x,y+p.y,z+p.z];});
-    for (const [a,b] of edges) {for (const coordinate of corners[a]!) values[offset++]=coordinate;for (const coordinate of corners[b]!) values[offset++]=coordinate;}
+    const corner=(index:number)=>new THREE.Vector3(corners[index]![0]!,corners[index]![1]!,corners[index]![2]!);
+    for (const [a,b] of edges) line(corner(a),corner(b));
   }
-  return values;
+  return new Float32Array(values);
 }
 
 /** Contact gap, proxy origin and sampled terrain normal for nearby world colliders. */
 export function groundingLineVertices(boxes: readonly CollisionBox[],heightAt:(x:number,z:number)=>number,camera:{x:number;z:number},range=72):Float32Array {
   const values:number[]=[],limitSq=range*range;
   for(const box of boxes){const dx=box.position.x-camera.x,dz=box.position.z-camera.z;if(dx*dx+dz*dz>limitSq)continue;const ground=heightAt(box.position.x,box.position.z);if(!Number.isFinite(ground)||ground< -9.9)continue;
-    const {x,y,z}=box.position,bottom=y-box.halfExtents.y,step=.65,gradeX=(heightAt(x+step,z)-heightAt(x-step,z))/(2*step),gradeZ=(heightAt(x,z+step)-heightAt(x,z-step))/(2*step),inv=1/Math.hypot(gradeX,1,gradeZ),nx=-gradeX*inv,ny=inv,nz=-gradeZ*inv;
+    const {x,y,z}=box.position,bottom=y-box.halfExtents.y-(box.shape==='capsule'?box.halfExtents.x:0),step=.65,gradeX=(heightAt(x+step,z)-heightAt(x-step,z))/(2*step),gradeZ=(heightAt(x,z+step)-heightAt(x,z-step))/(2*step),inv=1/Math.hypot(gradeX,1,gradeZ),nx=-gradeX*inv,ny=inv,nz=-gradeZ*inv;
     // Vertical gap from proxy foot to ground, then a one-meter normal marker.
     values.push(x,bottom,z,x,ground,z,x,ground,z,x+nx,ground+ny,z+nz);
     // Cross at the collider origin makes its authored center easy to find.

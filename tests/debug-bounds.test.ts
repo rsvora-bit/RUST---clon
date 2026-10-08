@@ -30,6 +30,14 @@ describe('F3 world collision bounds', () => {
     expect([...lines.slice(0,6)]).toEqual([.5,-1,-2,.5,1,-2]);
   });
 
+  it('draws authored tree capsules as round profiles and measures their true grounded base',()=>{
+    const capsule:CollisionBox={position:{x:1,y:5.8,z:-2},halfExtents:{x:.38,y:5.42,z:.38},shape:'capsule'},lines=boundsLineVertices([capsule]);
+    expect(lines.length).toBeGreaterThan(12*12*2*3);
+    const xs=Array.from({length:lines.length/3},(_,index)=>lines[index*3]!),ys=Array.from({length:lines.length/3},(_,index)=>lines[index*3+1]!),zs=Array.from({length:lines.length/3},(_,index)=>lines[index*3+2]!);
+    expect(Math.min(...xs)).toBeCloseTo(.62,2);expect(Math.max(...xs)).toBeCloseTo(1.38,2);expect(Math.min(...ys)).toBeCloseTo(0,5);expect(Math.max(...ys)).toBeCloseTo(11.6,5);expect(Math.min(...zs)).toBeCloseTo(-2.38,2);expect(Math.max(...zs)).toBeCloseTo(-1.62,2);
+    const ground=groundingLineVertices([capsule],()=>0,{x:1,z:-2});expect(ground[1]).toBeCloseTo(0,5);
+  });
+
   it('shows proxy contact gap, origin marker and the local terrain normal',()=>{
     const box:CollisionBox={position:{x:0,y:3,z:0},halfExtents:{x:1,y:2,z:1}},lines=groundingLineVertices([box],(x)=>x*.1,{x:0,z:0});
     expect(lines).toHaveLength(24);

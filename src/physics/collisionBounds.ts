@@ -4,6 +4,7 @@ export interface CollisionBounds {
   position: { x: number; y: number; z: number };
   halfExtents: { x: number; y: number; z: number };
   rotation?: number;
+  shape?: 'cuboid'|'capsule';
 }
 
 /** Stable trunk proxy based on the authored species scale and meter height. */
@@ -36,6 +37,7 @@ export function treeAssetCollision(position: { x: number; y: number; z: number }
   return {
     position: { x: position.x, y: position.y + proxy.center * scale, z: position.z },
     halfExtents: { x: proxy.radius * scale, y: proxy.halfHeight * scale, z: proxy.radius * scale },
+    shape: 'capsule',
   };
 }
 
