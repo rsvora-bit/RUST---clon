@@ -52,9 +52,27 @@ try{
       }
     });
     if(!cliffPlans.length)throw Error('No clear, walkable approach to any authored cliff slab collider');
+    const resourceBoxes=art.resourceRockColliderBounds??[],resourcePlans=[];
+    for(const kind of ['stone','metal','sulfur','hqmetal']){
+      let found;
+      for(const box of resourceBoxes.filter(candidate=>candidate.asset===kind)){
+        const yaw=box.rotation??0,axes=[{x:Math.cos(yaw),z:-Math.sin(yaw),extent:box.halfExtents.x,lateralExtent:box.halfExtents.z},{x:Math.sin(yaw),z:Math.cos(yaw),extent:box.halfExtents.z,lateralExtent:box.halfExtents.x}];
+        for(let axisIndex=0;axisIndex<2&&!found;axisIndex++)for(const sign of [-1,1]){const axis=axes[axisIndex],direction={x:axis.x*sign,z:axis.z*sign},distance=2.2,start={x:box.position.x-direction.x*(axis.extent+distance),z:box.position.z-direction.z*(axis.extent+distance)};let valid=true;
+          for(let sample=0;sample<=8;sample++){const t=distance*sample/8,x=start.x+t*direction.x,z=start.z+t*direction.z,grade=Math.hypot(api.height(x+.5,z)-api.height(x-.5,z),api.height(x,z+.5)-api.height(x,z-.5));if(api.height(x,z)<1||grade>.55){valid=false;break;}}
+          if(!valid)continue;
+          for(const obstacle of [...boxes,...cliffBoxes,...resourceBoxes.filter(other=>other.nodeId!==box.nodeId)]){const radius=Math.hypot(obstacle.halfExtents.x,obstacle.halfExtents.z)+.35,approach=distanceToSegment(obstacle.position,start,direction,distance);if(approach.along>-radius&&approach.along<distance+radius&&approach.lateral<radius){valid=false;break;}}
+          if(!valid)continue;
+          for(const tree of trees){const approach=distanceToSegment(tree,start,direction,distance);if(approach.along>-.4&&approach.along<distance+.4&&approach.lateral<.9){valid=false;break;}}
+          if(valid)found={asset:kind,nodeId:box.nodeId,center:box.position,extent:axis.extent,lateralExtent:axis.lateralExtent,start,direction};
+        }
+        if(found)break;
+      }
+      if(!found)throw Error(`No clear walkable collision approach found for ${kind} resource nodes`);
+      resourcePlans.push(found);
+    }
     const plan=selected[0],y=api.height(plan.start.x,plan.start.z);
     api.dev('testing');api.dev('god');api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});api.lookAt({x:plan.start.x+plan.axis.x,y:y+1.72,z:plan.start.z+plan.axis.z});api.setCapturePaused(false);
-    return{plans:selected.map(({index,asset,side,axis,distance,start,extent,lateralExtent,box})=>({index,asset,side,axis,distance,start,extent,lateralExtent,center:box.position})),cliffPlan:cliffPlans[0],assets:art.generatedRockModels.assets,cliffs,cliffBoxes};
+    return{plans:selected.map(({index,asset,side,axis,distance,start,extent,lateralExtent,box})=>({index,asset,side,axis,distance,start,extent,lateralExtent,center:box.position})),cliffPlan:cliffPlans[0],resourcePlans,assets:art.generatedRockModels.assets,cliffs,cliffBoxes};
   });
   console.log(`PASS ${approach.cliffs.length} authored cliff slabs on rocky high slopes with ${approach.cliffBoxes.length} stable collider bounds`);
   const results=await page.evaluate(({plans})=>{const api=window.__TIDELAND;return plans.map(plan=>{const y=api.height(plan.start.x,plan.start.z);api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});for(let i=0;i<10;i++)api.physicsMoveForTest({x:0,y:-.04,z:0});for(let i=0;i<100;i++)api.physicsMoveForTest({x:plan.axis.x*.12,y:0,z:plan.axis.z*.12});const p=api.physics().position,dx=p.x-plan.center.x,dz=p.z-plan.center.z,depth=dx*plan.axis.x+dz*plan.axis.z,lateral=Math.abs(dx*plan.axis.z-dz*plan.axis.x);return{asset:plan.asset,side:plan.side,position:p,depth,lateral,extent:plan.extent,lateralExtent:plan.lateralExtent};});},approach);
@@ -68,6 +86,9 @@ try{
   assert.ok(cliffResult.depth>-(cliffResult.extent+1.35),`Player stopped too far from authored ${cliffResult.asset} collider: ${JSON.stringify(cliffResult)}`);
   assert.ok(cliffResult.lateral<cliffResult.lateralExtent+.45,`Player moved beyond tested authored ${cliffResult.asset} collider face: ${JSON.stringify(cliffResult)}`);
   console.log(`PASS live player movement is blocked by an authored ${cliffResult.asset} cliff slab`);
+  const resourceResults=await page.evaluate(plans=>plans.map(plan=>{const api=window.__TIDELAND,y=api.height(plan.start.x,plan.start.z);api.teleport({x:plan.start.x,y:y+.08,z:plan.start.z});for(let i=0;i<12;i++)api.physicsMoveForTest({x:0,y:-.04,z:0});for(let i=0;i<100;i++)api.physicsMoveForTest({x:plan.direction.x*.10,y:0,z:plan.direction.z*.10});const position=api.physics().position,dx=position.x-plan.center.x,dz=position.z-plan.center.z;return{asset:plan.asset,nodeId:plan.nodeId,position,depth:dx*plan.direction.x+dz*plan.direction.z,lateral:Math.abs(dx*plan.direction.z-dz*plan.direction.x),extent:plan.extent,lateralExtent:plan.lateralExtent};}),approach.resourcePlans);
+  for(const result of resourceResults){assert.ok(result.depth<-(result.extent+.06),`Player passed into ${result.asset} resource node collider: ${JSON.stringify(result)}`);assert.ok(result.depth>-(result.extent+1.25),`Player stopped too far from ${result.asset} resource node: ${JSON.stringify(result)}`);assert.ok(result.lateral<result.lateralExtent+.45,`Player moved outside the tested ${result.asset} resource collider face: ${JSON.stringify(result)}`);}
+  console.log(`PASS live player collision for rock resource nodes · ${resourceResults.map(result=>result.asset).join(', ')}`);
   const lods=await page.evaluate(()=>{const api=window.__TIDELAND,previous=api.cameraState().settings.quality,result={};for(const preset of ['low','medium','high','ultra']){api.settingsForTest({quality:preset});const art=api.worldArt();result[preset]={models:art.generatedCliffModels,colliders:art.generatedCliffColliderBounds};}api.settingsForTest({quality:previous});return result;});
   assert.deepEqual(lods.low.models.assets,['cliff_slab_a','cliff_slab_b']);assert.deepEqual([lods.low.models.lod,lods.medium.models.lod,lods.high.models.lod,lods.ultra.models.lod],[2,1,0,0]);
   for(const preset of ['medium','high','ultra'])assert.deepEqual(lods[preset].colliders,approach.cliffBoxes,`cliff colliders must stay fixed at ${preset.toUpperCase()}`);
